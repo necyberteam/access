@@ -1,0 +1,16 @@
+{
+    "name": "amp/access",
+    "description": "A collection of modules for access match.",
+    "type": "drupal-module",
+    "license": "GPL-2.0+",
+    "authors": [
+        {
+            "name": "Miles France",
+            "email": "Miles.France@protitude.com"
+        }
+    ],
+    "support": {
+        "issues": "https://github.com/necyberteam/access/issues",
+        "source": "https://github.com/necyberteam/access"
+    }
+}
