@@ -1,7 +1,7 @@
 {
     "name": "amp/access",
     "description": "A collection of modules for access match.",
-    "type": "drupal-module",
+    "type": "drupal-custom-module",
     "license": "GPL-2.0+",
     "authors": [
         {
