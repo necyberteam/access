@@ -1,0 +1,8 @@
+name: Access Match Engagement
+description: 'Custom functionality for the Match Engagement node type'
+type: module
+core_version_requirement: ^8.8 || ^9
+package: Custom
+dependencies:
+  - access
+
