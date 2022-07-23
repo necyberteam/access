@@ -6,48 +6,142 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\user\Entity\User;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\Component\Utility\Xss;
+use Drupal\Core\Entity\EntityInterface;
+
 
 /**
  * Implements hook_form_alter().
  */
-function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  $current_user = \Drupal::currentUser();
-  $roles = $current_user->getRoles();
-  $accepted = $form_state->getValue(['field_accepted']);
-  $form['field_requested_engagement']['#access'] = FALSE;
-  $form['field_project_image']['#access'] = FALSE;
-  $form['field_project_deliverables']['#access'] = FALSE;
-  $form['field_mileston']['#access'] = FALSE;
-  $form['field_field_group']['#access'] = FALSE;
-  $form['field_milestone_completion_date']['#access'] = FALSE;
-  $form['field_milestone_actual_date']['#access'] = FALSE;
-  $form['field_hpc_resources_needed']['#access'] = FALSE;
-  $form['field_mentor']['#access'] = FALSE;
-  $form['field_students']['#access'] = FALSE;
-  $form['field_qualifications']['#access'] = FALSE;
-  $form['field_student_learning']['#access'] = FALSE;
-  $form['field_education']['#access'] = FALSE;
-  $form['field_programming_skill_level']['#access'] = FALSE;
-  $form['field_launch_presentation']['#access'] = FALSE;
-  $form['field_launch_presentation_date']['#access'] = FALSE;
-  $form['field_wrap_presentation']['#access'] = FALSE;
-  $form['field_wrap_presentation_date']['#access'] = FALSE;
-  $form['field_git_contribution']['#access'] = FALSE;
-  $form['field_planned_portal_contributio']['#access'] = FALSE;
-  $form['field_planned_publications']['#access'] = FALSE;
-  $form['field_what_match_will_learn']['#access'] = FALSE;
-  $form['field_notes']['#access'] = FALSE;
-  $form['field_what_is_the_impact_on_othe']['#access'] = FALSE;
-  $form['What is the impact on the development discipline(s) of the project?']['#access'] = FALSE;
-  $form['field_is_there_an_impact_on_info']['#access'] = FALSE;
-  $form['field_is_there_an_impact_on_inst']['#access'] = FALSE;
-  $form['field_is_there_an_impact_on_soci']['#access'] = FALSE;
-  $form['field_is_there_an_impact_on_tech']['#access'] = FALSE;
-  $form['field_is_there_an_impact_physica']['#access'] = FALSE;
-  $form['field_lessons_learned']['#access'] = FALSE;
-  $form['field_overall_results']['#access'] = FALSE;
-  $form['field_status']['#access'] = FALSE;
-  if (!in_array('administrator', $roles)) {
-    $form['field_accepted']['#access'] = FALSE;
+function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {  
+  if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
+    $current_user = \Drupal::currentUser();
+    $roles = $current_user->getRoles();
+    $accepted = $form['field_accepted']['widget']['value']['#default_value'];
+    if (!$accepted) {
+      $form['field_requested_engagement']['#access'] = FALSE;
+      $form['field_project_image']['#access'] = FALSE;
+      $form['field_project_deliverables']['#access'] = FALSE;
+      $form['field_mileston']['#access'] = FALSE;
+      $form['field_field_group']['#access'] = FALSE;
+      $form['field_milestone_completion_date']['#access'] = FALSE;
+      $form['field_milestone_actual_date']['#access'] = FALSE;
+      $form['field_hpc_resources_needed']['#access'] = FALSE;
+      $form['field_mentor']['#access'] = FALSE;
+      $form['field_students']['#access'] = FALSE;
+      $form['field_qualifications']['#access'] = FALSE;
+      $form['field_student_learning']['#access'] = FALSE;
+      $form['field_education']['#access'] = FALSE;
+      $form['field_programming_skill_level']['#access'] = FALSE;
+      $form['field_launch_presentation']['#access'] = FALSE;
+      $form['field_launch_presentation_date']['#access'] = FALSE;
+      $form['field_wrap_presentation']['#access'] = FALSE;
+      $form['field_wrap_presentation_date']['#access'] = FALSE;
+      $form['field_git_contribution']['#access'] = FALSE;
+      $form['field_planned_portal_contributio']['#access'] = FALSE;
+      $form['field_planned_publications']['#access'] = FALSE;
+      $form['field_what_match_will_learn']['#access'] = FALSE;
+      $form['field_notes']['#access'] = FALSE;
+      $form['field_what_is_the_impact_on_othe']['#access'] = FALSE;
+      $form['What is the impact on the development discipline(s) of the project?']['#access'] = FALSE;
+      $form['field_is_there_an_impact_on_info']['#access'] = FALSE;
+      $form['field_is_there_an_impact_on_inst']['#access'] = FALSE;
+      $form['field_is_there_an_impact_on_soci']['#access'] = FALSE;
+      $form['field_is_there_an_impact_on_tech']['#access'] = FALSE;
+      $form['field_is_there_an_impact_physica']['#access'] = FALSE;
+      $form['field_lessons_learned']['#access'] = FALSE;
+      $form['field_overall_results']['#access'] = FALSE;
+      $form['field_status']['#access'] = FALSE;
+    }
+    if (!in_array('administrator', $roles)) {
+      $form['field_accepted']['#access'] = FALSE;
+    }
   }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function access_match_engagement_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'ame-node-update':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = $params['title'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
+
+/**
+ * Implements hook_node_insert().
+ */
+function access_match_engagement_node_insert(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'match_engagement') {
+    $ame_nid = $entity->id();
+    $ame_title = Xss::filter($entity->gettitle());
+    access_match_engagement_build_email($ame_nid, $ame_title);
+  }
+}
+
+/**
+ * Build access_match_engagement Email.
+ */
+function access_match_engagement_build_email($ame_nid, $ame_title) {
+  $options = ['absolute' => TRUE];
+  $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);  
+  $body['string'] = [
+    '#type' => 'inline_template',
+    '#template' => '<p>{{ intro }}<p>
+        <p>{{ link }}</p>',      
+    '#context' => [
+      'intro' => t('A new Match+ Engagement node has been created:'),
+      'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
+    ],
+  ];
+  // Get all user emails with the Administrator role.
+  $ids = \Drupal::entityQuery('user')
+    ->condition('status', 1)
+    ->condition('roles', 'administrator')
+    ->execute();
+  $users = User::loadMultiple($ids);
+  $email = '';
+  $user_count = count($users);
+  $iterate = 0;
+  foreach($users as $user){
+    $iterate++;
+    $email .= $user->get('mail')->getString();
+    if ($user_count != $iterate) {
+      $email .= ", ";
+    }    
+  }
+  $env = getenv('PANTHEON_ENVIRONMENT');
+  if ($env == 'live') {
+    $to_email = $email;
+  }
+  else {
+    $to_email = 'match+node@protitude.com';
+  }
+  $render_service = \Drupal::service('renderer');
+  $params = [];
+  $params['to'] = $to_email;
+  $params['body'] = $render_service->render($body);
+  $params['title'] = "MATCH+ Engagement: $ame_title";
+  ame_send('ame-node-update', $params);
+}
+
+/**
+ * Send email.
+ */
+function ame_send($key, $params) {
+  $to = $params['to'];
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
+  $send = TRUE;
+  $module = 'access_match_engagement';
+  $mailManager = \Drupal::service('plugin.manager.mail');
+  $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+  return $result;
 }
