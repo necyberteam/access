@@ -18,9 +18,13 @@ use Drupal\Core\Entity\EntityInterface;
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {  
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
+    // Attach javascript
+    $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
+    $form['promote']['widget']['value']['#title'] = 'Form Accepted';
+    $form['promote']['widget']['value']['#description'] = 'Once checked, all fields will be available to fill out.';    
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
-    $accepted = $form['field_accepted']['widget']['value']['#default_value'];
+    $accepted = $form['promote']['widget']['value']['#default_value'];
     if (!$accepted) {
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
@@ -57,8 +61,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_status']['#access'] = FALSE;
     }
     if (!in_array('administrator', $roles)) {
-      $form['field_accepted']['#access'] = FALSE;
+      $form['field_email_user']['#access'] = FALSE;
     }
+    $form['field_email_user']['#group'] = 'options';
   }
 }
 
@@ -67,7 +72,8 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
  */
 function access_match_engagement_mail($key, &$message, $params) {
   switch ($key) {
-    case 'ame-node-update':
+    case 'ame-admin-update':
+    case 'ame-accepted-update':
       $message['from'] = \Drupal::config('system.site')->get('mail');
       $message['subject'] = $params['title'];
       $message['body'][] = $params['body'];
@@ -83,14 +89,68 @@ function access_match_engagement_node_insert(EntityInterface $entity) {
   if ($type == 'match_engagement') {
     $ame_nid = $entity->id();
     $ame_title = Xss::filter($entity->gettitle());
-    access_match_engagement_build_email($ame_nid, $ame_title);
+    access_match_engagement_admin_email($ame_nid, $ame_title);
   }
 }
 
 /**
- * Build access_match_engagement Email.
+ * Implements hook_entity_presave().
  */
-function access_match_engagement_build_email($ame_nid, $ame_title) {
+function access_match_engagement_entity_presave(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'match_engagement') {
+    $get_fields = $entity->getFields();
+    $email_user = $get_fields['field_email_user']->getValue();
+    $current_user = \Drupal::currentUser()->id();
+    $owner_user = $entity->getOwner();
+    if ($email_user) {      
+      $ame_nid = $entity->id();
+      $ame_title = Xss::filter($entity->gettitle());
+      access_match_engagement_accepted_email($ame_nid, $ame_title);
+      $entity->set('field_email_user', 0);
+    } elseif ($current_user == $owner_user->id()) {
+      $ame_nid = $entity->id();
+      $ame_title = Xss::filter($entity->gettitle());
+      access_match_engagement_admin_email($ame_nid, $ame_title);
+    }
+  }
+}
+
+/**
+ * Build access_match_engagement accepted Email.
+ */
+function access_match_engagement_accepted_email($ame_nid, $ame_title) {
+  $options = ['absolute' => TRUE];
+  $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);  
+  $body['string'] = [
+    '#type' => 'inline_template',
+    '#template' => '<p>{{ intro }}<p>
+        <p>{{ link }}</p>',      
+    '#context' => [
+      'intro' => t('Your new Match+ Engagement submission has been accepted. Please fill in the rest of this form at your convenience:'),
+      'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
+    ],
+  ];
+  $email = User::load(\Drupal::currentUser()->id());
+  $env = getenv('PANTHEON_ENVIRONMENT');
+  if ($env == 'live') {
+    $to_email = $email;
+  }
+  else {
+    $to_email = 'match+node@protitude.com';
+  }
+  $render_service = \Drupal::service('renderer');
+  $params = [];
+  $params['to'] = $to_email;
+  $params['body'] = $render_service->render($body);
+  $params['title'] = "MATCH+ Engagement: $ame_title";
+  ame_send('ame-accepted-update', $params);
+}
+
+/**
+ * Build access_match_engagement admin Email.
+ */
+function access_match_engagement_admin_email($ame_nid, $ame_title) {
   $options = ['absolute' => TRUE];
   $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);  
   $body['string'] = [
@@ -130,7 +190,7 @@ function access_match_engagement_build_email($ame_nid, $ame_title) {
   $params['to'] = $to_email;
   $params['body'] = $render_service->render($body);
   $params['title'] = "MATCH+ Engagement: $ame_title";
-  ame_send('ame-node-update', $params);
+  ame_send('ame-admin-update', $params);
 }
 
 /**
