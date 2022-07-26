@@ -106,7 +106,7 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
     if ($email_user) {      
       $ame_nid = $entity->id();
       $ame_title = Xss::filter($entity->gettitle());
-      access_match_engagement_accepted_email($ame_nid, $ame_title);
+      access_match_engagement_accepted_email($ame_nid, $ame_title, $owner_user->id());
       $entity->set('field_email_user', 0);
     } elseif ($current_user == $owner_user->id()) {
       $ame_nid = $entity->id();
@@ -119,7 +119,7 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
 /**
  * Build access_match_engagement accepted Email.
  */
-function access_match_engagement_accepted_email($ame_nid, $ame_title) {
+function access_match_engagement_accepted_email($ame_nid, $ame_title, $author) {
   $options = ['absolute' => TRUE];
   $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);  
   $body['string'] = [
@@ -131,13 +131,14 @@ function access_match_engagement_accepted_email($ame_nid, $ame_title) {
       'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
     ],
   ];
-  $email = User::load(\Drupal::currentUser()->id());
+  $current_user = User::load(\Drupal::currentUser()->id());
+  $node_author = User::load($author);
   $env = getenv('PANTHEON_ENVIRONMENT');
   if ($env == 'live') {
-    $to_email = $email;
+    $to_email = $node_author->getEmail();
   }
   else {
-    $to_email = 'match+node@protitude.com';
+    $to_email = $current_user->getEmail();
   }
   $render_service = \Drupal::service('renderer');
   $params = [];
@@ -178,12 +179,13 @@ function access_match_engagement_admin_email($ame_nid, $ame_title) {
       $email .= ", ";
     }    
   }
+  $current_user = User::load(\Drupal::currentUser()->id());
   $env = getenv('PANTHEON_ENVIRONMENT');
   if ($env == 'live') {
     $to_email = $email;
   }
   else {
-    $to_email = 'match+node@protitude.com';
+    $to_email = $current_user->getEmail();
   }
   $render_service = \Drupal::service('renderer');
   $params = [];
