@@ -2,9 +2,12 @@ var checkBoxPromo = document.getElementById("edit-promote-value");
 var checkBoxEmail = document.getElementById("edit-field-email-user-value");
 
 function checkBoth(chkBoxId, checkBoxWhich) {
-  if (checkBoxWhich.checked == TRUE){
-    console.log('checked');
-    document.getElementById(chkBoxId).checked = TRUE;
+  var element = document.getElementById("edit-field-notes-to-author-wrapper");
+  if (checkBoxWhich.checked == true){
+    document.getElementById(chkBoxId).checked = true;
+    element.classList.remove("hide");
+  } else{    
+    element.classList.add("hide");
   }
 }
 

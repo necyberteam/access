@@ -30,9 +30,25 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_project_image']['#access'] = FALSE;
       $form['field_project_deliverables']['#access'] = FALSE;
       $form['field_mileston']['#access'] = FALSE;
-      $form['field_field_group']['#access'] = FALSE;
+      $form['field_milestone_description']['#access'] = FALSE;
       $form['field_milestone_completion_date']['#access'] = FALSE;
       $form['field_milestone_actual_date']['#access'] = FALSE;
+      $form['field_milestone_title_1']['#access'] = FALSE;
+      $form['field_milestone_description_1']['#access'] = FALSE;
+      $form['field_completion_date_goal_1']['#access'] = FALSE;
+      $form['field_actual_completion_date_1']['#access'] = FALSE;
+      $form['field_milestone_title_2']['#access'] = FALSE;
+      $form['field_milestone_description_2']['#access'] = FALSE;
+      $form['field_completion_date_goal_2']['#access'] = FALSE;
+      $form['field_actual_completion_date_2']['#access'] = FALSE;
+      $form['field_milestone_title_3']['#access'] = FALSE;
+      $form['field_milestone_description_3']['#access'] = FALSE;
+      $form['field_completion_date_goal_3']['#access'] = FALSE;
+      $form['field_actual_completion_date_3']['#access'] = FALSE;
+      $form['field_milestone_title_4']['#access'] = FALSE;
+      $form['field_milestone_description_4']['#access'] = FALSE;
+      $form['field_completion_date_goal_4']['#access'] = FALSE;
+      $form['field_actual_completion_date_4']['#access'] = FALSE;
       $form['field_hpc_resources_needed']['#access'] = FALSE;
       $form['field_mentor']['#access'] = FALSE;
       $form['field_students']['#access'] = FALSE;
@@ -62,8 +78,11 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     }
     if (!in_array('administrator', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
+      $form['field_notes_to_author']['#access'] = FALSE;
     }
     $form['field_email_user']['#group'] = 'options';
+    $form['field_notes_to_author']['#group'] = 'options';
+    $form['field_notes_to_author']['#attributes']['class'][] = 'hide';
   }
 }
 
@@ -103,10 +122,12 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
     $email_user = $get_fields['field_email_user']->getValue();
     $current_user = \Drupal::currentUser()->id();
     $owner_user = $entity->getOwner();
-    if ($email_user) {      
+    if ($email_user) {   
+      $get_fields = $entity->getFields();   
       $ame_nid = $entity->id();
       $ame_title = Xss::filter($entity->gettitle());
-      access_match_engagement_accepted_email($ame_nid, $ame_title, $owner_user->id());
+      $ame_notes = $get_fields['field_notes_to_author']->getValue();
+      access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes[0]['value'], $owner_user->id());
       $entity->set('field_email_user', 0);
     } elseif ($current_user == $owner_user->id()) {
       $ame_nid = $entity->id();
@@ -119,16 +140,18 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
 /**
  * Build access_match_engagement accepted Email.
  */
-function access_match_engagement_accepted_email($ame_nid, $ame_title, $author) {
+function access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $author) {
   $options = ['absolute' => TRUE];
   $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);  
   $body['string'] = [
     '#type' => 'inline_template',
     '#template' => '<p>{{ intro }}<p>
-        <p>{{ link }}</p>',      
+        <p>{{ link }}</p>
+        <p>{{ notes }}</p>',      
     '#context' => [
       'intro' => t('Your new Match+ Engagement submission has been accepted. Please fill in the rest of this form at your convenience:'),
       'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
+      'notes' => $ame_notes,
     ],
   ];
   $current_user = User::load(\Drupal::currentUser()->id());

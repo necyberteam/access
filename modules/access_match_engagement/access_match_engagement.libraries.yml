@@ -1,3 +1,6 @@
 access_match_engagement:
   js:
     js/access_match_engagement.js: {}
+  css:
+    theme:
+      css/access_match_engagement.css: {}
