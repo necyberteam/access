@@ -1,0 +1,167 @@
+<?php
+
+use Drupal\user\UserInterface;
+use Drupal\Component\Serialization\Json;
+
+/**
+ * Implements hook_user_login()
+ * 
+ * When user logs in, use the username to look for account info with an API call.
+ * Update these account fields:
+ * field_institution field_user_first_name field_user_last_name email 
+ * 
+ * If user not found, just quietly do nothing.
+ */
+
+function user_profiles_user_login(UserInterface $account)
+{
+  $testing_enable_verbose_logging = TRUE;
+  $testing_use_other_username = TRUE;
+
+  $logger = new UserProfilesLogger($testing_enable_verbose_logging);
+
+  $logger->log("-------------- into hook_user_login ---------------");
+
+  $username = $account->get('name')->value;
+
+  $logger->log("user account email = [" . print_r($account->getEmail(), true)). ']';
+
+  if ($testing_use_other_username) {
+    $username = 'karpenko';
+    $logger->log("For testing, using alternative username [$username] for testing");
+  }
+
+  $api_account_array = get_account_data_from_api($logger, $username);
+
+  if ($api_account_array === false) {
+    // api call failed -- can't continue, and errors already reported
+    return;
+  }
+
+  $logger->log("api call results: " . print_r($api_account_array, true));
+
+  // set following fields based on API call response:
+  //    field_institution field_user_first_name field_user_last_name email 
+
+  // example response:
+  // account_json = Array ( [username] => karpenko [firstName] => Barbara [middleName] => S. [lastName] => Minsker 
+  //    [isSuspended] => [isArchived] => [organizationName] => University of Illinois at Urbana-Champaign 
+  //    [organizationId] => 184 [nsfStatusCodeName] => Faculty [nsfStatusCodeId] => 3 [countryName] => United States 
+  //    [countryId] => 210 [workPhone] => (217) 265-5293 [email] => minsker@uiuc.edu 
+  //    [citizenships] => Array ( ) [profileVerificationDate] => )
+
+  $account->set('field_user_first_name', $api_account_array['firstName']);
+  $account->set('field_user_last_name', $api_account_array['lastName']);
+  $account->set('field_institution', $api_account_array['organizationName']);
+  $account->set('field_citizenships', implode(',', $api_account_array['citizenships']));  // convert to comma separated string
+
+  if (!$testing_use_other_username)
+    $account->setEmail($api_account_array['email']);
+
+  // while testing, verify sets
+  $logger->log('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
+  $logger->log('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+  $logger->log('after set, field_institution = [' . $account->get('field_institution')->value . ']');
+  $logger->log('after set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
+  $logger->log('after set, email = [' . $account->getEmail() . ']');
+
+  //
+  // leftover from example code -- leaving in case useful later
+  //
+  /* // If the user has a NULL time zone, notify them to set a time zone.
+  if (!$account->getTimezone() && 
+        $config->get('timezone.user.configurable') && 
+        $config->get('timezone.user.warn')) {
+    \Drupal::messenger()
+      ->addStatus(t('Configure your <a href=":user-edit">account time zone setting</a>.', [
+      ':user-edit' => $account
+        ->toUrl('edit-form', [
+        'query' => \Drupal::destination()
+          ->getAsArray(),
+        'fragment' => 'edit-timezone',
+      ])
+        ->toString(),
+    ]));
+  } */
+}
+
+
+/**
+ * Pull account info from the api.  
+ * 
+ * @return json of account info (or FALSE if unable to get data)
+ */
+function get_account_data_from_api($logger, $username)
+{
+  $base_url = 'https://xras-identity-service-demo.xsede.org/profiles/v1/people';
+  $request_url = $base_url . '/' . $username;
+
+  // look for the ramps key in directory /var/www/cyberteam_drupal_dev/web/
+  // in file sites/default/files/private/.keys/secrets.json
+  $path = 'sites/default/files/private/.keys/secrets.json';
+  if (!file_exists($path)) {
+    Drupal::messenger()->addError("[User Profiles] Unable to get ramps api key");
+    return false;
+  }
+  $secrets_json_text = file_get_contents($path);
+  $secrets_data = json_decode($secrets_json_text, TRUE);
+  $api_key = $secrets_data['ramps_api_key'];
+
+  $request_options = array('headers' => array(
+      'XA-API-KEY' => $api_key,
+      'XA-REQUESTER' => 'MATCH',
+      'Content-Type' => 'application/json'));
+  
+  /** @var \GuzzleHttp\Client $client */
+  $client = new GuzzleHttp\Client();
+  try {
+    $response = $client->request('GET', $request_url, $request_options);
+    $userinfo = Json::decode((string) $response->getBody());
+    return $userinfo;
+  } catch (Exception $e) {
+    $variables = [
+      '@message' => 'Could not retrieve user profile information',
+      '@error_message' => $e->getMessage(),
+    ];
+    $logger->log_error(" error: " . print_r($variables, true));
+  }
+  return false;
+}
+
+
+class UserProfilesLogger
+{
+  private $enabled;
+
+  function __construct($enable)
+  {
+    $this->enabled = $enable;
+  }
+
+  /**
+   * Log the message to the apache log and to Drupal's messenger
+   * if $is_error is TRUE, report the message as an error.  Otherwise as a status message.
+   * 
+   */
+  private function _log_it($msg, $is_error)
+  {
+    if ($this->enabled) {
+      // prepend call function & linenumber to msg
+      $stack = debug_backtrace(~DEBUG_BACKTRACE_PROVIDE_OBJECT|DEBUG_BACKTRACE_IGNORE_ARGS,2);
+      $msg = basename($stack[1]['file']) . ':' . $stack[1]['line'] . ' -- ' . $msg;
+
+      error_log($msg);
+      $is_error ? Drupal::messenger()->addError($msg) : Drupal::messenger()->addStatus($msg);
+    }
+  }
+
+  function log($msg)
+  {
+    $this->_log_it($msg, false);
+  }
+  function log_error($msg)
+  {
+    $this->_log_it($msg, true);
+  }
+}
+
