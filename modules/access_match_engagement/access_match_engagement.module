@@ -11,20 +11,34 @@ use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\EntityInterface;
-
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Implements hook_form_alter().
  */
-function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {  
+function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) { 
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     // Attach javascript
     $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
     $form['promote']['widget']['value']['#title'] = 'Form Accepted';
-    $form['promote']['widget']['value']['#description'] = 'Once checked, all fields will be available to fill out.';    
+    $form['promote']['widget']['value']['#description'] = 'Once checked, all fields will be available to fill out.';
+    $request = \Drupal::request();
+    $request_type = $request->get("type");    
+    if (!isset($request_type) && $form_id != 'node_match_engagement_edit_form') {
+      $url = '/node/add/match_engagement?type=plus';
+      $response = new RedirectResponse($url);
+      $response->send();
+    }
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
     $accepted = $form['promote']['widget']['value']['#default_value'];
+    // Default to plus if type is unexpected value.
+    $request_type = $request_type == 'premier' ? 'premier' : 'plus';
+    if ($request_type == 'premier') {
+      $form['#title'] = t('Create Premier Engagement');
+    }
+    $form['field_node_type']['#access'] = FALSE;
+    $form['field_node_type']['widget']['#default_value'][0] = $request_type;
     if (!$accepted) {
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
@@ -50,6 +64,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_completion_date_goal_4']['#access'] = FALSE;
       $form['field_actual_completion_date_4']['#access'] = FALSE;
       $form['field_hpc_resources_needed']['#access'] = FALSE;
+      $form['field_consultant']['#access'] = FALSE;
       $form['field_mentor']['#access'] = FALSE;
       $form['field_students']['#access'] = FALSE;
       $form['field_qualifications']['#access'] = FALSE;
@@ -80,6 +95,28 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
     }
+    if ($form_id == 'node_match_engagement_edit_form') {
+      $node_param = \Drupal::routeMatch()->getParameter('node');
+      $node_storage = \Drupal::entityTypeManager()->getStorage('node');
+      $node = $node_storage->load($node_param->id());
+      $type = $node->get('field_node_type')->value;
+      if ($type == 'plus') {
+        unset($form['field_requested_engagement']['widget']['#options'][12]);
+        unset($form['field_requested_engagement']['widget']['#options'][18]);
+        $form['field_consultant']['#access'] = FALSE;
+      }
+      if ($type == 'premier') {
+        $title = $node->get('title')->value;
+        $form['#title'] = t('Edit Premier Engagement ') . $title;
+        unset($form['field_requested_engagement']['widget']['#options'][3]);
+        $form['field_mentor']['#access'] = FALSE;
+        $form['field_students']['#access'] = FALSE;
+        $form['field_qualifications']['#access'] = FALSE;
+        $form['field_student_learning']['#access'] = FALSE;
+        $form['field_education']['#access'] = FALSE;
+        $form['field_programming_skill_level']['#access'] = FALSE;
+      }
+    }
     $form['field_email_user']['#group'] = 'options';
     $form['field_notes_to_author']['#group'] = 'options';
     $form['field_notes_to_author']['#attributes']['class'][] = 'hide';
@@ -105,6 +142,13 @@ function access_match_engagement_mail($key, &$message, $params) {
  */
 function access_match_engagement_node_insert(EntityInterface $entity) {
   $type = $entity->bundle();
+  // $request = \Drupal::request();
+  // $request_type = $request->get("type");
+  // $request_type = $request_type == 'premier' ? 'premier' : 'plus';
+  // $get_fields = $entity->getFields();
+  // $email_user = $get_fields['field_node_type']->getValue();
+  // kint($request_type);
+  // die();
   if ($type == 'match_engagement') {
     $ame_nid = $entity->id();
     $ame_title = Xss::filter($entity->gettitle());
@@ -116,18 +160,19 @@ function access_match_engagement_node_insert(EntityInterface $entity) {
  * Implements hook_entity_presave().
  */
 function access_match_engagement_entity_presave(EntityInterface $entity) {
-  $type = $entity->bundle();
-  if ($type == 'match_engagement') {
+  $type = $entity->bundle();    
+  if ($type == 'match_engagement' && !empty($entity->id())) {
     $get_fields = $entity->getFields();
     $email_user = $get_fields['field_email_user']->getValue();
     $current_user = \Drupal::currentUser()->id();
     $owner_user = $entity->getOwner();
-    if ($email_user) {   
+    if ($email_user[0]['value']) {   
       $get_fields = $entity->getFields();   
       $ame_nid = $entity->id();
       $ame_title = Xss::filter($entity->gettitle());
       $ame_notes = $get_fields['field_notes_to_author']->getValue();
-      access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes[0]['value'], $owner_user->id());
+      $ame_notes = isset($ame_notes[0]['value']) ? $ame_notes[0]['value'] : '';
+      access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $owner_user->id());
       $entity->set('field_email_user', 0);
     } elseif ($current_user == $owner_user->id()) {
       $ame_nid = $entity->id();
