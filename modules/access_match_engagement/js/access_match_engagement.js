@@ -6,7 +6,7 @@ function checkBoth(chkBoxId, checkBoxWhich) {
   if (checkBoxWhich.checked == true){
     document.getElementById(chkBoxId).checked = true;
     element.classList.remove("hide");
-  } else{    
+  } else{
     element.classList.add("hide");
   }
 }
