@@ -142,13 +142,6 @@ function access_match_engagement_mail($key, &$message, $params) {
  */
 function access_match_engagement_node_insert(EntityInterface $entity) {
   $type = $entity->bundle();
-  // $request = \Drupal::request();
-  // $request_type = $request->get("type");
-  // $request_type = $request_type == 'premier' ? 'premier' : 'plus';
-  // $get_fields = $entity->getFields();
-  // $email_user = $get_fields['field_node_type']->getValue();
-  // kint($request_type);
-  // die();
   if ($type == 'match_engagement') {
     $ame_nid = $entity->id();
     $ame_title = Xss::filter($entity->gettitle());
