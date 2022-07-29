@@ -11,11 +11,20 @@ use Drupal\Component\Serialization\Json;
  * field_institution field_user_first_name field_user_last_name email 
  * 
  * If user not found, just quietly do nothing.
+ * 
+ * ------------- NOTE:  this module is currently disabled -----------
+ * Waiting til the we have figured out how to customize the user data
+ * that CILogin or OpenIDAccessClient returns.
  */
 
 function user_profiles_user_login(UserInterface $account)
 {
+  return;
+  
+  // disable the following to turn off all logging by this module
   $testing_enable_verbose_logging = TRUE;
+
+  // enable this to use username 'karpenko' when making api calls
   $testing_use_other_username = TRUE;
 
   $logger = new UserProfilesLogger($testing_enable_verbose_logging);
@@ -28,6 +37,7 @@ function user_profiles_user_login(UserInterface $account)
 
   if ($testing_use_other_username) {
     $username = 'karpenko';
+    // $username = 'apasquale';
     $logger->log("For testing, using alternative username [$username] for testing");
   }
 
