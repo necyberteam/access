@@ -143,9 +143,12 @@ function access_match_engagement_mail($key, &$message, $params) {
 function access_match_engagement_node_insert(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'match_engagement') {
+    $get_fields = $entity->getFields();
+    $node_type = $get_fields['field_node_type']->getValue();
+    $ame_type = $node_type[0]['value'] == 'plus' ? '+' : ' Premier';
     $ame_nid = $entity->id();
     $ame_title = Xss::filter($entity->gettitle());
-    access_match_engagement_admin_email($ame_nid, $ame_title);
+    access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type);
   }
 }
 
@@ -159,18 +162,20 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
     $email_user = $get_fields['field_email_user']->getValue();
     $current_user = \Drupal::currentUser()->id();
     $owner_user = $entity->getOwner();
+    $get_fields = $entity->getFields();
+    $node_type = $get_fields['field_node_type']->getValue();
+    $ame_type = $node_type[0]['value'] == 'plus' ? '+' : ' Premier';
     if ($email_user[0]['value']) {   
-      $get_fields = $entity->getFields();   
       $ame_nid = $entity->id();
       $ame_title = Xss::filter($entity->gettitle());
       $ame_notes = $get_fields['field_notes_to_author']->getValue();
       $ame_notes = isset($ame_notes[0]['value']) ? $ame_notes[0]['value'] : '';
-      access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $owner_user->id());
+      access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $owner_user->id(), $ame_type);
       $entity->set('field_email_user', 0);
     } elseif ($current_user == $owner_user->id()) {
       $ame_nid = $entity->id();
-      $ame_title = Xss::filter($entity->gettitle());
-      access_match_engagement_admin_email($ame_nid, $ame_title);
+      $ame_title = Xss::filter($entity->gettitle()); 
+      access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type);
     }
   }
 }
@@ -178,7 +183,7 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
 /**
  * Build access_match_engagement accepted Email.
  */
-function access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $author) {
+function access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $author, $ame_type) {
   $options = ['absolute' => TRUE];
   $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);  
   $body['string'] = [
@@ -205,14 +210,14 @@ function access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes
   $params = [];
   $params['to'] = $to_email;
   $params['body'] = $render_service->render($body);
-  $params['title'] = "MATCH+ Engagement: $ame_title";
+  $params['title'] = "MATCH$ame_type Engagement: $ame_title";
   ame_send('ame-accepted-update', $params);
 }
 
 /**
  * Build access_match_engagement admin Email.
  */
-function access_match_engagement_admin_email($ame_nid, $ame_title) {
+function access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type) {
   $options = ['absolute' => TRUE];
   $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);  
   $body['string'] = [
@@ -220,7 +225,7 @@ function access_match_engagement_admin_email($ame_nid, $ame_title) {
     '#template' => '<p>{{ intro }}<p>
         <p>{{ link }}</p>',      
     '#context' => [
-      'intro' => t('A new Match+ Engagement node has been created:'),
+      'intro' => t('A MATCH Engagement has been saved:'),
       'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
     ],
   ];
@@ -252,7 +257,7 @@ function access_match_engagement_admin_email($ame_nid, $ame_title) {
   $params = [];
   $params['to'] = $to_email;
   $params['body'] = $render_service->render($body);
-  $params['title'] = "MATCH+ Engagement: $ame_title";
+  $params['title'] = "MATCH$ame_type Engagement: $ame_title";
   ame_send('ame-admin-update', $params);
 }
 
