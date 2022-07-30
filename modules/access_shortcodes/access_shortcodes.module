@@ -1,0 +1,18 @@
+<?php
+
+/**
+ * Define our variables (parameters) for each shortcode
+ */
+function access_shortcodes_theme() {
+  return array(
+    'shortcode_icon_block' => array(
+      'variables' => array(
+        'icon' => '', 
+        'img' => '',
+        'alt' => '', 
+        'title' => '',
+        'link' => '',
+      )
+    ),
+  );
+}

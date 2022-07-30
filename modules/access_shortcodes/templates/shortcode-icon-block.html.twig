@@ -1,0 +1,28 @@
+{#
+/**
+ * @file
+ * Default theme implementation for the icon_block shortcode.
+ *
+ * Available variables:
+ * - icon: Font Awesome class string.
+ * - img: url for image to display.
+ * - alt: alt text for image.
+ * - title: The heading text.
+ * - link: link for the icon box.
+ */
+#}
+{% if link %}
+<a href="{{ link }}">
+{% endif %}
+<div class="icon-box d-flex flex-column align-items-center">
+    {% if icon %}
+        <i class="fa-solid {{ icon }}"></i>
+    {% endif %}
+    {% if img %}
+        <img src="{{ img }}" alt="{{ alt }}"/>
+    {% endif %}
+    <div class="icon-box-title mt-1">{{ title }}</div>
+</div>
+{% if link %}
+</a>">
+{% endif %}
