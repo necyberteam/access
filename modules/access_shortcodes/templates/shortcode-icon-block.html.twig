@@ -22,7 +22,10 @@
         <img src="{{ img }}" alt="{{ alt }}"/>
     {% endif %}
     <div class="icon-box-title mt-1">{{ title }}</div>
+    {% if text %}
+        <div class="icon-box-text text-muted small mt-2">{{ text }}</div>
+    {% endif %}
 </div>
 {% if link %}
-</a>">
+</a>
 {% endif %}

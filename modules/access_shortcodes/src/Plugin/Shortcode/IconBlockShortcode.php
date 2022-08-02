@@ -30,6 +30,7 @@ class IconBlockShortcode extends ShortcodeBase {
       'img' => '',
       'alt' => '',
       'title' => '',
+      'text' => '',
       'link' => ''
     ],
       $attributes
@@ -39,6 +40,7 @@ class IconBlockShortcode extends ShortcodeBase {
     $img = $attributes['img'];
     $alt = $attributes['alt'];
     $title = $attributes['title'];
+    $text = $attributes['text'];
     $link = $attributes['link'];
 
     $output = [
@@ -47,6 +49,7 @@ class IconBlockShortcode extends ShortcodeBase {
         '#img' => $img,
         '#alt' => $alt,
         '#title' => $title,
+        '#text' => $text,
         '#link' => $link
       ];
   
@@ -58,7 +61,7 @@ class IconBlockShortcode extends ShortcodeBase {
    */
   public function tips($long = FALSE) {
     $output = [];
-    $output[] = '<p><strong>' . $this->t('[icon_box icon="fa-camera-retro" img="optional image url" alt="alt text for image" title="Your title here" link="Link for icon box"][/icon_box]') . '</strong> ';
+    $output[] = '<p><strong>' . $this->t('[icon_box icon="fa-camera-retro" img="optional image url" alt="alt text for image" title="Your title here" text="Your text here" link="Link for icon box"][/icon_box]') . '</strong> ';
     if ($long) {
       $output[] = $this->t('Builds an icon box with the Font Awesome icon or image that you specify and the title text.') . '</p>';
     }
