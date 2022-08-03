@@ -175,3 +175,188 @@ class UserProfilesLogger
   }
 }
 
+
+// REMOVING user_profiles_cilogon_auth_claims_alter
+
+// the claims in function user_profiles_cilogon_auth_claims_alter(array &$claims) show up in 
+// the cilogon configuration area, so we could use that to map to user fields, though maybe we already 
+// did that in the userinfo_save function so guess we can remove that function?
+
+// /**
+//  * Modify the list of claims.
+//  *
+//  * @param array $claims
+//  *   A array of claims.
+//  *
+//  * @ingroup cilogon_auth_api
+//  */
+// function user_profiles_cilogon_auth_claims_alter(array &$claims) {
+
+//   $claims['profile'] = [
+//     'scope' => 'profile',
+//     'title' => 'Profile Claim',
+//     'type' => 'string',
+//     'description' => 'A custom claim from provider',
+//   ];
+
+//   $claims['org.cilogon.userinfo'] = [
+//     'scope' => 'org.cilogon.userinfo',
+//     'title' => 'CILogon userinfo claim',
+//     'type' => 'string',
+//     'description' => 'A custom claim from CILogin',
+//   ];
+//   // $msg = basename(__FILE__) . ':' . __LINE__ . ' -- into user_profiles_cilogon_auth_claims_alter(), ' 
+//   //   . '$claims[\'custom_claim\'] = ' . print_r($claims['custom_claim'], true);
+//   // error_log($msg);
+//   // \Drupal::messenger()->addStatus('test');
+// }
+
+
+
+    /*
+    implement cilogon_auth_pre_authorize
+    have it look up the username which will be the eppn from userinfo
+    do a regex to get before the @
+    return the user_interface returned by find_user
+
+    from slack: 
+        So we could implement the hook_cilogon_auth_pre_authorize() function in user_profiles.module and 
+        look up user by username using the userinfo[‘eppn’] value and return the user from that function.
+
+        
+
+        
+    this should do it
+    */
+
+/**
+ * CILogon Auth pre authorize hook.
+ *
+ * This hook runs before a user is authorized and before any claim mappings
+ * take place.
+ *
+ * Popular use cases for this hook are overriding the user account that shall
+ * be authorized, or checking certain constraints before authorization and
+ * distinctively allowing/denying authorization for the given account.
+ *
+ * @param \Drupal\user\UserInterface|bool $account
+ *   User account identified using the "sub" provided by the identity provider,
+ *   or FALSE, if no such account exists.
+ * @param array $context
+ *   An associative array with context information:
+ *   - tokens:         An array of tokens.
+ *   - user_data:      An array of user and session data.
+ *   - userinfo:       An array of user information.
+ *   - plugin_id:      The plugin identifier.
+ *   - sub:            The remote user identifier.
+ *
+ * @return \Drupal\user\UserInterface|false
+ *   A user account for a certain user to authorize, FALSE, if the user shall
+ *   not be logged in, or TRUE for successful hook execution.
+ *
+ * @ingroup cilogon_auth_api
+ */
+function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
+
+  $eppn = $context['userinfo']['eppn'];
+  $user = user_load_by_name($eppn);
+
+  if ($user === FALSE) {
+    \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ 
+    . " -- unable to load user [$eppn]");
+    return FALSE;
+  }
+
+  return $user;
+}
+
+
+/**
+     * Save userinfo hook.
+     *
+     * This hook runs after the claim mappings have been applied by the OpenID
+     * Connect module, but before the account will be saved.
+     *
+     * A popular use case for this hook is mapping additional information like
+     * user roles or other complex claims provided by the identity provider, that
+     * the CILogon Auth module has no mapping mechanisms for.
+     *
+     * @param \Drupal\user\UserInterface $account
+     *   A user account object.
+     * @param array $context
+     *   An associative array with context information:
+     *   - tokens:         Array of original tokens.
+     *   - user_data:      Array of user and session data from the ID token.
+     *   - userinfo:       Array of user information from the userinfo endpoint.
+     *   - plugin_id:      The plugin identifier.
+     *   - sub:            The remote user identifier.
+     *   - is_new:         Whether the account was created during authorization.
+     *
+     * @ingroup cilogon_auth_api
+     */
+    function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array $context) {
+      // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' 
+      //   . '$context = ' . print_r($context, true));
+      
+      // Update only when the required information is available.
+      // if ($context['plugin_id'] != 'cilogon' || empty($context['userinfo']['eppn'])) {
+      //     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' 
+      //       . 'cilogon context incomplete, $context = ' . print_r($context, true));
+      //     return;
+      // }
+
+      // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . '$context[userinfo] = '
+      //    . print_r($context['userinfo'], true));
+      
+
+      // [userinfo] => Array (
+      //   [sub] => http://cilogon.org/serverE/users/17924
+      //   [acr] => https://refeds.org/profile/mfa
+      //   [aud] => cilogon:/client_id/6e6bcf2881796b725f80c26ad05b3e3c
+      //   [idp_name] => ACCESS
+      //   [idp] => https://access-ci.org/idp
+      //   [eppn] => apasquale@access-ci.org
+      //   [cert_subject_dn] => /DC=org/DC=cilogon/C=US/O=ACCESS/CN=Andrew Pasquale E17924
+      //   [eptid] => https://access-ci.org/idp!https://cilogon.org/shibboleth!cSP9oLg+zSyblaC5VPEo7XkeJW4=
+      //   [name] => Andrew Pasquale
+      //   [iss] => https://cilogon.org
+      //   [email] => andrew@elytra.net
+      //   [jti] => https://cilogon.org/oauth2/idToken/1aaa82e4d1d98e028c18422ddd5d74df/1659388814433 )
+      //   [sub] => http://cilogon.org/serverE/users/17924
+      //   [is_new] => )
+
+      // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' 
+      //   . '$account = ' . print_r($account->get, true));
+     
+      // while testing, verify presets
+      $msg = ('before set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+      $msg =('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+      $msg =('before set, email = [' . $account->getEmail() . ']');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+
+
+      $userinfo = $context['userinfo'];
+      $account->set('field_user_first_name', $userinfo['given_name']);
+      $account->set('field_user_last_name', $userinfo['family_name']);
+      $account->setUsername($userinfo['eppn']);
+      $account->setEmail($userinfo['email']);
+
+          
+      // while testing, verify sets
+      $msg = ('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+      $msg =('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+      $msg =('after set, email = [' . $account->getEmail() . ']');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+
+
+      // Note: For brevity, this example does not validate field
+      // types, nor does it implement error handling.
+      // $my_info = $context['userinfo']['my_info'];
+      // foreach ($my_info as $key => $value) {
+      //     $account->set('field_' . $key, $value);
+      // }
+  }
