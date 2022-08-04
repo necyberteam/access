@@ -4,3 +4,6 @@ access_match_engagement:
   css:
     theme:
       css/access_match_engagement.css: {}
+match_engagement_view:
+  js:
+    js/match_engagement_view.js: {}
