@@ -12,6 +12,16 @@ use Drupal\Core\Url;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\EntityInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\views\ViewExecutable;
+
+/**
+* Implements hook_views_pre_render().
+*/
+function access_match_engagement_views_pre_render(ViewExecutable $view) {
+  if (isset($view) && ($view->storage->id() == 'match_engagement_view')) {
+    $view->element['#attached']['library'][] = 'access_match_engagement/match_engagement_view';
+  }
+}
 
 /**
  * Implements hook_form_alter().
