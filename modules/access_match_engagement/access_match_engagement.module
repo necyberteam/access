@@ -91,6 +91,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_what_match_will_learn']['#access'] = FALSE;
       $form['field_notes']['#access'] = FALSE;
       $form['field_what_is_the_impact_on_othe']['#access'] = FALSE;
+      $form['field_what_is_the_impact_on_the_']['#access'] = FALSE;
       $form['What is the impact on the development discipline(s) of the project?']['#access'] = FALSE;
       $form['field_is_there_an_impact_on_info']['#access'] = FALSE;
       $form['field_is_there_an_impact_on_inst']['#access'] = FALSE;
