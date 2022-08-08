@@ -117,10 +117,14 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
  */
 function get_account_data_from_api($username) {
 
-  $base_url = 'https://xras-identity-service-demo.xsede.org/profiles/v1/people';
+  // // previous URL
+  // $base_url = 'https://xras-identity-service-demo.xsede.org/profiles/v1/people';
+
+  // ACCESS production URL for the profile API
+  $base_url = 'https://allocations-api.access-ci.org/identity/profiles/v1';
   $request_url = $base_url . '/' . $username;
 
-  // look for the ramps key in file system
+  // look for the ramps key in file system (e.g. root /var/www/cyberteam_drupal_dev/web)
   $path = 'sites/default/files/private/.keys/secrets.json';
   if (!file_exists($path)) {
     \Drupal::messenger()->addError("[User Profiles] Unable to get ramps api key");
