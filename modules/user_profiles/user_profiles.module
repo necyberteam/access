@@ -4,113 +4,126 @@ use Drupal\user\UserInterface;
 use Drupal\Component\Serialization\Json;
 
 /**
- * Implements hook_user_login()
- * 
- * When user logs in, use the username to look for account info with an API call.
- * Update these account fields:
- * field_institution field_user_first_name field_user_last_name email 
- * 
- * If user not found, just quietly do nothing.
- * 
- * ------------- NOTE:  this module is currently disabled -----------
- * Waiting til the we have figured out how to customize the user data
- * that CILogin or OpenIDAccessClient returns.
+ * Hide the username field on the profile form -- we don't want users to 
+ * be able to set or change their username.
  */
+function user_profiles_form_alter(&$form, &$form_state, $form_id) {
+  // Hide username field
+  if ($form_id == 'user_form') {
+    $form['account']['name']['#access'] = FALSE;
+  }  
+}
 
-function user_profiles_user_login(UserInterface $account)
-{
-  return;
-  
-  // disable the following to turn off all logging by this module
-  $testing_enable_verbose_logging = TRUE;
+/**
+ * CILogon Auth pre authorize hook.
+ *
+ * This hook runs before a user is authorized and before any claim mappings
+ * take place.
+ *
+ * For AMP, we lookup the user using $context['userinfo']['eppn']
+ */
+function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
 
-  // enable this to use username 'karpenko' when making api calls
-  $testing_use_other_username = TRUE;
+  $eppn = $context['userinfo']['eppn'];
+  $user = user_load_by_name($eppn);
 
-  $logger = new UserProfilesLogger($testing_enable_verbose_logging);
-
-  $logger->log("-------------- into hook_user_login ---------------");
-
-  $username = $account->get('name')->value;
-
-  $logger->log("user account email = [" . print_r($account->getEmail(), true)). ']';
-
-  if ($testing_use_other_username) {
-    $username = 'karpenko';
-    // $username = 'apasquale';
-    $logger->log("For testing, using alternative username [$username] for testing");
+  if ($user === FALSE) {
+    \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ 
+    . " -- unable to load user [$eppn]");
+    return FALSE;
   }
 
-  $api_account_array = get_account_data_from_api($logger, $username);
-
-  if ($api_account_array === false) {
-    // api call failed -- can't continue, and errors already reported
-    return;
-  }
-
-  $logger->log("api call results: " . print_r($api_account_array, true));
-
-  // set following fields based on API call response:
-  //    field_institution field_user_first_name field_user_last_name email 
-
-  // example response:
-  // account_json = Array ( [username] => karpenko [firstName] => Barbara [middleName] => S. [lastName] => Minsker 
-  //    [isSuspended] => [isArchived] => [organizationName] => University of Illinois at Urbana-Champaign 
-  //    [organizationId] => 184 [nsfStatusCodeName] => Faculty [nsfStatusCodeId] => 3 [countryName] => United States 
-  //    [countryId] => 210 [workPhone] => (217) 265-5293 [email] => minsker@uiuc.edu 
-  //    [citizenships] => Array ( ) [profileVerificationDate] => )
-
-  $account->set('field_user_first_name', $api_account_array['firstName']);
-  $account->set('field_user_last_name', $api_account_array['lastName']);
-  $account->set('field_institution', $api_account_array['organizationName']);
-  $account->set('field_citizenships', implode(',', $api_account_array['citizenships']));  // convert to comma separated string
-
-  if (!$testing_use_other_username)
-    $account->setEmail($api_account_array['email']);
-
-  // while testing, verify sets
-  $logger->log('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
-  $logger->log('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
-  $logger->log('after set, field_institution = [' . $account->get('field_institution')->value . ']');
-  $logger->log('after set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
-  $logger->log('after set, email = [' . $account->getEmail() . ']');
-
-  //
-  // leftover from example code -- leaving in case useful later
-  //
-  /* // If the user has a NULL time zone, notify them to set a time zone.
-  if (!$account->getTimezone() && 
-        $config->get('timezone.user.configurable') && 
-        $config->get('timezone.user.warn')) {
-    \Drupal::messenger()
-      ->addStatus(t('Configure your <a href=":user-edit">account time zone setting</a>.', [
-      ':user-edit' => $account
-        ->toUrl('edit-form', [
-        'query' => \Drupal::destination()
-          ->getAsArray(),
-        'fragment' => 'edit-timezone',
-      ])
-        ->toString(),
-    ]));
-  } */
+  return $user;
 }
 
 
 /**
+ * Save userinfo hook.
+ *
+ * This hook runs after the claim mappings have been applied by the OpenID
+ * Connect module, but before the account will be saved.
+ *
+ * A popular use case for this hook is mapping additional information like
+ * user roles or other complex claims provided by the identity provider, that
+ * the CILogon Auth module has no mapping mechanisms for.
+ *
+ * @param \Drupal\user\UserInterface $account
+ *   A user account object.
+ * @param array $context
+ *   An associative array with context information:
+ *   - tokens:         Array of original tokens.
+ *   - user_data:      Array of user and session data from the ID token.
+ *   - userinfo:       Array of user information from the userinfo endpoint.
+ *   - plugin_id:      The plugin identifier.
+ *   - sub:            The remote user identifier.
+ *   - is_new:         Whether the account was created during authorization.
+ *
+ * @ingroup cilogon_auth_api
+ */
+function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array $context) {
+
+  // // while testing, examine values before we set them
+  // $msg = ('before set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $msg =('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $msg =('before set, email = [' . $account->getEmail() . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $msg = ('before set, field_institution = [' . $account->get('field_institution')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $$msg = ('before set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+
+  $userinfo = $context['userinfo'];
+
+  $username = $userinfo['eppn'];
+
+  // GET https://xras-identity-service-demo.xsede.org/profiles/v1/people/apasquale` resulted in a 404 Not Found
+  // GET https://xras-identity-service-demo.xsede.org/profiles/v1/people/apasquale@access-ci.org` resulted in a 404 Not Found
+  
+  $api_account_array = get_account_data_from_api($username);
+
+  if ($api_account_array !== FALSE) {
+    if (in_array('organizationName', $api_account_array))
+      $account->set('field_institution', $api_account_array['organizationName']);
+    if (in_array('citizenships', $api_account_array))
+      $account->set('field_citizenships', implode(',', $api_account_array['citizenships']));  // convert to comma separated string
+  }
+  
+
+  $account->set('field_user_first_name', $userinfo['given_name']);
+  $account->set('field_user_last_name', $userinfo['family_name']);
+  $account->setUsername($username);
+  $account->setEmail($userinfo['email']);
+
+      
+  // // while testing, examine values after setting them
+  // $msg = ('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $msg =('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $msg =('after set, email = [' . $account->getEmail() . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $msg = ('after set, field_institution = [' . $account->get('field_institution')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  // $$msg = ('after set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
+  // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+}
+
+/**
  * Pull account info from the api.  
  * 
- * @return json of account info (or FALSE if unable to get data)
+ * @return mixed of account info (or FALSE if unable to get data)
  */
-function get_account_data_from_api($logger, $username)
-{
+function get_account_data_from_api($username) {
+
   $base_url = 'https://xras-identity-service-demo.xsede.org/profiles/v1/people';
   $request_url = $base_url . '/' . $username;
 
-  // look for the ramps key in directory /var/www/cyberteam_drupal_dev/web/
-  // in file sites/default/files/private/.keys/secrets.json
+  // look for the ramps key in file system
   $path = 'sites/default/files/private/.keys/secrets.json';
   if (!file_exists($path)) {
-    Drupal::messenger()->addError("[User Profiles] Unable to get ramps api key");
+    \Drupal::messenger()->addError("[User Profiles] Unable to get ramps api key");
     return false;
   }
   $secrets_json_text = file_get_contents($path);
@@ -129,234 +142,9 @@ function get_account_data_from_api($logger, $username)
     $userinfo = Json::decode((string) $response->getBody());
     return $userinfo;
   } catch (Exception $e) {
-    $variables = [
-      '@message' => 'Could not retrieve user profile information',
-      '@error_message' => $e->getMessage(),
-    ];
-    $logger->log_error(" error: " . print_r($variables, true));
+    \Drupal::messenger()->addError("Could not retrieve user profile information: " .  $e->getMessage());
   }
   return false;
 }
 
 
-class UserProfilesLogger
-{
-  private $enabled;
-
-  function __construct($enable)
-  {
-    $this->enabled = $enable;
-  }
-
-  /**
-   * Log the message to the apache log and to Drupal's messenger
-   * if $is_error is TRUE, report the message as an error.  Otherwise as a status message.
-   * 
-   */
-  private function _log_it($msg, $is_error)
-  {
-    if ($this->enabled) {
-      // prepend call function & linenumber to msg
-      $stack = debug_backtrace(~DEBUG_BACKTRACE_PROVIDE_OBJECT|DEBUG_BACKTRACE_IGNORE_ARGS,2);
-      $msg = basename($stack[1]['file']) . ':' . $stack[1]['line'] . ' -- ' . $msg;
-
-      error_log($msg);
-      $is_error ? Drupal::messenger()->addError($msg) : Drupal::messenger()->addStatus($msg);
-    }
-  }
-
-  function log($msg)
-  {
-    $this->_log_it($msg, false);
-  }
-  function log_error($msg)
-  {
-    $this->_log_it($msg, true);
-  }
-}
-
-
-// REMOVING user_profiles_cilogon_auth_claims_alter
-
-// the claims in function user_profiles_cilogon_auth_claims_alter(array &$claims) show up in 
-// the cilogon configuration area, so we could use that to map to user fields, though maybe we already 
-// did that in the userinfo_save function so guess we can remove that function?
-
-// /**
-//  * Modify the list of claims.
-//  *
-//  * @param array $claims
-//  *   A array of claims.
-//  *
-//  * @ingroup cilogon_auth_api
-//  */
-// function user_profiles_cilogon_auth_claims_alter(array &$claims) {
-
-//   $claims['profile'] = [
-//     'scope' => 'profile',
-//     'title' => 'Profile Claim',
-//     'type' => 'string',
-//     'description' => 'A custom claim from provider',
-//   ];
-
-//   $claims['org.cilogon.userinfo'] = [
-//     'scope' => 'org.cilogon.userinfo',
-//     'title' => 'CILogon userinfo claim',
-//     'type' => 'string',
-//     'description' => 'A custom claim from CILogin',
-//   ];
-//   // $msg = basename(__FILE__) . ':' . __LINE__ . ' -- into user_profiles_cilogon_auth_claims_alter(), ' 
-//   //   . '$claims[\'custom_claim\'] = ' . print_r($claims['custom_claim'], true);
-//   // error_log($msg);
-//   // \Drupal::messenger()->addStatus('test');
-// }
-
-
-
-    /*
-    implement cilogon_auth_pre_authorize
-    have it look up the username which will be the eppn from userinfo
-    do a regex to get before the @
-    return the user_interface returned by find_user
-
-    from slack: 
-        So we could implement the hook_cilogon_auth_pre_authorize() function in user_profiles.module and 
-        look up user by username using the userinfo[‘eppn’] value and return the user from that function.
-
-        
-
-        
-    this should do it
-    */
-
-/**
- * CILogon Auth pre authorize hook.
- *
- * This hook runs before a user is authorized and before any claim mappings
- * take place.
- *
- * Popular use cases for this hook are overriding the user account that shall
- * be authorized, or checking certain constraints before authorization and
- * distinctively allowing/denying authorization for the given account.
- *
- * @param \Drupal\user\UserInterface|bool $account
- *   User account identified using the "sub" provided by the identity provider,
- *   or FALSE, if no such account exists.
- * @param array $context
- *   An associative array with context information:
- *   - tokens:         An array of tokens.
- *   - user_data:      An array of user and session data.
- *   - userinfo:       An array of user information.
- *   - plugin_id:      The plugin identifier.
- *   - sub:            The remote user identifier.
- *
- * @return \Drupal\user\UserInterface|false
- *   A user account for a certain user to authorize, FALSE, if the user shall
- *   not be logged in, or TRUE for successful hook execution.
- *
- * @ingroup cilogon_auth_api
- */
-function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
-
-  $eppn = $context['userinfo']['eppn'];
-  $user = user_load_by_name($eppn);
-
-  if ($user === FALSE) {
-    \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ 
-    . " -- unable to load user [$eppn]");
-    return FALSE;
-  }
-
-  return $user;
-}
-
-
-/**
-     * Save userinfo hook.
-     *
-     * This hook runs after the claim mappings have been applied by the OpenID
-     * Connect module, but before the account will be saved.
-     *
-     * A popular use case for this hook is mapping additional information like
-     * user roles or other complex claims provided by the identity provider, that
-     * the CILogon Auth module has no mapping mechanisms for.
-     *
-     * @param \Drupal\user\UserInterface $account
-     *   A user account object.
-     * @param array $context
-     *   An associative array with context information:
-     *   - tokens:         Array of original tokens.
-     *   - user_data:      Array of user and session data from the ID token.
-     *   - userinfo:       Array of user information from the userinfo endpoint.
-     *   - plugin_id:      The plugin identifier.
-     *   - sub:            The remote user identifier.
-     *   - is_new:         Whether the account was created during authorization.
-     *
-     * @ingroup cilogon_auth_api
-     */
-    function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array $context) {
-      // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' 
-      //   . '$context = ' . print_r($context, true));
-      
-      // Update only when the required information is available.
-      // if ($context['plugin_id'] != 'cilogon' || empty($context['userinfo']['eppn'])) {
-      //     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' 
-      //       . 'cilogon context incomplete, $context = ' . print_r($context, true));
-      //     return;
-      // }
-
-      // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . '$context[userinfo] = '
-      //    . print_r($context['userinfo'], true));
-      
-
-      // [userinfo] => Array (
-      //   [sub] => http://cilogon.org/serverE/users/17924
-      //   [acr] => https://refeds.org/profile/mfa
-      //   [aud] => cilogon:/client_id/6e6bcf2881796b725f80c26ad05b3e3c
-      //   [idp_name] => ACCESS
-      //   [idp] => https://access-ci.org/idp
-      //   [eppn] => apasquale@access-ci.org
-      //   [cert_subject_dn] => /DC=org/DC=cilogon/C=US/O=ACCESS/CN=Andrew Pasquale E17924
-      //   [eptid] => https://access-ci.org/idp!https://cilogon.org/shibboleth!cSP9oLg+zSyblaC5VPEo7XkeJW4=
-      //   [name] => Andrew Pasquale
-      //   [iss] => https://cilogon.org
-      //   [email] => andrew@elytra.net
-      //   [jti] => https://cilogon.org/oauth2/idToken/1aaa82e4d1d98e028c18422ddd5d74df/1659388814433 )
-      //   [sub] => http://cilogon.org/serverE/users/17924
-      //   [is_new] => )
-
-      // \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' 
-      //   . '$account = ' . print_r($account->get, true));
-     
-      // while testing, verify presets
-      $msg = ('before set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
-      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-      $msg =('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
-      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-      $msg =('before set, email = [' . $account->getEmail() . ']');
-      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-
-
-      $userinfo = $context['userinfo'];
-      $account->set('field_user_first_name', $userinfo['given_name']);
-      $account->set('field_user_last_name', $userinfo['family_name']);
-      $account->setUsername($userinfo['eppn']);
-      $account->setEmail($userinfo['email']);
-
-          
-      // while testing, verify sets
-      $msg = ('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
-      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-      $msg =('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
-      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-      $msg =('after set, email = [' . $account->getEmail() . ']');
-      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-
-
-      // Note: For brevity, this example does not validate field
-      // types, nor does it implement error handling.
-      // $my_info = $context['userinfo']['my_info'];
-      // foreach ($my_info as $key => $value) {
-      //     $account->set('field_' . $key, $value);
-      // }
-  }
