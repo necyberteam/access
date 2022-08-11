@@ -1,0 +1,13 @@
+<?php
+/**
+ * Implements hook_theme().
+ */
+function access_outages_theme() {
+    return [
+      'outages_block' => [
+        'variables' => [
+          'data' => [],
+        ],
+      ],
+    ];
+  }

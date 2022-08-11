@@ -1,0 +1,9 @@
+outages_library:
+  version: 1.x
+  css:
+    theme:
+      //cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css: {type: external}
+  js:
+    //cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js: {}
+  dependencies:
+    - core/jquery
