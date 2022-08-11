@@ -12,9 +12,9 @@
  */
 #}
 {% if link %}
-<a href="{{ link }}">
+<a href="{{ link }}" class="d-flex align-items-stretch">
 {% endif %}
-<div class="icon-box d-flex flex-column align-items-center">
+<div class="icon-box d-flex flex-column align-items-center {{ boxed }}">
     {% if icon %}
         <i class="fa-solid {{ icon }}"></i>
     {% endif %}
