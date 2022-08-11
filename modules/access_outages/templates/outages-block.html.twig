@@ -1,0 +1,174 @@
+{{ attach_library('access_outages/outages_library') }}
+
+<div id="single-outage" class="section container" style="display: none;">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>Outage</h2>
+      <p id="loading-outage">Loading outage...</p>
+      <table id="outage" class="display text-start w-100" style="display: none;">
+          <thead>
+              <tr>
+                  <th>Event</th>
+                  <th>Summary</th>
+                  <th>Start</th>
+                  <th>End</th>
+              </tr>
+          </thead>
+          <tbody>
+          </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="outage-list section container">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>Current Outages</h2>
+      <p id="no-current-outages">There are no current outages.</p>
+      <table id="outages-current" class="display text-start" style="display: none;">
+          <thead>
+              <tr>
+                  <th>Event</th>
+                  <th>Summary</th>
+                  <th>Start</th>
+                  <th>End</th>
+              </tr>
+          </thead>
+          <tbody>
+          </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="outage-list section container">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>Planned Downtimes</h2>
+      <p id="no-planned-outages">There are no planned outages scheduled.</p>
+      <table id="outages-planned" class="display text-start" style="display:none;">
+          <thead>
+              <tr>
+                  <th>Event</th>
+                  <th>Summary</th>
+                  <th>Start</th>
+                  <th>End</th>
+              </tr>
+          </thead>
+          <tbody>
+          </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<div class="outage-list section container">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>Past Outages</h2>
+      <p id="no-past-outages">Loading past outages...</p>
+      <table id="outages-past" class="display text-start">
+          <thead>
+              <tr>
+                  <th>Event</th>
+                  <th>Summary</th>
+                  <th>Start</th>
+                  <th>End</th>
+              </tr>
+          </thead>
+          <tbody>
+          </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<script>
+  const showOutages = async function showOutages(outageName, endpointUrl) {
+    const response = await fetch(endpointUrl)
+    const outages = await response.json()
+    //console.log(outages)
+
+    if (outages.length > 0) {
+      const noOutages = document.getElementById(`no-${outageName}-outages`)
+      noOutages.style.display = 'none' 
+      const outagesTable = document.getElementById('outages-' + outageName)
+      jQuery(outagesTable).DataTable({
+        data: outages,
+        columns: [
+          { data: 'Subject',
+            render: function ( data, type, row, meta ) {
+              return type === 'display' ? `<a href="/outages?outageID=${row['ID']}">${data}</a>` : data;
+            }  
+          },
+          { data: 'Content' },
+          { data: 'OutageStart',
+            render: function ( data, type, row, meta ) {
+              return type === 'display' ? new Date(data).toLocaleString() : data;
+            } 
+          },
+          { data: 'OutageEnd',
+            render: function ( data, type, row, meta ) {
+              return type === 'display' ? new Date(data).toLocaleString() : data;
+            }
+          }
+        ],
+        order: [[3, 'desc']],
+      })
+      outageTables.style.display = 'block'
+    }
+  }
+
+  const showOutage = async function showOutage(outageID) {
+    const singleOutage = document.getElementById('single-outage')
+    singleOutage.style.display = 'block'
+    const outageLists = document.querySelectorAll('.outage-list')
+    outageLists.forEach(
+      list => {
+        list.style.display = 'none'
+      }
+    )
+
+    const response = await fetch(`https://info.xsede.org/wh1/outages/v1/outages/ID/${outageID}`)
+    const outage = await response.json()
+    //console.log(outage)
+    const loadingOutage = document.getElementById('loading-outage')
+    loadingOutage.style.display = 'none' 
+    const outageTable = document.getElementById('outage')
+    jQuery(outageTable).DataTable({
+      data: [outage],
+      columns: [
+        { data: 'Subject' },
+        { data: 'Content' },
+        { data: 'OutageStart',
+          render: function ( data, type, row, meta ) {
+            return type === 'display' ? new Date(data).toLocaleString() : data;
+          } 
+        },
+        { data: 'OutageEnd',
+          render: function ( data, type, row, meta ) {
+            return type === 'display' ? new Date(data).toLocaleString() : data;
+          }
+        }
+      ],
+      'paging': false,
+      'searching': false,
+      'info': false,
+      'bAutoWidth': false
+    })
+    outageTable.style.display = 'block'
+  }
+
+  const url = new URL(window.location.href)
+  const outageID = url.searchParams.get("outageID")
+
+  if (!outageID) {
+    showOutages('current', 'https://info.xsede.org/wh1/outages/v1/outages/Current')
+    showOutages('planned', 'https://info.xsede.org/wh1/outages/v1/outages/Future')
+    showOutages('past', 'https://info.xsede.org/wh1/outages/v1/outages/')
+  } else {
+    showOutage(outageID)
+  }
+
+</script>
