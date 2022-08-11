@@ -3,6 +3,8 @@
 use Drupal\user\UserInterface;
 use Drupal\Component\Serialization\Json;
 
+$debug = FALSE;
+
 /**
  * Hide the username field on the profile form -- we don't want users to 
  * be able to set or change their username.
@@ -23,17 +25,14 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
  * For AMP, we lookup the user using $context['user_data']['eppn']
  */
 function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
-
-  $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' 
+  global $debug;
+  if ($debug) {
+    $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' 
     . 'will try user_load_by_name with $context = ' . print_r($context, true);
 
-  \Drupal::messenger()->addStatus($msg);
+    \Drupal::messenger()->addStatus($msg);
+  }
   // error_log($msg);
-
-  // $context['userinfo'] = Array ( [sub] => http://cilogon.org/serverE/users/18633 [aud] => cilogon:/client_id/5bea8d62e8580e65d3691e8d0187aeaf 
-  //     [iss] => https://cilogon.org 
-  //     [email] => jasperjon@gmail.com 
-  //     [jti] => https://cilogon.org/oauth2/idToken/2525b0658f1fec959ce37611a8547968/1660076434292 )
 
   $eppn = array_key_exists('eppn', $context['user_data']) ? $context['user_data']['eppn'] : null;
 
@@ -45,9 +44,11 @@ function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
   $user = user_load_by_name($eppn);
   if ($user === FALSE) return TRUE;
 
-  // during development, here's some logging:
-  $msg = "user_load_by_name($eppn) returns user with email "  . $user->getEmail();
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  if ($debug) {
+    // during development, here's some logging:
+    $msg = "user_load_by_name($eppn) returns user with email "  . $user->getEmail();
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  }
 
   return $user;
 }
@@ -77,18 +78,20 @@ function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
  * @ingroup cilogon_auth_api
  */
 function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array $context) {
-
-  // while testing, examine values before we set them
-  $msg = ('before set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $msg =('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $msg =('before set, email = [' . $account->getEmail() . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $msg = ('before set, field_institution = [' . $account->get('field_institution')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $$msg = ('before set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  global $debug;
+  if ($debug) {
+    // while testing, examine values before we set them
+    $msg = ('before set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    $msg =('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    $msg =('before set, email = [' . $account->getEmail() . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    $msg = ('before set, field_institution = [' . $account->get('field_institution')->value . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    $$msg = ('before set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+  }
 
   $userinfo = $context['user_data'];
 
@@ -129,8 +132,9 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
       $user_handle = $eppn;
     }
 
-    $api_account_array = get_account_data_from_api($user_handle);
-    
+    // $api_account_array = get_account_data_from_api($user_handle);
+    $api_account_array = FALSE;
+
     if ($api_account_array !== FALSE) {
       if (array_key_exists('organizationName', $api_account_array)) 
         $account->set('field_institution', $api_account_array['organizationName']);
@@ -144,26 +148,26 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
     $account->setUsername($eppn);
   } 
 
-      
-  // while testing, examine values after setting them
-  $msg = ('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $msg =('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $msg =('after set, email = [' . $account->getEmail() . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $msg = ('after set, field_institution = [' . $account->get('field_institution')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  $msg = ('after set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
-  \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  if (!empty($eppn)) {
-    $msg = ('and set username to  = [' . $eppn . ']');
+  if ($debug) {
+    // while testing, examine values after setting them
+    $msg = ('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  } else {
-    $msg = ('did not set username because found no eppn');
+    $msg =('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    $msg =('after set, email = [' . $account->getEmail() . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    $msg = ('after set, field_institution = [' . $account->get('field_institution')->value . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    $msg = ('after set, field_citizenships = [' . $account->get('field_citizenships')->value . ']');
+    \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    if (!empty($eppn)) {
+      $msg = ('and set username to  = [' . $eppn . ']');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    } else {
+      $msg = ('did not set username because found no eppn');
+      \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
+    }
   }
-
 }
 
 /**
@@ -173,14 +177,11 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
  */
 function get_account_data_from_api($username) {
 
-  // // previous URL
-  // $base_url = 'https://xras-identity-service-demo.xsede.org/profiles/v1/people';
-
   // ACCESS production URL for the profile API
-  $base_url = 'https://allocations-api.access-ci.org/identity/profiles/v1';
+  $base_url = 'https://allocations-api.access-ci.org/identity/profiles/v1/people';
   $request_url = $base_url . '/' . $username;
 
-  // look for the ramps key in file system (e.g. root /var/www/cyberteam_drupal_dev/web)
+  // look for the ramps key in file system
   $path = 'sites/default/files/private/.keys/secrets.json';
   if (!file_exists($path)) {
     \Drupal::messenger()->addError("[User Profiles] Unable to get ramps api key");
@@ -193,7 +194,8 @@ function get_account_data_from_api($username) {
   $request_options = array('headers' => array(
       'XA-API-KEY' => $api_key,
       'XA-REQUESTER' => 'MATCH',
-      'Content-Type' => 'application/json'));
+      'Content-Type' => 'application/json'),
+      'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]);
   
   /** @var \GuzzleHttp\Client $client */
   $client = new GuzzleHttp\Client();
