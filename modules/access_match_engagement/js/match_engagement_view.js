@@ -1,4 +1,4 @@
-rows = document.querySelectorAll('.view-content .row');
+rows = document.querySelectorAll('.view-content .col');
 for (let i = 0; i < rows.length; i++) { 
   rows[i].insertAdjacentHTML('beforeend', '<button type="button" data-article="' + i + '" class="btn btn-primary ml-0 mt-3 more-match">+ More</button>');
 }
