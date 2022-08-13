@@ -183,10 +183,6 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
       $ame_notes = isset($ame_notes[0]['value']) ? $ame_notes[0]['value'] : '';
       access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $owner_user->id(), $ame_type);
       $entity->set('field_email_user', 0);
-    } elseif ($current_user == $owner_user->id()) {
-      $ame_nid = $entity->id();
-      $ame_title = Xss::filter($entity->gettitle()); 
-      access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type);
     }
   }
 }
