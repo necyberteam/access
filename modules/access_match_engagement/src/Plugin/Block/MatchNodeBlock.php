@@ -91,13 +91,21 @@ class MatchNodeBlock extends BlockBase implements
       $nid = $thisNode->id();
       $node = $this->entityInterface->getStorage('node')->load($nid);
       $mentor = $node->get('field_mentor')->getValue();
-      $mentor = $this->entityInterface->getStorage('user')->load($mentor[0]['target_id']);
-      $students = $node->get('field_students')->getValue(); 
-      $students = $this->entityInterface->getStorage('user')->load($students[0]['target_id']);
+      $mentor_name = '';
+      if ($mentor) {        
+        $mentor = $this->entityInterface->getStorage('user')->load($mentor[0]['target_id']);
+        $mentor_name = $mentor->get('field_user_first_name')->value . ' ' . $mentor->get('field_user_last_name')->value;
+      }
+      $students = $node->get('field_students')->getValue();
+      $student_name = '';
+      if ($students) {
+        $students = $this->entityInterface->getStorage('user')->load($students[0]['target_id']);
+        $student_name = $students->get('field_user_first_name')->value . ' ' . $students->get('field_user_last_name')->value;
+      }
       $image = $node->get('field_project_image')->getValue();
-      $img_file = File::load($image[0]['target_id']);
       $image_loaded = '';
-      if ($img_file) {
+      if ($image) {
+        $img_file = File::load($image[0]['target_id']);
         $uri = $img_file->getFileUri();
         $image_full = Url::fromUri(file_create_url($uri))->toString();
         $alt = $image[0]['alt'];
@@ -108,15 +116,17 @@ class MatchNodeBlock extends BlockBase implements
       }
       $tags = $node->get('field_tags')->getValue();
       $tag_list = '';
-      $tag_count = count($tags);
-      $tag_iterate = 0;
-      foreach ($tags as $key => $tag) {
-        $tag_iterate++;
-        $tag_id = $tag['target_id'];
-        $tag_load = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id)->get('name')->value;
-        $tag_list .= "<a href='/taxonomy/term/$tag_id'>$tag_load</a>";
-        if ($tag_count > $tag_iterate) {
-          $tag_list .= ", ";          
+      if ($tags) {        
+        $tag_count = count($tags);
+        $tag_iterate = 0;
+        foreach ($tags as $key => $tag) {
+          $tag_iterate++;
+          $tag_id = $tag['target_id'];
+          $tag_load = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id)->get('name')->value;
+          $tag_list .= "<a href='/taxonomy/term/$tag_id'>$tag_load</a>";
+          if ($tag_count > $tag_iterate) {
+            $tag_list .= ", ";          
+          }
         }
       }
       return [
@@ -129,9 +139,9 @@ class MatchNodeBlock extends BlockBase implements
         </div>',
         '#context' => [
           'mentor_label' => $this->t('Mentor'),
-          'mentor' => $mentor->get('field_user_first_name')->value . ' ' . $mentor->get('field_user_last_name')->value,
+          'mentor' => $mentor_name,
           'students_label' => $this->t('Student'),
-          'students' => $students->get('field_user_first_name')->value . ' ' . $students->get('field_user_last_name')->value,
+          'students' => $student_name,
           'tags_label' => $this->t('Tags'),
           'tags' => $tag_list,
           'image' => $image_loaded,
