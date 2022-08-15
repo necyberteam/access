@@ -1,6 +1,7 @@
 rows = document.querySelectorAll('.view-content .col');
-for (let i = 0; i < rows.length; i++) { 
-  rows[i].insertAdjacentHTML('beforeend', '<button type="button" data-article="' + i + '" class="btn btn-primary ml-0 mt-3 more-match">+ More</button>');
+for (let i = 0; i < rows.length; i++) {
+  const cardFooter = rows[i].querySelector('.card-footer')
+  cardFooter.innerHTML = '<button type="button" data-article="' + i + '" class="btn btn-primary more-match">+ More</button>';
 }
 
 var more = document.getElementsByClassName("more-match");
