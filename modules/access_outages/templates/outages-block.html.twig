@@ -9,6 +9,7 @@
           <thead>
               <tr>
                   <th>Event</th>
+                  <th>Resource</th>
                   <th>Summary</th>
                   <th>Type</th>
                   <th>Start</th>
@@ -31,7 +32,9 @@
           <thead>
               <tr>
                   <th>Event</th>
+                  <th>Resource</th>
                   <th>Summary</th>
+                  <th>Type</th>
                   <th>Start</th>
                   <th>End</th>
               </tr>
@@ -52,7 +55,9 @@
           <thead>
               <tr>
                   <th>Event</th>
+                  <th>Resource</th>
                   <th>Summary</th>
+                  <th>Type</th>
                   <th>Start</th>
                   <th>End</th>
               </tr>
@@ -67,13 +72,15 @@
 <div class="outage-list section container">
   <div class="row">
     <div class="col text-start text-md-center">
-      <h2>Past Outages</h2>
+      <h2>All Outages</h2>
       <p id="no-past-outages">Loading past outages...</p>
       <table id="outages-past" class="display text-start">
           <thead>
               <tr>
                   <th>Event</th>
+                  <th>Resource</th>
                   <th>Summary</th>
+                  <th>Type</th>
                   <th>Start</th>
                   <th>End</th>
               </tr>
@@ -103,7 +110,9 @@
               return type === 'display' ? `<a href="/outages?outageID=${row['ID']}">${data}</a>` : data;
             }  
           },
+          { data: 'ResourceID' },
           { data: 'Content' },
+          { data: 'OutageType' },
           { data: 'OutageStart',
             render: function ( data, type, row, meta ) {
               return type === 'display' ? new Date(data).toLocaleString() : data;
@@ -116,8 +125,9 @@
           }
         ],
         order: [[3, 'desc']],
+        bAutoWidth: false
       })
-      outageTables.style.display = 'block'
+      outagesTable.style.display = 'block'
     }
   }
 
@@ -141,6 +151,7 @@
       data: [outage],
       columns: [
         { data: 'Subject' },
+        { data: 'ResourceID' },
         { data: 'Content' },
         { data: 'OutageType' },
         { data: 'OutageStart',
