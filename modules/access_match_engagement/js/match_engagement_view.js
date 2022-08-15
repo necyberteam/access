@@ -1,34 +1,35 @@
+const more = document.getElementsByClassName("more-match");
+const showMore = function() {
+    const attribute = this.getAttribute("data-article");
+    const row = rows[attribute]
+    if (row.querySelector('.field--type-text-with-summary').classList.contains('visually-hidden')) {
+      var hasSummary = row.getElementsByClassName('field--type-text-with-summary');
+      if (hasSummary.length > 0) {
+        row.querySelector('.field--type-text-with-summary').classList.remove("visually-hidden");
+      }
+      var hasTags = row.getElementsByClassName('field--name-field-tags');
+      if (hasTags.length > 0) {
+        row.querySelector('.field--name-field-tags').classList.remove("visually-hidden");
+      }
+      row.querySelector('.more-match span').innerHTML = "- Less";
+    } else {
+      var hasSummary = row.getElementsByClassName('field--type-text-with-summary');
+      if (hasSummary.length > 0) {
+        row.querySelector('.field--type-text-with-summary').classList.add("visually-hidden");
+      }
+      var hasTags = row.getElementsByClassName('field--name-field-tags');
+      if (hasTags.length > 0) {
+        row.querySelector('.field--name-field-tags').classList.add("visually-hidden");
+      }
+      row.querySelector('.more-match span').innerHTML = "+ More";
+    }
+};
+
 rows = document.querySelectorAll('.view-content .col');
 for (let i = 0; i < rows.length; i++) {
   const cardFooter = rows[i].querySelector('.card-footer')
-  cardFooter.innerHTML = '<button type="button" data-article="' + i + '" class="btn btn-primary more-match">+ More</button>';
-}
-
-var more = document.getElementsByClassName("more-match");
-var showMore = function() {
-    var attribute = this.getAttribute("data-article");
-    if (rows[attribute].querySelector('.field--type-text-with-summary').classList.contains('visually-hidden')) {
-      var hasSummary = rows[attribute].getElementsByClassName('field--type-text-with-summary');
-      if (hasSummary.length > 0) {
-        rows[attribute].querySelector('.field--type-text-with-summary').classList.remove("visually-hidden");
-      }
-      var hasTags = rows[attribute].getElementsByClassName('field--name-field-tags');
-      if (hasTags.length > 0) {
-        rows[attribute].querySelector('.field--name-field-tags').classList.remove("visually-hidden");
-      }
-      rows[attribute].querySelector('.more-match').innerHTML = "- Less";
-    } else {
-      var hasSummary = rows[attribute].getElementsByClassName('field--type-text-with-summary');
-      if (hasSummary.length > 0) {
-        rows[attribute].querySelector('.field--type-text-with-summary').classList.add("visually-hidden");
-      }
-      var hasTags = rows[attribute].getElementsByClassName('field--name-field-tags');
-      if (hasTags.length > 0) {
-        rows[attribute].querySelector('.field--name-field-tags').classList.add("visually-hidden");
-      }
-      rows[attribute].querySelector('.more-match').innerHTML = "+ More";
-    }
-};
-for (var i = 0; i < more.length; i++) {
-    more[i].addEventListener('click', showMore, false);
+  cardFooter.classList.add('more-match')
+  cardFooter.dataset.article = i
+  cardFooter.innerHTML = '<span>+ More</span>';
+  cardFooter.addEventListener('click', showMore, false);
 }
