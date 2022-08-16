@@ -24,6 +24,16 @@ function access_match_engagement_views_pre_render(ViewExecutable $view) {
 }
 
 /**
+ * Implements hook_block_build_BASE_BLOCK_ID_alter().
+ */
+function access_match_engagement_block_build_views_block_alter(array &$build, \Drupal\Core\Block\BlockPluginInterface $block) {
+  // Using label because block numbers seem to change
+  if ($block->label() == 'match engagement view: Block - My Engagement') {
+    $build['#create_placeholder'] = FALSE;
+  }
+}
+
+/**
  * Implements hook_form_alter().
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) { 
