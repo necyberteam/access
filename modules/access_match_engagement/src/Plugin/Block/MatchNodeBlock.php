@@ -129,10 +129,16 @@ class MatchNodeBlock extends BlockBase implements
           }
         }
       }
-      $status = $node->get('field_status')->getValue()[0]['value'];
-      $skill = $node->get('field_programming_skill_level')->getValue()[0]['value'];
-      $works_label = $status == 'Recruiting' ? $this->t('Student skills needed:') : '';
-      $works = $status == 'Recruiting' ? $skill : '';
+      $status = $node->get('field_status')->getValue();
+      $works = '';
+      $works_label = '';
+      if ($status) {}
+        $status = $status[0]['value'];
+        $skill = $node->get('field_programming_skill_level')->getValue();
+        if ($skill) {
+          $works_label = $status == 'Recruiting' ? $this->t('Student skills needed:') : '';
+          $works = $status == 'Recruiting' ? $skill[0]['value'] : '';
+        }
       return [
         '#type' => 'inline_template',
         '#template' => '<div class="p-3">
