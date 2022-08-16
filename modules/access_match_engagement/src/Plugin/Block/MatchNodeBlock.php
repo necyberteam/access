@@ -129,6 +129,10 @@ class MatchNodeBlock extends BlockBase implements
           }
         }
       }
+      $status = $node->get('field_status')->getValue()[0]['value'];
+      $skill = $node->get('field_programming_skill_level')->getValue()[0]['value'];
+      $works_label = $status == 'Recruiting' ? $this->t('Student skills needed:') : '';
+      $works = $status == 'Recruiting' ? $skill : '';
       return [
         '#type' => 'inline_template',
         '#template' => '<div class="p-3">
@@ -136,6 +140,7 @@ class MatchNodeBlock extends BlockBase implements
           <div><span class="fw-bold">{{ mentor_label }}:</span> {{ mentor }}</div> 
           <div><span class="fw-bold">{{ students_label }}:</span> {{ students }}</div> 
           <div><span class="fw-bold">{{ tags_label }}:</span> {{ tags | raw }}</div>
+          <div><span class="fw-bold">{{ works_label }}</span> {{ works | raw }}</div>
         </div>',
         '#context' => [
           'mentor_label' => $this->t('Mentor'),
@@ -145,6 +150,8 @@ class MatchNodeBlock extends BlockBase implements
           'tags_label' => $this->t('Tags'),
           'tags' => $tag_list,
           'image' => $image_loaded,
+          'works_label' => $works_label,
+          'works' => $works,
         ]
       ];
     }
