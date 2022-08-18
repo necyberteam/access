@@ -1,0 +1,54 @@
+<?php
+
+/**
+ * Implements hook_mail().
+ */
+function ticketing_mail($key, &$message, $params)
+{
+
+  switch ($key) {
+    case 'ticketing':
+
+      // question:  some of the sample code had this conditional before modifying the $message,
+      // and i'm not sure if it's needed
+      // if (strpos($message['id'], 'webform') === 0) 
+
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = $params['title'];
+      $message['body'][] = $params['body'];
+
+      // trying this for CC -- but would get an error message from drupal
+      // $message['headers'] = $params['headers'];
+
+      // add any cc's
+      if (array_key_exists('headers', $params) && array_key_exists('cc', $params['headers']))
+        $message['headers']['cc'] = $params['headers']['cc'];
+
+      // there was a request for the custom header 'X-RT-Source:Form';
+      $message['headers']['X-RT-Source'] = 'Form';
+
+      $debug = false;
+      if ($debug) {
+        $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'mail $message = ' . print_r($message, true);
+        \Drupal::messenger()->addStatus($msg);
+      }
+
+      break;
+  }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function ticketing_theme()
+{
+  return [
+    'ticketing_mail' => [
+      'template' => 'ticketing_mail',
+      'variables' => [
+        'problem_description' => '',
+        'tags' => ''
+      ],
+    ],
+  ];
+}
