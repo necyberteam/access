@@ -44,6 +44,13 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         //  4 - otherwise use the default queue
         if ($data['resource'] !== 'issue_not_resource_related') {
             $to = $data['resource'];
+
+            // some queues have an alias override
+            $queue_alias_overrides = ["0-PSC", "0-TACC"];
+            foreach ($queue_alias_overrides as $alias_override) {
+                if (str_starts_with($to, $alias_override)) $to = $alias_override;
+            }
+
         } else if ($data['is_your_issue_related_to_allocations_'] == 'Yes') {
             $to = $data['please_select_an_allocations_category'];
         } else if (!empty($data['category'])) {
@@ -58,7 +65,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         //  FOR TESTING
         $to_copy = $to;
         $to = 'jasperjunk@gmail.com, andrew@elytra.net';
-        $to = 'jasperjunk@gmail.com'; //, andrew@elytra.net';
+        // $to = 'jasperjunk@gmail.com'; //, andrew@elytra.net';
 
         // build up the email params
         $params = [];
@@ -83,7 +90,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         }
 
         // get tags
-        foreach ($data['tags'] as $tag_id) {
+        foreach ($data['tag2'] as $tag_id) {
             $term = Term::load($tag_id);
             $data['tag_names'][] = $term->getName();
         }
@@ -132,7 +139,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         }
 
         if ($this->debug) {
-            $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'mail $result = ' . print_r($result['result'], true);
+            $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'mail $result = ' . print_r($result, true);
             \Drupal::messenger()->addStatus($msg);
         }
     }
