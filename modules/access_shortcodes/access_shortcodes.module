@@ -13,7 +13,9 @@ function access_shortcodes_theme() {
         'title' => '',
         'text' => '',
         'link' => '',
-        'boxed' => ''
+        'boxed' => '',
+        'btnlink' => '',
+        'btntext' => ''
       )
     ),
   );

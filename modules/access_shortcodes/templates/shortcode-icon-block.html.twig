@@ -9,12 +9,14 @@
  * - alt: alt text for image.
  * - title: The heading text.
  * - link: link for the icon box.
+ * - btnLink: optional href for button
+ * - btnText: optional text for button
  */
 #}
 {% if link %}
 <a href="{{ link }}" class="d-flex align-items-stretch">
 {% endif %}
-<div class="icon-box d-flex flex-column align-items-center {{ boxed }}">
+<div class="icon-box d-flex flex-column align-items-center justify-content-start {{ boxed }}">
     {% if icon %}
         <i class="fa-solid {{ icon }}"></i>
     {% endif %}
@@ -24,6 +26,9 @@
     <div class="icon-box-title mt-1">{{ title }}</div>
     {% if text %}
         <div class="icon-box-text text-muted small mt-2">{{ text }}</div>
+    {% endif %}
+    {% if btnlink and btntext %}
+        <a class="btn btn-primary mt-3" href="{{ btnlink }}">{{ btntext }}</a>
     {% endif %}
 </div>
 {% if link %}
