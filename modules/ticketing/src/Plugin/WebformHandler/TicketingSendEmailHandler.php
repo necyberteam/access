@@ -60,16 +60,19 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         }
 
         // append the email domain
-        $to .= '@tickets.access-ci.org';
+        // $to .= '@tickets.access-ci.org';
+        $to .= '@stg-tickets.access-ci.org';
 
-        //  FOR TESTING
-        $to_copy = $to;
-        $to = 'jasperjunk@gmail.com, andrew@elytra.net';
-        // $to = 'jasperjunk@gmail.com'; //, andrew@elytra.net';
+        if ($this->debug) {
+
+            // FOR TESTING
+            $to .= ', jasperjunk@gmail.com, andrew@elytra.net';
+        }
 
         // build up the email params
         $params = [];
         $params['to'] = $to;
+        $params['title'] = $data['subject'];
 
         // add the cc's
         if ($data['cc']) {
@@ -96,9 +99,17 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         }
 
         // get the body
-        $body = (string) getXMailMessageBody($data['problem_description'], $data['tag_names']);
+        $user = \Drupal::currentUser();
+        $from_email = $user->getEmail();
+
+        if ($this->debug) {
+            $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . '$from_email = ' . print_r($from_email, true);
+            \Drupal::messenger()->addStatus($msg);
+        }
+
+        $body = (string) $this->getXMailMessageBody($data['problem_description'], $data['tag_names'], $from_email);
         $params['body'] = $body;
-        
+
         if ($this->debug) {
             $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'in postSave() = $body = ' . print_r($body, true);
             \Drupal::messenger()->addStatus($msg);
@@ -118,13 +129,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         }
 
 
-        // $params['body'] = "body test"; //$render_service->render($data);
-        $params['title'] = $data['subject'];
-
-        // TESTING
-        $params['title'] .= " (debug:  'To:' would be '" . $to_copy . "')";
-
-        
+        // settings for the mail send
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
         $send = TRUE;
         $module = 'ticketing';
@@ -143,16 +148,18 @@ class TicketingSendEmailHandler extends WebformHandlerBase
             \Drupal::messenger()->addStatus($msg);
         }
     }
-}
 
-function getXMailMessageBody($description, $tags)
-{
-    return twig_render_template(
-        drupal_get_path('module', 'ticketing') . '/templates/ticketing-mail.html.twig',
-        [
-            'theme_hook_original' => 'not-applicable',
-            'problem_description' => $description,
-            'tags' => $tags
-        ]
-    );
+
+    function getXMailMessageBody($description, $tags, $from_email)
+    {
+        return twig_render_template(
+            drupal_get_path('module', 'ticketing') . '/templates/ticketing-mail.html.twig',
+            [
+                'theme_hook_original' => 'not-applicable',
+                'problem_description' => $description,
+                'tags' => $tags,
+                'email' => $from_email
+            ]
+        );
+    }
 }
