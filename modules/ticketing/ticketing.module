@@ -7,8 +7,7 @@ function ticketing_mail($key, &$message, $params)
 {
   switch ($key) {
     case 'ticketing':
-
-      $message['from'] = \Drupal::config('system.site')->get('mail');
+ 
       $message['subject'] = $params['title'];
       $message['body'][] = $params['body'];
 
@@ -27,20 +26,4 @@ function ticketing_mail($key, &$message, $params)
 
       break;
   }
-}
-
-/**
- * Implements hook_theme().
- */
-function ticketing_theme()
-{
-  return [
-    'ticketing_mail' => [
-      'template' => 'ticketing_mail',
-      'variables' => [
-        'problem_description' => '',
-        'tags' => ''
-      ],
-    ],
-  ];
 }
