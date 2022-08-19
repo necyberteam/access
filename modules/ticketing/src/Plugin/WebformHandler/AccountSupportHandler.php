@@ -39,15 +39,21 @@ class AccountSupportHandler extends WebformHandlerBase
         }
 
         $to = "0-Help@tickets.access-ci.org";
-        $to = 'jasperjunk@gmail.com, andrew@elytra.net';
+        $to = "0-Help@stg-tickets.access-ci.org";
 
-         // build up the email params
+        if ($this->debug) {
+
+            // FOR TESTING
+            $to .= ', jasperjunk@gmail.com, andrew@elytra.net';
+        }
+
+        // build up the email params
         $params = [];
         $params['to'] = $to;
-        $body = (string) getXMailMessageBody($data);
+        $body = (string) $this->getXMailMessageBody($data);
         $params['body'] = $body;
         $params['title'] = 'account support request from ' . $data['your_name'];
-          
+
         $langcode = \Drupal::currentUser()->getPreferredLangcode();
         $send = TRUE;
         $module = 'ticketing';
@@ -55,7 +61,7 @@ class AccountSupportHandler extends WebformHandlerBase
         $mailManager = \Drupal::service('plugin.manager.mail');
 
         $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
- 
+
         if ($result === false || (array_key_exists('result', $result) && !$result['result'])) {
             $msg = "There was a problem sending the email";
             \Drupal::messenger()->addWarning($msg);
@@ -67,18 +73,17 @@ class AccountSupportHandler extends WebformHandlerBase
         }
     }
 
-}
-
-function getXMailMessageBody($data)
-{
-    return twig_render_template(
-        drupal_get_path('module', 'ticketing') . '/templates/account-support-mail.html.twig',
-        [
-            'theme_hook_original' => 'not-applicable',
-            'name' => $data['your_name'],
-            'email' => $data['email'],
-            'access_id' => $data['access_id'],
-            'comment' => $data['comment'],
-        ]
-    );
+    function getXMailMessageBody($data)
+    {
+        return twig_render_template(
+            drupal_get_path('module', 'ticketing') . '/templates/account-support-mail.html.twig',
+            [
+                'theme_hook_original' => 'not-applicable',
+                'name' => $data['your_name'],
+                'email' => $data['email'],
+                'access_id' => $data['access_id'],
+                'comment' => $data['comment']
+            ]
+        );
+    }
 }
