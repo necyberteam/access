@@ -60,8 +60,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         }
 
         // append the email domain
-        // $to .= '@tickets.access-ci.org';
-        $to .= '@stg-tickets.access-ci.org';
+        $to .= '@tickets.access-ci.org';
 
         if ($this->debug) {
 
