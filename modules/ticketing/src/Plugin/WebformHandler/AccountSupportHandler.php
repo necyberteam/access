@@ -39,7 +39,6 @@ class AccountSupportHandler extends WebformHandlerBase
         }
 
         $to = "0-Help@tickets.access-ci.org";
-        $to = "0-Help@stg-tickets.access-ci.org";
 
         if ($this->debug) {
 

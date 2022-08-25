@@ -52,7 +52,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
             }
 
         } else if ($data['is_your_issue_related_to_allocations_'] == 'Yes') {
-            $to = $data['please_select_an_allocations_category'];
+            $to = 'ACCESS-Allocations-Support';
         } else if (!empty($data['category'])) {
             $to = $data['category'];
         } else {
@@ -60,8 +60,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         }
 
         // append the email domain
-        // $to .= '@tickets.access-ci.org';
-        $to .= '@stg-tickets.access-ci.org';
+        $to .= '@tickets.access-ci.org';
 
         if ($this->debug) {
 
