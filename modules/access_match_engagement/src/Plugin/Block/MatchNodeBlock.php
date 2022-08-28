@@ -90,17 +90,20 @@ class MatchNodeBlock extends BlockBase implements
     if ($thisNode instanceof NodeInterface) {
       $nid = $thisNode->id();
       $node = $this->entityInterface->getStorage('node')->load($nid);
-      $mentor = $node->get('field_mentor')->getValue();
-      $mentor_name = '';
-      if ($mentor) {        
-        $mentor = $this->entityInterface->getStorage('user')->load($mentor[0]['target_id']);
-        $mentor_name = $mentor->get('field_user_first_name')->value . ' ' . $mentor->get('field_user_last_name')->value;
-      }
-      $students = $node->get('field_students')->getValue();
-      $student_name = '';
-      if ($students) {
-        $students = $this->entityInterface->getStorage('user')->load($students[0]['target_id']);
-        $student_name = $students->get('field_user_first_name')->value . ' ' . $students->get('field_user_last_name')->value;
+      $fields = [
+        'field_consultant',
+        'field_students',
+        'field_mentor'
+      ];
+      $msc_loaded = [];
+      foreach ($fields as $field) {
+        $field_value = $node->get($field)->getValue();
+        if ($field_value) {
+          $field_value = $this->entityInterface->getStorage('user')->load($field_value[0]['target_id']);
+          $msc_loaded[$field] = $field_value->get('field_user_first_name')->value . ' ' . $field_value->get('field_user_last_name')->value;
+        } else {
+          $msc_loaded[$field] = '';
+        }
       }
       $image = $node->get('field_project_image')->getValue();
       $image_loaded = '';
@@ -116,7 +119,7 @@ class MatchNodeBlock extends BlockBase implements
       }
       $tags = $node->get('field_tags')->getValue();
       $tag_list = '';
-      if ($tags) {        
+      if ($tags) {
         $tag_count = count($tags);
         $tag_iterate = 0;
         foreach ($tags as $key => $tag) {
@@ -125,39 +128,56 @@ class MatchNodeBlock extends BlockBase implements
           $tag_load = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id)->get('name')->value;
           $tag_list .= "<a href='/taxonomy/term/$tag_id'>$tag_load</a>";
           if ($tag_count > $tag_iterate) {
-            $tag_list .= ", ";          
+            $tag_list .= ", ";
           }
         }
       }
       $status = $node->get('field_status')->getValue();
       $works = '';
       $works_label = '';
-      if ($status) {}
+      if ($status) {
         $status = $status[0]['value'];
         $skill = $node->get('field_programming_skill_level')->getValue();
         if ($skill) {
           $works_label = $status == 'Recruiting' ? $this->t('Student skills needed:') : '';
           $works = $status == 'Recruiting' ? $skill[0]['value'] : '';
         }
+      }
+      $type = $node->get('field_node_type')->getValue();
+      $type = $type[0]['value'];
       return [
         '#type' => 'inline_template',
         '#template' => '<div class="p-3">
           <div class="pb-3">{{ image | raw }}</div>
-          <div><span class="fw-bold">{{ mentor_label }}:</span> {{ mentor }}</div> 
-          <div><span class="fw-bold">{{ students_label }}:</span> {{ students }}</div> 
-          <div><span class="fw-bold">{{ tags_label }}:</span> {{ tags | raw }}</div>
+          {% if ( type == "plus" ) %}
+            {% if ( student ) %}
+              <div><span class="fw-bold">{{ student_label }}:</span> {{ student }}</div>
+            {% endif %}
+            {% if ( mentor ) %}
+              <div><span class="fw-bold">{{ mentor_label }}:</span> {{ mentor }}</div>
+            {% endif %}
+          {% endif %}
+          {% if (consultant and ( type == "premier" )) %}
+            <div><span class="fw-bold">{{ consultant_label }}:</span> {{ consultant }}</div>
+          {% endif %}
+          {% if tags %}
+            <div><span class="fw-bold">{{ tags_label }}:</span> {{ tags | raw }}</div>
+          {% endif %}
           <div><span class="fw-bold">{{ works_label }}</span> {{ works | raw }}</div>
         </div>',
         '#context' => [
+          'consultant_label' => $this->t('Consultant'),
+          'consultant' => $msc_loaded['field_consultant'],
+          'student_label' => $this->t('Student'),
+          'student' => $msc_loaded['field_students'],
           'mentor_label' => $this->t('Mentor'),
-          'mentor' => $mentor_name,
-          'students_label' => $this->t('Student'),
-          'students' => $student_name,
+          'mentor' => $msc_loaded['field_mentor'],
           'tags_label' => $this->t('Tags'),
           'tags' => $tag_list,
           'image' => $image_loaded,
           'works_label' => $works_label,
           'works' => $works,
+          'type' => $type,
         ]
       ];
     }
