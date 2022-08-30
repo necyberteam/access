@@ -39,7 +39,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
 
         // Adjust the To: email address based on form selections with this logic:
         //  1 - if a resource is selected, use it
-        //  2 - if an allocations category is provided, use that category
+        //  2 - if an allocations category is provided, use that category (with some possible overrides)
         //  3 - if some other category is selected, use that
         //  4 - otherwise use the default queue
         if ($data['resource'] !== 'issue_not_resource_related') {
@@ -55,6 +55,9 @@ class TicketingSendEmailHandler extends WebformHandlerBase
             $to = 'ACCESS-Allocations-Support';
         } else if (!empty($data['category'])) {
             $to = $data['category'];
+            if ($to == 'ACCESS-XDMoD') {
+                $to = 'ACCESS-Metrics';
+            }
         } else {
             $to = '0-Help';
         }
