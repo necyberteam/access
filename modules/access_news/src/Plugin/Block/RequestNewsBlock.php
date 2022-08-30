@@ -22,6 +22,7 @@ class RequestNewsBlock extends BlockBase {
 
     return [
       '#theme' => 'requestnews_block',
+      'variables' => [],
     ];
   }
 
