@@ -1,0 +1,8 @@
+name: Access News
+description: 'Custom functionality for ACCESS News'
+type: module
+core_version_requirement: ^8.8 || ^9
+package: Custom
+dependencies:
+  - access
+
