@@ -88,6 +88,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_hpc_resources_needed']['#access'] = FALSE;
       $form['field_consultant']['#access'] = FALSE;
       $form['field_mentor']['#access'] = FALSE;
+      $form['field_researcher']['#access'] = FALSE;
       $form['field_students']['#access'] = FALSE;
       $form['field_qualifications']['#access'] = FALSE;
       $form['field_student_learning']['#access'] = FALSE;
