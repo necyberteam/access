@@ -125,10 +125,13 @@ class MatchNodeBlock extends BlockBase implements
         foreach ($tags as $key => $tag) {
           $tag_iterate++;
           $tag_id = $tag['target_id'];
-          $tag_load = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id)->get('name')->value;
-          $tag_list .= "<a href='/taxonomy/term/$tag_id'>$tag_load</a>";
-          if ($tag_count > $tag_iterate) {
-            $tag_list .= ", ";
+          $term = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id);
+          if ($term) {
+            $tag_load = $term->get('name')->value;
+            $tag_list .= "<a href='/taxonomy/term/$tag_id'>$tag_load</a>";
+            if ($tag_count > $tag_iterate) {
+              $tag_list .= ", ";
+            }
           }
         }
       }
