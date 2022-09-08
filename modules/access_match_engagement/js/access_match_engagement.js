@@ -3,8 +3,8 @@ var checkBoxEmail = document.getElementById("edit-field-email-user-value");
 
 function checkBoth(chkBoxId, checkBoxWhich) {
   var element = document.getElementById("edit-field-notes-to-author-wrapper");
-  if (checkBoxWhich.checked == true){
-    document.getElementById(chkBoxId).checked = true;
+  if (checkBoxWhich.checked == TRUE){
+    document.getElementById(chkBoxId).checked = TRUE;
     element.classList.remove("hide");
   } else{
     element.classList.add("hide");

@@ -93,7 +93,7 @@ class MatchNodeBlock extends BlockBase implements
       $fields = [
         'field_consultant',
         'field_students',
-        'field_mentor'
+        'field_mentor',
       ];
       $msc_loaded = [];
       foreach ($fields as $field) {
@@ -101,7 +101,8 @@ class MatchNodeBlock extends BlockBase implements
         if ($field_value) {
           $field_value = $this->entityInterface->getStorage('user')->load($field_value[0]['target_id']);
           $msc_loaded[$field] = $field_value->get('field_user_first_name')->value . ' ' . $field_value->get('field_user_last_name')->value;
-        } else {
+        }
+        else {
           $msc_loaded[$field] = '';
         }
       }
@@ -122,7 +123,7 @@ class MatchNodeBlock extends BlockBase implements
       if ($tags) {
         $tag_count = count($tags);
         $tag_iterate = 0;
-        foreach ($tags as $key => $tag) {
+        foreach ($tags as $tag) {
           $tag_iterate++;
           $tag_id = $tag['target_id'];
           $term = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id);
@@ -181,7 +182,7 @@ class MatchNodeBlock extends BlockBase implements
           'works_label' => $works_label,
           'works' => $works,
           'type' => $type,
-        ]
+        ],
       ];
     }
   }
@@ -212,4 +213,3 @@ class MatchNodeBlock extends BlockBase implements
   }
 
 }
-
