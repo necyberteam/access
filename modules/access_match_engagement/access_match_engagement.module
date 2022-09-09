@@ -144,6 +144,8 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $form['field_email_user']['#group'] = 'options';
     $form['field_notes_to_author']['#group'] = 'options';
     $form['field_notes_to_author']['#attributes']['class'][] = 'hide';
+  }
+  if ($form_id == 'node_match_engagement_form') {
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
   }
