@@ -144,8 +144,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $form['field_email_user']['#group'] = 'options';
     $form['field_notes_to_author']['#group'] = 'options';
     $form['field_notes_to_author']['#attributes']['class'][] = 'hide';
+    // Custom Submit handler.
+    $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
   }
-  $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
 }
 
 function access_match_engagement_submit_function(&$form, FormStateInterface $form_state) {
