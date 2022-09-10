@@ -1,0 +1,8 @@
+name: Access Affinity Group
+description: 'Custom functionality for Affinity Groups'
+type: module
+core_version_requirement: ^8.8 || ^9
+package: Custom
+dependencies:
+  - access
+
