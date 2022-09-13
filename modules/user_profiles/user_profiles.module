@@ -2,18 +2,33 @@
 
 use Drupal\user\UserInterface;
 use Drupal\Component\Serialization\Json;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\domain\DomainInterface;
+use Drupal\Component\Utility\Html;
 
 $debug = FALSE;
 
 /**
- * Hide the username field on the profile form -- we don't want users to 
+ * Hide the username field on the profile form -- we don't want users to
  * be able to set or change their username.
  */
 function user_profiles_form_alter(&$form, &$form_state, $form_id) {
-  // Hide username field
-  if ($form_id == 'user_form') {
-    $form['account']['name']['#access'] = FALSE;
-  }  
+  switch ($form_id) {
+    case 'change_pwd_form':
+      // Get current domain
+      $domain = \Drupal::config('domain.settings');
+      $token = \Drupal::token();
+      $domainName = t("[domain:name]");
+      $current_domain_name = Html::getClass($token->replace($domainName));
+      if ( $current_domain_name == 'access-support' ) {
+        $response = new RedirectResponse('/user');
+        $response->send();
+      }
+      break;
+    case 'user_form':
+      $form['account']['name']['#access'] = FALSE;
+      break;
+  }
 }
 
 /**
@@ -27,7 +42,7 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
 function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
   global $debug;
   if ($debug) {
-    $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' 
+    $msg = basename(__FILE__) . ':' . __LINE__ . ' -- '
     . 'will try user_load_by_name with $context = ' . print_r($context, true);
 
     \Drupal::messenger()->addStatus($msg);
@@ -136,17 +151,17 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
     $api_account_array = FALSE;
 
     if ($api_account_array !== FALSE) {
-      if (array_key_exists('organizationName', $api_account_array)) 
+      if (array_key_exists('organizationName', $api_account_array))
         $account->set('field_institution', $api_account_array['organizationName']);
       if (array_key_exists('citizenships', $api_account_array))
         $account->set('field_citizenships', implode(',', $api_account_array['citizenships']));  // convert to comma separated string
     }
   }
-    
+
   // use sub for the username (and not just the $user_handle, to avoid collisions with other accounts)
   if (!empty($sub)) {
     $account->setUsername($sub);
-  } 
+  }
 
   if ($debug) {
     // while testing, examine values after setting them
@@ -171,8 +186,8 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
 }
 
 /**
- * Pull account info from the api.  
- * 
+ * Pull account info from the api.
+ *
  * @return mixed of account info (or FALSE if unable to get data)
  */
 function get_account_data_from_api($username) {
@@ -196,7 +211,7 @@ function get_account_data_from_api($username) {
       'XA-REQUESTER' => 'MATCH',
       'Content-Type' => 'application/json'),
       'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]);
-  
+
   /** @var \GuzzleHttp\Client $client */
   $client = new GuzzleHttp\Client();
   try {
