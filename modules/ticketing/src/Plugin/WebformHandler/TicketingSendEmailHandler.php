@@ -57,6 +57,10 @@ class TicketingSendEmailHandler extends WebformHandlerBase
             $to = $data['category'];
             if ($to == 'ACCESS-XDMoD') {
                 $to = 'ACCESS-Metrics';
+            } else if ((str_starts_with($to, "ACCESS-Operations-Security"))) {
+                // 2022-09-13 -- both "ACCESS-Operations-Security" and "ACCESS-Operations-Security-Accounts"
+                // should go to ACCESS-Operations-Security
+                $to = "ACCESS-Operations-Security";
             }
         } else {
             $to = '0-Help';
@@ -68,7 +72,8 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         if ($this->debug) {
 
             // FOR TESTING
-            $to .= ', jasperjunk@gmail.com, andrew@elytra.net';
+            // $to .= ', jasperjunk@gmail.com, andrew@elytra.net';
+            $to .= ', jasper.amp@gmail.com';
         }
 
         // build up the email params
