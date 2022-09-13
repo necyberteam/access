@@ -9,6 +9,20 @@ use Drupal\Component\Utility\Html;
 $debug = FALSE;
 
 /**
+ * Implements hook_menu_local_tasks_alter().
+ */
+function user_profiles_menu_local_tasks_alter(&$data, $route_name) {
+  // Get current domain
+  $domain = \Drupal::config('domain.settings');
+  $token = \Drupal::token();
+  $domainName = t("[domain:name]");
+  $current_domain_name = Html::getClass($token->replace($domainName));
+  if ( $route_name == 'entity.user.canonical' && isset($data['tabs'][0]) && $current_domain_name == 'access-support' ) {
+    $data['tabs'][0]['change_pwd_page.change_password_form']['#access'] = FALSE;
+  }
+}
+
+/**
  * Hide the username field on the profile form -- we don't want users to
  * be able to set or change their username.
  */
@@ -223,5 +237,3 @@ function get_account_data_from_api($username) {
   }
   return false;
 }
-
-
