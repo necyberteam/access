@@ -258,7 +258,7 @@ function access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type) {
       'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
     ],
   ];
-  // Get all user emails with the Administrator role.
+  // Get all user emails with the match_pm role.
   $ids = \Drupal::entityQuery('user')
     ->condition('status', 1)
     ->condition('roles', 'match_pm')
@@ -271,7 +271,7 @@ function access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type) {
     $iterate++;
     $email .= $user->get('mail')->getString();
     if ($user_count != $iterate) {
-      $email .= ", ";
+      $email .= ",";
     }
   }
   $current_user = User::load(\Drupal::currentUser()->id());
