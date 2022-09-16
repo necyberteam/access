@@ -2,9 +2,11 @@
 
 namespace Drupal\access_affinitygroup\Form;
 
-use Drupal\access_affinitygroup\Plugin\ConstantContactApiAuth;
+use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\FormBase;
+use \Drupal\Core\Url;
+use \Drupal\Core\Link;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
@@ -15,33 +17,23 @@ class ConstantContact extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+
     $request = \Drupal::request();
     $code = $request->get('code');
+    $refresh_token = $request->get('refresh_token');
+
+    if ($refresh_token) {
+      $cca = new ConstantContactApi;
+      $cca->newToken();
+    }
 
     if ($code) {
-      $key = trim(\Drupal::service('key.repository')->getKey('constant_contact')->getKeyValue());
-      $clientId = urlencode($key);
-      $key_secret = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_secret')->getKeyValue());
-      $clientSecret = urlencode($key_secret);
-      $host = \Drupal::request()->getSchemeAndHttpHost();
-      $redirectURI = urlencode("$host/admin/services/constantcontact-token");
-
-      $returned_token = $this->getAccessToken($redirectURI, $clientId, $clientSecret, $code);
-      $returned_token = json_decode($returned_token);
-
-      if ( !isset($returned_token->error) ) {
-        $config_factory = \Drupal::configFactory();
-        $config = $config_factory->getEditable('constantcontact.settings');
-        $config->set('access_token', $returned_token->access_token);
-        $config->set('refresh_token', $returned_token->refresh_token);
-        $config->save();
-        \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
-        \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
-      } else {
-        \Drupal::logger('access_affinitygroup')->error("$returned_token->error: $returned_token->error_description");
-        \Drupal::messenger()->addMessage("$returned_token->error: $returned_token->error_description", 'error');
-      }
+      $cca = new ConstantContactApi;
+      $cca->initializeToken($code);
     }
+
+    $url = Url::fromUri('internal:/admin/services/constantcontact-token', ['query' => ['refresh_token' => TRUE]]);
+    $link = Link::fromTextAndUrl(t('Refresh Token'), $url)->toString()->getGeneratedLink();
 
     $form['scope'] = array(
       '#type' => 'checkboxes',
@@ -68,51 +60,11 @@ class ConstantContact extends FormBase {
       '#value' => $this->t('Authorize App'),
     ];
 
+    $form['refresh_token'] = [
+        '#markup' => $link,
+    ];
+
     return $form;
-  }
-
-  /*
-  * This function can be used to exchange an authorization code for an access token.
-  * Make this call by passing in the code present when the account owner is redirected back to you.
-  * The response will contain an 'access_token' and 'refresh_token'
-  */
-
-  /**
-   * @param $redirectURI - URL Encoded Redirect URI
-   * @param $clientId - API Key
-   * @param $clientSecret - API Secret
-   * @param $code - Authorization Code
-   * @return string - JSON String of results
-   */
-
-  private function getAccessToken($redirectURI, $clientId, $clientSecret, $code) {
-    // Use cURL to get access token and refresh token
-    $ch = curl_init();
-
-    // Define base URL
-    $base = 'https://authz.constantcontact.com/oauth2/default/v1/token';
-
-    // Create full request URL
-    $url = $base . '?code=' . $code . '&redirect_uri=' . $redirectURI . '&grant_type=authorization_code';
-    curl_setopt($ch, CURLOPT_URL, $url);
-
-    // Set authorization header
-    // Make string of "API_KEY:SECRET"
-    $auth = $clientId . ':' . $clientSecret;
-    // Base64 encode it
-    $credentials = base64_encode($auth);
-    // Create and set the Authorization header to use the encoded credentials, and set the Content-Type header
-    $authorization = 'Authorization: Basic ' . $credentials;
-    curl_setopt($ch, CURLOPT_HTTPHEADER, array($authorization, 'Content-Type: application/x-www-form-urlencoded'));
-
-    // Set method and to expect response
-    curl_setopt($ch, CURLOPT_POST, true);
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-
-    // Make the call
-    $result = curl_exec($ch);
-    curl_close($ch);
-    return $result;
   }
 
   /**
@@ -147,7 +99,7 @@ class ConstantContact extends FormBase {
         $selected_scope .= $scope_value . ' ';
       }
     }
-    $cc = new ConstantContactApiAuth;
+    $cc = new ConstantContactApi;
     $key = trim(\Drupal::service('key.repository')->getKey('constant_contact')->getKeyValue());
     $token = urlencode($key);
     $host = \Drupal::request()->getSchemeAndHttpHost();

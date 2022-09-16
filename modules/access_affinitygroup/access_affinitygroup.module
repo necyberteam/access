@@ -1,0 +1,17 @@
+<?php
+
+use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
+
+/**
+ * @file
+ * Module for affinity group.
+ */
+
+function access_affinitygroup_cron() {
+  // Setting this to run once a day, may need adjustment
+  // if cron is run more frequently.
+  if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) <= 30)) {
+    $cca = new ConstantContactApi;
+    $cca->newToken();
+  }
+}
