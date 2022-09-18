@@ -1,11 +1,79 @@
 <?php
 
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
+use Drupal\Core\Entity\EntityInterface;
 
 /**
  * @file
  * Module for affinity group.
  */
+
+/**
+ * Implements hook_node_insert().
+ */
+function access_affinitygroup_node_insert(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'affinity_group') {
+    $get_fields = $entity->getFields();
+    $title = $entity->getTitle();
+    $summary = $get_fields['body']->summary;
+    $post_data = [
+      'name' => $title,
+      'favorite' => 0,
+      'description' => $summary
+    ];
+    $post_data = json_encode($post_data);
+    // Create constant contact list for affinity group
+    $cca->apiCall('/contact_lists ', $post_data, 'POST');
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+ */
+function access_affinitygroup_entity_presave(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'affinity_group') {
+    $get_fields = $entity->getFields();
+    $title = $entity->getTitle();
+    $summary = $get_fields['body']->summary;
+    $post_data = [
+      'name' => $title,
+      'favorite' => 0,
+      'description' => $summary
+    ];
+    $post_data = json_encode($post_data);
+
+    $cca = new ConstantContactApi;
+    kint($cca);
+    die();
+    $lists = $cca->apiCall('/contact_lists ');
+    $list_exists = false;
+    foreach ($lists->lists as $list) {
+      if ($list->name == $title) {
+        // Constant Contact contains affinity group
+        // title in list.
+        $list_exists = true;
+        break;
+      }
+    }
+    if (! $list_exists) {
+      // Create Constant contact title with affinity
+      // group title.
+      $cca->apiCall('/contact_lists ', $post_data, 'POST');
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_delete().
+ */
+function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'affinity_group') {
+    // Add api code
+  }
+}
 
 function access_affinitygroup_cron() {
   // Setting this to run once a day, may need adjustment
