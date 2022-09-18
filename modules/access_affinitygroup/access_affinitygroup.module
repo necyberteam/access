@@ -45,8 +45,6 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
     $post_data = json_encode($post_data);
 
     $cca = new ConstantContactApi;
-    kint($cca);
-    die();
     $lists = $cca->apiCall('/contact_lists ');
     $list_exists = false;
     foreach ($lists->lists as $list) {
