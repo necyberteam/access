@@ -166,6 +166,11 @@ class ConstantContactApi {
       curl_setopt($ch, CURLOPT_POST, true);
     }
 
+    if ($type == 'DELETE') {
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+    }
+
     // Set method and to expect response
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
