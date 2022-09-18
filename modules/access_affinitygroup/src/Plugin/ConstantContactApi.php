@@ -41,7 +41,7 @@ class ConstantContactApi {
     $this->configSettings = $config_factory->getEditable('constantcontact.settings');
     $this->accessToken = $this->configSettings->get('access_token');
     $this->refreshToken = $this->configSettings->get('refresh_token');
-    $cc_key = trim(\Drupal::service('key.repository')->getKey('constant_contact')->getKeyValue());
+    $cc_key = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_id')->getKeyValue());
     $this->clientId = urlencode($cc_key);
     $key_secret = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_secret')->getKeyValue());
     $this->clientSecret = urlencode($key_secret);
@@ -134,6 +134,47 @@ class ConstantContactApi {
       \Drupal::logger('access_affinitygroup')->error("$result->error: $result->error_description");
       \Drupal::messenger()->addMessage("$result->error: $result->error_description", 'error');
     }
+  }
+
+  /**
+   * Refresh Constant Contact Token and set new ones.
+   * @param $endpoint - end of the URL api call.
+   * @param $post_data - included with $type PUT json encoded.
+   * @param $type - POST or GET, defaults to GET.
+   */
+  public function apiCall($endpoint, $post_data=null, $type='GET') {
+    $access_token = $this->accessToken;
+    // Use cURL to get a new access token and refresh token
+    $ch = curl_init();
+
+    // Create full request URL
+    $url = 'https://api.cc.email/v3' . $endpoint;
+    curl_setopt($ch, CURLOPT_URL, $url);
+
+    // Set authorization header
+    // Make string of "API_KEY"
+    $auth = $access_token;
+    // Base64 encode it
+    $credentials = $auth;
+    // Create and set the Authorization header to use the encoded credentials,
+    // and set the Content-Type header
+    $authorization = 'Authorization: Bearer ' . $credentials;
+    curl_setopt($ch, CURLOPT_HTTPHEADER, array($authorization, 'Content-Type: application/json'));
+
+    if ($type == 'POST') {
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
+      curl_setopt($ch, CURLOPT_POST, true);
+    }
+
+    // Set method and to expect response
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+
+    // Make the call
+    $result = curl_exec($ch);
+    $result = json_decode($result);
+    curl_close($ch);
+
+    return $result;
   }
 
   /**
