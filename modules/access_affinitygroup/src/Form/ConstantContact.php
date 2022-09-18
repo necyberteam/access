@@ -86,7 +86,10 @@ class ConstantContact extends FormBase {
    *   Object describing the current state of the form.
    */
   public function validateForm(array &$form, FormStateInterface $form_state) {
-    // Probably don't need error check...
+    $value_check = array_filter($form_state->getValue('scope'));
+    if (empty($value_check)) {
+      $form_state->setErrorByName('access_affinitygroup', 'Select at least one checkbox under scope.');
+    }
   }
 
   /**
@@ -100,7 +103,7 @@ class ConstantContact extends FormBase {
       }
     }
     $cc = new ConstantContactApi;
-    $key = trim(\Drupal::service('key.repository')->getKey('constant_contact')->getKeyValue());
+    $key = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_id')->getKeyValue());
     $token = urlencode($key);
     $host = \Drupal::request()->getSchemeAndHttpHost();
     $redirectURI = urlencode("$host/admin/services/constantcontact-token");
