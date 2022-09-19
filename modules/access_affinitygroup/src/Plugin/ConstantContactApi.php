@@ -85,8 +85,8 @@ class ConstantContactApi {
       \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
       \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
     } else {
-      \Drupal::logger('access_affinitygroup')->error("$returned_token->error: $returned_token->error_description");
-      \Drupal::messenger()->addMessage("$returned_token->error: $returned_token->error_description", 'error');
+      $this->apiError($returned_token->error, $returned_token->error_description);
+
     }
   }
 
@@ -131,13 +131,22 @@ class ConstantContactApi {
       \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
       \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
     } else {
-      \Drupal::logger('access_affinitygroup')->error("$result->error: $result->error_description");
-      \Drupal::messenger()->addMessage("$result->error: $result->error_description", 'error');
+      $this->apiError($result->error, $result->error_description);
     }
   }
 
   /**
    * Refresh Constant Contact Token and set new ones.
+   * @param $key - error key.
+   * @param $message - error message.
+   */
+  public function apiError($key, $message) {
+    \Drupal::logger('access_affinitygroup')->error("$key: $message");
+    \Drupal::messenger()->addMessage("$key: $message", 'error');
+  }
+
+  /**
+   * Make api call.
    * @param $endpoint - end of the URL api call.
    * @param $post_data - included with $type PUT json encoded.
    * @param $type - POST or GET, defaults to GET.
@@ -175,11 +184,28 @@ class ConstantContactApi {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     // Make the call
-    $result = curl_exec($ch);
-    $result = json_decode($result);
+    $returned_result = curl_exec($ch);
+    $result = json_decode($returned_result);
     curl_close($ch);
 
+    if ( preg_match('/error_key/', $returned_result, $matches, PREG_OFFSET_CAPTURE) ) {
+      foreach ($result as $error) {
+        $this->apiError($error->error_key, $error->error_message);
+      }
+    }
+
     return $result;
+  }
+
+
+  /**
+   * Add user to constant contact emails.
+   * @string $firstname - contact's first name.
+   * @string $lastname - contact's last name.
+   * @string $mail - contact's last name.
+   * @string $uid - contact's user id.
+   */
+  public function addContact($firstname, $lastname, $mail, $uid) {
   }
 
   /**
