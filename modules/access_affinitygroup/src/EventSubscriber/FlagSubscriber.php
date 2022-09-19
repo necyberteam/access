@@ -15,15 +15,17 @@ use Drupal\flag\Event\UnflaggingEvent;
 class FlagSubscriber implements EventSubscriberInterface {
 
   public function onFlag(FlaggingEvent $event) {
-    $flagging = $event->getFlagging();
-    $entity_nid = $flagging->getFlaggable()->id();
+    // $flagging = $event->getFlagging();
+    // $entity_nid = $flagging->getFlaggable()->id();
     // WRITE SOME CUSTOM LOGIC
+    // $current_user = \Drupal::currentUser();
+
   }
 
   public function onUnflag(UnflaggingEvent $event) {
-    $flagging = $event->getFlaggings();
-    $flagging = reset($flagging);
-    $entity_nid = $flagging->getFlaggable()->id();
+    // $flagging = $event->getFlaggings();
+    // $flagging = reset($flagging);
+    // $entity_nid = $flagging->getFlaggable()->id();
     // WRITE SOME CUSTOM LOGIC
   }
 
