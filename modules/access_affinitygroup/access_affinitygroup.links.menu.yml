@@ -1,0 +1,5 @@
+access_affinitygroup.constantcontact_form:
+  title: 'Constant Contact Token'
+  description: 'Authenticate with constant contact to get an api token'
+  route_name: access_affinitygroup.constantcontact_form
+  parent: 'system.admin_config_services'
