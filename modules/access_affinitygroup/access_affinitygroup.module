@@ -1,8 +1,10 @@
 <?php
 
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
+use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\user\Entity\User;
+use Drupal\Component\Utility\Xss;
 
 /**
  * @file
@@ -25,7 +27,9 @@ function access_affinitygroup_node_insert(EntityInterface $entity) {
     ];
     $post_data = json_encode($post_data);
     // Create constant contact list for affinity group
-    $cca->apiCall('/contact_lists ', $post_data, 'POST');
+    $created_list = $cca->apiCall('/contact_lists ', $post_data, 'POST');
+    $list_id = Xss::filter($created_list->list_id);
+    $entity->set('field_list_id', $list_id);
   }
 }
 
@@ -39,14 +43,13 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
       $current_user = \Drupal::currentUser();
       $user_id = $current_user->id();
       $user_detail = User::load($user_id);
-      $user_first_name = $user_detail->get('field_user_first_name')->getString();
-      $user_last_name = $user_detail->get('field_user_last_name')->getString();
-      $user_mail = $current_user->getEmail();
-
+      $user_cc_id = $user_detail->get('field_constant_contact_id')->getValue()[0]['value'];
+      //$list_id = $entity->get('field_list_id');
       $cca = new ConstantContactApi;
-      kint($cca->apiCall('/contacts'));
-      kint($user_mail);
+      $cc_user = $cca->apiCall("/contacts/$user_cc_id");
+      kint($entity);
       die();
+
     } else {
       $get_fields = $entity->getFields();
       $title = $entity->getTitle();
@@ -74,7 +77,9 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
       if (! $list_exists) {
         // Create Constant contact title with affinity
         // group title.
-        $cca->apiCall('/contact_lists ', $post_data, 'POST');
+        $created_list = $cca->apiCall('/contact_lists ', $post_data, 'POST');
+        $list_id = Xss::filter($created_list->list_id);
+        $entity->set('field_list_id', $list_id);
       }
     }
   }
@@ -109,6 +114,27 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
   }
 }
 
+/**
+ * Implements hook_user_login().
+ */
+function  access_affinitygroup_user_login(UserInterface $account) {
+  $current_user = \Drupal::currentUser();
+  $user_id = $current_user->id();
+  $user_detail = User::load($user_id);
+  $user_first_name = $user_detail->get('field_user_first_name')->getString();
+  $user_last_name = $user_detail->get('field_user_last_name')->getString();
+  $user_mail = $current_user->getEmail();
+
+  $cca = new ConstantContactApi;
+  $cca_user_id = $cca->addContact($user_first_name, $user_last_name, $user_mail, $user_id);
+
+  $user_detail->set('field_constant_contact_id', $cca_user_id);
+  $user_detail->save();
+}
+
+/**
+ * Implements hook_cron().
+ */
 function access_affinitygroup_cron() {
   // Setting this to run once a day, may need adjustment
   // if cron is run more frequently.

@@ -206,6 +206,19 @@ class ConstantContactApi {
    * @string $uid - contact's user id.
    */
   public function addContact($firstname, $lastname, $mail, $uid) {
+    $cc_contact = [
+      'email_address' => [
+        'address' => $mail,
+        'permission_to_send' => 'implicit'
+      ],
+      'first_name' => $firstname,
+      'last_name' => $lastname,
+      'create_source' => 'Account',
+    ];
+    $cc_contact = json_encode($cc_contact);
+    $new_contact = $this->apiCall('/contacts', $cc_contact, 'POST');
+
+    return $new_contact->contact_id;
   }
 
   /**
