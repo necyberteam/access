@@ -70,10 +70,9 @@ class TicketingSendEmailHandler extends WebformHandlerBase
         $to .= '@tickets.access-ci.org';
 
         if ($this->debug) {
-
             // FOR TESTING
             // $to .= ', jasperjunk@gmail.com, andrew@elytra.net';
-            $to .= ', jasper.amp@gmail.com';
+            $to = 'jasper.amp@gmail.com';
         }
 
         // build up the email params
@@ -114,7 +113,8 @@ class TicketingSendEmailHandler extends WebformHandlerBase
             \Drupal::messenger()->addStatus($msg);
         }
 
-        $body = (string) $this->getXMailMessageBody($data['problem_description'], $data['tag_names'], $from_email);
+        $body = (string) $this->getXMailMessageBody($data['problem_description'], $data['tag_names'], 
+            $data['suggested_tag'], $from_email);
         $params['body'] = $body;
 
         if ($this->debug) {
@@ -149,15 +149,51 @@ class TicketingSendEmailHandler extends WebformHandlerBase
             $msg = "There was a problem sending the email";
             \Drupal::messenger()->addWarning($msg);
         }
-
+        
         if ($this->debug) {
             $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'mail $result = ' . print_r($result, true);
             \Drupal::messenger()->addStatus($msg);
         }
+
+        // if user suggested a tag, send that to the support email
+        $new_tag = $data['suggested_tag'];
+
+        if (strlen(trim($new_tag)) > 0) {
+
+            $to = "access-support-website@tickets.access-ci.org";
+
+            if ($this->debug) {
+                // FOR TESTING
+                // $to .= ', jasperjunk@gmail.com, andrew@elytra.net';
+                $to = 'jasper.amp@gmail.com';
+            }
+
+            $params = [];
+
+            $params['to'] = $to;
+            $params['title'] = "request for new tag: $new_tag";
+            $params['body'] = "The user with email $from_email has suggested this new tag:  $new_tag";;
+
+            $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+
+            
+            if ($result === false || (array_key_exists('result', $result) && !$result['result'])) {
+                $msg = "There was a problem sending the email";
+                \Drupal::messenger()->addWarning($msg);
+            }
+            
+            if ($this->debug) {
+                $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'mail $result = ' . print_r($result, true);
+                \Drupal::messenger()->addStatus($msg);
+            }
+
+
+        }
+
     }
 
 
-    function getXMailMessageBody($description, $tags, $from_email)
+    function getXMailMessageBody($description, $tags, $suggested_tag, $from_email)
     {
         return twig_render_template(
             drupal_get_path('module', 'ticketing') . '/templates/ticketing-mail.html.twig',
@@ -165,6 +201,7 @@ class TicketingSendEmailHandler extends WebformHandlerBase
                 'theme_hook_original' => 'not-applicable',
                 'problem_description' => $description,
                 'tags' => $tags,
+                'suggested_tag' =>  $suggested_tag,
                 'email' => $from_email
             ]
         );
