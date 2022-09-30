@@ -1,6 +1,54 @@
 <?php
 
+use \Drupal\Core\Form\FormStateInterface;
 use \Drupal\node\Entity\Node;
+use \Drupal\user\Entity\User;
+
+/**
+ * Implements hook_form_alter().
+ */
+function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_access_news_edit_form') {
+    $form['#validate'][] = 'access_news_validate';
+  }
+}
+
+/**
+ * Custom validation callback.
+ */
+function access_news_validate(&$form, FormStateInterface $form_state) {
+  // administrator can assign ACCESS News to any Affinity Group
+  if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
+    return;
+  }
+  // Require that the person saving is an Affinity Group Coordinator
+  // if an Affinity Group is selected for ACCESS News.
+  $user = User::load(\Drupal::currentUser()->id());
+  $ag_node_array = $form_state->getValue('field_affinity_group_node');
+  // Valid values are arrays with non-null 'target-id' value
+  foreach ($ag_node_array as $ag_node) {
+    if (is_array($ag_node)) {
+      $nid = $ag_node['target_id'];
+      if ($nid) {
+        $authorized = FALSE;
+        $n = \Drupal\node\Entity\Node::load($nid);
+        // Load coordinator(s) for the Affinity Group
+        $coordinator_field = $n->get('field_coordinator');
+        if ($coordinator_field) {
+          $coordinators = $coordinator_field->getValue();
+          foreach ($coordinators as $coordinator) {
+            if ($coordinator['target_id'] == $user->get('uid')->value) {
+              $authorized = TRUE;
+            }
+          }
+        }
+      }
+      if (!$authorized) {
+        $form_state->setErrorByName('access_news', t('You are not a Coordinator for the ' . $n->get('title')->value . ' Affinity Group.'));
+      }
+    }
+  }
+}
 
 /**
  * Implements hook_node_presave().
