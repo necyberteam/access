@@ -1,5 +1,31 @@
 <?php
 
+use \Drupal\node\Entity\Node;
+
+/**
+ * Implements hook_node_presave().
+ */
+function access_news_node_presave(Node $node) {
+  $type = $node->bundle();
+  if ( $type == 'access_news' ) {
+    // Set Affinity Group taxonomy terms based on the Affinity Group node field
+    $ag_node_array = $node->get('field_affinity_group_node');
+    $node->set('field_affinity_group', NULL);
+    foreach ($ag_node_array as $ag_node) {
+      // Get the Affinity Group node
+      $nid = $ag_node->getValue()['target_id'];
+      $ag = \Drupal\node\Entity\Node::load($nid);
+      $name = $ag->get('title')->value;
+
+      // Get the term with the same name as the Affinity Group
+      $vid = 'affinity-group';
+      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => $name]);
+      $node->get('field_affinity_group')->appendItem(array_key_first($term));
+      // TODO: handle case where taxonomy term doesn't exist
+    }
+  }
+}
+
 /**
  * Implements hook_theme().
  */
