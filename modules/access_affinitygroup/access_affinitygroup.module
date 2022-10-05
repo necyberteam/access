@@ -10,8 +10,14 @@ use Drupal\Component\Utility\Xss;
  * @file
  * Module for affinity group.
  * 
- * Each affinity group (AG) has an associated Constant Contact list.
- * The list in Constant Contact is stored by the AG name, so relationship
+ * Each affinity group (AG) has a dedicated "List" in Constant Contact, and
+ * each user is a Constant Contact "Contact". 
+ * We add a user to CC when the user logs in, if they don't already have a
+ * constant contact id stored on the user form.  
+ * When a user Joins or Leaves an AG, we add or remove the user from
+ * the corresponding CC list.
+ * When an AG is edited or created, we add the list to CC if not already done.
+ * Note: The list in Constant Contact is stored by the AG name, so relationship
  * to CC list is broken if AG name changes.
  */
 
@@ -40,173 +46,111 @@ function access_affinitygroup_node_insert(EntityInterface $entity)
 
 /**
  * Implements hook_entity_presave(). 
+ * Handles either
+ * 1) User did Join on Affinity Group
+ * 2) Admin user saved Affinity Group form
  */
 function access_affinitygroup_entity_presave(EntityInterface $entity)
 { 
-  logdru("IN PRESAVE");
   
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
-    //kint("In AG");
-    logdru("IN TYPE=AG");
 
     if (method_exists($entity, 'getFlaggableType')) {
 
-      /* user did join the group */
-      logdru("IN FLAGGABLE");
-    
-      //kint("In flaggable");
-      //kint($entity);
-      
-      $current_user = \Drupal::currentUser();
-      $user_id = $current_user->id();
-            
-      $user_detail = User::load($user_id);
-      $user_cc_id = $user_detail->get('field_constant_contact_id')->getValue()[0]['value'];
-      
-      // todo: what if user has no cc id yet. need to add it here?      
-      //    kint($user_detail);
-      
-      // This entity is the flag (user join/unjoin) that corresponds to affinity group 
-      // We find the appropriate affinity group node, which contains a field with this entity id
+      // user did Join
       
       $group_id = $entity->get('entity_id')->getValue()[0]['value'];
-      //kint($group_id);
 
-//      joinOrLeaveList($group_id, $user_cc_id);  //put user stuff from top in here too
+      $postJSON = makeListMembershipJSON($group_id);
 
-      $query = \Drupal::entityQuery('node');
-      $node_ids = $query
-        ->condition('field_affinity_group', $group_id)
-        ->execute();
-        
-      //kint($node_ids);
-      $aval =  array_values($node_ids);
-      $nid = $aval[0];
-     
-      // todo: hangle err if list has no field_list_id. 
-      $ag = \Drupal\node\Entity\Node::load($nid);      
-      $list_cc_id = $ag->get('field_list_id')->getValue()[0]['value'];;
-          
-      logdru('list id: '.$list_cc_id);
-      logdru('user id: '.$user_cc_id);
-
-      if (empty($list_cc_id)) {
-        logdru('Missing Constant Contact List Id for this Affinity Group.');
-        return;
-      }
-      //x CC stores association user:contact list in each user. 
-      //x We get the user's contact list and add in the new list id
-      
-      $cca = new ConstantContactApi;
-      //$cc_user = $cca->apiCall("/contacts/$user_cc_id");
-      //kint($cc_user);
-      //die();
-
-      $list_array = [$list_cc_id];
-/*
-      $cc_contact = [
-        'email_address' => [
-          'address' => $mail,
-          'permission_to_send' => 'implicit'
-        ],
-        'first_name' => $firstname,
-        'last_name' => $lastname,
-        'create_source' => 'Account',
-      ];
-      */
-
-      $post_data = [
-        'source' => [
-          'contact_ids' => [$user_cc_id]
-        ],
-        'list_ids' =>  [$list_cc_id]
-      ];
-      $post_data = json_encode($post_data);
-      logdru($post_data);
-      //$cc_response = $cca->apiCall("/contacts/$cc_list_id", 'PUT');      
-      $cc_response = $cca->apiCall('/activities/add_list_memberships', $post_data, 'POST');
-      logdru($cc_response);
+      if (empty($postJSON)) {                
+        logdru("Can't add user to email list; check if user is missing Constant Contact ID.");        
+      } else {
+        $cca = new ConstantContactApi;
+        $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
+      }    
 
     } else {
-      logdru("In NOT AG!!!!!!!!!!!!!!!!!!!!!");
-      
-      // affinity group edit was saved by admin user
-      $get_fields = $entity->getFields();
-      $title = $entity->getTitle();
-      $summary = $get_fields['body']->summary;
-      // Api max is 255 characters.
-      $summary = (strlen($summary) > 255) ? substr($summary, 0, 255) : $summary;
-      $post_data = [
-        'name' => $title,
-        'favorite' => 0,
-        'description' => $summary
-      ];
-      $post_data = json_encode($post_data);
 
-      //kint($post_data);
-      
+      // affinity group edit was saved by admin user.
+      // If not already there, add list to constant contact.
+      // TODO - should we skip all this if list_id already set
+      // instead of checking for list of lists from CC?
+
+      // get all existing lists
+
       $cca = new ConstantContactApi;
       $lists = $cca->apiCall('/contact_lists ');
-      // here you can see all lists CC knows about along with their List IDs
+      if (empty($lists)) {
+        return;
+      }
+
+      //debug info: here you can see all lists CC knows about along with their List IDs
       //kint($lists);
-      
-      // TO DO: if we get error bc cc is not authorized, bail instead of trying to add to list again
-      // and resetting list id
 
       $list_exists = false;
       foreach ($lists->lists as $list) {
         if ($list->name == $title) {
-          // Constant Contact contains affinity group
-          // title in list.
           $list_exists = true;
           break;
         }
       }
 
       if (!$list_exists) {
-        logdru('CC List Item not found on list of lists from CC. Calling CC list create API');
 
-        // Create Constant contact title with affinity
-        // group title.
+        $get_fields = $entity->getFields();
+        $title = $entity->getTitle();
+        $summary = $get_fields['body']->summary;
+        // Api max is 255 characters.
+        $summary = (strlen($summary) > 255) ? substr($summary, 0, 255) : $summary;
+        $post_data = [
+          'name' => $title,
+          'favorite' => 0,
+          'description' => $summary
+        ];
+        $post_data = json_encode($post_data);
+      
+        // Create Constant contact list named with AG title
+
         $created_list = $cca->apiCall('/contact_lists ', $post_data, 'POST');
-        //kint($created_list);
         
-        $list_id = Xss::filter($created_list->list_id);
-        if (!empty($list_id)) {
-          logdru('Setting cc list id field in create list.');
-          $entity->set('field_list_id', $list_id);
-        } else {
-          logdru('Bad list id returned from CC api attempting to create list.');
+        if (!empty($created_list)) {        
+          $list_id = Xss::filter($created_list->list_id);
         }
-      }
+
+        if (!empty($list_id)) {
+            $entity->set('field_list_id', $list_id);
+        } else {
+            logdru('Bad list id returned from CC api attempting to create list.');
+        }
+      }      
     }
   }
 }
 
 /**
  * Implements hook_entity_delete().
+ * * Handles either
+ * 1) User did Leave on Affinity Group
+ * 2) Admin deleted Affinity Group
  */
 function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface $entity)
-{
-  kint ($entity);
-  kint('in delete');
-  
+{  
   $type = $entity->bundle();
-
-  kint($type);
-  $x = method_exists($entity, 'getFlaggableType');
-  kint('flag method exists : '. $x);
-  die();
-
+    
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {     
+     
+      $group_id = $entity->get('entity_id')->getValue()[0]['value'];
+     
+      $postJSON = makeListMembershipJSON($group_id, false);
 
-      // user did 'leave' on affinity group
-      
-      // call the modifyUserMembership(), same as add but remove api call.
-
+      if (!empty($postJSON)) {      
+        $cca = new ConstantContactApi;
+        $ccResponse = $cca->apiCall('/activities/remove_list_memberships', $postJSON, 'POST');        
+      }  
 
     } else {
 
@@ -234,18 +178,68 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
   }
 }
 
+/**
+ * Prepares json for api call that for adds or deletes CC user from 
+ * a CC list.  
+ * Called from code where we have the id, group_id from the Join/Leave flag
+ * corresponding to the Affinity Group. From this, need to find the
+ * node (AG) containing the CC list id. 
+ */
 
+function makeListMembershipJSON($group_id) 
+{
+  $current_user = \Drupal::currentUser();
+  $user_id = $current_user->id();
+        
+  $user_detail = User::load($user_id);
+  $user_cc_id = $user_detail->get('field_constant_contact_id')->getValue()[0]['value']; 
+
+  if (empty($user_cc_id)) {
+    return NULL;
+  }
+
+  $query = \Drupal::entityQuery('node');
+  $node_ids = $query
+    ->condition('field_affinity_group', $group_id)
+    ->execute();
+    
+  $aval =  array_values($node_ids);
+  $nid = $aval[0];
+
+  $ag = \Drupal\node\Entity\Node::load($nid);  
+
+  $fieldVal = $ag->get('field_list_id')->getValue();
+  if (!empty($fieldVal)) {   
+    $list_cc_id = $fieldVal[0]['value'];;
+  }
+    
+  if (empty($list_cc_id)) {
+    logdru('Missing Constant Contact List Id for this Affinity Group.');
+    return NULL;
+  }
+
+  $post_data = [
+    'source' => [
+      'contact_ids' => [$user_cc_id]
+    ],
+    'list_ids' =>  [$list_cc_id]
+  ];
+  $post_data = json_encode($post_data);
+  return $post_data;
+}
 
 /**
  * Implements hook_user_login().
+ * Add user to Constant Contact if we don't have a CC ID stored yet.
  */
-// ? should we check if they've logged on before? Could do this when they joing
-// aff group if no ccid?.  What if a certain user get cca err every time (why would they), logging on will take a longer time?
+
+// ? should we check if we've tried this before?  What if a certain user get cca err every time
+//(but what case would this be, idn...), logging on will take a longer time?
+
 function  access_affinitygroup_user_login(UserInterface $account)
 {
   $current_user = \Drupal::currentUser();
 
-  //kint($current_user);
   $user_id = $current_user->id();
   $user_detail = User::load($user_id);
 
@@ -260,24 +254,23 @@ function  access_affinitygroup_user_login(UserInterface $account)
     $user_first_name = $user_detail->get('field_user_first_name')->getString();
     $user_last_name = $user_detail->get('field_user_last_name')->getString();
     $user_mail = $current_user->getEmail();
-
-    logdru("Trying Add Contact (api)");
+    
     $cca = new ConstantContactApi;
     $cca_user_id = $cca->addContact($user_first_name, $user_last_name, $user_mail, $user_id);
-    //kint($cca_user_id);
-
-    if (!empty($cca_user_id)) {
-      logdru("SUCCESS new contact id. SETTING cca user id field");
+    
+    if (empty($cca_user_id)) {
+      //do we want to tell the user here that we were trying to create cc contact and could not?
+      // or just in debugging?
+    }else {
       $user_detail->set('field_constant_contact_id', $cca_user_id);
       $user_detail->save();
     }
   } else {
-    // just for debugging in early stages
-    logdru("Login and NOT attempting add of new constant contact id.");
+    // this else just for debugging in early stages
+    //logdru("Login and NOT attempting add of new constant contact id.");
   }
 
 }
-
 function logdru($logmsg)
 {
   $msg = basename(__FILE__) . ':' .  print_r($logmsg, true);
@@ -290,8 +283,49 @@ function access_affinitygroup_cron()
 {
   // Setting this to run once a day, may need adjustment
   // if cron is run more frequently.
-  if ((date('G', time()) == 15) && (date('i', time()) >= 0) && (date('i', time()) <= 60)) {
+  if ((date('G', time()) == 17) && (date('i', time()) >= 0) && (date('i', time()) <= 60)) {
     $cca = new ConstantContactApi;
     $cca->newToken();
   }
 }
+
+/** 
+ * Return error msg, or NULL if not error (in 200's)
+ * ??Perhaps we only check for 401 else just show code num
+ * 
+ * ??TODO prob existing function, for now use this
+*/
+  
+function getHttpErrMsg($httpCode) {
+
+    if ($httpCode < 300) {
+      return NULL;      
+    }
+
+    switch ($httpCode) {
+      case 400:	
+        $m = 'Bad request. Either the JSON was malformed or there was a data validation error.';
+        break;
+      case 401:
+        $m = 'The Access Token used is invalid.';
+        break;
+      case 403:
+        $m = 'Forbidden request. You lack the necessary scopes, you lack the necessary user privileges, or the application is deactivated.';
+        break;
+      case 409:
+        $m = 'Conflict. The resource you are creating or updating conflicts with an existing resource.';
+        break;
+      case 415:
+        $m = 'Unsupported Media Type; the payload must be in JSON format, and Content-Type must be application/json';
+        break;
+      case 500:	
+        $m = 'There was a problem with our internal service.';
+        break;
+      case 503:	
+        $m = 'Our internal service is temporarily unavailable.';
+        break;
+      default:
+        $m = 'HTTP error code: '. $http_code;
+    }
+    return 'Constant Contact: '.$m;
+  }

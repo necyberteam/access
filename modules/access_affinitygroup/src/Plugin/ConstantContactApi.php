@@ -126,11 +126,13 @@ class ConstantContactApi {
     // Make the call
     $result = curl_exec($ch);
     $result = json_decode($result);
-    
+
+    $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    logdru('New Token: API Response code: '.$httpCode);
     
     curl_close($ch);
 
-    logdru("New token - About to check error, $result->error is ".$result->error);
+    logdru("New token: About to check error, $result->error is ".$result->error);
 
     if ( !isset($result->error) ) {
       $this->setAccessToken($result->access_token);
@@ -138,7 +140,7 @@ class ConstantContactApi {
       \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
       \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
     } else {
-      logdru("About to do apiError");
+      logdru("New token: calling apiError");
 
       $this->apiError($result->error, $result->error_description);
     }
@@ -153,7 +155,7 @@ class ConstantContactApi {
     \Drupal::logger('access_affinitygroup')->error("$key: $message");
     \Drupal::messenger()->addMessage("$key: $message", 'error');
   }
-
+  
   /**
    * Make api call.
    * @param $endpoint - end of the URL api call.
@@ -161,6 +163,7 @@ class ConstantContactApi {
    * @param $type - POST or GET, defaults to GET.
    */
   public function apiCall($endpoint, $post_data=null, $type='GET') {
+
     $access_token = $this->accessToken;
     // Use cURL to get a new access token and refresh token
     $ch = curl_init();
@@ -198,41 +201,36 @@ class ConstantContactApi {
     
     // Make the call
     $returned_result = curl_exec($ch);       
+    $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    
+    $errMsg = getHttpErrMsg($httpCode);
+        
+    if (!empty($errMsg)) {
+      logdru($errMsg);    
+      return NULL;      
+    }
+
+    if (empty($returned_result)) {
+      logdru("Error calling Constant Contact - no returned result");
+      return NULL;
+    }
+
     $result = json_decode($returned_result);
     
-    curl_close($ch);
-    //kint($type);
-    //kint($returned_result);
-    //kint($result);
-    //die();
-
-    logdru("API CALL done - About to check error:");
+    //logdru('API call response code: '.$httpCode);
     //logdru("returned_result: ". $returned_result);
-
-    // note - when cc not authorized, $result->error and ->error_key both= "unauthorized"
-    // (eg token was not refreshed bc cron did not run)
-    // this following code crashes in this case...
-    
+    //:returned_result: {"error_key":"unauthorized","error_message":"Unauthorized"}
+    curl_close($ch);
+          
     // looking for error_key; that field is not present if there is no error.
     if ( preg_match('/error_key/', $returned_result, $matches, PREG_OFFSET_CAPTURE) ) {
-      
-      logdru("ERROR. preg_match true, matches is... ");
-      //$avals =  array_values($matches); 
-      //logdru($avals[0]);
-
       foreach ($result as $error) {
-
-        //kint("in foreach");
-        //kint ($error);
-        logdru("calling api error from API CALL");
         $this->apiError($error->error_key, $error->error_message);
-        logdru("after api error from API CALL");
       }
     }
 
     return $result;
   }
-
 
   /**
    * Add user to constant contact emails.
@@ -258,24 +256,11 @@ class ConstantContactApi {
     $cc_contact = json_encode($cc_contact);
 
     $new_contact = $this->apiCall('/contacts', $cc_contact, 'POST');
-    //kint($new_contact);
-    //kint(array_values($new_contact));
-    $av = (array_values($new_contact));
-    //kint($av[0]->error);
-    //kint    ($av[0]->error_key);
-    //kint($new_contact->error_key);
-    //kint($new_contact->error);
-
-    // have to add this bc err crash when contact already exists. err that we don't need to show or log.
-    // bc new_contact->contact_id is non-exist
-
-    if ( isset($av[0]->error_key) ) {      
-      logdru("add contact returning 0: ".$av[0]->error_key);
+    if (empty($new_contact)) {
       return 0;
-    } 
-    
-    logdru("add contact returning ".$new_contact->contact_id);
-    return $new_contact->contact_id;    
+    } else {      
+      return $new_contact->contact_id;    
+    }
   }
 
   /**
@@ -339,10 +324,4 @@ class ConstantContactApi {
     curl_close($ch);
     return $result;
   }
-
-  function logdru($logmsg)
-  {
-    $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' .  print_r($logmsg, true);
-    \Drupal::messenger()->addStatus($msg);
-  }    
 }
