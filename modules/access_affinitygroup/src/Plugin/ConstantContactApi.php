@@ -79,8 +79,6 @@ class ConstantContactApi {
     $returned_token = $this->getAccessToken($redirectURI, $clientId, $clientSecret, $code);
     $returned_token = json_decode($returned_token);
 
-    logdru("Init token - About to check error, $result->error is ".$result->error);
-
     if ( !isset($returned_token->error) ) {
       $this->setAccessToken($returned_token->access_token);
       $this->setRefreshToken($returned_token->refresh_token);
@@ -127,12 +125,10 @@ class ConstantContactApi {
     $result = curl_exec($ch);
     $result = json_decode($result);
 
-    $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    logdru('New Token: API Response code: '.$httpCode);
-    
+    //$httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    // todo: might want to check code here too in case result is not formed
+        
     curl_close($ch);
-
-    logdru("New token: About to check error, $result->error is ".$result->error);
 
     if ( !isset($result->error) ) {
       $this->setAccessToken($result->access_token);
@@ -140,8 +136,7 @@ class ConstantContactApi {
       \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
       \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
     } else {
-      logdru("New token: calling apiError");
-
+      
       $this->apiError($result->error, $result->error_description);
     }
   }
@@ -201,25 +196,22 @@ class ConstantContactApi {
     
     // Make the call
     $returned_result = curl_exec($ch);       
-    $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
     
+    $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);    
     $errMsg = getHttpErrMsg($httpCode);
         
     if (!empty($errMsg)) {
-      logdru($errMsg);    
+      showStatus($errMsg);    
       return NULL;      
     }
 
     if (empty($returned_result)) {
-      logdru("Error calling Constant Contact - no returned result");
+      showStatus("Error calling Constant Contact: no result.");
       return NULL;
     }
 
     $result = json_decode($returned_result);
     
-    //logdru('API call response code: '.$httpCode);
-    //logdru("returned_result: ". $returned_result);
-    //:returned_result: {"error_key":"unauthorized","error_message":"Unauthorized"}
     curl_close($ch);
           
     // looking for error_key; that field is not present if there is no error.
