@@ -1,0 +1,8 @@
+access_affinitygroup.constantcontact_form:
+  path: '/admin/services/constantcontact-token'
+  defaults:
+    _form: '\Drupal\access_affinitygroup\Form\ConstantContact'
+    _title: 'Constant Contact setup token'
+  requirements:
+    _role: 'administrator'
+
