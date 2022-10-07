@@ -104,12 +104,15 @@
   const showOutages = async function showOutages(outageName, endpointUrl) {
     const response = await fetch(endpointUrl)
     const outages = await response.json()
-    //console.log(outages)
+    {# console.log(outages) #}
 
     if (outages.length > 0) {
       const noOutages = document.getElementById(`no-${outageName}-outages`)
       noOutages.style.display = 'none' 
       const outagesTable = document.getElementById('outages-' + outageName)
+      const options = {
+        timeZoneName: 'short'
+      }
       jQuery(outagesTable).DataTable({
         data: outages,
         columns: [
@@ -123,12 +126,12 @@
           { data: 'OutageType' },
           { data: 'OutageStart',
             render: function ( data, type, row, meta ) {
-              return type === 'display' ? new Date(data).toLocaleString() : data;
+              return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
             } 
           },
           { data: 'OutageEnd',
             render: function ( data, type, row, meta ) {
-              return type === 'display' ? new Date(data).toLocaleString() : data;
+              return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
             }
           }
         ],
@@ -155,6 +158,9 @@
     const loadingOutage = document.getElementById('loading-outage')
     loadingOutage.style.display = 'none' 
     const outageTable = document.getElementById('outage')
+    const options = {
+      timeZoneName: 'short'
+    }
     jQuery(outageTable).DataTable({
       data: [outage],
       columns: [
@@ -164,12 +170,12 @@
         { data: 'OutageType' },
         { data: 'OutageStart',
           render: function ( data, type, row, meta ) {
-            return type === 'display' ? new Date(data).toLocaleString() : data;
+            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
           } 
         },
         { data: 'OutageEnd',
           render: function ( data, type, row, meta ) {
-            return type === 'display' ? new Date(data).toLocaleString() : data;
+            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
           }
         }
       ],
