@@ -158,7 +158,7 @@ class ConstantContactApi {
    * @param $type - POST or GET, defaults to GET.
    */
   public function apiCall($endpoint, $post_data=null, $type='GET') {
-kint($endpoint);
+
     $access_token = $this->accessToken;
     // Use cURL to get a new access token and refresh token
     $ch = curl_init();
@@ -194,13 +194,12 @@ kint($endpoint);
 
     // Set method and to expect response
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    kint($ch);
+    
     // Make the call
-    $returned_result = curl_exec($ch);       
-    kint($returned_result);
+    $returned_result = curl_exec($ch);           
     
     $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);    
-    kint($httpCode);
+    
     $errMsg = getHttpErrMsg($httpCode);
         
     if (!empty($errMsg)) {
