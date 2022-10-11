@@ -158,7 +158,7 @@ class ConstantContactApi {
    * @param $type - POST or GET, defaults to GET.
    */
   public function apiCall($endpoint, $post_data=null, $type='GET') {
-
+kint($endpoint);
     $access_token = $this->accessToken;
     // Use cURL to get a new access token and refresh token
     $ch = curl_init();
@@ -177,23 +177,30 @@ class ConstantContactApi {
     $authorization = 'Authorization: Bearer ' . $credentials;
     curl_setopt($ch, CURLOPT_HTTPHEADER, array($authorization, 'Content-Type: application/json'));
     
-    if ($type == 'POST') {
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
-      curl_setopt($ch, CURLOPT_POST, true);
-    }
+    if ($type != 'GET') {
 
-    if ($type == 'DELETE') {
       curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+      
+      if ($type == 'POST') {      
+                curl_setopt($ch, CURLOPT_POST, true);
+
+      } else if ($type == 'PUT') { 
+        curl_setopt ($ch, CURLOPT_CUSTOMREQUEST, 'PUT');        
+
+      } else if ($type == 'DELETE') {      
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");      
+      }
     }
 
     // Set method and to expect response
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    
+    kint($ch);
     // Make the call
     $returned_result = curl_exec($ch);       
+    kint($returned_result);
     
     $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);    
+    kint($httpCode);
     $errMsg = getHttpErrMsg($httpCode);
         
     if (!empty($errMsg)) {

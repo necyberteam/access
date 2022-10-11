@@ -61,6 +61,10 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
       // user did Join
       
       $group_id = $entity->get('entity_id')->getValue()[0]['value'];
+      if ($group_id == 685) {
+        testTheMail();
+        return;        
+      }     
 
       $postJSON = makeListMembershipJSON($group_id);
 
@@ -144,6 +148,10 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
     if (method_exists($entity, 'getFlaggableType')) {     
      
       $group_id = $entity->get('entity_id')->getValue()[0]['value'];
+      if ($group_id == 685) {
+        testTheMail();
+        return;        
+      }
      
       $postJSON = makeListMembershipJSON($group_id, false);
 
@@ -275,6 +283,13 @@ function showStatus($logmsg)
 {  
   \Drupal::messenger()->addStatus($logmsg);
 }    
+
+function logdru($logmsg)
+{
+  $msg = basename(__FILE__) . ':' .  print_r($logmsg, true);
+  \Drupal::messenger()->addStatus($msg);
+}    
+
 /**
  * Implements hook_cron().
  */
@@ -322,7 +337,182 @@ function getHttpErrMsg($httpCode) {
         $m = 'Our internal service is temporarily unavailable.';
         break;
       default:
-        $m = 'HTTP error code: '. $http_code;
+        $m = 'HTTP error code: '. $httpCode;
     }
     return 'Constant Contact: '.$m;
   }
+
+function testTheMail() {
+  logdru("TestTheMail");  
+  /*
+  In order to successfully send an email to contacts, you must:
+
+ Make a POST request to create an email campaign and campaign activities.
+ Make a GET request to retrieve the primary_email email campaign activity.
+ Make a PUT request to update the email campaign activity and add recipients.
+ Make a POST request to schedule the email campaign activity.
+ */
+  //$ccResponse = createEmailCampaign();
+  
+  //if (!empty($ccResponse)) {
+//    $campaignId = $ccResponse->campaign_id;
+    //logdru($campaignId);
+  //  $campaignActivityId = $ccResponse->campaign_activites[0]->campaign_activity_id;
+    //logdru($campaignActivityId);
+
+    // marigold 7
+    $campaignActivityId = '4e5b5ccf-3eab-4bbe-ba7e-558e39810661';
+    $campaignId = '2cf34668-e8f7-43e9-84a6-0abcfe544166';
+
+    kint("calling send");
+    sendEmailCampaign($campaignId, $campaignActivityId);
+  kint('done sent');
+  //}
+  
+
+}
+
+// return post data; need for campaign id and activiy id 
+function createEmailCampaign() 
+{
+
+  $emailHtml = "<html><body>[[trackingImage]] <a href=\"http://www.constantcontact.com\">Visit Aruba for Pie!</a> </body></html>";
+
+  $postData = [
+    'name' => 'Marigold Bakery 7',
+    'email_campaign_activities' => [
+      [
+      'format_type' => 5,
+      'from_name'=> 'Manny Piemaker',
+      'from_email'=> 'ingmann33@gmail.com',
+      'reply_to_email'=> 'ingmann33@gmail.com',
+      'subject'=> 'Daily baking newsletter',
+      'preheader'=> 'CC hey tqi new email',
+      'html_content' => $emailHtml
+      ]
+    ]    
+  ];
+  // This code works to create. Need a new "name" for each campaign. 
+  // marigold 4: 
+/*  
+?public campaign_activity_id -> string (36) "aad760a7-af30-4220-8e14-74e721e35fd2"
+?public role -> string (13) "primary_email"
+??1 => stdClass (2)
+Properties (2)
+?public campaign_activity_id -> string (36) "940c9385-3218-450a-b969-caaac7f37630"
+?public role -> string (9) "permalink"
+?public campaign_id -> string (36) "53220856-57d0-41f1-b620-d5148d007688"
+*/
+  // could include addr here but don't have to, uses addr on record for footer addres in email
+
+  
+
+  $postData = json_encode($postData);
+  //kint($postData);
+  $cca = new ConstantContactApi;
+  $ccResponse = $cca->apiCall('/emails', $postData, 'POST');
+
+  return $ccResponse;
+}
+/* marigold 7
+  $returned_result string (422) 
+  "{"campaign_activities":
+    [{"campaign_activity_id":"4e5b5ccf-3eab-4bbe-ba7e-558...
+  Json (8)Contents
+  ⇄⧉campaign_activities => array (2)
+  Table (2)Contents (2)
+  campaign_activity_id	role
+  0	4e5b5ccf-3eab-4bbe-ba7e-558e39810661	primary_email
+  1	f934ec15-393d-4aaf-b5c5-ebbabe368914	permalink
+  ⇄campaign_id => string (36) "2cf34668-e8f7-43e9-84a6-0abcfe544166"
+  ⇄created_at => string (24) "2022-10-11T15:20:25.992Z"
+  ⇄current_status => string (5) "Draft"
+  ⇄name => string (17) "Marigold Bakery 7"
+  ⇄type => string (17) "CUSTOM_CODE_EMAIL"
+  ⇄type_code => integer 26
+  ⇄updated_at => string (24) "2022-10-11T15:20:25.992Z"
+*/
+
+function sendEmailCampaign($campaignId, $campaignActivityId) 
+{
+  // first, get the activity object 
+  $sent = false;
+  $cca = new ConstantContactApi;
+  $ccActivity = $cca->apiCall("/emails/activities/$campaignActivityId");
+
+  kint($ccActivity);
+
+  if (!empty($ccActivity)) {
+    
+    // update activity obj with the destination cc email lists
+
+    $agListId = '23223746-48c4-11ed-a81f-fa163e52f1a1'; // tinaDestTest CC list
+    //$ccActivity['contact_list_ids'] = array($agListId);      // array with list_id from each group to receive news
+    $ccActivity->contact_list_ids = array($agListId);      // array with list_id from each group to receive news
+    
+    kint($ccActivity);
+    kint("about to encode and call");
+    $ccActivity = json_encode($ccActivity);
+    kint($ccActivity);
+    $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId", $ccActivity, 'PUT');
+    kint($ccResponse);
+    
+
+    if (!empty($ccResponse)) {
+      // finally, send it, scheduled with 0 signifying now.
+ 
+      $schedule = array('scheduled_date'=>'0');  
+      $schedule = json_encode($schedule);
+      // comment out for now since I have limited free test email sends
+//      $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
+      $sent = true;
+    }   
+  }
+  if ($sent) {
+    showStatus("News item emails sent to affinity groups.");
+  } else {
+    showStatus("Email error while trying to send new items to affinity groups.");
+  }
+}
+
+  /*
+  $postData = [
+    'name' => 'Marigold Bakery 7',
+    'email_campaign_activities' => [
+      [
+      'format_type' => 5,
+      'from_name'=> 'Manny Piemaker',
+      'from_email'=> 'ingmann33@gmail.com',
+      'reply_to_email'=> 'ingmann33@gmail.com',
+      'subject'=> 'Daily baking newsletter',
+      'preheader'=> 'CC hey tqi new email',
+      'html_content' => $emailHtml
+      ]
+    ]    
+  ];
+  $postData = json_encode($postData);
+  //kint($postData);
+  $cca = new ConstantContactApi;
+  $ccResponse = $cca->apiCall('/emails', $postData, 'POST');
+
+  return $ccResponse;
+  */
+
+/*
+activity return looks like this
+{
+  "campaign_activity_id": "4e5b5ccf-3eab-4bbe-ba7e-558e39810661",
+  "campaign_id": "2cf34668-e8f7-43e9-84a6-0abcfe544166",
+  "role": "primary_email",
+  "contact_list_ids": [],
+  "segment_ids": [],
+  "current_status": "DRAFT",
+  "format_type": 5,
+  "from_email": "ingmann33@gmail.com",
+  "from_name": "Manny Piemaker",
+  "reply_to_email": "ingmann33@gmail.com",
+  "subject": "Daily baking newsletter",
+  "preheader": "CC hey tqi new email"
+}
+*/
+
