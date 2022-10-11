@@ -91,9 +91,10 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
       }
 
       //debug info: here you can see all lists CC knows about along with their List IDs
-      //kint($lists);
-
+      
       $list_exists = false;
+      $title = $entity->getTitle();
+      
       foreach ($lists->lists as $list) {
         if ($list->name == $title) {
           $list_exists = true;
@@ -103,8 +104,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
 
       if (!$list_exists) {
 
-        $get_fields = $entity->getFields();
-        $title = $entity->getTitle();
+        $get_fields = $entity->getFields();        
         $summary = $get_fields['body']->summary;
         // Api max is 255 characters.
         $summary = (strlen($summary) > 255) ? substr($summary, 0, 255) : $summary;
