@@ -11,7 +11,7 @@ use \Drupal\user\Entity\User;
  * Implements hook_form_alter().
  */
 function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'node_access_news_edit_form') {
+  if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form') {
     // Only allow these roles to publish ACCESS News
     // Default is for ACCESS News to be unpblished.
     $allowed_roles = ['administrator'];
