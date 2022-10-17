@@ -65,7 +65,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
       $form['field_project_deliverables']['#access'] = FALSE;
-      $form['field_mileston']['#access'] = FALSE;
+      $form['group_milestones_group']['#access'] = FALSE;
+      $form['group_launch_details_group']['#access'] = FALSE;
+      $form['field_email_user']['#access'] = FALSE;
       $form['field_milestone_description']['#access'] = FALSE;
       $form['field_milestone_completion_date']['#access'] = FALSE;
       $form['field_milestone_actual_date']['#access'] = FALSE;
