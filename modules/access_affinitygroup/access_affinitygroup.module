@@ -368,6 +368,30 @@ function getHttpErrMsg($httpCode) {
   Make a PUT request to update the email campaign activity and add recipients.
   Make a POST request to schedule the email campaign activity.
  */
+
+ // 2nd 2 args are arrays
+function emailToAffinityGroups($emailText, $emailTitle, $ccListIds, $agNames) {
+  
+  // todo = mkae the html here.
+//showStatus("IN EMAIL");
+  $ccResponse = setupEmailCampaign($emailText, $emailTitle);
+  //kint ($ccResponse);
+
+  if (!empty($ccResponse)) {
+
+    $campaignId = $ccResponse->campaign_id;
+    $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
+
+    // marigold 7
+    //$campaignActivityId = '4e5b5ccf-3eab-4bbe-ba7e-558e39810661';
+    //$campaignId = '2cf34668-e8f7-43e9-84a6-0abcfe544166';
+    
+    sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds);
+  }
+
+
+}
+/*
 function testTheMail() {
   logdru("TESTING THE EMAIL SEND.");  
   
@@ -386,25 +410,28 @@ function testTheMail() {
     sendEmailCampaign($campaignId, $campaignActivityId);
   }
 }
+*/
 
 // Create the Constant Contact email campaign, which is the initial setup. 
 // Nothing is sent at this point. Returns the response which included the 
 // campaign id and campaign activity id needed for step leading to send.
-function createEmailCampaign() 
-{
+function setupEmailCampaign($emailText, $emailTitle) {
 
-  $emailHtml = "<html><body>[[trackingImage]] <a href=\"http://www.constantcontact.com\">Visit NJ for Pie!</a> </body></html>";
+  //$emailHtml = "<html><body>[[trackingImage]] <a href=\"http://www.constantcontact.com\">Visit NJ for Pie!</a> </body></html>";
+  $emailHtml = "<html><body>[[trackingImage]]".$emailText."</body></html>";
 
+  $campaignName = uniqid('Access-news', true);
+  // unique name for campaign
   $postData = [
-    'name' => 'Marigold Bakery Delish 10',
+    'name' => $campaignName,
     'email_campaign_activities' => [
       [
       'format_type' => 5,
-      'from_name'=> 'Yolanda Queen of the Pies',
+      'from_name'=> 'Access Support',
       'from_email'=> 'ingmann33@gmail.com',
       'reply_to_email'=> 'ingmann33@gmail.com',
-      'subject'=> 'Daily baking newsletter delish 10',
-      'preheader'=> 'CC preheader 10 with Yolanda',
+      'subject'=> $emailTitle,
+      'preheader'=> $emailTitle,
       'html_content' => $emailHtml
       ]
     ]    
@@ -422,7 +449,7 @@ function createEmailCampaign()
 // Take the campaign and campaign activity ids from the campaign setup api call, 
 // set up the recipient lists, and finally, schedule for immediate sendoff.
 
-function sendEmailCampaign($campaignId, $campaignActivityId) 
+function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) 
 {
   // first, get the activity object 
   $sent = false;
@@ -434,14 +461,17 @@ function sendEmailCampaign($campaignId, $campaignActivityId)
     // update activity obj with the destination cc email lists in 
     // an array with list_id from each AG group to receive news
 
-    $agListId = '23223746-48c4-11ed-a81f-fa163e52f1a1'; // tinaDestTest CC list; replace this with affinity group list_ids
-    $ccActivity->contact_list_ids = array($agListId);      
+    // test: tinaDestTest CC list;
+    //$agListId = '23223746-48c4-11ed-a81f-fa163e52f1a1'; 
+    //$ccActivity->contact_list_ids = array($agListId);      
+
+    $ccActivity->contact_list_ids = $ccListIds;      
     
     $ccActivity = json_encode($ccActivity);
     $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId", $ccActivity, 'PUT');
 
     if (!empty($ccResponse)) {
-      // finally, send it, scheduled with 0 signifying now.
+      // finally, send it, scheduled with 0 signifying: now.
  
       $schedule = array('scheduled_date'=>'0');  
       $schedule = json_encode($schedule);
