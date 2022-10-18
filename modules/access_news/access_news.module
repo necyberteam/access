@@ -1,42 +1,30 @@
 <?php
 
-use \Drupal\Component\Utility\Xss;
+use \Drupal\Core\Entity\EntityInterface;
 use \Drupal\Core\Form\FormStateInterface;
-use \Drupal\Core\Link;
-use \Drupal\Core\Url;
 use \Drupal\node\Entity\Node;
 use \Drupal\user\Entity\User;
 
 /**
  * Implements hook_form_alter().
+ * 
+ * Provide custom validation for ACCESS New and Recurring Events
  */
 function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form') {
-    // Only allow these roles to publish ACCESS News
-    // Default is for ACCESS News to be unpblished.
-    $allowed_roles = ['administrator'];
-    $current_user = \Drupal::currentUser();
-    $roles = $current_user->getRoles();
-    if (!array_intersect($allowed_roles, $roles)) {
-      // Set status field to readonly if not authorized to publish
-      // TODO: not currently working.
-      // Field isn't displayed for non-admins. Not readonly for admins.
-      $form['status']['#attributes'] = ['readonly' => 'readonly'];
-    }
-    $form['status']['#group'] = 'content';
-
+  if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form' || $form_id == 'eventseries_default_add_form' || $form_id == 'eventseries_default_edit_form') {
     $form['#validate'][] = 'access_news_validate';
   }
 }
 
 /**
  * Custom validation callback.
+ * 
+ * Require that the person adding an Affinity Group
+ * is a Coordinator of that Affinity Group.
+ * 
+ * Also, check that the Affinity Group taxonomy term exists.
  */
 function access_news_validate(&$form, FormStateInterface $form_state) {
-  // administrator can assign ACCESS News to any Affinity Group
-  if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
-    return;
-  }
   // Require that the person saving is an Affinity Group Coordinator
   // if an Affinity Group is selected for ACCESS News.
   $user = User::load(\Drupal::currentUser()->id());
@@ -48,16 +36,21 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
       if ($nid) {
         $authorized = FALSE;
         $n = \Drupal\node\Entity\Node::load($nid);
-        // Load coordinator(s) for the Affinity Group
-        $coordinator_field = $n->get('field_coordinator');
-        if ($coordinator_field) {
-          $coordinators = $coordinator_field->getValue();
-          foreach ($coordinators as $coordinator) {
-            if ($coordinator['target_id'] == $user->get('uid')->value) {
-              $authorized = TRUE;
+        // administrator can assign ACCESS News to any Affinity Group
+        if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
+          $authorized = TRUE;
+        } else {
+          // Load coordinator(s) for the Affinity Group
+          $coordinator_field = $n->get('field_coordinator');
+          if ($coordinator_field) {
+            $coordinators = $coordinator_field->getValue();
+            foreach ($coordinators as $coordinator) {
+              if ($coordinator['target_id'] == $user->get('uid')->value) {
+                $authorized = TRUE;
+              }
             }
           }
-        }
+        } 
         // Check that the Affinity Group term exists
         $name = $n->get('title')->value;
         $vid = 'affinity-group';
@@ -65,9 +58,9 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
         if (!$term) {
           $form_state->setErrorByName('access_news', t('The Affinity Group taxonomy term ' . $name . ' does not exist. Please contact an administrator.'));
         }
-      }
-      if (!$authorized) {
-        $form_state->setErrorByName('access_news', t('You are not a Coordinator for the ' . $n->get('title')->value . ' Affinity Group.'));
+        if (!$authorized) {
+          $form_state->setErrorByName('access_news', t('You are not a Coordinator for the ' . $n->get('title')->value . ' Affinity Group.'));
+        }
       }
     }
   }
@@ -75,115 +68,81 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
 
 /**
  * Implements hook_node_presave().
+ * 
+ * Set the Affinity Group taxonomy term based on the 
+ * Affinity Group node so people only have to select it once.
  */
 function access_news_node_presave(Node $node) {
   $type = $node->bundle();
   if ( $type == 'access_news' ) {
-    // Set Affinity Group taxonomy terms based on the Affinity Group node field
-    $ag_node_array = $node->get('field_affinity_group_node');
-    $node->set('field_affinity_group', NULL);
-    foreach ($ag_node_array as $ag_node) {
-      // Get the Affinity Group node
-      $nid = $ag_node->getValue()['target_id'];
-      $ag = \Drupal\node\Entity\Node::load($nid);
-      $name = $ag->get('title')->value;
-      // Get the term with the same name as the Affinity Group
-      $vid = 'affinity-group';
-      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => $name]);
-      $node->get('field_affinity_group')->appendItem(array_key_first($term));
-    }
+    update_affinity_group($node);
+  }
+}
+
+/**
+ * Implements hook_entity_presave().
+ * 
+ * Set the Affinity Group taxonomy term based on the 
+ * Affinity Group node so people only have to select it once.
+ */
+function access_news_entity_presave(EntityInterface $entity) {
+  $type = $entity->getEntityTypeId();
+  if ( $type == 'eventseries' ) {
+    update_affinity_group($entity);
+  }
+}
+
+/**
+ * Set Affinity Group taxonomy terms based on the Affinity Group node field
+ */
+function update_affinity_group($node) {
+  $ag_node_array = $node->get('field_affinity_group_node');
+  $node->set('field_affinity_group', NULL);
+  foreach ($ag_node_array as $ag_node) {
+    // Get the Affinity Group node
+    $nid = $ag_node->getValue()['target_id'];
+    $ag = \Drupal\node\Entity\Node::load($nid);
+    $name = $ag->get('title')->value;
+    // Get the term with the same name as the Affinity Group
+    $vid = 'affinity-group';
+    $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => $name]);
+    $node->get('field_affinity_group')->appendItem(array_key_first($term));
   }
 }
 
 /**
  * Implements hook_node_insert().
+ * 
+ * Provide message that approval is required
  */
 function access_news_node_insert(Node $node) {
   $type = $node->bundle();
   if ($type == 'access_news') {
-    // Send admins a message if an ACCESS News node is created  
-    // and needs approval for publication.
     if (!$node->isPublished()) {
-      $nid = $node->id();
-      $title = Xss::filter($node->gettitle());
-      access_news_admin_email($nid, $title);
-      $message = t('Thank you for submitting your news. News items require approval by an admin to be published.');
-      \Drupal::messenger()->addMessage($message);
+      $allowed_roles = ['administrator', 'affinity_group_leader'];
+      if (!in_array($allowed_roles, \Drupal::currentUser()->getRoles())) {
+        $message = t('Thank you for submitting your news. Please change the state to "Ready for Review" when you would like to publish it.');
+        \Drupal::messenger()->addMessage($message);
+      }
     }
   }
 }
 
-
 /**
- * Build access_news admin Email.
+ * Implements hook_entity_insert().
+ * 
+ *  * Provide message that approval is required
  */
-function access_news_admin_email($nid, $title) {
-  $options = ['absolute' => TRUE];
-  $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
-  $body['string'] = [
-    '#type' => 'inline_template',
-    '#template' => '<p>{{ intro }}<p>
-    <p>{{ link }}</p>',
-    '#context' => [
-      'intro' => t('An ACCESS News post has been created:'),
-      'link' => Link::fromTextAndUrl($title, $here)->toString(),
-    ],
-  ];
-  // Get all user emails with the match_pm role.
-  $ids = \Drupal::entityQuery('user')
-    ->condition('status', 1)
-    ->condition('roles', 'match_pm')
-    ->execute();
-  $users = User::loadMultiple($ids);
-  $email = '';
-  $user_count = count($users);
-  $iterate = 0;
-  foreach($users as $user){
-    $iterate++;
-    $email .= $user->get('mail')->getString();
-    if ($user_count != $iterate) {
-      $email .= ",";
+function access_news_entity_insert(EntityInterface $entity) {
+  $type = $entity->getEntityTypeId();
+  if ( $type == 'eventseries' ) {
+    if (!$entity->isPublished()) {
+      $allowed_roles = ['affinity_group_leader'];
+      if (!in_array($allowed_roles, \Drupal::currentUser()->getRoles())) {
+        $message = t('Thank you for submitting your event. Please change the state to "Ready for Review" when you would like to publish it.');
+        \Drupal::messenger()->addMessage($message);
+      }
     }
-  }
-  $current_user = User::load(\Drupal::currentUser()->id());
-  $env = getenv('PANTHEON_ENVIRONMENT');
-  if ($env == 'live') {
-    $to_email = $email;
-  }
-  else {
-    $to_email = $current_user->getEmail();
-  }
-  $render_service = \Drupal::service('renderer');
-  $params = [];
-  $params['to'] = $to_email;
-  $params['body'] = $render_service->render($body);
-  $params['title'] = "ACCESS News: $title";
-  access_news_send('access-news-admin-update', $params);
-}
-
-/**
- * Send email.
- */
-function access_news_send($key, $params) {
-  $to = $params['to'];
-  $langcode = \Drupal::currentUser()->getPreferredLangcode();
-  $send = TRUE;
-  $module = 'access_news';
-  $mailManager = \Drupal::service('plugin.manager.mail');
-  $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
-  return $result;
-}
-
-/**
- * Implements hook_mail().
- */
-function access_news_mail($key, &$message, $params) {
-  switch ($key) {
-  case 'access-news-admin-update':
-    $message['from'] = \Drupal::config('system.site')->get('mail');
-    $message['subject'] = $params['title'];
-    $message['body'][] = $params['body'];
-    break;
   }
 }
 
