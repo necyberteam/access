@@ -72,6 +72,10 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
       // which we need to build the JSON to send to api. 
 
       $entityId = $entity->get('entity_id')->getValue()[0]['value'];
+      //if ($entityId == 685) {
+      //  testTheMail();
+      //  return;        
+      //} 
 
       $postJSON = makeListMembershipJSON($entityId);
 
@@ -156,8 +160,12 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
      
       // user did Leave AG. This flag entity id is used to find the
       // AG node and the list id within the node for json to send to api. 
-
+      
       $entityId = $entity->get('entity_id')->getValue()[0]['value'];
+      //if ($entityId == 685) {
+      //  testTheMail();
+      //  return;        
+      //}     
      
       $postJSON = makeListMembershipJSON($entityId, false);
 
@@ -286,10 +294,19 @@ function  access_affinitygroup_user_login(UserInterface $account)
   }
 
 }
+
 function showStatus($logmsg)
 {  
   \Drupal::messenger()->addStatus($logmsg);
 }    
+
+//testing only
+function logdru($logmsg)
+{
+  $msg = basename(__FILE__) . ':' .  print_r($logmsg, true);
+  \Drupal::messenger()->addStatus($msg);
+}    
+
 /**
  * Implements hook_cron().
  * Refreshes the authorization. If not run, token expires and we'll get
@@ -343,3 +360,139 @@ function getHttpErrMsg($httpCode) {
     }
     return 'Constant Contact: '.$m;
   }
+
+  /*
+  Steps to send email campaign from Constant Contact 
+  Make a POST request to create an email campaign and campaign activities.
+  Make a GET request to retrieve the primary_email email campaign activity.
+  Make a PUT request to update the email campaign activity and add recipients.
+  Make a POST request to schedule the email campaign activity.
+ */
+function testTheMail() {
+  logdru("TESTING THE EMAIL SEND.");  
+  
+  $ccResponse = createEmailCampaign();
+  //kint ($ccResponse);
+
+  if (!empty($ccResponse)) {
+
+    $campaignId = $ccResponse->campaign_id;
+    $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
+
+    // marigold 7
+    //$campaignActivityId = '4e5b5ccf-3eab-4bbe-ba7e-558e39810661';
+    //$campaignId = '2cf34668-e8f7-43e9-84a6-0abcfe544166';
+    
+    sendEmailCampaign($campaignId, $campaignActivityId);
+  }
+}
+
+// Create the Constant Contact email campaign, which is the initial setup. 
+// Nothing is sent at this point. Returns the response which included the 
+// campaign id and campaign activity id needed for step leading to send.
+function createEmailCampaign() 
+{
+
+  $emailHtml = "<html><body>[[trackingImage]] <a href=\"http://www.constantcontact.com\">Visit NJ for Pie!</a> </body></html>";
+
+  $postData = [
+    'name' => 'Marigold Bakery Delish 10',
+    'email_campaign_activities' => [
+      [
+      'format_type' => 5,
+      'from_name'=> 'Yolanda Queen of the Pies',
+      'from_email'=> 'ingmann33@gmail.com',
+      'reply_to_email'=> 'ingmann33@gmail.com',
+      'subject'=> 'Daily baking newsletter delish 10',
+      'preheader'=> 'CC preheader 10 with Yolanda',
+      'html_content' => $emailHtml
+      ]
+    ]    
+  ];
+
+  // could include addr here but don't have to as cc uses addr on record for footer addres in email
+
+  $postData = json_encode($postData);
+  $cca = new ConstantContactApi;
+  $ccResponse = $cca->apiCall('/emails', $postData, 'POST');
+
+  return $ccResponse;
+}
+
+// Take the campaign and campaign activity ids from the campaign setup api call, 
+// set up the recipient lists, and finally, schedule for immediate sendoff.
+
+function sendEmailCampaign($campaignId, $campaignActivityId) 
+{
+  // first, get the activity object 
+  $sent = false;
+  $cca = new ConstantContactApi;
+  $ccActivity = $cca->apiCall("/emails/activities/$campaignActivityId");
+
+  if (!empty($ccActivity)) {
+    
+    // update activity obj with the destination cc email lists in 
+    // an array with list_id from each AG group to receive news
+
+    $agListId = '23223746-48c4-11ed-a81f-fa163e52f1a1'; // tinaDestTest CC list; replace this with affinity group list_ids
+    $ccActivity->contact_list_ids = array($agListId);      
+    
+    $ccActivity = json_encode($ccActivity);
+    $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId", $ccActivity, 'PUT');
+
+    if (!empty($ccResponse)) {
+      // finally, send it, scheduled with 0 signifying now.
+ 
+      $schedule = array('scheduled_date'=>'0');  
+      $schedule = json_encode($schedule);
+      // TODO. comment in/out for now since I have limited free test email sends
+      // $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
+      $sent = true;
+    }   
+  }
+  if ($sent) {
+    showStatus("News item emails sent to affinity groups.");
+  } else {
+    showStatus("Email error while trying to send new items to affinity groups.");
+  }
+}
+
+/*
+
+/* marigold 7
+  $returned_result string (422) 
+  "{"campaign_activities":
+    [{"campaign_activity_id":"4e5b5ccf-3eab-4bbe-ba7e-558...
+  Json (8)Contents
+  ⇄⧉campaign_activities => array (2)
+  Table (2)Contents (2)
+  campaign_activity_id	role
+  0	4e5b5ccf-3eab-4bbe-ba7e-558e39810661	primary_email
+  1	f934ec15-393d-4aaf-b5c5-ebbabe368914	permalink
+  ⇄campaign_id => string (36) "2cf34668-e8f7-43e9-84a6-0abcfe544166"
+  ⇄created_at => string (24) "2022-10-11T15:20:25.992Z"
+  ⇄current_status => string (5) "Draft"
+  ⇄name => string (17) "Marigold Bakery 7"
+  ⇄type => string (17) "CUSTOM_CODE_EMAIL"
+  ⇄type_code => integer 26
+  ⇄updated_at => string (24) "2022-10-11T15:20:25.992Z"
+*/
+
+/*
+activity return looks like this before filling in the list ids
+{
+  "campaign_activity_id": "4e5b5ccf-3eab-4bbe-ba7e-558e39810661",
+  "campaign_id": "2cf34668-e8f7-43e9-84a6-0abcfe544166",
+  "role": "primary_email",
+  "contact_list_ids": [],
+  "segment_ids": [],
+  "current_status": "DRAFT",
+  "format_type": 5,
+  "from_email": "ingmann33@gmail.com",
+  "from_name": "Manny Piemaker",
+  "reply_to_email": "ingmann33@gmail.com",
+  "subject": "Daily baking newsletter",
+  "preheader": "CC hey tqi new email"
+}
+*/
+

@@ -9,9 +9,12 @@ use \Drupal\user\Entity\User;
 
 /**
  * Implements hook_form_alter().
+ *  when a user does add news or edit an existing news, called before showing the form.
  */
 function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'node_access_news_edit_form') {
+  showStatus("in NEWS form alter: ".$form_id);
+    if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form') {
+    
     // Only allow these roles to publish ACCESS News
     // Default is for ACCESS News to be unpblished.
     $allowed_roles = ['administrator'];
@@ -23,7 +26,8 @@ function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id
       // Field isn't displayed for non-admins. Not readonly for admins.
       $form['status']['#attributes'] = ['readonly' => 'readonly'];
     }
-    $form['status']['#group'] = 'content';
+    $form['status']['#group'] = 'content';  // status is published/unpublished
+    $form['field_broadcast_affinity_groups']['#group'] = 'options';
 
     $form['#validate'][] = 'access_news_validate';
   }
@@ -33,19 +37,27 @@ function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id
  * Custom validation callback.
  */
 function access_news_validate(&$form, FormStateInterface $form_state) {
+
+  showStatus("News: in validate");
   // administrator can assign ACCESS News to any Affinity Group
   if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
     return;
   }
+  showStatus("... validating (not admin)...");
   // Require that the person saving is an Affinity Group Coordinator
   // if an Affinity Group is selected for ACCESS News.
   $user = User::load(\Drupal::currentUser()->id());
   $ag_node_array = $form_state->getValue('field_affinity_group_node');
   // Valid values are arrays with non-null 'target-id' value
+  //kint($ag_node_array);
+  //die();
   foreach ($ag_node_array as $ag_node) {
     if (is_array($ag_node)) {
+      showStatus('...yes array agnode');
+
       $nid = $ag_node['target_id'];
       if ($nid) {
+        showStatus('...nid in validate:'.$nid);
         $authorized = FALSE;
         $n = \Drupal\node\Entity\Node::load($nid);
         // Load coordinator(s) for the Affinity Group
@@ -70,6 +82,7 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
         $form_state->setErrorByName('access_news', t('You are not a Coordinator for the ' . $n->get('title')->value . ' Affinity Group.'));
       }
     }
+    showStatus('...!! not is_array for ag_node');
   }
 }
 
@@ -79,6 +92,13 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
 function access_news_node_presave(Node $node) {
   $type = $node->bundle();
   if ( $type == 'access_news' ) {
+    showStatus('acess news presave');
+
+    $getFields = $node->getFields();    
+    $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
+    $broadcastToAGs = $broadcastArray[0]['value'];
+    showStatus ("broadcast: ".$broadcastToAGs);
+
     // Set Affinity Group taxonomy terms based on the Affinity Group node field
     $ag_node_array = $node->get('field_affinity_group_node');
     $node->set('field_affinity_group', NULL);
@@ -91,7 +111,7 @@ function access_news_node_presave(Node $node) {
       $vid = 'affinity-group';
       $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => $name]);
       $node->get('field_affinity_group')->appendItem(array_key_first($term));
-    }
+    }    
   }
 }
 
@@ -100,7 +120,9 @@ function access_news_node_presave(Node $node) {
  */
 function access_news_node_insert(Node $node) {
   $type = $node->bundle();
+  showstatus("node insert...");
   if ($type == 'access_news') {
+    showstatus("... in access news node insert");
     // Send admins a message if an ACCESS News node is created  
     // and needs approval for publication.
     if (!$node->isPublished()) {
@@ -112,7 +134,18 @@ function access_news_node_insert(Node $node) {
     }
   }
 }
+function access_news_entity_update(Drupal\Core\Entity\EntityInterface $entity) {
+  showstatus("news_entity update...");
 
+}
+function access_news_update(Drupal\Core\Entity\EntityInterface $entity) {
+  showstatus("news update, entity arg...");
+
+}
+function access_news_node_update(Node $node) {
+  
+  showstatus("node update...");
+}
 
 /**
  * Build access_news admin Email.

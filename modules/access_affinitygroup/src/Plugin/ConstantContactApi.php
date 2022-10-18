@@ -177,14 +177,19 @@ class ConstantContactApi {
     $authorization = 'Authorization: Bearer ' . $credentials;
     curl_setopt($ch, CURLOPT_HTTPHEADER, array($authorization, 'Content-Type: application/json'));
     
-    if ($type == 'POST') {
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
-      curl_setopt($ch, CURLOPT_POST, true);
-    }
+    if ($type != 'GET') {
+      
+      curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);      
 
-    if ($type == 'DELETE') {
-      curl_setopt($ch, CURLOPT_POSTFIELDS, $post_data);
-      curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+      if ($type == 'POST') {      
+        curl_setopt($ch, CURLOPT_POST, true);      
+
+      }  else if ($type == 'PUT') { 
+        curl_setopt ($ch, CURLOPT_CUSTOMREQUEST, 'PUT'); 
+
+      } else if ($type == 'DELETE') {      
+        curl_setopt($ch, CURLOPT_CUSTOMREQUEST, "DELETE");
+      }
     }
 
     // Set method and to expect response

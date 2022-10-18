@@ -18,7 +18,9 @@ use Drupal\views\ViewExecutable;
  * Implements hook_views_pre_render().
  */
 function access_match_engagement_views_pre_render(ViewExecutable $view) {
+  //showStatus("AME prerender");
   if (isset($view) && ($view->storage->id() == 'match_engagement_view')) {
+    //showStatus("...prerender - in matching id");
     $view->element['#attached']['library'][] = 'access_match_engagement/match_engagement_view';
   }
 }
@@ -32,12 +34,14 @@ function access_match_engagement_block_build_views_block_alter(array &$build, \D
     $build['#create_placeholder'] = FALSE;
   }
 }
-
 /**
  * Implements hook_form_alter().
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  //showStatus("AME in form ALTER");
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
+    //showStatus("///alter form id: ".$form_id);
+
     // Attach javascript
     $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
     $form['promote']['widget']['value']['#title'] = 'Form Accepted';
@@ -174,7 +178,9 @@ function access_match_engagement_mail($key, &$message, $params) {
  * Implements hook_node_insert().
  */
 function access_match_engagement_node_insert(EntityInterface $entity) {
+  
   $type = $entity->bundle();
+  //showStatus("AME Node INSERT bundle type: ".$type);
   if ($type == 'match_engagement') {
     $get_fields = $entity->getFields();
     $node_type = $get_fields['field_node_type']->getValue();
@@ -189,7 +195,11 @@ function access_match_engagement_node_insert(EntityInterface $entity) {
  * Implements hook_entity_presave().
  */
 function access_match_engagement_entity_presave(EntityInterface $entity) {
+  
+
   $type = $entity->bundle();
+  //showStatus("AME entity presave bundle type: ".$type);
+
   if ($type == 'match_engagement' && !empty($entity->id())) {
     $get_fields = $entity->getFields();
     $email_user = $get_fields['field_email_user']->getValue();
@@ -213,7 +223,9 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
  * Build access_match_engagement accepted Email.
  */
 function access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $author, $ame_type) {
+  //showStatus("AME accepter email");
   $options = ['absolute' => TRUE];
+
   $here = Url::fromRoute('entity.node.canonical', ['node' => $ame_nid], $options);
   $body['string'] = [
     '#type' => 'inline_template',
