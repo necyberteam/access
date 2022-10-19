@@ -300,13 +300,6 @@ function showStatus($logmsg)
   \Drupal::messenger()->addStatus($logmsg);
 }    
 
-//testing only
-function logdru($logmsg)
-{
-  $msg = basename(__FILE__) . ':' .  print_r($logmsg, true);
-  \Drupal::messenger()->addStatus($msg);
-}    
-
 /**
  * Implements hook_cron().
  * Refreshes the authorization. If not run, token expires and we'll get
@@ -361,83 +354,61 @@ function getHttpErrMsg($httpCode) {
     return 'Constant Contact: '.$m;
   }
 
-  /*
-  Steps to send email campaign from Constant Contact 
-  Make a POST request to create an email campaign and campaign activities.
-  Make a GET request to retrieve the primary_email email campaign activity.
-  Make a PUT request to update the email campaign activity and add recipients.
-  Make a POST request to schedule the email campaign activity.
+/**
+  * Email emailText to each AG email group in ccListIds array.
+  * Subjuct of email is emailTitle.
+  * See makeNewsHTML for meaning of other arguments. 
+  *    
+  * Steps to send email campaign from Constant Contact:
+  * Setup:
+  * - Make a POST request to create an email campaign and campaign activities.
+  * - Make a GET request to retrieve the primary_email email campaign activity.
+  * Send:
+  * - Make a PUT request to update the email campaign activity and add recipients.
+  * - Make a POST request to schedule the email campaign activity.
  */
 
- // 2nd 2 args are arrays
-function emailToAffinityGroups($emailText, $emailTitle, $ccListIds, $agNames) {
+ // last 2 args are arrays
+function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds) {
   
-  // todo = mkae the html here.
-//showStatus("IN EMAIL");
-  $ccResponse = setupEmailCampaign($emailText, $emailTitle);
-  //kint ($ccResponse);
-
+  $emailHtml = makeNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
+  $ccResponse = setupEmailCampaign($emailTitle, $emailHtml);
+ 
   if (!empty($ccResponse)) {
-
     $campaignId = $ccResponse->campaign_id;
     $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
-
-    // marigold 7
-    //$campaignActivityId = '4e5b5ccf-3eab-4bbe-ba7e-558e39810661';
-    //$campaignId = '2cf34668-e8f7-43e9-84a6-0abcfe544166';
-    
+   
     sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds);
   }
-
-
 }
-/*
-function testTheMail() {
-  logdru("TESTING THE EMAIL SEND.");  
-  
-  $ccResponse = createEmailCampaign();
-  //kint ($ccResponse);
+/**
+ * Create the Constant Contact email campaign, which is the initial setup. 
+ * Nothing is sent at this point. Returns the response which included the 
+ * campaign id and campaign activity id needed for step leading to send.
+ */
+function setupEmailCampaign($emailSubject, $emailHtml) {
 
-  if (!empty($ccResponse)) {
+  //$emailHtml = "<html><body>[[trackingImage]]".$emailText."</body></html>"; // basic
 
-    $campaignId = $ccResponse->campaign_id;
-    $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
-
-    // marigold 7
-    //$campaignActivityId = '4e5b5ccf-3eab-4bbe-ba7e-558e39810661';
-    //$campaignId = '2cf34668-e8f7-43e9-84a6-0abcfe544166';
-    
-    sendEmailCampaign($campaignId, $campaignActivityId);
-  }
-}
-*/
-
-// Create the Constant Contact email campaign, which is the initial setup. 
-// Nothing is sent at this point. Returns the response which included the 
-// campaign id and campaign activity id needed for step leading to send.
-function setupEmailCampaign($emailText, $emailTitle) {
-
-  //$emailHtml = "<html><body>[[trackingImage]] <a href=\"http://www.constantcontact.com\">Visit NJ for Pie!</a> </body></html>";
-  $emailHtml = "<html><body>[[trackingImage]]".$emailText."</body></html>";
-
+  // for CC, must be unique name for campaign
   $campaignName = uniqid('Access-news', true);
-  // unique name for campaign
+
   $postData = [
     'name' => $campaignName,
     'email_campaign_activities' => [
       [
       'format_type' => 5,
-      'from_name'=> 'Access Support',
-      'from_email'=> 'ingmann33@gmail.com',
-      'reply_to_email'=> 'ingmann33@gmail.com',
-      'subject'=> $emailTitle,
-      'preheader'=> $emailTitle,
+      'from_name'=> 'Access Support',           //TODO
+      'from_email'=> 'ingmann33@gmail.com',     //TODO
+      'reply_to_email'=> 'ingmann33@gmail.com', //TODO
+      'subject'=> $emailSubject,
+      'preheader'=> $emailSubject,
       'html_content' => $emailHtml
       ]
     ]    
   ];
 
-  // could include addr here but don't have to as cc uses addr on record for footer addres in email
+  // note: could include addr in postData if we want to change, but don't have to as cc uses addr on record for footer addres in email
 
   $postData = json_encode($postData);
   $cca = new ConstantContactApi;
@@ -446,8 +417,11 @@ function setupEmailCampaign($emailText, $emailTitle) {
   return $ccResponse;
 }
 
-// Take the campaign and campaign activity ids from the campaign setup api call, 
-// set up the recipient lists, and finally, schedule for immediate sendoff.
+/**
+ * Take the campaign and campaign activity ids from the campaign setup api call, 
+ * set up the recipient lists, and finally, schedule for immediate sendoff.
+ * ccListIds: array of CC email List Ids, one for each AG 
+ */
 
 function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) 
 {
@@ -471,12 +445,11 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds)
     $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId", $ccActivity, 'PUT');
 
     if (!empty($ccResponse)) {
-      // finally, send it, scheduled with 0 signifying: now.
- 
+      // finally, send it, scheduled with 0 signifying: now.  
       $schedule = array('scheduled_date'=>'0');  
       $schedule = json_encode($schedule);
-      // TODO. comment in/out for now since I have limited free test email sends
-      // $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
+      // TODO. comment this actual in/out for now since I have limited free test email sends
+      //$ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
       $sent = true;
     }   
   }
@@ -486,43 +459,431 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds)
     showStatus("Email error while trying to send new items to affinity groups.");
   }
 }
+/**
+ * returns the HTML to send to Constant Contact
+ * This functions like an email template. CC does not have API for email templates. 
+ * 
+ * newsBody: the html for the main part of the message
+ * newsTitle: line at the top
+ * pubDate: date string to be used with [published: xxxx]
+ * agNames: list of Affinity Group names for the 'You are receiving this email through...' 
+ * newsUrl: link for 'View on website' button 
+ */
+// todo: we will probably have to change the url of the access logo image when we close our test accounts
 
-/*
+function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
 
-/* marigold 7
-  $returned_result string (422) 
-  "{"campaign_activities":
-    [{"campaign_activity_id":"4e5b5ccf-3eab-4bbe-ba7e-558...
-  Json (8)Contents
-  ⇄⧉campaign_activities => array (2)
-  Table (2)Contents (2)
-  campaign_activity_id	role
-  0	4e5b5ccf-3eab-4bbe-ba7e-558e39810661	primary_email
-  1	f934ec15-393d-4aaf-b5c5-ebbabe368914	permalink
-  ⇄campaign_id => string (36) "2cf34668-e8f7-43e9-84a6-0abcfe544166"
-  ⇄created_at => string (24) "2022-10-11T15:20:25.992Z"
-  ⇄current_status => string (5) "Draft"
-  ⇄name => string (17) "Marigold Bakery 7"
-  ⇄type => string (17) "CUSTOM_CODE_EMAIL"
-  ⇄type_code => integer 26
-  ⇄updated_at => string (24) "2022-10-11T15:20:25.992Z"
-*/
+  // build list of one or more affinity group names separated by 'or'
+  $agText = '';
+  $or = '';
+  foreach ($agNames as $agName) {
+    $agText = $agText.$or.$agName;
+    $or = ' or ';
+  }
+  $agText = 'You are receiving this email through the '.$agText.' Affinity Group.';
+  
+  // HTML with values for newsBody, newsTitle, pubdate and agText inserted
 
-/*
-activity return looks like this before filling in the list ids
-{
-  "campaign_activity_id": "4e5b5ccf-3eab-4bbe-ba7e-558e39810661",
-  "campaign_id": "2cf34668-e8f7-43e9-84a6-0abcfe544166",
-  "role": "primary_email",
-  "contact_list_ids": [],
-  "segment_ids": [],
-  "current_status": "DRAFT",
-  "format_type": 5,
-  "from_email": "ingmann33@gmail.com",
-  "from_name": "Manny Piemaker",
-  "reply_to_email": "ingmann33@gmail.com",
-  "subject": "Daily baking newsletter",
-  "preheader": "CC hey tqi new email"
+  $emailText = <<<EMAILTEXT
+  <html>
+<body>[[trackingImage]]
+    <div id="yiv2621404860">
+        <style type="text/css">
+            @media only screen and (max-width:480px) {
+                #yiv2621404860 .yiv2621404860footer-main-width {
+                    width: 100% !important;
+                }
+
+                #yiv2621404860 .yiv2621404860footer-mobile-hidden {
+                    display: none !important;
+                }
+
+                #yiv2621404860 .yiv2621404860footer-mobile-hidden {
+                    display: none !important;
+                }
+
+                #yiv2621404860 .yiv2621404860footer-column {
+                    display: block !important;
+                }
+
+                #yiv2621404860 .yiv2621404860footer-mobile-stack {
+                    display: block !important;
+                }
+
+                #yiv2621404860 .yiv2621404860footer-mobile-stack-padding {
+                    padding-top: 3px;
+                }
+            }
+
+            #yiv2621404860 #yiv2621404860 img {}
+
+            #yiv2621404860 .yiv2621404860layout {
+                min-width: 100%;
+            }
+
+            #yiv2621404860 table {
+                table-layout: fixed;
+            }
+
+            #yiv2621404860 .yiv2621404860shell_outer-row {
+                table-layout: auto;
+            }
+
+            #yiv2621404860 #yiv2621404860 u+.yiv2621404860body .yiv2621404860shell_outer-row {
+                width: 700px;
+            }
+
+            #yiv2621404860 #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell p {
+                margin: 0;
+                padding: 0;
+                margin-bottom: 0;
+            }
+
+            #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell ul,
+            #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell ol {
+                padding: 0;
+                margin: 0 0 0 40px;
+            }
+
+            #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell li {
+                padding: 0;
+                margin: 0;
+            }
+
+            #yiv2621404860 #yiv2621404860 a {
+                text-decoration: underline;
+            }
+
+            #yiv2621404860 #yiv2621404860 a .filtered99999 {
+                text-decoration: underline !important;
+                font-size: inherit !important;
+                font-family: inherit !important;
+                font-weight: inherit !important;
+                line-height: inherit !important;
+                color: inherit !important;
+            }
+
+            #yiv2621404860 #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell {}
+        </style>
+        <style>
+            @media only screen and (max-width:480px) {
+                #yiv2621404860 .yiv2621404860button_content-cell {
+                    padding-top: 10px !important;
+                    padding-right: 20px !important;
+                    padding-bottom: 10px !important;
+                    padding-left: 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860button_border-row .yiv2621404860button_content-cell {
+                    padding-top: 10px !important;
+                    padding-right: 20px !important;
+                    padding-bottom: 10px !important;
+                    padding-left: 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860column .yiv2621404860content-padding-horizontal {
+                    padding-left: 20px !important;
+                    padding-right: 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860layout .yiv2621404860column .yiv2621404860content-padding-horizontal .yiv2621404860content-padding-horizontal {
+                    padding-left: 0px !important;
+                    padding-right: 0px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860layout .yiv2621404860column .yiv2621404860content-padding-horizontal .yiv2621404860block-wrapper_border-row .yiv2621404860content-padding-horizontal {
+                    padding-left: 20px !important;
+                    padding-right: 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860dataTable {
+                    overflow: auto !important;
+                }
+
+                #yiv2621404860 .yiv2621404860dataTable .yiv2621404860dataTable_content {
+                    width: auto !important;
+                }
+
+                #yiv2621404860 .yiv2621404860image--mobile-scale .yiv2621404860image_container img {
+                    width: auto !important;
+                }
+
+                #yiv2621404860 .yiv2621404860image--mobile-center .yiv2621404860image_container img {
+                    margin-left: auto !important;
+                    margin-right: auto !important;
+                }
+
+                #yiv2621404860 .yiv2621404860layout-margin .yiv2621404860layout-margin_cell {
+                    padding: 0px 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860layout-margin--uniform .yiv2621404860layout-margin_cell {
+                    padding: 20px 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860scale {
+                    width: 100% !important;
+                    height: auto !important;
+                }
+
+                #yiv2621404860 .yiv2621404860stack {
+                    display: block !important;
+                }
+
+                #yiv2621404860 .yiv2621404860hide {
+                    display: none !important;
+                }
+
+                #yiv2621404860 u+.yiv2621404860body .yiv2621404860shell_outer-row {
+                    width: 100% !important;
+                }
+
+                #yiv2621404860 .yiv2621404860socialFollow_container {
+                    text-align: center !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell {
+                    font-size: 16px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell h1 {
+                    font-size: 24px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell h2 {
+                    font-size: 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell h3 {
+                    font-size: 20px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text--sectionHeading .yiv2621404860text_content-cell {
+                    font-size: 24px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text--heading .yiv2621404860text_content-cell {
+                    font-size: 24px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text--dataTable .yiv2621404860text_content-cell .yiv2621404860dataTable .yiv2621404860dataTable_content-cell {
+                    font-size: 14px !important;
+                }
+
+                #yiv2621404860 .yiv2621404860text--dataTable .yiv2621404860text_content-cell .yiv2621404860dataTable th.yiv2621404860dataTable_content-cell {}
+            }
+        </style>
+        <div>
+            
+            <div lang="en-US" style="background-color:#138597;" class="yiv2621404860shell">
+                <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#138597;"
+                    bgcolor="#138597" class="yiv2621404860shell_panel-row">
+                    <tbody>
+                        <tr>
+                            <td style="" align="center" valign="top" class="yiv2621404860shell_panel-cell">
+                                <table style="width:700px;" align="center" border="0" cellpadding="0" cellspacing="0"
+                                    class="yiv2621404860shell_width-row yiv2621404860scale">
+                                    <tbody>
+                                        <tr>
+                                            <td style="padding:15px 10px;" align="center" valign="top"
+                                                class="yiv2621404860shell_width-cell">
+                                                <table width="100%" align="center" border="0" cellpadding="0"
+                                                    cellspacing="0" class="yiv2621404860shell_content-row">
+                                                    <tbody>
+                                                        <tr>
+                                                            <td style="background-color:#ffffff;padding:0;"
+                                                                align="center" valign="top" bgcolor="#ffffff"
+                                                                class="yiv2621404860shell_content-cell">
+                                                                <table
+                                                                    style="background-color:#1a5b6e;table-layout:fixed;"
+                                                                    width="100%" border="0" cellpadding="0"
+                                                                    cellspacing="0" bgcolor="#1a5b6e"
+                                                                    class="yiv2621404860layout yiv2621404860layout--1-column">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td style="width:100%;" align="center"
+                                                                                valign="top"
+                                                                                class="yiv2621404860column yiv2621404860column--1 yiv2621404860scale yiv2621404860stack">
+                                                                                
+                                                                                <table width="100%" border="0"
+                                                                                    cellpadding="0" cellspacing="0"
+                                                                                    style="table-layout:fixed;"
+                                                                                    class="yiv2621404860text yiv2621404860text--padding-vertical">
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
+                                                                                                align="left"
+                                                                                                valign="top"
+                                                                                                class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
+                                                                                                <p style="margin:0;">
+                                                                                                    <span style="color:rgb(255, 255, 255);">
+                                                                                                      $agText
+                                                                                                    </span>
+                                                                                                </p>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                                <table style="table-layout:fixed;" width="100%"
+                                                                    border="0" cellpadding="0" cellspacing="0"
+                                                                    class="yiv2621404860layout yiv2621404860layout--1-column">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td style="width:100%;" align="center"
+                                                                                valign="top"
+                                                                                class="yiv2621404860column yiv2621404860column--1 yiv2621404860scale yiv2621404860stack">
+                                                                                <div style="line-height:30px;min-height:30px;"
+                                                                                    class="yiv2621404860spacer"> </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                                <table style="table-layout:fixed;" width="100%"
+                                                                    border="0" cellpadding="0" cellspacing="0"
+                                                                    class="yiv2621404860layout yiv2621404860layout--1-column">
+                                                                    <tbody>
+                                                                        <tr>
+                                                                            <td style="width:100%;" align="center"
+                                                                                valign="top"
+                                                                                class="yiv2621404860column yiv2621404860column--1 yiv2621404860scale yiv2621404860stack">
+                                                                                <table width="100%" border="0"
+                                                                                    cellpadding="0" cellspacing="0"
+                                                                                    class="yiv2621404860image yiv2621404860image--padding-vertical yiv2621404860image--mobile-scale yiv2621404860image--mobile-center">
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            <td align="left"
+                                                                                                valign="top"
+                                                                                                style="padding:10px 40px;"
+                                                                                                class="yiv2621404860image_container yiv2621404860content-padding-horizontal">
+                                                                                                <img width="240"
+                                                                                                    src="https://ecp.yusercontent.com/mail?url=https%3A%2F%2Ffiles.constantcontact.com%2F611b8b84901%2F3769f037-6aeb-4d73-baae-408c17803a76.jpg%3Frdr%3Dtrue&amp;t=1666141473&amp;ymreqid=e44e9186-6cc5-04bd-1ceb-710003012600&amp;sig=tCKknf09uZ.wgIRKOMIdqw--~D"
+                                                                                                    alt=""
+                                                                                                    style="display:block;height:auto;max-width:100%;"
+                                                                                                    class="yiv2621404860image_content">
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                                <div style="line-height:10px;min-height:10px;"
+                                                                                    class="yiv2621404860spacer"> </div>
+                                                                                <table width="100%" border="0"
+                                                                                    cellpadding="0" cellspacing="0"
+                                                                                    style="table-layout:fixed;"
+                                                                                    class="yiv2621404860text yiv2621404860text--padding-vertical">
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
+                                                                                                align="left"
+                                                                                                valign="top"
+                                                                                                class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
+                                                                                                <p style="margin:0;">
+                                                                                                    <span style="font-size:16px;font-weight:bold;color:rgb(26, 91, 110);">
+                                                                                                    $newsTitle
+                                                                                                    </span>
+                                                                                                </p>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                                <table width="100%" border="0"
+                                                                                    cellpadding="0" cellspacing="0"
+                                                                                    style="table-layout:fixed;"
+                                                                                    class="yiv2621404860text yiv2621404860text--padding-vertical">
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
+                                                                                                align="left"
+                                                                                                valign="top"
+                                                                                                class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
+                                                                                                <p style="margin:0;">
+                                                                                                    [Published Date: $pubDate]
+                                                                                                </p>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>                                                                                
+                                                                                <table width="100%" border="0"
+                                                                                    cellpadding="0" cellspacing="0"
+                                                                                    style="table-layout:fixed;"
+                                                                                    class="yiv2621404860text yiv2621404860text--padding-vertical">
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
+                                                                                                align="left"
+                                                                                                valign="top"
+                                                                                                class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
+                                                                                                $newsBody
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                                
+                                                                                <div style="line-height:20px;min-height:20px;"
+                                                                                    class="yiv2621404860spacer"> </div>
+                                                                                <table width="100%" border="0"
+                                                                                    cellpadding="0" cellspacing="0"
+                                                                                    style="table-layout:fixed;"
+                                                                                    class="yiv2621404860button yiv2621404860button--padding-vertical">
+                                                                                    <tbody>
+                                                                                        <tr>
+                                                                                            <td align="left"
+                                                                                                style="padding:10px 40px;"
+                                                                                                class="yiv2621404860button_container yiv2621404860content-padding-horizontal">
+                                                                                                <table
+                                                                                                    style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
+                                                                                                    border="0"
+                                                                                                    cellpadding="0"
+                                                                                                    cellspacing="0"
+                                                                                                    bgcolor="#ffc42d"
+                                                                                                    class="yiv2621404860button_content-row">
+                                                                                                    <tbody>
+                                                                                                        <tr>
+                                                                                                            <td style="padding:10px 15px;"
+                                                                                                                align="center"
+                                                                                                                class="yiv2621404860button_content-cell">
+                                                                                                                <a href="$newsUrl"
+                                                                                                                    rel="nofollow noopener noreferrer"
+                                                                                                                    style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;word-wrap:break-word;font-weight:bold;text-decoration:none;"
+                                                                                                                    class="yiv2621404860button_link">
+                                                                                                                    VIEW ON WEBSITE
+                                                                                                                </a>
+                                                                                                            </td>
+                                                                                                        </tr>
+                                                                                                    </tbody>
+                                                                                                </table>
+                                                                                            </td>
+                                                                                        </tr>
+                                                                                    </tbody>
+                                                                                </table>
+                                                                                <div style="min-height:30px;line-height:30px;"
+                                                                                    class="yiv2621404860spacer"> </div>
+                                                                            </td>
+                                                                        </tr>
+                                                                    </tbody>
+                                                                </table>
+                                                            </td>
+                                                        </tr>
+                                                    </tbody>
+                                                </table>
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>            
+        </div>
+    </div>
+</body>
+</html>
+EMAILTEXT;
+// note: EMAILTEXT must be to the left column-wise of the last tag (php)
+
+return $emailText;
 }
-*/
-

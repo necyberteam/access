@@ -12,7 +12,7 @@ use \Drupal\user\Entity\User;
  *  when a user does add news or edit an existing news, called before showing the form.
  */
 function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  showStatus("in NEWS form alter: ".$form_id);
+  
     if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form') {
     
     // Only allow these roles to publish ACCESS News
@@ -37,27 +37,23 @@ function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id
  * Custom validation callback.
  */
 function access_news_validate(&$form, FormStateInterface $form_state) {
-
-  showStatus("News: in validate");
+  
   // administrator can assign ACCESS News to any Affinity Group
   if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
     return;
   }
-  showStatus("... validating (not admin)...");
+  
   // Require that the person saving is an Affinity Group Coordinator
   // if an Affinity Group is selected for ACCESS News.
   $user = User::load(\Drupal::currentUser()->id());
   $ag_node_array = $form_state->getValue('field_affinity_group_node');
   // Valid values are arrays with non-null 'target-id' value
-  //kint($ag_node_array);
-  //die();
+  
   foreach ($ag_node_array as $ag_node) {
     if (is_array($ag_node)) {
-      showStatus('...yes array agnode');
-
+      
       $nid = $ag_node['target_id'];
-      if ($nid) {
-        showStatus('...nid in validate:'.$nid);
+      if ($nid) {      
         $authorized = FALSE;
         $n = \Drupal\node\Entity\Node::load($nid);
         // Load coordinator(s) for the Affinity Group
@@ -92,10 +88,7 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
 function access_news_node_presave(Node $node) {
   $type = $node->bundle();
   if ( $type == 'access_news' ) {
-    //kint("node enterign presave code");
-    showStatus('acess news presave...');
-    //kint($node);
-
+    
     $getFields = $node->getFields();    
     $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
     $broadcastToAGs = $broadcastArray[0]['value'];
@@ -115,9 +108,6 @@ function access_news_node_presave(Node $node) {
       $node->get('field_affinity_group')->appendItem(array_key_first($term));
     }    
   }
-  //kint("node after presave code");
-  //kint($node);
-  //die();
 }
 
 /**
@@ -125,9 +115,8 @@ function access_news_node_presave(Node $node) {
  */
 function access_news_node_insert(Node $node) {
   $type = $node->bundle();
-  showstatus("node insert...");
-  if ($type == 'access_news') {
-    showstatus("... in access news node insert");
+  
+  if ($type == 'access_news') {  
     // Send admins a message if an ACCESS News node is created  
     // and needs approval for publication.
 
@@ -139,108 +128,86 @@ function access_news_node_insert(Node $node) {
       \Drupal::messenger()->addMessage($message);
     }
     else {
-      // if published, see if they want the news to be broadcast to listed AGs
-      //showStatus("going to AGBroadcast from INSERT");
+      // New is published. See if they wanted the news to be broadcast to listed AGs, do it if so
       affinityGroupBroadcast($node);
     }
   }
 }
 
+/**
+ * if published, check for broadcast to listed AGs, and if so, send the emails
+ */
 function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
-  $type = $node->bundle();
-  //showstatus("entity update...");
-  
-  if ($type == 'access_news') {
-  
-  //showstatus("news_entity update...");
 
-    // if published, check for broadcast to listed AGs
+  $type = $node->bundle();  
+  if ($type == 'access_news') {   
+   
     if ($node->isPublished()) {
-      //showStatus("going to AGBroadcast from UPDATE");
       affinityGroupBroadcast($node);
     }
-
-    //kint($entity);
-    //die();
   }
-
 }
-
-// Send email to constant contact email list of chosen Affinity Groups
-//  if both:
-// 1) option to BroadcastToAffinityGroup is checked 
-// 2) affinity groups specified
-//
-// After send attemp, uncheck the broadcast option.
+/** 
+ * Send email to constant contact email list of chosen Affinity Groups
+ *  if both:
+ * 1) option to BroadcastToAffinityGroup is checked 
+ * 2) at least one affinity group specified
+ * 
+ * Should also be in published state, but that is checked before we get here. 
+ * After send attempt, uncheck the broadcast option.
+ */
+  
 function affinityGroupBroadcast(Node $node) {
 
   $getFields = $node->getFields();    
   $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
   $broadcastToAGs = $broadcastArray[0]['value'];
   //showStatus ("broadcast: ".$broadcastToAGs);
-  //kint($node);
+  
   // find the node ids for the AGs.  If AGs have been specified, get the 
   // corresponding Constant Contact email list ids from the nodes.
 
   if ($broadcastToAGs) {
     
     $agNodes = $node->get('field_affinity_group_node');
-    //kint($agNodes);
-    
+        
     if (count($agNodes)) {
-      //showStatus('ag node count'.count($agNodes));
+      
       $ccListIdArray = array();
       $agNames = array();
 
+      // collect ag name and cc email list id
       foreach ($agNodes as $agNode) {     
-        //kint($agNode);
-        $nid = $agNode->getValue()['target_id'];
-        $ag = \Drupal\node\Entity\Node::load($nid);
-        //kint($ag);
-        $name = $ag->get('title')->value;
-        //kint($name);
-        //showStatus($name);
-        array_push($agNames, $name);
-        $ccListId = $ag->get('field_list_id')->value;
-        //showStatus($ccListId);
         
+        $nid = $agNode->getValue()['target_id'];
+        $ag = \Drupal\node\Entity\Node::load($nid);        
+        
+        $name = $ag->get('title')->value;                
+        array_push($agNames, $name);
+        
+        $ccListId = $ag->get('field_list_id')->value;                
         array_push($ccListIdArray, $ccListId);      
       }
 
-      //kint($ccListIdArray);
-
       if (!count($ccListIdArray)) {
-        //showStatus("Missing Constant Contact List Ids for Affinity Group");
+          showStatus("Missing Constant Contact Email List Id for Affinity Group");
       } else {
-        //kint($node);
-  
-        //showStatus("EMAILING TO AGS...");
+                
+        // gather items to insert into the email template
         $bodyArray = $getFields['body']->getValue();
         $body = $bodyArray[0]['value'];
         $titleArray = $getFields['title']->getValue();
         $title = $titleArray[0]['value'];
-    //showStatus ("broadcast: ".$broadcastToAGs);
-    //kint($body);
-    //kint($title);
-        emailToAffinityGroups($body, $title, $ccListIdArray, $agNames);        
+        $pubDateArray = $getFields['field_published_date']->getValue();
+        $pubDate = $pubDateArray[0]['value']; 
+        $date = date_create_from_format('Y-m-d', $pubDate);
+        $pubDate = date_format($date, 'm-d-Y');   // reverse the date
+        $newsUrl = $node->toUrl()->setAbsolute()->toString();
+
+        emailToAffinityGroups($body, $title, $pubDate, $agNames, $newsUrl, $ccListIdArray);            
       }
-    }
-    
+    }    
   }
-}
-
-
-function access_news_node_update(Node $node) {
-  
-  $type = $node->bundle();
-  
-  if ($type == 'access_news') {
-  
-    //showstatus("node update...");
-    //kint('node:');
-    //kint($node);
-  }
-  
 }
 
 /**
