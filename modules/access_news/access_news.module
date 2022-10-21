@@ -13,7 +13,7 @@ use \Drupal\user\Entity\User;
 function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form' || $form_id == 'eventseries_default_add_form' || $form_id == 'eventseries_default_edit_form') {
     $form['#validate'][] = 'access_news_validate';
-    $form['field_broadcast_affinity_groups']['#group'] = 'options';    
+    $form['field_broadcast_affinity_groups']['#group'] = 'options'; 
   }
 }
 
@@ -97,7 +97,6 @@ function access_news_entity_presave(EntityInterface $entity) {
  * Set Affinity Group taxonomy terms based on the Affinity Group node field
  */
 function update_affinity_group($node) {
-
   $ag_node_array = $node->get('field_affinity_group_node');
   $node->set('field_affinity_group', NULL);
   foreach ($ag_node_array as $ag_node) {
@@ -127,9 +126,9 @@ function access_news_node_insert(Node $node) {
       $allowed_roles = ['administrator', 'affinity_group_leader'];
       if (!in_array($allowed_roles, \Drupal::currentUser()->getRoles())) {
         $message = t('Thank you for submitting your news. Please change the state to "Ready for Review" when you would like to publish it.');
-      \Drupal::messenger()->addMessage($message);
-    }
-    else {
+        \Drupal::messenger()->addMessage($message);
+      }
+    } else {
       // News is published. See if they wanted the news to be broadcast to listed AGs, do it if so
       affinityGroupBroadcast($node);
     }
@@ -153,7 +152,6 @@ function access_news_entity_insert(EntityInterface $entity) {
     }
   }
 }
-
 function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
 
   $type = $node->bundle();  
@@ -164,17 +162,6 @@ function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
     }
   }
 }
-/**
- * Implements hook_theme().
- */
-function access_news_theme($existing, $type, $theme, $path): array {
-  return [
-    'requestnews_block' => [
-      'variables' => [
-      ]
-    ],
-  ];
-}
 /** 
  * Send email to constant contact email list of chosen Affinity Groups
  *  if both:
@@ -184,7 +171,6 @@ function access_news_theme($existing, $type, $theme, $path): array {
  * Should also be in published state, but that is checked before we get here. 
  * After send attempt, uncheck the broadcast option.
  */
-  
 function affinityGroupBroadcast(Node $node) {
 
   $getFields = $node->getFields();    
@@ -234,6 +220,18 @@ function affinityGroupBroadcast(Node $node) {
 
         emailToAffinityGroups($body, $title, $pubDate, $agNames, $newsUrl, $ccListIdArray);            
       }
-    }    
+    } 
   }
+}
+
+/**
+ * Implements hook_theme().
+ */
+function access_news_theme($existing, $type, $theme, $path): array {
+  return [
+    'requestnews_block' => [
+      'variables' => [
+      ]
+    ],
+  ];
 }
