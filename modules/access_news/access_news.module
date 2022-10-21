@@ -121,7 +121,7 @@ function access_news_node_insert(Node $node) {
   if ($type == 'access_news') {
     // Send admins a message if an ACCESS News node is created  
     // and needs approval for publication.
-
+    
     if (!$node->isPublished()) {
       $allowed_roles = ['administrator', 'affinity_group_leader'];
       if (!in_array($allowed_roles, \Drupal::currentUser()->getRoles())) {
@@ -152,6 +152,7 @@ function access_news_entity_insert(EntityInterface $entity) {
     }
   }
 }
+
 function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
 
   $type = $node->bundle();  
