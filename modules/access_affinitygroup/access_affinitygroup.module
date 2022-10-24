@@ -314,46 +314,6 @@ function access_affinitygroup_cron()
     $cca->newToken();
   }
 }
-
-/** 
- * Return error msg, or NULL if not error (in 200's)
- * todo: Perhaps we only check for 401 + just show code num otherwise
-*/
-  
-function getHttpErrMsg($httpCode) {
-
-    if ($httpCode < 300) {
-      return NULL;      
-    }
-
-    switch ($httpCode) {
-      case 400:	
-        $m = 'Bad request. Either the JSON was malformed or there was a data validation error.';
-        break;
-      case 401:
-        $m = 'The Access Token used is invalid.';
-        break;
-      case 403:
-        $m = 'Forbidden request. You lack the necessary scopes, you lack the necessary user privileges, or the application is deactivated.';
-        break;
-      case 409:
-        $m = 'Conflict. The resource you are creating or updating conflicts with an existing resource.';
-        break;
-      case 415:
-        $m = 'Unsupported Media Type; the payload must be in JSON format, and Content-Type must be application/json';
-        break;
-      case 500:	
-        $m = 'There was a problem with our internal service.';
-        break;
-      case 503:	
-        $m = 'Our internal service is temporarily unavailable.';
-        break;
-      default:
-        $m = 'HTTP error code: '. $httpCode;
-    }
-    return 'Constant Contact: '.$m;
-  }
-
 /**
   * Email emailText to each AG email group in ccListIds array.
   * Subjuct of email is emailTitle.
