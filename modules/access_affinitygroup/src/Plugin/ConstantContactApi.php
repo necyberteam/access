@@ -35,6 +35,8 @@ class ConstantContactApi {
 
   private $httpResponseCode;
   private $errorMessage;
+  // if true, log but do not display err to user
+  private $supressErrDisplay;
 
   /**
    * Function to sort the curl headers.
@@ -48,6 +50,7 @@ class ConstantContactApi {
     $this->clientId = urlencode($cc_key);
     $key_secret = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_secret')->getKeyValue());
     $this->clientSecret = urlencode($key_secret);
+    $this->supressErrDisplay = false;
   }
 
   /**
@@ -151,7 +154,9 @@ class ConstantContactApi {
   public function apiError($key, $message) {
         
     \Drupal::logger('access_affinitygroup')->error("$key: $message");
-    \Drupal::messenger()->addMessage("$key: $message", 'error');
+    if (!$this->supressErrDisplay) {
+      \Drupal::messenger()->addMessage("$key: $message", 'error');
+    }
   }
   
   /**
@@ -159,6 +164,12 @@ class ConstantContactApi {
    * @param $endpoint - end of the URL api call.
    * @param $post_data - included with $type PUT json encoded.
    * @param $type - POST or GET, defaults to GET.
+   * Returns result from CC call or NULL upon error.
+   * If error returned from Constant contact:
+   * this function will show the http error
+   * as well and any error message from constant contact.
+   * this->httpResponseCode set
+   * this->errorMessage set to CC error message as well.
    */
   public function apiCall($endpoint, $post_data=null, $type='GET') {
 
@@ -200,34 +211,41 @@ class ConstantContactApi {
     
     // Make the call
     $returned_result = curl_exec($ch);       
-    kint($returned_result);
-    kint($ch);
     
-    $this->httpResponseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);    
-        
-    $errMsg = getHttpErrMsg($this->httpResponseCode);
-        kint($errMsg);
-    if (!empty($errMsg)) {
-      showStatus('http error code: ' . $errMsg);     // TO DO - temp
-       //  return NULL;      
-    }
 
     if (empty($returned_result)) {
-      showStatus("Error from Constant Contact: no result; http code; ".$httpCode);
+      $this->apiError("Error from Constant Contact: no result; http code; ".$httpCode,"");
       return NULL;
     }
 
     $result = json_decode($returned_result);
+    
+    // log any http error code
+    $this->httpResponseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    $errMsg = getHttpErrMsg($this->httpResponseCode);       
+    if (!empty($errMsg)) {
+      \Drupal::logger('access_affinitygroup')->error($errMsg);
+      //showStatus($errMsg);       
+    }    
     curl_close($ch);
-          
-    // looking for error_key; that field is not present if there is no error.
+    
+    // Check for CC error. error_key field is only present in case of error.
     if ( preg_match('/error_key/', $returned_result, $matches, PREG_OFFSET_CAPTURE) ) {
-      foreach ($result as $error) {
-        $this->errorMessage = $error->error_message;
-        $this->apiError($error->error_key, $error->error_message);
+           
+     // special case: when unauth (ie token not refreshed) returned_result is not
+     // an array list other types of error returns
+      if ($result->error == 'unauthorized') {                    
+          $this->errorMessage = $result->error_message;
+          $this->apiError($result->error_key, $result->error_message);
+      } else {        
+        foreach ($result as $error) {
+          $this->errorMessage = $error->error_message;
+          $this->apiError($error->error_key, $error->error_message);
+        }
       }
+      $result = NULL;
     }
-
+    
     return $result;
   }
 
@@ -255,6 +273,7 @@ class ConstantContactApi {
     ];
     $cc_contact = json_encode($cc_contact);
 
+    $this->supressErrDisplay = true;
     $new_contact = $this->apiCall('/contacts', $cc_contact, 'POST');
     
     // if reposonse is resource conflict, that means the email is already a contact but
