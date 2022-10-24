@@ -219,6 +219,8 @@ function affinityGroupBroadcast(Node $node) {
         $pubDate = date_format($date, 'm-d-Y');   // reverse the date
         $newsUrl = $node->toUrl()->setAbsolute()->toString();
 
+        $node->set('field_broadcast_affinity_groups', [0]);        
+        $node->save();
         emailToAffinityGroups($body, $title, $pubDate, $agNames, $newsUrl, $ccListIdArray);            
       }
     } 
