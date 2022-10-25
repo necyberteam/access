@@ -210,31 +210,33 @@ class ConstantContactApi {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     
     // Make the call
-    $returned_result = curl_exec($ch);       
-    
+    $returned_result = curl_exec($ch);   
 
-    if (empty($returned_result)) {
-      $this->apiError("Error from Constant Contact: no result; http code; ".$httpCode,"");
-      return NULL;
-    }
-
+ 
     $result = json_decode($returned_result);
     
     // log any http error code
     $this->httpResponseCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    curl_close($ch);
+    
     $errMsg = getHttpErrMsg($this->httpResponseCode);       
     if (!empty($errMsg)) {
-      \Drupal::logger('access_affinitygroup')->error($errMsg);
-      //showStatus($errMsg);       
-    }    
-    curl_close($ch);
+      $this->apiError($errMsg, "");
+          
+    } else {
+      if (empty($returned_result)) {
+        $this->apiError("Error from Constant Contact: no result", "");
+        return NULL;
+      }  
+    } 
+
     
     // Check for CC error. error_key field is only present in case of error.
     if ( preg_match('/error_key/', $returned_result, $matches, PREG_OFFSET_CAPTURE) ) {
-           
+      
      // special case: when unauth (ie token not refreshed) returned_result is not
      // an array list other types of error returns
-      if ($result->error == 'unauthorized') {                    
+      if ($result->error_key == 'unauthorized') {           
           $this->errorMessage = $result->error_message;
           $this->apiError($result->error_key, $result->error_message);
       } else {        

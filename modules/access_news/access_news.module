@@ -12,6 +12,9 @@ use \Drupal\user\Entity\User;
  */
 function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form' || $form_id == 'eventseries_default_add_form' || $form_id == 'eventseries_default_edit_form') {
+    //kint("in alter form id: ".$form_id);
+    //kint($form);
+    //die();
     $form['#validate'][] = 'access_news_validate';
     $form['field_broadcast_affinity_groups']['#group'] = 'options'; 
   }
@@ -118,6 +121,7 @@ function update_affinity_group($node) {
  */
 function access_news_node_insert(Node $node) {
   $type = $node->bundle();
+  showStatus("In node insert, $type: ".$type);
   if ($type == 'access_news') {
     // Send admins a message if an ACCESS News node is created  
     // and needs approval for publication.
@@ -129,7 +133,7 @@ function access_news_node_insert(Node $node) {
         \Drupal::messenger()->addMessage($message);
       }
     } else {
-      // News is published. See if they wanted the news to be broadcast to listed AGs, do it if so
+      // For published news: See if they wanted the news to be broadcast to listed AGs, do it if so
       affinityGroupBroadcast($node);
     }
   }
@@ -142,6 +146,7 @@ function access_news_node_insert(Node $node) {
  */
 function access_news_entity_insert(EntityInterface $entity) {
   $type = $entity->getEntityTypeId();
+  showStatus("In entity insert, type: ".$type);
   if ( $type == 'eventseries' ) {
     if (!$entity->isPublished()) {
       $allowed_roles = ['affinity_group_leader'];
@@ -154,10 +159,18 @@ function access_news_entity_insert(EntityInterface $entity) {
 }
 
 function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
-
+  
   $type = $node->bundle();  
-  if ($type == 'access_news') {   
+  $typeId = $node->getEntityTypeId();  
+  showStatus("In entity update, type, typeId: ".$type. ' '. $typeId);
+  //kint($type);
+  //kint ($node);
+  //die();
+  // probably want to do this on an individual event as well. If so, will need to find the 
+  // AGs which go with that instance from the series.   
+  if ($type == 'access_news' || $typeId == 'eventseries') {   
    
+    kint($node);
     if ($node->isPublished()) {
       affinityGroupBroadcast($node);
     }
@@ -172,22 +185,29 @@ function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
  * Should also be in published state, but that is checked before we get here. 
  * After send attempt, uncheck the broadcast option.
  */
-function affinityGroupBroadcast(Node $node) {
+function affinityGroupBroadcast(Drupal\Core\Entity\EntityInterface $node) {
+//function affinityGroupBroadcast(Node $node) {
 
+  kint($node);
   $getFields = $node->getFields();    
+  //kint($getFields);
+
   $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
+  kint ($broadcastArray);
+
   $broadcastToAGs = $broadcastArray[0]['value'];
-  //showStatus ("broadcast: ".$broadcastToAGs);
+  kint($broadcastToAGs);
+  showStatus ("broadcast: ".$broadcastToAGs);
   
   // find the node ids for the AGs.  If AGs have been specified, get the 
   // corresponding Constant Contact email list ids from the nodes.
 
   if ($broadcastToAGs) {
-    
+ 
     $agNodes = $node->get('field_affinity_group_node');
-        
+
     if (count($agNodes)) {
-      
+      showStatus("count agnodes is: ".count($agNodes));
       $ccListIdArray = array();
       $agNames = array();
 
@@ -207,7 +227,9 @@ function affinityGroupBroadcast(Node $node) {
       if (!count($ccListIdArray)) {
           showStatus("Missing Constant Contact Email List Id for Affinity Group");
       } else {
-                
+                showStatus("DOING THE EMAIL CAMPAIGN");
+                kint("IN EMAIL");
+                die();
         // gather items to insert into the email template
         $bodyArray = $getFields['body']->getValue();
         $body = $bodyArray[0]['value'];
@@ -219,6 +241,8 @@ function affinityGroupBroadcast(Node $node) {
         $pubDate = date_format($date, 'm-d-Y');   // reverse the date
         $newsUrl = $node->toUrl()->setAbsolute()->toString();
 
+        // Now emailing the group; set option off. If user wants to email again after
+        // and edit, they will need to check the box again.
         $node->set('field_broadcast_affinity_groups', [0]);        
         $node->save();
         emailToAffinityGroups($body, $title, $pubDate, $agNames, $newsUrl, $ccListIdArray);            

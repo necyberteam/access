@@ -72,11 +72,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
       // which we need to build the JSON to send to api. 
 
       $entityId = $entity->get('entity_id')->getValue()[0]['value'];
-      //if ($entityId == 685) {
-      //  testTheMail();
-      //  return;        
-      //} 
-
+      
       $postJSON = makeListMembershipJSON($entityId);
 
       if (empty($postJSON)) {                
@@ -414,9 +410,9 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds)
     }   
   }
   if ($sent) {
-    showStatus("News item emails sent to affinity groups.");
+    showStatus("News item emailed to specified affinity groups.");
   } else {
-    showStatus("Email error while trying to send new items to affinity groups.");
+    showStatus("Error while trying to email news items to affinity groups.");
   }
 }
 /**
