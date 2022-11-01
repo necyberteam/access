@@ -15,7 +15,7 @@ use Drupal\Core\Block\BlockBase;
  */
 class RequestNewsBlock extends BlockBase {
 
-/**
+  /**
    * {@inheritdoc}
    */
   public function build() {

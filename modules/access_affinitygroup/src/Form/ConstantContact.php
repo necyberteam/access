@@ -5,14 +5,15 @@ namespace Drupal\access_affinitygroup\Form;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\FormBase;
-use \Drupal\Core\Url;
-use \Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\Core\Link;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Class ConstantContact.
  */
 class ConstantContact extends FormBase {
+
   /**
    * {@inheritdoc}
    */
@@ -23,19 +24,19 @@ class ConstantContact extends FormBase {
     $refresh_token = $request->get('refresh_token');
 
     if ($refresh_token) {
-      $cca = new ConstantContactApi;
+      $cca = new ConstantContactApi();
       $cca->newToken();
     }
 
     if ($code) {
-      $cca = new ConstantContactApi;
+      $cca = new ConstantContactApi();
       $cca->initializeToken($code);
     }
 
     $url = Url::fromUri('internal:/admin/services/constantcontact-token', ['query' => ['refresh_token' => TRUE]]);
     $link = Link::fromTextAndUrl(t('Refresh Token'), $url)->toString()->getGeneratedLink();
 
-    $form['scope'] = array(
+    $form['scope'] = [
       '#type' => 'checkboxes',
       '#options' => [
         'account_read' => $this->t('Account Read'),
@@ -53,7 +54,7 @@ class ConstantContact extends FormBase {
       ],
       '#title' => $this->t('Scope'),
       '#description' => $this->t('Select Constant Contact permissions.'),
-    );
+    ];
 
     $form['submit'] = [
       '#type' => 'submit',
@@ -61,7 +62,7 @@ class ConstantContact extends FormBase {
     ];
 
     $form['refresh_token'] = [
-        '#markup' => $link,
+      '#markup' => $link,
     ];
 
     return $form;
@@ -98,11 +99,11 @@ class ConstantContact extends FormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $selected_scope = '';
     foreach ($form_state->getValue('scope') as $scope_value) {
-      if ( $scope_value !== 0 ) {
+      if ($scope_value !== 0) {
         $selected_scope .= $scope_value . ' ';
       }
     }
-    $cc = new ConstantContactApi;
+    $cc = new ConstantContactApi();
     $key = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_id')->getKeyValue());
     $token = urlencode($key);
     $host = \Drupal::request()->getSchemeAndHttpHost();
