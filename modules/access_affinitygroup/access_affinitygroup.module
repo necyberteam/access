@@ -5,6 +5,7 @@ use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\user\Entity\User;
 use Drupal\Component\Utility\Xss;
+use Drupal\Component\Serialization\Json;
 
 /**
  * @file
@@ -303,16 +304,268 @@ function showStatus($logmsg)
  */
 function access_affinitygroup_cron()
 {
+  showStatus ("IN AAG CHRON");
+  
   // Setting this to run once a day, may need adjustment
   // if cron is run more frequently.
   if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) <= 30)) {
     $cca = new ConstantContactApi;
     $cca->newToken();
   }
+
+
+  updateUserAllocations();
 }
+
+// api call to 
+// run from chron 
+function updateUserAllocations() {
+    
+    $apiBase = 'https://a3mdev.xsede.org/xdcdb-api-test-new/xdusage';
+    $requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=5723';
+    
+    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&resource_id=3000';
+    
+    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired';
+
+  
+//    $path = 'sites/default/files/private/.keys/secrets.json';
+//    if (!file_exists($path)) {
+//      \Drupal::messenger()->addError("[User Profiles] Unable to get ramps api key");
+//      return false;
+//    }
+//    $secrets_json_text = file_get_contents($path);
+//    $secrets_data = json_decode($secrets_json_text, TRUE);
+//    $api_key = $secrets_data['ramps_api_key'];
+    $apiKey = 'RDv4lYxksmUNBjABS32RW3F6EKGHx49sPsSWmlViJPKjvG82WyGpeyqQmXyQS6I3';
+    $requestOpts = array('headers' => array(
+                        'XA-API-KEY' => $apiKey,
+                        'XA-AGENT'   => 'xdusage',
+                        'XA-RESOURCE' => 'support.access-ci.org', 
+                        'Content-Type' => 'application/json'),    
+                       'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]);
+      
+    $client = new GuzzleHttp\Client();
+    try {
+      $response = $client->request('GET', $requestUrl, $requestOpts);
+      kint($response);
+      
+      $responseJson = Json::decode((string) $response->getBody());
+      
+      kint($responseJson['message']);
+
+      // check each project. this may not be the right api call, not sure yet. for now 
+      // try it with this. (if it is, get unique users first)
+      $projectsArray = $responseJson['result'];
+      
+      //kint(count($projectsArray));
+      //$project = $projectsArray[0];  // just for now
+      //kint($project);
+
+      showStatus('!!!incoming count: ' .count($projectsArray));
+
+      $userArray = array();
+        // assemble array of users and which resources they use 
+      foreach ($projectsArray as $project) {
+
+        $userName = $project['pi_portal_username'];
+        showStatus('* '.$userName);
+        //kint('* '.$userName);
+
+        $oneUser = array_search($userName, $userArray);
+        
+        if ($oneUser === false) {
+          //showStatus('-- not found; adding '. $userName .' '. $project['resource_id']);          
+          $userArray[] = $userName;          
+          $userArray[$userName] = array($project['info_resource_id']); 
+          //$userArray['findex'] = array($project['info_resource_id']); 
+        } else {
+          // have user. add this rid if they don't already have in their list 
+          showStatus('.............found, appending rid:'. $userName .'- '. $project['info_resource_id']);          
+          
+          if (array_search($project['info_resource_id'], $userArray[$userName]) === false) {                      
+            array_push ($userArray[$userName], $project['info_resource_id']);
+          }
+        }
+      }  
+
+      showStatus('count: '.count($userArray));
+
+      //kint($users);      
+      //kint(count($users));      
+      //die();
+
+      // for each user: if user does not exist, create the user. First look for the user via the user name.
+      // the name would have @access_id on the end [IS THIS right?]
+
+      // now we have a user handle, whether newly created or existing. 
+      // for each rid, find related AG. Make sure user is part of that AG. 
+      
+      // after creating, and if we do have the user. find which resource they are part of 
+
+      foreach ($userArray as $oneUser) {
+        
+        //kint($userArray);
+        kint($oneUser);        
+
+        //showStatus($oneUser);
+        //$userHandle = user_load_by_name('banana');
+        //kint($userHandle);
+
+        $accessUserName = $userName.'@access-ci.org';
+        $userHandle = user_load_by_name($accessUserName);
+        kint($userHandle);
+        
+        // @access-ci.org
+        // did not have the user, so create it. Ongoing, this is much the less frequent case
+        // so instead of storing everyone's account info in $users, go back to incoming to find
+        if ($userHandle === false) {
+                                      
+          $userProjects = array_usearch($projectsArray, function ($o) use ($userName) { return $o['pi_portal_username'] === $userName; });
+
+          kint($userProjects);
+          $userProjects = array_values($userProjects);
+          kint($userProjects);
+          kint($userProjects[0]);
+      
+          // TODO - might have to make another api call here to get the email if needed... yes though, for constant contact!
+          
+          $userHandle = createUser($userProjects[0]);
+          kint($userHandle);
+          //createUser($userName, $project['pi_portal_email']);
+        }
+
+        // now we have a loaded user. check the user's Resources to see if they still match.
+
+        // load user
+
+        // now from list of resource_id for this user, check each to see which AG they are associated with. build list of AGs for this user
+        
+        $userResourceArray = $userHandle->get('field_resources');
+        kint($userResourceArray);
+        //->getValue()[0]['value']; 
+        
+
+        $x = $userResourceArray->getValue();
+        kint($x);
+
+        // test
+       // $database = \Drupal::database();
+       // kint($database);
+        //$query = $database->query("SELECT id, example FROM {mytable}");
+        //$qres = $query->fetchAll();
+        //kint($qres);
+
+        // test
+        $query = \Drupal::entityQuery('user');
+        kint($query);
+         //= $query->condition('type', 'article')
+        //  ->condition('uid.entity.name', 'admin')
+        //  ->execute();
+
+        $unodeIds = $query
+        ->condition('field_resources', '429')
+        ->execute();
+        kint($unodeIds);
+        //$aval =  array_values($node_ids);
+
+        
+        // test
+        $query = \Drupal::entityQuery('node');
+        kint($query);
+         //= $query->condition('type', 'article')
+        //  ->condition('uid.entity.name', 'admin')
+        //  ->execute();
+        
+        //$result = \Drupal::entityQuery('node')
+        //->condition('type', 'movie')
+        //->condition('field_director.entity:node.field_birth_year', '1981')
+        //->execute();
+        
+        //$nodeIds = $query
+        //->condition('field_cider_resources', '429')
+        //->execute();
+        //kint($nodeIds);
+        //$aval =  array_values($node_ids);
+
+        // this works
+        $agnodeIds = $query
+        ->condition('type', 'affinity_group')
+        ->condition('field_cider_resources', '429')
+        ->execute();
+     
+        kint($agnodeIds);
+        $aval =  array_values($agnodeIds);
+        kint($aval);
+
+        foreach ($aval as $oneag) {
+          //kint($oneag);
+        }
+
+        //kint($userResourceArray->getValue()[0]['target_id']);
+        // this is the node ID of the resource.  get all AGs associated with this resource
+        // todo - make a lookup table at the start of this so we don't need to query again for each person 
+        foreach ($userResourceArray->getValue() as $resource) {
+//          kint($resource['target_id']);  // this is the string number for the cider node ie '427'
+
+          // look for the AG
+
+        }
+
+
+
+        // check if user is a member of these AGs. If not, add. 
+        
+
+
+        die();        
+      }
+       
+          
+    } catch (Exception $e) {
+      \Drupal::messenger()->addError("exception " .  $e->getMessage());
+    }
+    return false;
+}
+
+function array_usearch(array $array, callable $comparitor) {
+  return array_filter(
+      $array,
+      function ($element) use ($comparitor) {
+          if ($comparitor($element)) {
+              return $element;
+          }
+      }
+  );
+}
+function createUser($userProject) {
+  
+  try {      
+    $u = User::create();
+    kint('user create');
+    kint($u);
+    $u->set('status', 1);
+//    $u->setEmail($userProject['ben@example.com');
+    $u->setUsername($userProject['pi_portal_username'].'@access-ci.org');
+  //$user->addRole('content_editor');
+  $u->set('field_user_first_name', $userProject['pi_first_name']);
+  $u->set('field_user_last_name', $userProject['pi_last_name']);
+  kint($userProject['pi_last_name']);
+  kint($u);
+  $u->save();
+  $status = true;
+
+  } catch (Exception $e) {
+    \Drupal::messenger()->addError("exception " .  $e->getMessage());
+    $u = false;
+  }
+  //return $status;
+  return $u;
+}
+
 /**
   * Email emailText to each AG email group in ccListIds array.
-  * Subjuct of email is emailTitle.
+  * Subject of email is emailTitle.
   * See makeNewsHTML for meaning of other arguments. 
   *    
   * Steps to send email campaign from Constant Contact:
@@ -693,7 +946,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                 valign="top"
                                                                                 class="yiv2621404860column yiv2621404860column--1 yiv2621404860scale yiv2621404860stack">
                                                                                 <div style="line-height:30px;min-height:30px;"
-                                                                                    class="yiv2621404860spacer"> </div>
+                                                                                    class="yiv2621404860spacer"> </div>
                                                                             </td>
                                                                         </tr>
                                                                     </tbody>
@@ -779,7 +1032,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                 </table>
                                                                                 
                                                                                 <div style="line-height:20px;min-height:20px;"
-                                                                                    class="yiv2621404860spacer"> </div>
+                                                                                    class="yiv2621404860spacer"> </div>
                                                                                 <table width="100%" border="0"
                                                                                     cellpadding="0" cellspacing="0"
                                                                                     style="table-layout:fixed;"
