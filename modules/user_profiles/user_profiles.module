@@ -44,6 +44,25 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
       break;
   }
 }
+/**
+ * Entity presave hook
+ * 
+ * Make use of the allocations-api.access-ci.org/identity/profiles/v1/people api
+ * to verify that the user is not suspended before saving any entity (which includes
+ * node, user, webform submission, event).  If the user is marked as suspended,
+ * abort the save with an exception.
+ * 
+ */
+function user_profiles_entity_presave(Object $entity) {
+  $current_user = \Drupal::currentUser();
+  $account_name = $current_user->getAccountName();
+  $userinfo = get_account_data_from_api($account_name);
+  $is_suspended = $userinfo && $userinfo['isSuspended'];
+  if ($is_suspended) {
+    throw new Exception("Cannot save because the user '$account_name' has been suspended");
+  }
+}
+
 
 /**
  * CILogon Auth pre authorize hook.
@@ -213,7 +232,8 @@ function get_account_data_from_api($username) {
   // look for the ramps key in file system
   $path = 'sites/default/files/private/.keys/secrets.json';
   if (!file_exists($path)) {
-    \Drupal::messenger()->addError("[User Profiles] Unable to get ramps api key");
+    $msg = "[User Profiles] Unable to find key file";
+    \Drupal::messenger()->addError($msg);
     return false;
   }
   $secrets_json_text = file_get_contents($path);
@@ -233,7 +253,11 @@ function get_account_data_from_api($username) {
     $userinfo = Json::decode((string) $response->getBody());
     return $userinfo;
   } catch (Exception $e) {
-    \Drupal::messenger()->addError("Could not retrieve user profile information: " .  $e->getMessage());
+    // display an addtional error message if response code is anything besides 404 (not found)
+    if ($e->getCode() != 404) {
+      $msg = "Could not retrieve user profile information: " .  $e->getMessage();
+      \Drupal::messenger()->addError($msg);
+    }
   }
   return false;
 }
