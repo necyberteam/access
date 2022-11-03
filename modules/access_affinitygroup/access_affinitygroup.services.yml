@@ -1,6 +1,0 @@
-services:
-  access_affinitygroup.flag_subscriber:
-    class: Drupal\access_affinitygroup\EventSubscriber\FlagSubscriber
-    tags:
-      - { name: event_subscriber }
-
