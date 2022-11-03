@@ -65,7 +65,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
   
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
-
+    showStatus("In AG entity presave");
     if (method_exists($entity, 'getFlaggableType')) {
 
       // user did Join the AG (using the Join button or link)
@@ -77,7 +77,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
       $postJSON = makeListMembershipJSON($entityId);
 
       if (empty($postJSON)) {                
-        showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");        
+        showStatus("XXCan't add user to email list; check if user is missing Constant Contact ID.");        
       } else {
         $cca = new ConstantContactApi;
         $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
@@ -237,7 +237,7 @@ function makeListMembershipJSON($flagEntityId)
   }
     
   if (empty($list_cc_id)) {
-    showStatus('Missing Constant Contact List Id for this Affinity Group.');
+    showStatus('YYMissing Constant Contact List Id for this Affinity Group.');
     return NULL;
   }
 
@@ -305,7 +305,8 @@ function showStatus($logmsg)
 function access_affinitygroup_cron()
 {
   showStatus ("IN AAG CHRON");
-  
+  //kint("hello");
+  //die();
   // Setting this to run once a day, may need adjustment
   // if cron is run more frequently.
   if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) <= 30)) {
@@ -313,7 +314,7 @@ function access_affinitygroup_cron()
     $cca->newToken();
   }
 
-
+  showStatus ("IN AAG CHRON 2");
   updateUserAllocations();
 }
 
@@ -518,7 +519,7 @@ function updateUserAllocations() {
         
 
 
-        die();        
+        //die();        
       }
        
           
