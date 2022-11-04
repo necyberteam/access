@@ -18,7 +18,7 @@ use Drupal\webform\WebformSubmissionInterface;
  * )
  */
 class RequestOrgsListAddHandler extends WebformHandlerBase {
-  public $debug = TRUE;
+  public $debug = false;
 
   /**
    * {@inheritdoc}
