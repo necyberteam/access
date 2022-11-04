@@ -6,7 +6,7 @@ use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
- * Create and send the request ticketing email.
+ * Create and send the account support email.
  *
  * @WebformHandler(
  *   id = "Account Support Add Header",
@@ -67,9 +67,6 @@ class AccountSupportHandler extends WebformHandlerBase {
     }
   }
 
-  /**
-   *
-   */
   public function getXMailMessageBody($data) {
     return twig_render_template(
           drupal_get_path('module', 'ticketing') . '/templates/account-support-mail.html.twig',
