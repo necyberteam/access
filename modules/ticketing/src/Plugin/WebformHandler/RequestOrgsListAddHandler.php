@@ -6,19 +6,19 @@ use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
- * Create and send the account support email.
+ * Create and send the request to add an organization to the access orginizations list
  *
  * @WebformHandler(
- *   id = "Account Support Add Header",
- *   label = @Translation("Account Support Add Header"),
+ *   id = "ACCESS Orgs List Add Header",
+ *   label = @Translation("ACCESS Orgs List Add Header"),
  *   category = @Translation("Entity creation"),
- *   description = @Translation("Account Support Add Header"),
+ *   description = @Translation("ACCESS Orgs List Add Header"),
  *   cardinality = \Drupal\webform\Plugin\WebformHandlerInterface::CARDINALITY_UNLIMITED,
  *   results = \Drupal\webform\Plugin\WebformHandlerInterface::RESULTS_PROCESSED,
  * )
  */
-class AccountSupportHandler extends WebformHandlerBase {
-  public $debug = FALSE;
+class RequestOrgsListAddHandler extends WebformHandlerBase {
+  public $debug = false;
 
   /**
    * {@inheritdoc}
@@ -33,12 +33,12 @@ class AccountSupportHandler extends WebformHandlerBase {
       // $data = Array ( [your_name] => a [email] => jasperjunk@gmail.com [access_id] => [comment] => )
     }
 
-    $to = "0-Help@tickets.access-ci.org";
+    $to = "ACCESS-Allocations-DevOPS@tickets.access-ci.org";
 
     if ($this->debug) {
 
       // FOR TESTING.
-      $to .= ', jasperjunk@gmail.com, andrew@elytra.net';
+      $to .= ', jasperjunk@gmail.com';
     }
 
     // Build up the email params.
@@ -46,7 +46,7 @@ class AccountSupportHandler extends WebformHandlerBase {
     $params['to'] = $to;
     $body = (string) $this->getXMailMessageBody($data);
     $params['body'] = $body;
-    $params['title'] = 'account support request from ' . $data['your_name'];
+    $params['title'] = 'request to an an organization to ACCESS organization list from ' . $data['your_name'];
 
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
     $send = TRUE;
@@ -69,13 +69,12 @@ class AccountSupportHandler extends WebformHandlerBase {
 
   public function getXMailMessageBody($data) {
     return twig_render_template(
-          drupal_get_path('module', 'ticketing') . '/templates/account-support-mail.html.twig',
+          drupal_get_path('module', 'ticketing') . '/templates/request-orgs-list-add-mail.html.twig',
           [
             'theme_hook_original' => 'not-applicable',
             'name' => $data['your_name'],
-            'email' => $data['email'],
-            'access_id' => $data['access_id'],
-            'comment' => $data['comment'],
+            'email' => $data['your_email'],
+            'organization' => $data['your_organization'],
           ]
       );
   }
