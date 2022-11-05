@@ -10,7 +10,7 @@ function access_misc_views_post_render(ViewExecutable $view) {
   // Override view /admin/structure/views/view/resources/edit/page_2 title
   if ($view->id() == 'resources' && $view->getDisplay()->view->element['#display_id'] == 'page_2' ) {
     $tid = $view->getTitle();
-    $title = term::load($tid)->get('name')->value;
+    $title = 'Resources tagged ' . term::load($tid)->get('name')->value;
     // Set the view title.
     $view->setTitle($title);
     // Set the route title.
