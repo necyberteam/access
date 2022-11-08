@@ -1,0 +1,55 @@
+<?php
+
+use Drupal\webform\Entity\Webform;
+use Drupal\webform\Entity\WebformSubmission;
+use Drupal\webform\WebformSubmissionForm;
+
+
+
+/**
+ * @file
+ * Initiate dev site.
+ */
+
+/**
+ * Implements hook_install().  This gets called when this module is installed.
+ * Can be used to create or modify data.
+ */
+function amp_dev_install()
+{
+  update_user_100();
+  // submit_webform_for_test_tag();
+}
+
+function update_user_100()
+{
+  $this_user = \Drupal::entityTypeManager()->getStorage('user')->load(100);
+  // kint($this_user);
+  $this_user->set('field_user_first_name', 'Julie');
+  $this_user->set('field_user_last_name', 'Ma');
+  $this_user->set('field_institution', 'MGHPCC');
+  $this_user->save();
+}
+
+
+// wrote this as a trial run of submitting a webform
+// not actually in use (call is commented out)
+function submit_webform_for_test_tag()
+{
+
+  // Example IDs
+  $webform_id = 'request_tag';
+  $webform = Webform::load($webform_id);
+  kint($webform);
+  // Create webform submission.
+  $values = [
+    'webform_id' => $webform->id(),
+    'data' => [
+      'tag_request_name' => 'test_tag_amp_dev',
+    ],
+  ];
+
+  /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
+  $webform_submission = WebformSubmission::create($values);
+  $webform_submission->save();
+}
