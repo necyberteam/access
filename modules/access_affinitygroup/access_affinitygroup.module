@@ -63,8 +63,10 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
 {   
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
-
+    
     if (method_exists($entity, 'getFlaggableType')) {
+      KINT('!!!PRESAVE AG flaggable');
+      showStatus('!!!PRESAVE AG flaggable');
       // user did Join the AG (using the Join button or link)
       // The entity id of this flag is used to find the AG node
       // which we need to build the JSON to send to api. 
@@ -80,8 +82,18 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
         $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
       }    
 
+      // TODO!! Don't do this if in  cron (adding user to AG)
+      // remove this AG from this user's block list if not already there
+      if (false) {                                        // TEMP TEMP
+      $currentUser = \Drupal::currentUser();
+      $userId = $currentUser->id();        
+      $userDetails = User::load($userId);    
+      removeBlockedAG($entityId, $userDetails);
+      }
+      kint("End Presave Flaggable");
     } else {
-
+        KINT('!!!PRESAVE AG not flaggable');
+        showStatus('!!!PRESAVE AG not flaggable');
       // affinity group edit was saved by admin user.
       // If not already there, add list to constant contact.
       // TODO - should we skip all this if list_id already set
@@ -145,23 +157,22 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
  * 
  * See notes above on presave for Join flag for Leave.
  */
-// TODO - don't want to do this from CRON! Like when we are setting the user's AGs
 function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface $entity)
 {  
   $type = $entity->bundle();    
-  if ($type == 'affinity_group') {
+  if ($type == 'affinity_group') {    
     
     if (method_exists($entity, 'getFlaggableType')) {     
      
       // user did Leave AG. This flag entity id is used to find the
       // AG node and the list id within the node for json to send to api. 
-      
+      // this is the taxonomy number for the ag      
       $entityId = $entity->get('entity_id')->getValue()[0]['value'];
-      //if ($entityId == 685) {
-      //  testTheMail();
-      //  return;        
-      //}     
-     
+      kint($entityId);
+      kint($entity);
+      $refEntArray = $entity->referencedEntities();
+      kint($refEntArray);
+
       $postJSON = makeListMembershipJSON($entityId, false);
 
       if (!empty($postJSON)) {      
@@ -169,6 +180,12 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
         $ccResponse = $cca->apiCall('/activities/remove_list_memberships', $postJSON, 'POST');        
       }  
 
+      // put this AG on this user's block list if not already there
+      $currentUser = \Drupal::currentUser();
+      $userId = $currentUser->id();        
+      $userDetails = User::load($userId);      
+      addBlockedAG($entityId, $userDetails);
+      
     } else {
       // AG getting deleted. 
       $title = $entity->getTitle();
@@ -195,6 +212,45 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
   }
 }
 
+// user is leaving an ag; add if not already on blocked list
+function addBlockedAG($agTaxonomyId, $userDetails) {
+  $userBlockedArray = $userDetails->get('field_taxo_block')->getValue();
+  kint($userBlockedArray);
+  foreach ($userBlockedArray as $userBlock) {          
+    kint($userBlock);   
+    $userBlockedAgTids[] =  $userBlock['target_id'];
+  }
+
+  kint($userBlockedAgTids);  
+  if (!in_array($agTaxonomyId, $userBlockedAgTids)) {
+    kint('adding '.$agTaxonomyId);
+    $userDetails->get('field_taxo_block')->appendItem($agTaxonomyId);
+    $userDetails->save();
+  }
+}
+
+// user is joining an ag; remove if on the blocked list
+function removeBlockedAG($agTaxonomyId, $userDetails) {
+  $userBlockedArray = $userDetails->get('field_taxo_block')->getValue();
+  kint($userBlockedArray);
+
+  $wasBlocked = false;
+  foreach ($userBlockedArray as $userBlock) {          
+    if ($userBlock['target_id'] !== $agTaxonomyId) {
+      $userBlockedTaxIds[] = $userBlock['target_id'] ;
+    }else {
+      $wasBlocked = true;
+    }
+  }
+
+  // 
+  if ($wasBlocked) {
+    kint('removeing'. $agTaxonomyId);
+    $userDetails->set('field_taxo_block', $userBlockedTaxIds);
+    $userDetails->save();
+  }
+}
+
 /**
  * Prepares json for api call that for adds or deletes CC user from 
  * a CC list.  The json contains 2 CC ids: the user (contact) and the
@@ -210,7 +266,11 @@ function makeListMembershipJSON($flagEntityId)
   $user_id = $current_user->id();
         
   $user_detail = User::load($user_id);
-  $user_cc_id = $user_detail->get('field_constant_contact_id')->getValue()[0]['value']; 
+
+  $ccIdField = $user_detail->get('field_constant_contact_id')->getValue();
+  if (!empty($ccIdField)) {
+    $user_cc_id = $ccIdField[0]['value']; 
+  }
 
   if (empty($user_cc_id)) {
     return NULL;
@@ -255,28 +315,21 @@ function makeListMembershipJSON($flagEntityId)
  */
 
 function  access_affinitygroup_user_login(UserInterface $account)
-{
+{  
   $current_user = \Drupal::currentUser();
 
   $user_id = $current_user->id();
   $user_detail = User::load($user_id);
-
+  
   $cca_user_id = null;
   $field_val = $user_detail->get('field_constant_contact_id')->getValue();
   if (!empty($field_val)) {
     $cca_user_id = $field_val[0]['value'];    
   }
-
   // if user did not already have the CC id, try to add to CC.
   if (empty($cca_user_id)) {
-
-    $user_first_name = $user_detail->get('field_user_first_name')->getString();
-    $user_last_name = $user_detail->get('field_user_last_name')->getString();
-    $user_mail = $current_user->getEmail();
-    
-    $cca = new ConstantContactApi;
-    $cca_user_id = $cca->addContact($user_first_name, $user_last_name, $user_mail, $user_id);
-    
+ 
+    $cca_user_id = addUserToConstantContact($user_detail, $current_user->getEmail());   
     if (empty($cca_user_id)) {
       showStatus("Could not add user to Constant Contact.");
     }else {
@@ -286,8 +339,17 @@ function  access_affinitygroup_user_login(UserInterface $account)
   } else {
     // this else just for debugging in early stages
     //showStatus("Login and NOT attempting add of new constant contact id.");
-  }
+  } 
+}
 
+// Return the new ID if any. 
+function addUserToConstantContact($userDetail, $userEmail) {
+  $firstName = $userDetail->get('field_user_first_name')->getString();
+  $lastName = $userDetail->get('field_user_last_name')->getString();
+  
+  $cca = new ConstantContactApi;
+  $ccaUserId = $cca->addContact($firstName, $lastName, $userEmail);
+  return $ccaUserId;  
 }
 
 function showStatus($logmsg)
@@ -323,9 +385,11 @@ function access_affinitygroup_cron()
 function updateUserAllocations() {
     
     $apiBase = 'https://a3mdev.xsede.org/xdcdb-api-test-new/xdusage';
-    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=5723';    
-    $requestUrl = $apiBase . '/v2/projects?active_only&not_expired&resource_id=3000';    
-    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired';
+    $requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=5723';     // ktomko
+    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=17626';     // j park
+    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=12684';     // asherman
+    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&resource_id=3132';    // once resource, over 90 users
+    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired';  // thousands
   
 //    $path = 'sites/default/files/private/.keys/secrets.json';
 //    if (!file_exists($path)) {
@@ -336,6 +400,8 @@ function updateUserAllocations() {
 //    $secrets_data = json_decode($secrets_json_text, TRUE);
 //    $api_key = $secrets_data['ramps_api_key'];
     $apiKey = '';
+    $apiKey = 'RDv4lYxksmUNBjABS32RW3F6EKGHx49sPsSWmlViJPKjvG82WyGpeyqQmXyQS6I3'; //TODO - get from file
+  
      //TODO - get from file
 
     $requestOpts = array('headers' => array(
@@ -392,14 +458,13 @@ function updateUserAllocations() {
 
       foreach ($xdAllocations as $xdUserName => $xdUserCiderNames) {
         kint($xdUserName);
-        kint($xdUserCiderNames);
+        //kint($xdUserCiderNames);
         
         try {
-
-        $accessUserName = $xdUserName.'@access-ci.org';
-        $userDetails = user_load_by_name($accessUserName);
-        kint('**** ' . $accessUserName);
-        kint($userDetails);
+          $accessUserName = $xdUserName.'NONO2@access-ci.org';    // TEMP TEMP  TODO
+          $userDetails = user_load_by_name($accessUserName);
+          //kint('**** ' . $accessUserName);
+          //kint($userDetails);
         
         // @access-ci.org
         // did not have the user, so create it. Ongoing, this is much the less frequent case
@@ -410,18 +475,19 @@ function updateUserAllocations() {
           kint("CREATING new user...");
           $xdOneUsersProjects = array_usearch($xdProjectsArray, function ($o) use ($xdUserName) { return $o['pi_portal_username'] === $xdUserName; });
           $xdOneUsersProjects = reset($xdOneUsersProjects); // get just first one
-          kint($xdOneUsersProjects);
-      
+          //kint($xdOneUsersProjects);      
           // TODO - might have to make another api call here to get the email if needed... yes it is needed,  for constant contact AG of course
           $userDetails = createUser($xdOneUsersProjects);  // change this to take varbs needed individually - more clear        
         }
-        
+        //kint($userDetails);
+
+        //kint('d');
         // !!(todo - Should really make a lookup table for all cider grid=>entityIds)
         // map the  incoming resource names for this user to array of the internal reference numbers
         // for comparison with those in the users
         $xdCiderRefnums= array();
         foreach ($xdUserCiderNames as $ciderName) {
-          
+          //kint($ciderName);
           // get a list of the corresponding entity ids for the incoming
           // this can be used to compare to the existing
           // TODO - should this be case-sensitive or not
@@ -438,7 +504,7 @@ function updateUserAllocations() {
             array_push($xdCiderRefnums, reset($refnum));
           }        
         }
-        kint($xdCiderRefnums);
+        //kint($xdCiderRefnums);
 
         // now we have a loaded userDetails whether existing or newly created. Check the user's Resources to see if they still match.
         // now from list of resource_id for this user, check each to see which AG they are associated with. build list of AGs for this user        
@@ -449,7 +515,7 @@ function updateUserAllocations() {
           $userCiderRefnums[] =  $userCider['target_id'];
         }
         //        kint($userCiderArray);                
-                kint($userCiderRefnums);
+        //        kint($userCiderRefnums);
         
                 // get current record of user's allocations, and make a list of the internal entity numbers (CiderRefNum coresponding to allocation cider name)  stored on the user record
                 // don't need this I think...
@@ -459,30 +525,28 @@ function updateUserAllocations() {
                   $ciderName = $refEnt->get('field_access_global_resource_id')->getValue()[0];        
                   array_push($userCiderNames, $ciderName);          
                 }
-                kint($userCiderNames);
+                //kint($userCiderNames);
         
         // is xd incoming list different from what user already has? if not, reset the user list
         $intersect = array_intersect(array_values($xdCiderRefnums), $userCiderRefnums);
-        if (count($intersect) !== count($xdCiderRefnums)) {
+        if (count($intersect) !== count($xdCiderRefnums) || count($intersect) !== count($userCiderRefnums)) {
           $xx = "----YES updating user ciders. count new: ".count($xdCiderRefnums). " was ". count($userCiderRefnums);
           kint($xx);
           updateUserCiderList($userDetails, $xdCiderRefnums);
         } else {
-          kint("-----not updating user ciders -count: ".count($intersect));
+          kint("-----not updating user ciders. count: ".count($intersect));
         }
         
-        // finally, check for AG membership in each AG corresponding to the ciderrefnum
-        // TODO - should we only do this if list has changed? 
+          // Finally, check for AG membership in each AG corresponding to the ciderrefnum.         
+          // Gather a list of associated affinity groups (unique)
+          // The Cider Refs might be associated with multiples AGs; 
+          // an AG has 0 to many Cider Refs
         
-        // gather a list of associated affinity groups (unique)
-        // The Cider Refs might be associated with multiples AGs, 
-        // and an AG has 0 to many Cider Refs
-        if (false) { // TEMP. this does work
-        $agNodes = array();
-        foreach ($xdCiderRefnums as $refnum) {
+          $agNodes = array();
+          foreach ($xdCiderRefnums as $refnum) {
       
-          $query = \Drupal::entityQuery('node');              
-          $agNodeIds = $query
+            $query = \Drupal::entityQuery('node');              
+            $agNodeIds = $query
             ->condition('type', 'affinity_group')
             ->condition('field_cider_resources', $refnum)
             ->execute();  
@@ -492,15 +556,24 @@ function updateUserAllocations() {
                   $agNodes[] = $id;
                 }
             }            
-        }
-        kint($agNodes);
+          }
+          kint($agNodes);
 
-        $nid = reset($agNodes);  // temp - first entry.  Look for all of them.
-        // Join this Affinity Group for this user.
-        setUserMembership($nid, $userDetails, true);        
-        kint("done with set membership");
-        
-        } // end if temp
+          // now we have agNodes, which is a list of all affinity groups having to do with the user's allocations.
+          // set membership will add the user to the group unless they previously blocked automembership to the ag by leaving
+          $userBlockedArray = $userDetails->get('field_taxo_block')->getValue();
+          kint($userBlockedArray);
+          foreach ($userBlockedArray as $userBlock) {                   
+            $userBlockedAgTids[] =  $userBlock['target_id'];
+          }
+      
+          foreach ($agNodes as $agNid ) {
+            kint("U ag membership: setting ");
+            kint($agNid);
+            setUserMembership($agNid, $userDetails, $userBlockedAgTids, true);        
+          }
+          kint("After Set membership");
+
         } catch (Exception $e) {
           kint($e->getMessage());
           \Drupal::messenger()->addError("exception for incoming user $xdUserName  " .  $e->getMessage());                    
@@ -514,30 +587,39 @@ function updateUserAllocations() {
   return false;
 }
 // user membership for an affinity group is stored in a per-user flag (not global) on the ag. 
-// pass in taxonomy node for the ag 
-function setUserMembership($agNid, $userDetails, $isJoin) {
-  // TODO - check user list for any blockAutoMembership (we add this blocked if they leave the group, and remove if they
-  // manually join the ag again)
+// $agNid - AG node id
+// $blocklist - array of taxonomy ids for blocked ags
+function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
 
   $ag = \Drupal\node\Entity\Node::load($agNid);        
   $agTax = \Drupal::entityTypeManager()
     ->getStorage('taxonomy_term')
     ->loadByProperties(['name' => ($ag->get('title')->value)]);
   $agTax = reset($agTax);
+kint("Setting membership: ".$ag->get('title')->value);
 
-  //$termId = reset($term)->id();
+  // for joining only, check if ag is on block list. 
+  if ($isJoin && in_array($agTax->id(), $blockList)) {
+    kint("IN BLOCKLIST, not adding ".$agTax->id());
+    return;
+  }
+  
   $flagService = \Drupal::service('flag');
   $flag = $flagService->getFlagById('affinity_group'); // replace by flag machine name
 
   // check if already flagged
-  $flagging = $flagService->getFlagging($flag, $agTax, $userDetails);  
-  kint($flagging);  
-
-  if ($isJoin) {
+  $flagStatus = $flagService->getFlagging($flag, $agTax, $userDetails);  
+  if (!$flagStatus) {
+    kint("setting the flag");
     $flagService->flag($flag, $agTax, $userDetails);
   } else {
-    $flagService->unflag($flag, $agTax, $userDetails);
+    kint("not setting the flag");
   }
+//  if ($isJoin) {
+//    $flagService->flag($flag, $agTax, $userDetails);
+//  } else {
+ //   $flagService->unflag($flag, $agTax, $userDetails);
+ // }
 }
 /**
  * Reset user's cider list 
@@ -562,22 +644,41 @@ function array_usearch(array $array, callable $comparitor) {
   );
 }
 function createUser($userProject) { 
-  try {      
-    $u = User::create();
-    kint('user create');
-    //kint($u);
+  try {          
+    $u = User::create();    
+    $x = $u->id();    
+    //$u->get_id 
     $u->set('status', 1);
-//    $u->setEmail($userProject['ben@example.com');
-    $u->setUsername($userProject['pi_portal_username'].'@access-ci.org');
+    $u->setUsername($userProject['pi_portal_username'].'NONO2@access-ci.org');  // TEMP TEMP TEMP take off NONO
+    // TODO - TEMP TEMP - actually need to get the user's email from API
+    $uEmail = $userProject['pi_portal_username'].'NONO2@access-ci.org';         // TEMP TEMP
+    $u->setEmail($uEmail);
+    kint($u->getEmail());
+
     //$user->addRole('content_editor');
     $u->set('field_user_first_name', $userProject['pi_first_name']);
-    $u->set('field_user_last_name', $userProject['pi_last_name']);
-    //kint($userProject['pi_last_name']);
+    $u->set('field_user_last_name', $userProject['pi_last_name']);   
+
+    // set them up with constant contact
+    $y = $u->id();// temp
+    kint('new user id: '. $y);
+
+    $ccUserId = addUserToConstantContact($u, $uEmail);   
+    if (empty($ccUserId)) {
+      showStatus("Could not add user to Constant Contact: ".$uEmail);
+      kint("Could not add user to Constant Contact: ".$uEmail);
+    }else {
+      $u->set('field_constant_contact_id', $ccUserId);
+    }
+    
     $u->save();
-    $status = true;
-    } catch (Exception $e) {
+  }
+  catch (Exception $e) {
+    
       \Drupal::messenger()->addError("exception " .  $e->getMessage());
+      kint( $e->getMessage());
       $u = false;
+      die();
     }
     return $u;
 }
@@ -997,7 +1098,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                     </tbody>
                                                                                 </table>
                                                                                 <div style="line-height:10px;min-height:10px;"
-                                                                                    class="yiv2621404860spacer"> </div>
+                                                                                    class="yiv2621404860spacer"> </div>
                                                                                 <table width="100%" border="0"
                                                                                     cellpadding="0" cellspacing="0"
                                                                                     style="table-layout:fixed;"
@@ -1088,7 +1189,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                     </tbody>
                                                                                 </table>
                                                                                 <div style="min-height:30px;line-height:30px;"
-                                                                                    class="yiv2621404860spacer"> </div>
+                                                                                    class="yiv2621404860spacer"> </div>
                                                                             </td>
                                                                         </tr>
                                                                     </tbody>
