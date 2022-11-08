@@ -57,7 +57,7 @@ function user_profiles_entity_presave(Object $entity) {
   $current_user = \Drupal::currentUser();
   $account_name = $current_user->getAccountName();
   $userinfo = get_account_data_from_api($account_name);
-  $is_suspended = $userinfo && $userinfo['isSuspended'];
+  $is_suspended = $userinfo && array_key_exists('isSuspended', $userinfo) && $userinfo['isSuspended'];
   if ($is_suspended) {
     throw new Exception("Cannot save because the user '$account_name' has been suspended");
   }
