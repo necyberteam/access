@@ -18,8 +18,81 @@ use Drupal\webform\WebformSubmissionForm;
 function amp_dev_install()
 {
   update_user_100();
+  create_dummy_users();
   // submit_webform_for_test_tag();
 }
+
+function create_dummy_users()
+{
+  $users = array(
+    array(
+      'first_name' => 'Walnut',
+      'last_name' => 'Pie',
+      'name' => 'walnut',
+      'email' => 'walnut@pie.org',
+      'roles' => array('affinity_group_leader')
+    ),
+    array(
+      'first_name' => 'Pecan',
+      'last_name' => 'Pie',
+      'name' => 'pecan',
+      'email' => 'pecan@pie.org',
+      'roles' => array('affinity_group_leader')
+    ),
+    array(
+      'first_name' => 'Cherry',
+      'last_name' => 'Pie',
+      'name' => 'cherry',
+      'email' => 'cherry@pie.org',
+      'roles' => array(),
+    ),
+    array(
+      'first_name' => 'Coconut',
+      'last_name' => 'Pie',
+      'name' => 'coconut',
+      'email' => 'coconut@pie.org',
+      'roles' => array()
+    ),
+    array(
+      'first_name' => 'Banana',
+      'last_name' => 'Pie',
+      'name' => 'banana',
+      'email' => 'banana@pie.org',
+      'roles' => array()
+    ),
+    array(
+      'first_name' => 'Lemon',
+      'last_name' => 'Pie',
+      'name' => 'lemon',
+      'email' => 'lemon@pie.org',
+      'roles' => array()
+    ),
+  );
+
+  foreach ($users as $user) {
+    $email = $user['email'];
+    $account = user_load_by_mail($email);
+    if ($account  !== FALSE) {
+      $account->delete();
+
+      echo ("***** email $email already existed and deleted");
+      // kint("email $email already existed and deleted");
+    }
+
+    $user = \Drupal\user\Entity\User::create([
+      'name' => $user['name'],
+      'mail' => $email,
+      'field_user_first_name' => $user['first_name'],
+      'field_user_last_name' => $user['last_name'],
+      'pass' => \Drupal::service('password_generator')->generate(),
+      'status' => 1,
+      'roles' => $user['roles'],
+    ]);
+
+    $res = $user->save();
+  }
+}
+
 
 function update_user_100()
 {
