@@ -1,0 +1,125 @@
+<?php
+
+use Drupal\webform\Entity\Webform;
+use Drupal\webform\Entity\WebformSubmission;
+use Drupal\webform\WebformSubmissionForm;
+
+
+
+/**
+ * @file
+ * Initiate dev site.
+ */
+
+/**
+ * Implements hook_install().  This gets called when this module is installed.
+ * Can be used to create or modify data.
+ */
+function amp_dev_install()
+{
+  update_user_100();
+  create_dummy_users();
+  // submit_webform_for_test_tag();
+}
+
+function create_dummy_users()
+{
+  $users = array(
+    array(
+      'first_name' => 'Walnut',
+      'last_name' => 'Pie',
+      'name' => 'walnut',
+      'email' => 'walnut@pie.org',
+      'roles' => array('affinity_group_leader')
+    ),
+    array(
+      'first_name' => 'Pecan',
+      'last_name' => 'Pie',
+      'name' => 'pecan',
+      'email' => 'pecan@pie.org',
+      'roles' => array('affinity_group_leader')
+    ),
+    array(
+      'first_name' => 'Cherry',
+      'last_name' => 'Pie',
+      'name' => 'cherry',
+      'email' => 'cherry@pie.org',
+      'roles' => array(),
+    ),
+    array(
+      'first_name' => 'Coconut',
+      'last_name' => 'Pie',
+      'name' => 'coconut',
+      'email' => 'coconut@pie.org',
+      'roles' => array()
+    ),
+    array(
+      'first_name' => 'Banana',
+      'last_name' => 'Pie',
+      'name' => 'banana',
+      'email' => 'banana@pie.org',
+      'roles' => array()
+    ),
+    array(
+      'first_name' => 'Lemon',
+      'last_name' => 'Pie',
+      'name' => 'lemon',
+      'email' => 'lemon@pie.org',
+      'roles' => array()
+    ),
+  );
+
+  foreach ($users as $user) {
+    $email = $user['email'];
+    $account = user_load_by_mail($email);
+    if ($account  !== FALSE) {
+      $account->delete();
+    }
+
+    $user = \Drupal\user\Entity\User::create([
+      'name' => $user['name'],
+      'mail' => $email,
+      'field_user_first_name' => $user['first_name'],
+      'field_user_last_name' => $user['last_name'],
+      'pass' => \Drupal::service('password_generator')->generate(),
+      'status' => 1,
+      'roles' => $user['roles'],
+    ]);
+
+    $res = $user->save();
+  }
+}
+
+
+function update_user_100()
+{
+  $this_user = \Drupal::entityTypeManager()->getStorage('user')->load(100);
+  // kint($this_user);
+  $this_user->set('field_user_first_name', 'Julie');
+  $this_user->set('field_user_last_name', 'Ma');
+  $this_user->set('field_institution', 'MGHPCC');
+  $this_user->save();
+}
+
+
+// wrote this as a trial run of submitting a webform
+// not actually in use (call is commented out)
+function submit_webform_for_test_tag()
+{
+
+  // Example IDs
+  $webform_id = 'request_tag';
+  $webform = Webform::load($webform_id);
+  kint($webform);
+  // Create webform submission.
+  $values = [
+    'webform_id' => $webform->id(),
+    'data' => [
+      'tag_request_name' => 'test_tag_amp_dev',
+    ],
+  ];
+
+  /** @var \Drupal\webform\WebformSubmissionInterface $webform_submission */
+  $webform_submission = WebformSubmission::create($values);
+  $webform_submission->save();
+}
