@@ -1,0 +1,22 @@
+<?php
+
+use Drupal\webform\Entity\WebformSubmission;
+use Drupal\webform\Entity\Webform;
+
+/**
+ * Update Resource webform submissions.
+ */
+function access_misc_update_9001() {
+  $webform = Webform::load('resource');
+  if ($webform->hasSubmissions()) {
+    $query = \Drupal::entityQuery('webform_submission')
+      ->condition('webform_id', 'resource');
+    $result = $query->execute();
+    $submission_data = [];
+    foreach ($result as $item) {
+      debug($item);
+      $submission = WebformSubmission::load($item);
+      $submission->save();
+    }
+  }
+}
