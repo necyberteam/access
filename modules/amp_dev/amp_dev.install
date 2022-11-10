@@ -30,14 +30,16 @@ function create_dummy_users()
       'last_name' => 'Pie',
       'name' => 'walnut',
       'email' => 'walnut@pie.org',
-      'roles' => array('affinity_group_leader')
+      'roles' => array('affinity_group_leader'),
+      'ag' => array('DELTA'),
     ),
     array(
       'first_name' => 'Pecan',
       'last_name' => 'Pie',
       'name' => 'pecan',
       'email' => 'pecan@pie.org',
-      'roles' => array('affinity_group_leader')
+      'roles' => array('affinity_group_leader'),
+      'ag' => array('DELTA', 'Rockfish'),
     ),
     array(
       'first_name' => 'Cherry',
@@ -45,6 +47,7 @@ function create_dummy_users()
       'name' => 'cherry',
       'email' => 'cherry@pie.org',
       'roles' => array(),
+      'ag' => array('Rockfish'),
     ),
     array(
       'first_name' => 'Coconut',
@@ -76,7 +79,7 @@ function create_dummy_users()
       $account->delete();
     }
 
-    $user = \Drupal\user\Entity\User::create([
+    $userEntity = \Drupal\user\Entity\User::create([
       'name' => $user['name'],
       'mail' => $email,
       'field_user_first_name' => $user['first_name'],
@@ -86,7 +89,22 @@ function create_dummy_users()
       'roles' => $user['roles'],
     ]);
 
-    $res = $user->save();
+    $userEntity->save();
+
+    // Add to any affinity groups
+    if (array_key_exists('ag', $user)) 
+      foreach ($user['ag'] as $agName) {
+
+        $agTaxName = \Drupal::entityTypeManager()
+        ->getStorage('taxonomy_term')
+        ->loadByProperties(['name' => $agName]);
+  
+      $agTaxName = reset($agTaxName);      
+  
+      $flagService = \Drupal::service('flag');
+      $agFlag = $flagService->getFlagById('affinity_group');
+      $flagService->flag($agFlag, $agTaxName, $userEntity);
+      }
   }
 }
 
