@@ -74,9 +74,6 @@ function create_dummy_users()
     $account = user_load_by_mail($email);
     if ($account  !== FALSE) {
       $account->delete();
-
-      echo ("***** email $email already existed and deleted");
-      // kint("email $email already existed and deleted");
     }
 
     $user = \Drupal\user\Entity\User::create([
