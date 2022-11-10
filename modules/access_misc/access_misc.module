@@ -8,7 +8,7 @@ use Drupal\taxonomy\Entity\Term;
  */
 function access_misc_views_post_render(ViewExecutable $view) {
   // Override view /admin/structure/views/view/resources/edit/page_2 title
-  if ($view->id() == 'resources' && property_exists($view->getDisplay(), '#display') && $view->getDisplay()->view->element['#display_id'] == 'page_2' ) {
+  if ($view->id() == 'resources' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_2' ) {
     $tid = $view->getTitle();
     if (term::load($tid)) {
       $title = 'Resources tagged ' . term::load($tid)->get('name')->value;
