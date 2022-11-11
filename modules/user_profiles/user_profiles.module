@@ -230,7 +230,7 @@ function get_account_data_from_api($username) {
   $request_url = $base_url . '/' . $username;
 
   // look for the ramps key in file system
-  $path = 'sites/default/files/private/.keys/secrets.json';
+  $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
   if (!file_exists($path)) {
     $msg = "[User Profiles] Unable to find key file";
     \Drupal::messenger()->addError($msg);
