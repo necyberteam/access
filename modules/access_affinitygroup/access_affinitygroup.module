@@ -6,7 +6,7 @@ use Drupal\user\Entity\User;
 use Drupal\Component\Utility\Xss;
 use Drupal\Component\Serialization\Json;
 
-const cDevUname="7NONO";  // for devtest, put in front of emails and uname for dev; set to '' to use real names
+const cDevUname="9NONO";  // for devtest, put in front of emails and uname for dev; set to '' to use real names
 $logDevEmail1="zingmann@yahoo.com"; // for email at end of cron job; todo: put this into the module config file
 $logCronErrors[] = array();  //global for collectCronLog for dev email
 $logCronInfo = array();      //global for collectCronLog for dev email
@@ -367,44 +367,61 @@ function access_affinitygroup_cron()
     //collectCronLog("msg is ".$qmsg, 'i');
     // end testing settings files
 
-    if (shouldRun()) {  
+      // 1. Refresh the Constant Contact Token
+    if (shouldRun('token')) {  
       $currentTime = \Drupal::time()->getCurrentTime();
-      \Drupal::state()->set('access_affinitygroup.crontime', $currentTime);
-      collectCronLog('Running the AG cron jobs. Current time is:'. date("Y-m-d H:i:s", $currentTime),  'i');   
-
-      // 1. Refresh the Constant Constact Token
+      \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
+      collectCronLog('Running cron: token' . date("Y-m-d H:i:s", $currentTime),  'i');   
+     
       $cca = new ConstantContactApi;
       $cca->newToken();  
+    }
 
-      // 2. call xdusage api to get users and create/update their 
+    // 2. call xdusage api to get users and create/update their 
       // allocations and associated affinity groups.    
+    if (shouldRun('users')) {  
+      $currentTime = \Drupal::time()->getCurrentTime();
+      \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
+      collectCronLog('Running cron: user' . date("Y-m-d H:i:s", $currentTime),  'i');
+      
       updateUserAllocations();   
-   }
- 
+    }
+    
   } catch (Exception $e) {
-    $s = '[AffinityGroup cron] exception: '.$e->getMessage();
-    \Drupal::messenger()->addError($s);
-    collectCronLog($s);
+    collectCronLog('exception: '.$e->getMessage());
   }  finally {
     \Drupal::state()->set('access_affinitygroup.cronrunning', false);
   }
   emailDevCronLog();
 }
 
-function shouldRun() {
+// test if the cron function should run: either 'token' or 'users'
+// we might read from module config file in future to see if function disabled
+function shouldRun($function) {
 
-  $lastAGCronRun = \Drupal::state()->get('access_affinitygroup.crontime', 0);
   $currentTime = \Drupal::time()->getCurrentTime();
-  $hoursDiff = round(($currentTime - $lastAGCronRun)/3600, 1);
-  collectCronLog('AG cron last run time: '. date("Y-m-d H:i:s", $lastAGCronRun), 'i');
-  collectCronLog("Current time: " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'i');
-
-  //run if it's been more than 24 hours since the last run, but only do it in the overnight hours
-  if ($hoursDiff > 24 && date('G', $currentTime) >= 1 && date('G', $currentTime) < 6) {
-    return true;
+  if ($function == 'token') {  
+    $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-t', 0);  
+    $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
+    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'i');
+          
+    //run if it's been more than 24 hours since the last run, but only do it in the overnight hours
+    if ($hoursDiff > 24 && date('G', $currentTime) >= 1 && date('G', $currentTime) < 6) {    
+        return true;
+    }    
+  
+  } else if ($function == 'users') {
+    $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);      
+    $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
+    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'i');
+          
+    //run if it's been more than 24 hours since the last run, but only do it in the overnight hours
+    if ($hoursDiff > 24 && date('G', $currentTime) >= 1 && date('G', $currentTime) < 6) {    
+        return true;
+    }      
   }
-   return true;
- //return false;
+
+  return false;
 }
 
 // Update current users with their current allocations and set their cider resrouces field (allocations), and 
@@ -422,18 +439,16 @@ function updateUserAllocations() {
   collectCronLog('Running updateUserAllocations.', 'i');
   
   try {
-    $apiBase = 'https://a3mdev.xsede.org/xdcdb-api-test-new/xdusage';
+    $apiBase = 'https://a3mdev.xsede.org/xdcdb-api-test-new/xdusage';   //todo. test endpoint
     //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=5723';     // ktomko
     //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=17626';     // j park
     //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=12684';     // asherman
     //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&resource_id=3132';    // once resource, over 90 users
-    $requestUrl = $apiBase . '/v2/projects?active_only&not_expired';  // thousands
+    $requestUrl = $apiBase . '/v2/projects?active_only&not_expired';  // production
       
     $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
-    if (!file_exists($path)) {
-        $s = "[AffinityGroup] Unable to get xsede api key.";      
-        \Drupal::messenger()->addError($s);
-        collectCronLog($s);
+    if (!file_exists($path)) {        
+        collectCronLog("Unable to get xsede api key.");
         return false;
     }        
     $secretsData = json_decode(file_get_contents($path), TRUE);
@@ -446,15 +461,12 @@ function updateUserAllocations() {
                         'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]);
       
     $client = new GuzzleHttp\Client();    
-    $response = $client->request('GET', $requestUrl, $requestOpts);
-    $responseJson = Json::decode((string) $response->getBody());
-    // todo - check response for http error, empty
+    $response = $client->request('GET', $requestUrl, $requestOpts);    
 
-  } catch (Exception $e) {
-        $s = '[AffinityGroup UpdateUserAllocations] api call: '.$e->getMessage();
-        \Drupal::messenger()->addError($s);
-        collectCronLog($s);
-        return false;
+    $responseJson = Json::decode((string) $response->getBody());    
+  } catch (Exception $e) {        
+      collectCronLog('xdusage api call: '.$e->getMessage());
+      return false;
   }
 
   try {
@@ -482,7 +494,8 @@ function updateUserAllocations() {
       // the access version of the name, which is their portal name plus @access-id.org tacked on
       // Once we have a user handle, whether newly created or existing,  
       // for each Resource Id (allocation), find related AG. Make sure user is part of that AG. 
-      
+      collectCronLog('Users from api: count '. count($xdAllocations), 'i');
+
       foreach ($xdAllocations as $xdUserName => $xdUserCiderNames) {
         
         try {
@@ -517,9 +530,7 @@ function updateUserAllocations() {
           ->execute(); 
 
           if (empty($refnum)) {
-            $s = "Incoming global resource id not found in CiDeR active resources: $ciderName ";
-            \Drupal::messenger()->addError($s);      
-            collectCronLog($s);
+            collectCronLog("Not found in CiDeR active res: $ciderName ");
           } else {
             array_push($xdCiderRefnums, reset($refnum));
           }        
@@ -575,16 +586,12 @@ function updateUserAllocations() {
           foreach ($agNodes as $agNid ) {            
             setUserMembership($agNid, $userDetails, $userBlockedAgTids, true);        
           }
-        } catch (Exception $e) {          
-          $s = "Exception for incoming user $xdUserName  " .  $e->getMessage();
-          collectCronLog($s);
-          \Drupal::messenger()->addError($s);                    
+        } catch (Exception $e) {                    
+          collectCronLog("Exception for incoming user $xdUserName  " .  $e->getMessage());          
         }
       } // end foreach xdAllocation (each unique returned from api)   
-    } catch (Exception $e) {
-      $s = "Exception while processing api results: " .  $e->getMessage();
-      collectCronLog($s);
-      \Drupal::messenger()->addError($s);
+    } catch (Exception $e) {      
+      collectCronLog( "Exception while processing api results: " .  $e->getMessage());      
     }
   return true;
 }
@@ -619,7 +626,7 @@ function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
     collectCronLog("...setting membership: ".$ag->get('title')->value, 'i'); 
 
   } else {
-    collectCronLog("...user already a member: ".$ag->get('title')->value, 'i'); 
+    //collectCronLog("...user already a member: ".$ag->get('title')->value, 'i'); 
   }
 }
 /**
@@ -675,9 +682,8 @@ function createUser($portalName, $firstName, $lastName) {
 
     // set them up with constant contact  
     $ccUserId = addUserToConstantContact($u, $uEmail);   
-    if (empty($ccUserId)) {
-      $s = "Could not add user to Constant Contact: ".$uEmail;            
-      collectCronLog($s);
+    if (empty($ccUserId)) {      
+      collectCronLog("Could not add user to Constant Contact: $uEmail ");
     }else {
       $u->set('field_constant_contact_id', $ccUserId);
     }
@@ -686,15 +692,14 @@ function createUser($portalName, $firstName, $lastName) {
     $y = $u->id();
     collectCronLog("User created $accessName - $uEmail ($y)", 'i');
   }
-  catch (Exception $e) {    
-      $s = "Exception createUser $portalName: " .  $e->getMessage();
-      \Drupal::messenger()->addError($s);      
-      collectCronLog($s);
+  catch (Exception $e) {          
+      collectCronLog("Exception createUser $portalName: " .  $e->getMessage());
       $u = false;      
     }
     return $u;
 }
 // collect problems adding user, etc  here to send as a deve alert email at end of cron 
+// also used for logging both errors and status
 // we might do this in a file
 function collectCronLog($msg, $logType='err') {
   global $logCronErrors;   
@@ -702,7 +707,9 @@ function collectCronLog($msg, $logType='err') {
 
   if ($logType==='err') {   
     $logCronErrors[] =  $msg;    
+    \Drupal::logger('cron_affinitygroup')->error($msg);
   } else {
+    \Drupal::logger('cron_affinitygroup')->notice($msg);
     $logCronInfo[] = $msg;    
   }
 }
@@ -726,8 +733,7 @@ function emailDevCronLog() {
   $result = $mailManager->mail($module, $key, $logDevEmail1, $langcode, $params, NULL, TRUE);
 
   if ($result === false || (array_key_exists('result', $result) && !$result['result'])) {
-     $msg = "There was a problem sending the email";
-     \Drupal::messenger()->addWarning($msg);
+    \Drupal::logger('cron_affinitygroup')->error("Error sending mail to: $logDevEmail1");
   }
   //kint ($logCronErrors);
   //kint ($logCronInfo);
