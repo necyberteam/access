@@ -5,5 +5,6 @@ outages_library:
       //cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css: {type: external}
   js:
     //cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js: {}
+    js/access_outages.js: {}
   dependencies:
     - core/jquery
