@@ -2,13 +2,8 @@
 
 namespace Drupal\access_shortcodes\Plugin\Shortcode;
 
-use Drupal\block_content\Entity\BlockContent;
-use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Language\Language;
-use Drupal\Core\Render\RendererInterface;
 use Drupal\shortcode\Plugin\ShortcodeBase;
-use Symfony\Component\DependencyInjection\ContainerInterface;
-
 
 /**
  * Provides a shortcode for icon blocks.
@@ -34,7 +29,7 @@ class IconBlockShortcode extends ShortcodeBase {
       'link' => '',
       'boxed' => '',
       'btnlink' => '',
-      'btntext' => ''
+      'btntext' => '',
     ],
       $attributes
     );
@@ -50,19 +45,19 @@ class IconBlockShortcode extends ShortcodeBase {
     $btntext = $attributes['btntext'];
 
     $output = [
-        '#theme' => 'shortcode_icon_block',
-        '#icon' => $icon,
-        '#img' => $img,
-        '#alt' => $alt,
-        '#title' => $title,
-        '#text' => $text,
-        '#link' => $link,
-        '#boxed' => $boxed,
-        '#btnlink' => $btnlink,
-        '#btntext' => $btntext
-      ];
-  
-      return $this->render($output);
+      '#theme' => 'shortcode_icon_block',
+      '#icon' => $icon,
+      '#img' => $img,
+      '#alt' => $alt,
+      '#title' => $title,
+      '#text' => $text,
+      '#link' => $link,
+      '#boxed' => $boxed,
+      '#btnlink' => $btnlink,
+      '#btntext' => $btntext,
+    ];
+
+    return $this->render($output);
   }
 
   /**

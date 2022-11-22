@@ -1,0 +1,22 @@
+<?php
+
+use Drupal\views\ViewExecutable;
+use Drupal\taxonomy\Entity\Term;
+
+/**
+ * Implements hook_views_post_render().
+ */
+function access_misc_views_post_render(ViewExecutable $view) {
+  // Override view /admin/structure/views/view/resources/edit/page_2 title
+  if ($view->id() == 'resources' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_2' ) {
+    $tid = $view->getTitle();
+    if (term::load($tid)) {
+      $title = 'Resources tagged ' . term::load($tid)->get('name')->value;
+      // Set the view title.
+      $view->setTitle($title);
+      // Set the route title.
+      $route = \Drupal::routeMatch()->getCurrentRouteMatch()->getRouteObject();
+      $route->setDefault('_title', $title);
+    }
+  }
+}
