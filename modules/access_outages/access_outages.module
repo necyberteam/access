@@ -1,5 +1,7 @@
 <?php
 
+use Drupal\views\ViewExecutable;
+
 /**
  * Implements hook_theme().
  */
@@ -14,34 +16,47 @@ function access_outages_theme()
   ];
 }
 
+// function access_outages_views_pre_render(ViewExecutable $view) {
+//   if (isset($view) && $view->id() == 'affinity_group' && $view->current_display == 'group') {
+//     foreach ($view->result as $key => $value) {
+//       $cider_ids = $value->_entity->get('field_cider_resources')->getValue();
+//       kint($cider_ids);
+//       $view->element['#attached']['library'][] = 'access_outages/access_outages';
+      
+//     $vars['#attached']['drupalSettings'] = [
+//       'agData' => ['agResourceId' => $cider_ids],
+//     ];
+//     }
+//   }
+
+// }
+
 function access_outages_preprocess_views_view(&$vars)
 {
+  $view = &$vars['view'];
+  if ($view->id() == 'affinity_group' &&  $view->current_display == 'group') {
+    // kint('get_class($view) = ' . get_class($view));
+    $node_storage = \Drupal::entityTypeManager()->getStorage('node');
 
-  // kint('$vars[\'view\']->id() = ' . $vars['view']->id());
+    foreach ($view->result as $key => $value) {
+      // kint('key = ' . $key);
+      // kint('get_class($value->_entity) = ' . get_class($value->_entity));  // node
+      // kint('$value->_entity = ' . print_r($value->_entity,true));
 
-  // other ways of looking for getting view name don't work in current drupal
-  // if ($view->name == 'affinity_group' && $view->current_display === 'group') {
+      $cider_ids = $value->_entity->get('field_cider_resources')->getValue();
+      // kint('cider_ids');
+      // kint($cider_ids);
 
-  if (isset($vars['view']) && $vars['view']->id() == 'affinity_group') {
+      $cider_resource_ids = [];
 
-    $view = &$vars['view'];
-    kint('class of vars = ' . get_class($vars));
-    kint('class of view = ' . get_class($view));
+      foreach ($cider_ids as $cider_id) {
+        $node = $node_storage->load($cider_id['target_id']);
+        $cider_resource_ids[] = $node->get('field_access_global_resource_id')->value;
+      }
+    }
 
-    // need to get the resource ids associated with the ag, set those into 
-    // the vars for the view that will be accessed from js
+    $vars['#attached']['library'][] = 'access_outages/outages_library';
+    $vars['#attached']['drupalSettings'] = ['ciderIds' => $cider_resource_ids];
 
-    // can't kint $vars -- breaks website
-    // kint(print_r($vars, true));
-
-    $vars['#attached']['library'][] = 'access_outages/access_outages.libraries.yml';
-
-    $vars['#attached']['drupalSettings'] = [
-      'agData' => [
-        'agResourceId' => 1,
-      ],
-    ];
-
-    kint('$vars[\'#attached\'] = ' . print_r($vars['#attached'], true));
   }
 }
