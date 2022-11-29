@@ -305,7 +305,7 @@ class ConstantContactApi
 
             // see if the error message contains a contact id. Message will look like this:
             // Validation failed: Email already exists for contact 61d00338-4bd5-11ed-8c0a-fa163ec17584
-            if (preg_match('/.{8}-.{4}-.{4}-.{4}-.{8}/', $this->errorMessage, $match) ) {
+            if (preg_match('/.{8}-.{4}-.{4}-.{4}-.{12}/', $this->errorMessage, $match) ) {
                 return $match;
             }
         }
