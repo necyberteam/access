@@ -16,38 +16,21 @@ function access_outages_theme()
   ];
 }
 
-// function access_outages_views_pre_render(ViewExecutable $view) {
-//   if (isset($view) && $view->id() == 'affinity_group' && $view->current_display == 'group') {
-//     foreach ($view->result as $key => $value) {
-//       $cider_ids = $value->_entity->get('field_cider_resources')->getValue();
-//       kint($cider_ids);
-//       $view->element['#attached']['library'][] = 'access_outages/access_outages';
-      
-//     $vars['#attached']['drupalSettings'] = [
-//       'agData' => ['agResourceId' => $cider_ids],
-//     ];
-//     }
-//   }
-
-// }
-
+/**
+ * Help display affinity group outages by passing cider resource ids to
+ * to the access_outages library
+ */
 function access_outages_preprocess_views_view(&$vars)
 {
   $view = &$vars['view'];
   if ($view->id() == 'affinity_group' &&  $view->current_display == 'group') {
-    // kint('get_class($view) = ' . get_class($view));
+
     $node_storage = \Drupal::entityTypeManager()->getStorage('node');
 
+    $cider_resource_ids = [];
+
     foreach ($view->result as $key => $value) {
-      // kint('key = ' . $key);
-      // kint('get_class($value->_entity) = ' . get_class($value->_entity));  // node
-      // kint('$value->_entity = ' . print_r($value->_entity,true));
-
       $cider_ids = $value->_entity->get('field_cider_resources')->getValue();
-      // kint('cider_ids');
-      // kint($cider_ids);
-
-      $cider_resource_ids = [];
 
       foreach ($cider_ids as $cider_id) {
         $node = $node_storage->load($cider_id['target_id']);
@@ -57,6 +40,5 @@ function access_outages_preprocess_views_view(&$vars)
 
     $vars['#attached']['library'][] = 'access_outages/outages_library';
     $vars['#attached']['drupalSettings'] = ['ciderIds' => $cider_resource_ids];
-
   }
 }

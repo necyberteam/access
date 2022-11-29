@@ -3,6 +3,7 @@ outages_library:
   css:
     theme:
       //cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css: {type: external}
+      css/access_outages.css: {}
   js:
     //cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js: {}
     js/access_outages.js: {}

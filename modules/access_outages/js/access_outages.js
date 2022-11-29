@@ -1,222 +1,102 @@
-/* will need outagesId */
-console.log('--hi--')
-// console.log(drupalSettings.ciderIds)
 
 
-// document.body.onload = addElement(outages);
+document.onreadystatechange = function () {
+  if (document.readyState == "complete") {
+    // console.log('document is ready. I can sleep now');
+    // var container = document.getElementById('block-views-block-affinity-group-group-2')
+    // console.log('container = ' + container)
 
-function addElement(outages) {
+    const ciderIds = drupalSettings.ciderIds
+    if (ciderIds.length > 0) showAgOutages(ciderIds)
+  }
+}
 
-  outage=outages[0];
-  console.log('in addElement')
-  console.log(outage)
+const showAgOutages = async function showAgOutages(ciderIds) {
+  
+  let outagesDiv = document.createElement('div')
+  outagesDiv.innerHTML = `<br>
+    <div class="outage-list section container">
+      <div class="row">
+        <div class="mb-3">
+          <h3 class="border-bottom pb-2">Planned Downtimes</h3>
+          <p id="no-planned-outages">(Retrieving planned outages scheduled for the Associated Infrastructure)</p>
+          <div class="table-responsive">
+            <table id="outages-planned" class="display text-start table" style="display:none;">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Start</th>
+                  <th>End</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+    `
 
-  // create a new div element
-  const newDiv = document.createElement('div');
+  var container = document.getElementById('access_news')
+  container.appendChild(outagesDiv, container.firstChild);
 
-  // and give it some content
-  const newContent = document.createTextNode('Hi there and greetings!');
-  // const newContent2 = document.createTextNode('<br><br>outage: ' + outages[0]);
-
-  const table_string = 
-'<div class="outage-list section container">             \
-<div class="row">             \
-  <div class="col text-start text-md-center">         \
-    <h2>All Outages</h2>              \
-    <p id="no-past-outages">Loading past outages...</p>               \
-    <div class="table-responsive">            \
-      <table id="outages-past" class="display text-start table">              \
-          <thead>             \
-              <tr>            \
-                  <th>Event</th>              \
-                  <th>Resource</th>           \
-                  <th>Summary</th>            \
-                  <th>Type</th>               \
-                  <th>Start</th>              \
-                  <th>End</th>                \
-              </tr>           \
-          </thead>            \
-          <tbody>             \
-          </tbody>            \
-      </table>                \
-    </div>            \
-  </div>              \
-</div>                \
-</div>          \
-';
-  // add the text node to the newly created div
-  newDiv.appendChild(newContent);
-  // newDiv.appendChild(newContent2);
-  newDiv.appendChild(table_string);
-
-  // add the newly created element and its content into the DOM
-  const currentDiv = document.getElementById("div1");
-  document.body.insertBefore(newDiv, currentDiv);
+  showOutages(ciderIds, 'planned')
 }
 
 
-const showAgOutage = async function showAgOutage(ciderId) {
-  console.log('inside showAgOutage(), ciderId = ' + ciderId)
-
-  // the actual endpoint is something like following
-  // const response = await fetch(`https://info.xsede.org//wh1/outages/v1/outages/StatusRelevant/ResourceID/acf.nics.xsede.org`)
-  // 
-  //                               https://info.xsede.org/wh1/outages/v1/outages/StatusRelevant/ResourceID/{ResourceID}/
-  // const response = await fetch(`https://info.xsede.org/wh1/outages/v1/outages/ID/${outageID}`)
-
-  // for testing, get all past outages
-  const response = await fetch(`https://info.xsede.org/wh1/outages/v1/outages/`)
-  const outages = await response.json()
-
-  outage=outages[0];
-
-  console.log('into outage')
-  console.log(outage)
-  // console.log(outage['Content'])
-
-  // var json = JSON.parse(outage)
-  // console.log(json.Content)
+const showOutages = async function showOutages(ciderIds, outageName) {
 
   
-  // create a new div element
-  const newDiv = document.createElement("div");
+  // const endpointUrl = 'https://info.xsede.org/wh1/outages/v1/outages/Future'
 
-  // and give it some content
-  // const newContent = document.createTextNode("Hi #2 !<br><br>" + outage.Content);
-  // const newContent2 = document.createTextNode("<br><br>outage: " + outages[0]);
+  // for testing, get all outages
+  const endpointUrl = 'https://info.xsede.org/wh1/outages/v1/outages'
 
+  const response = await fetch(endpointUrl)
+  let outages = await response.json()
+
+  let filtered = []
   
-  // newDiv.appendChild(newContent);
+  Object.keys( outages ).forEach( function( key ) {
+    if(ciderIds.indexOf(outages[key]['ResourceID']) > -1) {
+        filtered.push(outages[key]);
+    }
+  });
 
-  // add the newly created element and its content into the DOM
-  // const currentDiv = document.getElementById("div1");
-  // document.body.insertBefore(newDiv, currentDiv);
+  const noOutages = document.getElementById(`no-${outageName}-outages`)
+  if (filtered.length == 0) {
+    noOutages.innerHTML = 'There are no ' + outageName + ' outages for Associated Infrastructure' 
+  } else {
+    noOutages.style.display = 'none' 
+    const outagesTable = document.getElementById('outages-' + outageName)
+    const options = {
+      timeZoneName: 'short'
+    }
 
-  // Create table title
-
-  var outageElement = document.createElement('div')
-
-  var tableIntro = document.createElement('h3')
-  var tableIntroText = document.createTextNode('Will be a table of Outages for ' + ciderId)
-  tableIntro.appendChild(tableIntroText)
-  outageElement.appendChild(tableIntro)
-
-  var outageList = document.createElement('div')
-  outageList.setAttribute('class', 'outage-list section container')
-  outageElement.appendChild(outageList)
-
-  var row = document.createElement('div')
-  row.setAttribute('class', 'row')
-  outageList.appendChild(row)
-
-  var col = document.createElement('div')
-  col.setAttribute('class', 'col text-start')
-  row.appendChild(col)
-
-  var responsive = document.createElement('div')
-  responsive.setAttribute('class', 'table-responsive')
-  col.appendChild(responsive)
-
-  var outagesTable = document.createElement('table')
-  outagesTable.setAttribute('id', 'outages-table')
-  outagesTable.setAttribute('class', 'text-start table')
-  responsive.appendChild(outagesTable)lan
-
-  var thead = document.createElement('thead')
-  outagesTable.appendChild(thead)
-
-  var headerTr = document.createElement('tr')
-  thead.appendChild(headerTr)
-
-  var tableTh = document.createElement('th')
-  headerTr.appendChild(tableTh)
-
-  var thText = document.createTextNode('Resource')
-  tableTh.appendChild(thText)
-
-  var tableTh = document.createElement('th')
-  headerTr.appendChild(tableTh)
-
-  var thText = document.createTextNode('Summary')
-  tableTh.appendChild(thText)
-  
-  var tbody = document.createElement('tbody')
-  outagesTable.appendChild(tbody)
-
-  var bodyTr = document.createElement('tr')
-  bodyTr.setAttribute('class', 'odd')
-  tbody.appendChild(bodyTr)
-
-  var bodyTd = document.createElement('td')
-  bodyTr.appendChild(bodyTd)
-
-  var tdText = document.createTextNode(outage['ResourceID']);
-  bodyTd.appendChild(tdText)
-
-  var bodyTd = document.createElement('td')
-  bodyTr.appendChild(bodyTd)
-
-  var tdPara = document.createElement('p')
-  bodyTd.appendChild(tdPara)
-
-  var tdText = document.createTextNode(outage['Content']);
-  tdPara.appendChild(tdText)
-
-
-
-
-
-
-
-
-
-
-  
-  // for(var i=0; i<5; i++)
-  // {
-  //     var newP = document.createElement('h4')
-  //     var text = document.createTextNode('new paragraph number: ' + i)
-  //     newP.appendChild(text)
-  //     outageElement.appendChild(newP)
-
-  //     // container.insertBefore(newP, container.firstChild);
-  // }
-
-
-  // var tableTitle = document.createTextNode('a text node')
-
-  // // outageElement.insertBefore(a, container.firstChild);
-  // xxx.appendChild(tableTitle)
-
-  
-  // Create table object.
-  // <div class='table-responsive'>
-
-  // document.body.appendChild(a);
-  // col.appendChild(outagesTable)
-
-
-  // var b = document.createElement('TR');
-  // b.setAttribute('id', 'MyTr');
-  // a.appendChild(b);
-
-  // var c = document.createElement('TD');
-  // var d = document.createElement('p')
-  // var e = document.createTextNode(outage['Content']);
-  // d.appendChild(e);
-  // c.appendChild(d);
-  // b.appendChild(c);
-
-
-  var container = document.getElementById('block-views-block-affinity-group-group-2')
-  container.insertBefore(outageElement, container.firstChild);
-
-  // return outages
-
+    jQuery(outagesTable).DataTable({
+      data: filtered,
+      columns: [
+        { data: 'Subject',
+          render: function ( data, type, row, meta ) {
+            return type === 'display' ? `<a href="https://support.access-ci.org/outages?outageID=${row['ID']}">${data}</a>` : data;
+          }  
+        },
+        { data: 'OutageStart',
+          render: function ( data, type, row, meta ) {
+            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+          } 
+        },
+        { data: 'OutageEnd',
+          render: function ( data, type, row, meta ) {
+            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+          }
+        }
+      ],
+      order: [[1, 'desc']], // sort by OutageStart
+      bPaginate: false,
+      bAutoWidth: false
+    })
+    outagesTable.style.display = 'block'
+  }
 }
-
-var ciderId = drupalSettings.ciderIds[0]
-
-showAgOutage(ciderId)
-
-
