@@ -8,14 +8,15 @@ use Drupal\Component\Serialization\Json;
 
 // TODO: the SEND EMAIL api call is current;y commented out in sendEmailCampaign
 // TODO: Still Using TEST API call, change when we key for production endpoint
-const cDevUname="3NONO";  // TODO - set to ''. for devtest, put in front of emails and uname for dev; set to '' to use real names
+const cDevUname='';  // for devtest, put in front of emails and uname for dev; set to '' to use real names
 const cAccessEmail = "supportapiaccess@access-ci.org";
 
 // cCronCheckInterval: true for production so cron just runs once/night;
-// change to skip interval check inside cron run for the xdusage cider import
+// For dev purposes, set false to run cron cider import on demand
 const cCronCheckInterval = true;
+//const cCronCheckInterval = false;
 
-$logCronErrors[] = array();  //global for collectCronLog for dev status email
+$logCronErrors = array();  //global for collectCronLog for dev status email
 $logCronInfo = array();      //global for collectCronLog for dev status email
 
 /**
@@ -402,7 +403,7 @@ function shouldRun($function) {
   if ($function == 'token') {
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-t', 0);
     $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
-    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'i');
+    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
     //run if it's been more than 24 hours since the last run, but only do it in the overnight hours
     if ($hoursDiff > 24 && date('G', $currentTime) >= 1 && date('G', $currentTime) < 6) {
@@ -416,7 +417,7 @@ function shouldRun($function) {
     }
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);
     $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
-    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'i');
+    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
     //run if it's been more than 24 hours since the last run, but only do it in the overnight hours
     if ($hoursDiff > 24 && date('G', $currentTime) >= 1 && date('G', $currentTime) < 6) {
@@ -496,23 +497,31 @@ function updateUserAllocations() {
       // Once we have a user handle, whether newly created or existing,
       // for each Resource Id (allocation), find related AG. Make sure user is part of that AG.
       collectCronLog('Users from api: count '. count($xdAllocations), 'i');
-
+      $userCount = 0;
       foreach ($xdAllocations as $xdUserName => $xdUserCiderNames) {
 
         try {
+          $userCount++;
+          //if ($userCount > 40)  {kint($userCount); die();}
+
           $accessUserName = $xdUserName.cDevUname.'@access-ci.org';
-          collectCronLog("Processing: $accessUserName", 'i');
+          collectCronLog("Processing $userCount: $accessUserName", 'd');
 
           $userDetails = user_load_by_name($accessUserName);
 
-        // @access-ci.org
-        // did not have the user, so create it. Ongoing, this is much the less frequent case
-        // so instead of storing everyone's account info in $users, go back to incoming to find user's info in one of their projects
-        if ($userDetails === false) {
-          $xdOneUsersProjects = array_usearch($xdProjectsArray, function ($o) use ($xdUserName) { return $o['pi_portal_username'] === $xdUserName; });
-          $xdOneUsersProjects = reset($xdOneUsersProjects); // get just first one
-          $userDetails = createUser($xdOneUsersProjects['pi_portal_username'], $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name']);
-        }
+          // if we already have user, make sure they have the cc id
+          if ($userDetails) {
+            ensureUserCCId($userDetails);
+          }
+
+          // @access-ci.org
+          // did not have the user, so create it. Ongoing, this is much the less frequent case
+          // so instead of storing everyone's account info in $users, go back to incoming to find user's info in one of their projects
+          if ($userDetails === false) {
+            $xdOneUsersProjects = array_usearch($xdProjectsArray, function ($o) use ($xdUserName) { return $o['pi_portal_username'] === $xdUserName; });
+            $xdOneUsersProjects = reset($xdOneUsersProjects); // get just first one
+            $userDetails = createUser($xdOneUsersProjects['pi_portal_username'], $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name']);
+          }
 
         // !!(todo - Should really make a lookup table for all cider rid=>entityIds)
         // map the  incoming resource names for this user to array of the internal reference numbers
@@ -531,7 +540,7 @@ function updateUserAllocations() {
           ->execute();
 
           if (empty($refnum)) {
-            collectCronLog("Not found in CiDeR active res: $ciderName ", 'i');
+            collectCronLog("Not found in CiDeR active res: $ciderName ", 'd');
           } else {
             array_push($xdCiderRefnums, reset($refnum));
           }
@@ -550,7 +559,7 @@ function updateUserAllocations() {
 
         if (count($intersect) !== count($xdCiderRefnums) || count($intersect) !== count($userCiderRefnums)) {
 
-          collectCronLog('---updating user ciders; count new: '.count($xdCiderRefnums). ' was '. count($userCiderRefnums), 'i');
+          collectCronLog('---updating user ciders; count new: '.count($xdCiderRefnums). ' was '. count($userCiderRefnums), 'd');
           updateUserCiderList($userDetails, $xdCiderRefnums);
         }
           // Finally, check for AG membership in each AG corresponding to the ciderRefnum.
@@ -592,7 +601,7 @@ function updateUserAllocations() {
         }
       } // end foreach xdAllocation (each unique returned from api)
     } catch (Exception $e) {
-      collectCronLog( "Exception while processing api results: " .  $e->getMessage());
+      collectCronLog( "Exception while processing api results at $userCount " .  $e->getMessage());
     }
   return true;
 }
@@ -610,7 +619,7 @@ function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
 
   // for joining only, check if ag is on block list.
   if ($isJoin && in_array($agTax->id(), $blockList)) {
-    collectCronLog('...user blocked '. $agTax->id(). ' '. $ag->get('title')->value, 'i');
+    collectCronLog('...user blocked '. $agTax->id(). ' '. $ag->get('title')->value, 'd');
     return;
   }
 
@@ -624,7 +633,7 @@ function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
 
     $flagService->flag($flag, $agTax, $userDetails);
     subscribeToCCList($agTax->id(), $userDetails);
-    collectCronLog("...setting membership: ".$ag->get('title')->value, 'i');
+    collectCronLog("...setting membership: ".$ag->get('title')->value, 'd');
 
   } else {
     //collectCronLog("...user already a member: ".$ag->get('title')->value, 'i');
@@ -699,6 +708,28 @@ function createUser($portalName, $firstName, $lastName) {
     }
     return $u;
 }
+
+// send in userdetail to check for absent cc id. If not there, attempt to add.
+function ensureUserCCId($u) {
+  $ccId = null;
+  $fVal = $u->get('field_constant_contact_id')->getValue();
+  if (!empty($fVal)) {
+    $ccId = $fVal[0]['value'];
+  }
+  // if user did not already have the CC id, try to add to CC.
+  if (empty($ccId)) {
+    $uEmail = $u->getEmail();
+    $ccId = addUserToConstantContact($u, $uEmail);
+    if (empty($ccId)) {
+      collectCronLog("Could not add user to Constant Contact:  $uEmail", 'i');
+    }else {
+      $u->set('field_constant_contact_id', $ccId);
+      $u->save();
+      collectCronLog("Added user to Constant Contact:  $uEmail", 'i');
+    }
+  }
+}
+
 // collect problems adding user, etc  here to send as a deve alert email at end of cron
 // also used for logging both errors and status
 // we might do this in a file
@@ -709,9 +740,11 @@ function collectCronLog($msg, $logType='err') {
   if ($logType==='err') {
     $logCronErrors[] =  $msg;
     \Drupal::logger('cron_affinitygroup')->error($msg);
-  } else {
+  } elseif ($logType==='i'){
     \Drupal::logger('cron_affinitygroup')->notice($msg);
     $logCronInfo[] = $msg;
+  } else {
+    \Drupal::logger('cron_affinitygroup')->debug($msg);
   }
 }
 // send an email with the collected cron errors to users with role: administrator.
