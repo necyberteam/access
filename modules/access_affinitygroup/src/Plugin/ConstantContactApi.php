@@ -132,8 +132,8 @@ class ConstantContactApi
         curl_setopt($ch, CURLOPT_HTTPHEADER, [$authorization, 'Content-Type: application/x-www-form-urlencoded']);
 
         // Set method and to expect response.
-        curl_setopt($ch, CURLOPT_POST, TRUE);
-        curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
+        curl_setopt($ch, CURLOPT_POST, true);
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
         // Make the call.
         $result = curl_exec($ch);
@@ -228,8 +228,6 @@ class ConstantContactApi
 
         // Make the call
         $returned_result = curl_exec($ch);
-
-
         $result = json_decode($returned_result);
 
         // log any http error code
@@ -247,24 +245,29 @@ class ConstantContactApi
             }
         }
 
-
         // Check for CC error. error_key field is only present in case of error.
-        if (preg_match('/error_key/', $returned_result, $matches, PREG_OFFSET_CAPTURE) ) {
+        // First special case: when unauth (ie token not refreshed) returned_result is not
+        // an array list like rest of error returns
+        if (preg_match('/error_key/', $returned_result, $matches, PREG_OFFSET_CAPTURE)) {
 
-            // special case: when unauth (ie token not refreshed) returned_result is not
-            // an array list other types of error returns
-            if ($result->error_key == 'unauthorized') {
+            if (!array() === $result) {
                 $this->errorMessage = $result->error_message;
                 $this->apiError($result->error_key, $result->error_message);
+                $result = null;
             } else {
                 foreach ($result as $error) {
-                    $this->errorMessage = $error->error_message;
-                    $this->apiError($error->error_key, $error->error_message);
+                    $errmsg = (!property_exists($error, 'error_message') || !isset($error->error_message)) ?
+                     'ConstantContact Error' : $error->error_message;
+                    $errkey = (!property_exists($error, 'error_key') ||  !isset($error->error_key)) ?
+                     '-' : $error->error_key;
+
+                    $this->errorMessage = $errmsg;
+                    $this->apiError($errkey, $errmsg);
                 }
             }
+
             $result = null;
         }
-
         return $result;
     }
 
