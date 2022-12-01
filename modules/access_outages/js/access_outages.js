@@ -127,7 +127,7 @@ function  getOutageHtml(outage) {
   return `
     <a href="https://support.access-ci.org/outages?outageID=` + outage['ID'] + `">
       <span class="outage-span"> 
-        <span style="color: red; font-size: 170%"> &bull; </span>
+        <span style="color: #f07537; font-size: 170%"> &bull; </span>
         Current Outage
       </span>
     </a>
