@@ -357,15 +357,18 @@ function showStatus($logmsg)
   \Drupal::messenger()->addStatus($logmsg);
 }
 
+
 /**
  * Implements hook_cron().
- * Refreshes the authorization. If not run, token expires and we'll get
+ * Two functions:
+ * 1) Refreshes the authorization. If not run, token expires and we'll get
  * 'not authorized' return code from api calls.
+ * 2) User Allocations Import
  */
 function access_affinitygroup_cron()
 {
   try {
-    \Drupal::state()->set('access_affinitygroup.cronrunning', true);
+     \Drupal::state()->set('access_affinitygroup.cronrunning', true);
 
       // 1. Refresh the Constant Contact Token
     if (shouldRun('token')) {
@@ -378,7 +381,7 @@ function access_affinitygroup_cron()
     }
 
     // 2. call xdusage api to get users and create/update their
-      // allocations and associated affinity groups.
+    // allocations and associated affinity groups.
     if (shouldRun('users')) {
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
@@ -395,7 +398,8 @@ function access_affinitygroup_cron()
   emailDevCronLog();
 }
 
-// test if the cron function should run: either 'token' or 'users'
+// test if the cron function should run: either 'token' for refresh cc toke,
+// or 'users' for running the allocations api.
 // we might read from module config file in future to see if function disabled
 function shouldRun($function) {
 
@@ -412,9 +416,23 @@ function shouldRun($function) {
 
   } else if ($function == 'users') {
 
-    if  (!cCronCheckInterval) {
+    showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
+    showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
+
+    // these 2 environment booleans are off by default but can be set in the
+    // Constant Contact admin page.
+    if ( \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) ) {
+      return false;
+    }
+    if ( \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) ) {
       return true;
     }
+
+    if  (!cCronCheckInterval) {
+      // same as allow_ondemand, can probably get rid of this
+      return true;
+    }
+
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);
     $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
     collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
@@ -509,7 +527,10 @@ function updateUserAllocations() {
 
           $userDetails = user_load_by_name($accessUserName);
 
-          // if we already have user, make sure they have the cc id
+          // if we already have user, make sure they are all set with the cc id.
+          // todo: we will eventually need to put in a check if they have
+          // changed their email or their firstname or lastname, and change it in
+          // the drual database.
           if ($userDetails) {
             ensureUserCCId($userDetails);
           }
