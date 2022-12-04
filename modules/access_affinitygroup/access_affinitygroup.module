@@ -152,7 +152,6 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
 
 // call CC API to add user to the email list corresponding to the entityId
 function subscribeToCCList($taxonomyId, $userDetails) {
-
   $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
   if (empty($postJSON)) {
     showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");
@@ -329,7 +328,10 @@ function  access_affinitygroup_user_login(UserInterface $account)
   // if user did not already have the CC id, try to add to CC.
   if (empty($cca_user_id)) {
 
-    $cca_user_id = addUserToConstantContact($user_detail, $current_user->getEmail());
+    $firstName = $user_detail->get('field_user_first_name')->getString();
+    $lastName = $user_detail->get('field_user_last_name')->getString();
+
+    $cca_user_id = addUserToConstantContact($current_user->getEmail(), $firstName, $lastName);
     if (empty($cca_user_id)) {
       showStatus("Could not add user to Constant Contact.");
     }else {
@@ -343,10 +345,7 @@ function  access_affinitygroup_user_login(UserInterface $account)
 }
 
 // Return the new ID if any.
-function addUserToConstantContact($userDetail, $userEmail) {
-  $firstName = $userDetail->get('field_user_first_name')->getString();
-  $lastName = $userDetail->get('field_user_last_name')->getString();
-
+function addUserToConstantContact($userEmail, $firstName, $lastName) {
   $cca = new ConstantContactApi;
   $ccaUserId = $cca->addContact($firstName, $lastName, $userEmail);
   return $ccaUserId;
@@ -368,9 +367,8 @@ function showStatus($logmsg)
 function access_affinitygroup_cron()
 {
   try {
-     \Drupal::state()->set('access_affinitygroup.cronrunning', true);
-
-      // 1. Refresh the Constant Contact Token
+    \Drupal::state()->set('access_affinitygroup.cronrunning', false);
+    // 1. Refresh the Constant Contact Token
     if (shouldRun('token')) {
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
@@ -383,13 +381,13 @@ function access_affinitygroup_cron()
     // 2. call xdusage api to get users and create/update their
     // allocations and associated affinity groups.
     if (shouldRun('users')) {
+      \Drupal::state()->set('access_affinitygroup.cronrunning', true);
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
       collectCronLog('Running cron: user' . date("Y-m-d H:i:s", $currentTime),  'i');
 
       updateUserAllocations();
     }
-
   } catch (Exception $e) {
     collectCronLog('exception: '.$e->getMessage());
   }  finally {
@@ -416,8 +414,8 @@ function shouldRun($function) {
 
   } else if ($function == 'users') {
 
-    showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
-    showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
+    //showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
+    //showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
 
     // these 2 environment booleans are off by default but can be set in the
     // Constant Contact admin page.
@@ -488,7 +486,9 @@ function updateUserAllocations() {
       collectCronLog('xdusage api call: '.$e->getMessage());
       return false;
   }
-
+  $userCount = 0;
+  $newUsers = 0;
+  $newCCIds = 0;
   try {
       // Api response is a list of projects. We want the user name and resource from each. Users can be on many projects.
       // Compile a list of portal usernames (duplicated removed) with their associated projects (duplicates removed).
@@ -515,33 +515,49 @@ function updateUserAllocations() {
       // Once we have a user handle, whether newly created or existing,
       // for each Resource Id (allocation), find related AG. Make sure user is part of that AG.
       collectCronLog('Users from api: count '. count($xdAllocations), 'i');
-      $userCount = 0;
+
       foreach ($xdAllocations as $xdUserName => $xdUserCiderNames) {
 
         try {
           $userCount++;
-          //if ($userCount > 40)  {kint($userCount); die();}
+          //if ($userCount > 100)  {kint($userCount); die();}
 
           $accessUserName = $xdUserName.cDevUname.'@access-ci.org';
           collectCronLog("Processing $userCount: $accessUserName", 'd');
+          //kint("$userCount: $accessUserName");
 
           $userDetails = user_load_by_name($accessUserName);
 
           // if we already have user, make sure they are all set with the cc id.
-          // todo: we will eventually need to put in a check if they have
-          // changed their email or their firstname or lastname, and change it in
+          // todo: potentially, will  need to put in a check if they have
+          // changed their email or their firstname or lastname, and change it for
           // the drual database.
+          $needCCId = true;
           if ($userDetails) {
-            ensureUserCCId($userDetails);
+            $needCCId = needsCCId($userDetails);
           }
 
-          // @access-ci.org
           // did not have the user, so create it. Ongoing, this is much the less frequent case
           // so instead of storing everyone's account info in $users, go back to incoming to find user's info in one of their projects
-          if ($userDetails === false) {
+          if ($userDetails === false || $needCCId) {
             $xdOneUsersProjects = array_usearch($xdProjectsArray, function ($o) use ($xdUserName) { return $o['pi_portal_username'] === $xdUserName; });
             $xdOneUsersProjects = reset($xdOneUsersProjects); // get just first one
+
+          }
+          if ($userDetails === false) {
             $userDetails = createUser($xdOneUsersProjects['pi_portal_username'], $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name']);
+            $portalEmail = $userDetails->getEmail();  // portal email is found and set during create user
+            if ($userDetails) { $newUsers++;}
+          }
+          if ($needCCId) {
+            // already had user in our DB, but still need to get the email in the api
+            $portalEmail = getEmailFromApi($xdOneUsersProjects['pi_portal_username']);
+          }
+          if ($needCCId && $userDetails) {
+            // either new user just created, or existing user missing constant contact id
+            if (cronAddToConstantContact($userDetails, $portalEmail, $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name'])) {
+              $newCCIds++;
+            }
           }
 
         // !!(todo - Should really make a lookup table for all cider rid=>entityIds)
@@ -561,7 +577,7 @@ function updateUserAllocations() {
           ->execute();
 
           if (empty($refnum)) {
-            collectCronLog("Not found in CiDeR active res: $ciderName ", 'd');
+            //collectCronLog("Not found in CiDeR active res: $ciderName ", 'd');
           } else {
             array_push($xdCiderRefnums, reset($refnum));
           }
@@ -624,6 +640,7 @@ function updateUserAllocations() {
     } catch (Exception $e) {
       collectCronLog( "Exception while processing api results at $userCount " .  $e->getMessage());
     }
+    collectCronLog("Finished Allocation import. Processed: $userCount,  New users: $newUsers, CC Ids added: $newCCIds", 'i');
   return true;
 }
 
@@ -690,15 +707,8 @@ function createUser($portalName, $firstName, $lastName) {
     //$portalName = $userProject['pi_portal_username'];
     $accessName = $portalName.cDevUname.'@access-ci.org';
 
-    // get additional user details from api, bc we need the email
-    $userInfo = get_account_data_from_api($portalName);
-    if ($userInfo === false) {
-      // log inability to get email but continue with create
-      $uEmail = '';
-      collectCronLog("Could not get user email from API, user: $portalName");
-    }else {
-      $uEmail =  cDevUname.$userInfo['email'];
-    }
+    $uEmail = getEmailFromApi($portalName);
+
     $u = User::create();
     $x = $u->id();
     $u->set('status', 1);
@@ -708,17 +718,6 @@ function createUser($portalName, $firstName, $lastName) {
     $u->set('field_user_first_name', $firstName);
     $u->set('field_user_last_name', $lastName);
 
-    //$u->set('field_user_first_name', $userProject['pi_first_name']);
-    //$u->set('field_user_last_name', $userProject['pi_last_name']);
-
-    // set them up with constant contact
-    $ccUserId = addUserToConstantContact($u, $uEmail);
-    if (empty($ccUserId)) {
-      collectCronLog("Could not add user to Constant Contact: $uEmail ");
-    }else {
-      $u->set('field_constant_contact_id', $ccUserId);
-    }
-
     $u->save();
     $y = $u->id();
     collectCronLog("User created $accessName - $uEmail ($y)", 'i');
@@ -726,29 +725,49 @@ function createUser($portalName, $firstName, $lastName) {
   catch (Exception $e) {
       collectCronLog("Exception createUser $portalName: " .  $e->getMessage());
       $u = false;
-    }
-    return $u;
+  }
+  return $u;
 }
+function getEmailFromApi($portalName) {
+  // get additional user details from api, bc we need the email
+  $userInfo = get_account_data_from_api($portalName);
 
-// send in userdetail to check for absent cc id. If not there, attempt to add.
-function ensureUserCCId($u) {
+  if ($userInfo === false) {
+  // log inability to get email but continue with create
+    $uEmail = '';
+    collectCronLog("Could not get user email from API, user: $portalName");
+  }else {
+    $uEmail =  cDevUname.$userInfo['email'];
+  }
+  return $uEmail;
+}
+// Boolean check if user has a CC Id.
+function needsCCId($u) {
   $ccId = null;
   $fVal = $u->get('field_constant_contact_id')->getValue();
   if (!empty($fVal)) {
     $ccId = $fVal[0]['value'];
   }
-  // if user did not already have the CC id, try to add to CC.
-  if (empty($ccId)) {
-    $uEmail = $u->getEmail();
-    $ccId = addUserToConstantContact($u, $uEmail);
+  if (!empty($ccId)) {
+    return false;
+  }
+  return true;
+}
+
+// send in userdetail to check for absent cc id. If not there, attempt to add.
+// return boolean success.
+function cronAddToConstantContact($u, $uEmail, $firstName, $lastName) {
+
+    $ccId = addUserToConstantContact($uEmail, $firstName, $lastName);
     if (empty($ccId)) {
-      collectCronLog("Could not add user to Constant Contact:  $uEmail", 'i');
+      collectCronLog("Could not add user to Constant Contact:  $uEmail");
+      return false;
     }else {
       $u->set('field_constant_contact_id', $ccId);
       $u->save();
-      collectCronLog("Added user to Constant Contact:  $uEmail", 'i');
+      collectCronLog("Id from Constant Contact:  $uEmail", 'i');
+      return true;
     }
-  }
 }
 
 // collect problems adding user, etc  here to send as a deve alert email at end of cron
