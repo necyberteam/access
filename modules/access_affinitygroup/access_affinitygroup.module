@@ -7,12 +7,13 @@ use Drupal\Component\Utility\Xss;
 use Drupal\Component\Serialization\Json;
 
 // TODO: the SEND EMAIL api call is current;y commented out in sendEmailCampaign
-// TODO: Still Using TEST API call, change when we key for production endpoint
+
 const cDevUname='';  // for devtest, put in front of emails and uname for dev; set to '' to use real names
 const cAccessEmail = "supportapiaccess@access-ci.org";
 
 // cCronCheckInterval: true for production so cron just runs once/night;
-// For dev purposes, set false to run cron cider import on demand
+// For dev purposes, set false to run cron cider import on demand.
+// Dev can also completely disable/force the cron from the module's admin config page
 const cCronCheckInterval = true;
 //const cCronCheckInterval = false;
 
@@ -459,8 +460,7 @@ function updateUserAllocations() {
   collectCronLog('Running updateUserAllocations.', 'i');
 
   try {
-    $apiBase = 'https://a3mdev.xsede.org/xdcdb-api-test-new/xdusage';   //todo - switch to base below. this is the test endpoint.
-    //$apiBase = 'https://allocations-api.access-ci.org/acdb/xdusage';
+    $apiBase = 'https://allocations-api.access-ci.org/acdb/xdusage';
     //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=5723';     // ktomko
     $requestUrl = $apiBase . '/v2/projects?active_only&not_expired';
 
