@@ -125,6 +125,9 @@ function add_ag_taxonomy_term($entity)
   if (!$exists) {
     create_ag_taxonomy_term($ag_title);
   }
+  
+  // set entity's field_affinity_group to new term
+  $entity->set('field_affinity_group', $ag_title); 
 }
 
 function ag_taxonomy_lookup($ag_title)
