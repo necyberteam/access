@@ -1,11 +1,11 @@
 /**
  * Javascript to fetch and show outages associated with affinity groups.
- * 
+ *
  * CiDeR ids are pass to this from the
  * access_outages.module::access_outages_preprocess_views_view()
  */
 
-/**  
+/**
  * Found it was necessary to include this wrapper or subsequent functions
  * would get null pointers when trying to get dom elements
  */
@@ -13,7 +13,7 @@ document.onreadystatechange = function () {
 
   // since current & planned outages may be sparse, the following
   // boolean can be used for debugging / testing -- it forces the
-  // retrieval of all outages 
+  // retrieval of all outages
   const bDebugWithAllOutages = false
 
   if (document.readyState == "complete") {
@@ -24,9 +24,9 @@ document.onreadystatechange = function () {
 }
 
 /**
- * Make API calls for current & future outages, then filter them 
+ * Make API calls for current & future outages, then filter them
  * for resources on the list parameter
- * 
+ *
  * @param {*} ciderIds -- array of resources -- look for outages for these ids
  * @param {*} bDebugWithAllOutages -- debug with *all* outages
  */
@@ -40,7 +40,7 @@ const showAgOutages = async function showAgOutages(ciderIds, bDebugWithAllOutage
 /**
  * Add the planned outages table to the DOM
  */
- function addOutageTableHtmlToDom(){
+function addOutageTableHtmlToDom() {
 
   let outagesTableDiv = document.createElement('div')
   outagesTableDiv.innerHTML = `<br>
@@ -70,19 +70,19 @@ const showAgOutages = async function showAgOutages(ciderIds, bDebugWithAllOutage
 }
 
 /**
- * Current outages are shown in boxes in a div at top of page.  
+ * Current outages are shown in boxes in a div at top of page.
  * Only add the div if there are any associated outages.
  * Make the api call, filter results, and display any outages
  * (or display nothing if no results).
- * 
- * @param {*} ciderIds 
+ *
+ * @param {*} ciderIds
  * @param {*} bDebugWithAllOutages -- debug with *all* outages
  */
 const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWithAllOutages) {
   const outagesCurrentId = document.getElementById(`outages-current`)
 
   // for testing, get all outages
-  const endpointUrl = bDebugWithAllOutages 
+  const endpointUrl = bDebugWithAllOutages
     ? 'https://info.xsede.org/wh1/outages/v1/outages'
     : 'https://info.xsede.org/wh1/outages/v1/outages/Current'
 
@@ -107,7 +107,7 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
     container.insertBefore(outagesCurrentDiv, container.firstChild);
     const outagesCurrent = document.getElementById('outages-current-p')
 
-    // for all the filtered outages, add a link in a box to the outage to the 
+    // for all the filtered outages, add a link in a box to the outage to the
     // current outages div
     let outageHtml = ''
     for (const outage of filtered) {
@@ -119,14 +119,14 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
 
 /**
  * Helper function to generate the html link to an outage
- * 
- * @param {*} outage 
+ *
+ * @param {*} outage
  * @returns a chunk of html with the link to the outage
  */
-function  getOutageHtml(outage) {
+function getOutageHtml(outage) {
   return `
     <a href="https://support.access-ci.org/outages?outageID=` + outage['ID'] + `">
-      <span class="outage-span"> 
+      <span class="outage-span">
         <span style="color: #f07537; font-size: 170%"> &bull; </span>
         Current Outage
       </span>
@@ -136,19 +136,19 @@ function  getOutageHtml(outage) {
 }
 
 /**
- * Planned outages are shown in an html datatable.  
- * Make the API call and filter results against the list in ciderIds and 
+ * Planned outages are shown in an html datatable.
+ * Make the API call and filter results against the list in ciderIds and
  * fill the the datatable
- * 
- * @param {*} ciderIds 
+ *
+ * @param {*} ciderIds
  * @param {*} bDebugWithAllOutages -- debug with *all* outages
  */
 const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWithAllOutages) {
 
   // for testing, get all outages
-  const endpointUrl = bDebugWithAllOutages 
-  ? 'https://info.xsede.org/wh1/outages/v1/outages'
-  : 'https://info.xsede.org/wh1/outages/v1/outages/Future'
+  const endpointUrl = bDebugWithAllOutages
+    ? 'https://info.xsede.org/wh1/outages/v1/outages'
+    : 'https://info.xsede.org/wh1/outages/v1/outages/Future'
 
   const response = await fetch(endpointUrl)
   let outages = await response.json()
@@ -156,7 +156,7 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
 
   if (filtered.length > 0) {
 
-    // create the html table 
+    // create the html table
     addOutageTableHtmlToDom()
 
     const outagesTable = document.getElementById('outages-planned')
@@ -167,18 +167,21 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
     jQuery(outagesTable).DataTable({
       data: filtered,
       columns: [
-        { data: 'Subject',
-          render: function ( data, type, row, meta ) {
+        {
+          data: 'Subject',
+          render: function (data, type, row, meta) {
             return type === 'display' ? `<a href="https://support.access-ci.org/outages?outageID=${row['ID']}">${data}</a>` : data;
-          }  
+          }
         },
-        { data: 'OutageStart',
-          render: function ( data, type, row, meta ) {
+        {
+          data: 'OutageStart',
+          render: function (data, type, row, meta) {
             return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
-          } 
+          }
         },
-        { data: 'OutageEnd',
-          render: function ( data, type, row, meta ) {
+        {
+          data: 'OutageEnd',
+          render: function (data, type, row, meta) {
             return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
           }
         }
@@ -195,16 +198,16 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
 /**
  * Given a list of outages, return an array containing only those with an id
  * in the ciderIds list
- * 
- * @param {*} outages 
- * @param {*} ciderIds 
- * @returns 
+ *
+ * @param {*} outages
+ * @param {*} ciderIds
+ * @returns
  */
 function filterOutages(outages, ciderIds) {
   let filtered = []
-  Object.keys( outages ).forEach( function( key ) {
+  Object.keys(outages).forEach(function (key) {
     if (ciderIds.indexOf(outages[key]['ResourceID']) > -1) {
-        filtered.push(outages[key]);
+      filtered.push(outages[key]);
     }
   });
   return filtered;
