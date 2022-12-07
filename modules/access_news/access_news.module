@@ -5,13 +5,6 @@ use \Drupal\Core\Form\FormStateInterface;
 use \Drupal\node\Entity\Node;
 use \Drupal\user\Entity\User;
 
-// ?? TQI use Drupal\Core\Entity\EntityViewBuilder;
-/**
- * Defines the view builder for my_entity_type entities.
- */
-//class MyViewBuilder extends EntityViewBuilder {}
-//To render an entity, simply call the view() or viewMultiple() methods:
-
 /**
  * Implements hook_form_alter().
  *
@@ -170,11 +163,10 @@ function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
   if ($type != 'access_news') {
     $type = $node->getEntityTypeId();
   }
+  // todo: possible want to allow broadcast on an individual event as well.
+  //if ($type == 'access_news' || $type == 'eventseries' || $type == 'eventinstance') {
+  if ($type == 'access_news' || $type == 'eventseries') {
 
-  //showStatus ("News entity Update t: $type ");
-  // probably want to do this on an individual event as well. If so, will need to find the
-  // AGs which go with that instance from the series.
-  if ($type == 'access_news' || $type == 'eventseries' || $type == 'eventinstance') {
     if ($node->isPublished()) {
       affinityGroupBroadcast($node, $type);
     }
@@ -189,27 +181,19 @@ function access_news_entity_update(Drupal\Core\Entity\EntityInterface $node) {
  * Should also be in published state, but that is checked before we get here.
  * After send attempt, uncheck the broadcast option.
  * Meant to be used by both News items and Events Series
- * (event instances TDB, field name is field_broadcast_affinity_groups_i)
- * $newsType is eventseries, eventinstance, or access_news
+ * (TODO - event instances TDB)
+ * $newsType is eventseries or access_news (or tdb: eventinstance)
  */
 function affinityGroupBroadcast(Drupal\Core\Entity\EntityInterface $node, $newsType) {
-  //showStatus("AG Bcast $newsType");
-  //kint($newsType);
-  //kint($node);
-
 
   $getFields = $node->getFields();
-
   $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
   $broadcastToAGs = $broadcastArray[0]['value'];
-  //showStatus ($broadcastToAGs) ;
+
   // find the node ids for the AGs.  If AGs have been specified, get the
   // corresponding Constant Contact email list ids from the nodes.
-
   if ($broadcastToAGs) {
-
     $agNodes = $node->get('field_affinity_group_node');
-    //showStatus('count: '.count($agNodes));
     if (count($agNodes)) {
       $ccListIdArray = array();
       $agNames = array();
@@ -221,7 +205,6 @@ function affinityGroupBroadcast(Drupal\Core\Entity\EntityInterface $node, $newsT
         $ag = \Drupal\node\Entity\Node::load($nid);
 
         $name = $ag->get('title')->value;
-        //showStatus("name $name");
         array_push($agNames, $name);
 
         $ccListId = $ag->get('field_list_id')->value;
@@ -232,43 +215,37 @@ function affinityGroupBroadcast(Drupal\Core\Entity\EntityInterface $node, $newsT
           showStatus("Missing Constant Contact Email List Id for Affinity Group");
       } else {
         // gather items to insert into the email template
-        $bodyArray = $getFields['body']->getValue();
-        $body = $bodyArray[0]['value'];
         $titleArray = $getFields['title']->getValue();
         $title = $titleArray[0]['value'];
 
         $newsUrl = $node->toUrl()->setAbsolute()->toString();
 
+        // set pubDate and body; news / eventseries different
         if ($newsType=='access_news') {
           $pubDateArray = $getFields['field_published_date']->getValue();
           $pubDate = $pubDateArray[0]['value'];
           $date = date_create_from_format('Y-m-d', $pubDate);
           $pubDate = date_format($date, 'm-d-Y');   // reverse the date
 
+          $bodyArray = $getFields['body']->getValue();
+          $body = $bodyArray[0]['value'];
         } else {
-          // for event series TODO
-          // use revision field here?
-          $pubDate = 'Jan 01, 2023';
-          //showStatus("about to build html");
-          //$node = \Drupal::entityManager()->getStorage('node')->load($nodeid);
-          //$view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
-          //kint($view_builder);
-          //$full_output = $view_builder->view($node);
-          //kint($full_output);
-          //$rss_output = $view_builder->view($node, 'rss');
-          //kint($rss_output);
-          //$view_builder = \Drupal::EntityTypeManagerInterface()->getViewBuilder('node');
-          //$renderArray = $view_builder->view($node, 'full');
-          //kint($renderArray);
+          // newstype is eventseries.
+          // todo temp can't figure out how to get the timestamp or publish date
+          // because kint crashes on eventseries (but not event instance)
+          //$pubDateArray = $getFields['revision_timestamp']->getValue();
+          //$pubDate = $pubDateArray[0];
+          //$date = date_create_from_format('Y-m-d', $pubDate);
+          //$pubDate = date_format($date, 'm-d-Y');
+          $pubDate = date('m-d-Y');
 
-          //$html = \Drupal::service('renderer')->renderPlain($renderarray);
-          //kint($html);
-          //die();
-          //showStatus($html);
-          //return; // TEMP!
+          // body set using a custom view mode: ccemail
+          $view_builder = \Drupal::entityTypeManager()->getViewBuilder('eventseries');
+          $renderArray = $view_builder->view($node, 'ccemail');
+          $body = \Drupal::service('renderer')->renderPlain($renderArray);
         }
-        //die();
-        // Now emailing the group; set option off. If user wants to email again after
+
+        // Now emailing the group; set option broadcast off. If user wants to email again after
         // and edit, they will need to check the box again.
         $node->set('field_broadcast_affinity_groups', [0]);
         $node->save();
