@@ -1,329 +1,151 @@
 <?php
 
-use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
-use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
-use Drupal\Component\Utility\Xss;
 
 /**
  * @file
  * Module for affinity group.
- * 
- * Each affinity group (AG) has a dedicated "List" in Constant Contact, and
- * each user is a Constant Contact "Contact". 
- * We add a user to CC when the user logs in, if they don't already have a
- * constant contact id stored on the user form.  
- * When a user Joins or Leaves an AG, we add or remove the user from
- * the corresponding CC list.
- * When an AG is edited or created, we add the list to CC if not already done.
- * Note: The list in Constant Contact is stored by the AG name, so relationship
- * to CC list is broken if AG name changes.
  *
+ * Code in this module implements the following:
+ *  - Coordinators for Affinity Groups have their
+ *    "Affinity Group Leader" role updated
+ *  - Whenever an Affinity Group is saved, a taxonomy term with the same
+ *    name is created.
  */
 
 /**
- * Implements hook_node_insert().
- */
-function access_affinitygroup_node_insert(EntityInterface $entity)
-{
-  $type = $entity->bundle();
-  if ($type == 'affinity_group') {
-    $get_fields = $entity->getFields();
-    $title = $entity->getTitle();
-    $summary = $get_fields['body']->summary;
-    $post_data = [
-      'name' => $title,
-      'favorite' => 0,
-      'description' => $summary
-    ];
-    $post_data = json_encode($post_data);
-    // Create constant contact list for affinity group
-    $created_list = $cca->apiCall('/contact_lists ', $post_data, 'POST');
-    $list_id = Xss::filter($created_list->list_id);
-    $entity->set('field_list_id', $list_id);
-  }
-}
-
-/**
- * Implements hook_entity_presave(). 
- * Handles either
- * 1) User did Join on Affinity Group
- * 2) Admin user saved Affinity Group form
+ * Implements hook_entity_presave().
+ *  - update AG Leader roles for added or removed coordinators
+ *  - ensure every Affinity Group name has a corresponding taxonomy term.
  */
 function access_affinitygroup_entity_presave(EntityInterface $entity)
-{ 
-  
+{
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
 
-    if (method_exists($entity, 'getFlaggableType')) {
+    update_ag_leader_roles($entity);
 
-      // user did Join
-      
-      $group_id = $entity->get('entity_id')->getValue()[0]['value'];
+    add_ag_taxonomy_term($entity);
+  }
+}
 
-      $postJSON = makeListMembershipJSON($group_id);
+/**
+ *  - update AG Leader roles for added or removed coordinators
+ */
+function update_ag_leader_roles($entity)
+{
+  // get all coordinators for this AG
+  $coordinators = $entity->get('field_coordinator')->getValue();
 
-      if (empty($postJSON)) {                
-        showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");        
+  // add 'affinity_group_leader' role to all coordinators
+  $coordinator_ids = array();
+  foreach ($coordinators as $coordinator) {
+    $coordinator_id = $coordinator['target_id'];
+    $coordinator_ids[] = $coordinator_id;
+    $user = User::load($coordinator_id);
+
+    $user->addRole('affinity_group_leader');
+    $user->save();
+  }
+
+  // if removing a coordinator, remove the leader role (if not a leader anywhere else)
+  update_removed_ag_leader_roles($entity, $coordinator_ids);
+}
+
+function update_removed_ag_leader_roles($entity, $coordinator_ids)
+{
+  // get the original list of coordinators
+  $original_coordinators = $entity->original
+    ? $entity->original->get('field_coordinator')->getValue()
+    : null;
+
+  // build an array of all removed coordinators
+  $removed_coordinator_ids = array();
+  foreach ($original_coordinators as $original_coordinator) {
+    $original_coordinator_id = $original_coordinator['target_id'];
+    if (!in_array($original_coordinator_id, $coordinator_ids)) {
+      $removed_coordinator_ids[] = $original_coordinator_id;
+
+      // $msg = "user id $original_coordinator_id removed";
+      // \Drupal::messenger()->addStatus($msg);
+    }
+  }
+
+  // if any coordinators removed, possibly remove their leader role
+  if (count($removed_coordinator_ids)) {
+
+    // get all affinity group coordinators on other affinity groups
+
+    $storage = \Drupal::service('entity_type.manager')->getStorage('node');
+    $all_affinity_groups = $storage->loadByProperties([
+      'type' => 'affinity_group'
+    ]);
+
+    $all_other_coordinator_ids = array();
+
+    foreach ($all_affinity_groups as $affinity_group) {
+
+      if ($entity->id() == $affinity_group->id()) {
+        // \Drupal::messenger()->addStatus('in possibly remove, skipping group id = ' . $entity->id());
+        continue;
+      }
+      $coordinators = $affinity_group->get('field_coordinator')->getValue();
+      foreach ($coordinators as $coordinator) {
+        $all_other_coordinator_ids[] = $coordinator['target_id'];;
+      }
+    }
+
+    // \Drupal::messenger()->addStatus('all other ag coord ids = ' . print_r($all_other_coordinator_ids, true));
+    // \Drupal::messenger()->addStatus('all removed coord ids = ' . print_r($removed_coordinator_ids, true));
+
+    // foreach removed coordinator,
+    //    if not a coordinator on any other affinity group,
+    //       remove the leader role
+
+    foreach ($removed_coordinator_ids as $removed_coordinator_id) {
+      $user = User::load($removed_coordinator_id);
+      if (!in_array($removed_coordinator_id, $all_other_coordinator_ids)) {
+        $user->removeRole('affinity_group_leader');
+        $user->save();
+        \Drupal::messenger()->addStatus('Removed Affinity Group Leader role for ' . $user->getAccountName());
       } else {
-        $cca = new ConstantContactApi;
-        $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
-      }    
-
-    } else {
-
-      // affinity group edit was saved by admin user.
-      // If not already there, add list to constant contact.
-      // TODO - should we skip all this if list_id already set
-      // instead of checking for list of lists from CC?
-
-      // get all existing lists
-
-      $cca = new ConstantContactApi;
-      $lists = $cca->apiCall('/contact_lists ');
-      if (empty($lists)) {
-        return;
-      }
-
-      //debug info: here you can see all lists CC knows about along with their List IDs
-      //kint($lists);
-
-      $list_exists = false;
-      foreach ($lists->lists as $list) {
-        if ($list->name == $title) {
-          $list_exists = true;
-          break;
-        }
-      }
-
-      if (!$list_exists) {
-
-        $get_fields = $entity->getFields();
-        $title = $entity->getTitle();
-        $summary = $get_fields['body']->summary;
-        // Api max is 255 characters.
-        $summary = (strlen($summary) > 255) ? substr($summary, 0, 255) : $summary;
-        $post_data = [
-          'name' => $title,
-          'favorite' => 0,
-          'description' => $summary
-        ];
-        $post_data = json_encode($post_data);
-      
-        // Create Constant contact list named with AG title
-
-        $created_list = $cca->apiCall('/contact_lists ', $post_data, 'POST');
-        
-        if (!empty($created_list)) {        
-          $list_id = Xss::filter($created_list->list_id);
-        }
-
-        if (!empty($list_id)) {
-            $entity->set('field_list_id', $list_id);
-        } else {
-            showStatus('Bad Constant Contact list id.');
-        }
-      }      
-    }
-  }
-}
-
-/**
- * Implements hook_entity_delete().
- * * Handles either
- * 1) User did Leave on Affinity Group
- * 2) Admin deleted Affinity Group
- */
-function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface $entity)
-{  
-  $type = $entity->bundle();
-    
-  if ($type == 'affinity_group') {
-
-    if (method_exists($entity, 'getFlaggableType')) {     
-     
-      $group_id = $entity->get('entity_id')->getValue()[0]['value'];
-     
-      $postJSON = makeListMembershipJSON($group_id, false);
-
-      if (!empty($postJSON)) {      
-        $cca = new ConstantContactApi;
-        $ccResponse = $cca->apiCall('/activities/remove_list_memberships', $postJSON, 'POST');        
-      }  
-
-    } else {
-
-      $title = $entity->getTitle();
-      $cca = new ConstantContactApi;
-      $lists = $cca->apiCall('/contact_lists');
-      $list_exists = false;
-      foreach ($lists->lists as $list) {
-        if ($list->name == $title) {
-          // Constant Contact contains affinity group
-          // title in list.
-          $list_id = $list->list_id;
-          break;
-        }
-      }
-
-      if (isset($list_id)) {
-        $post_data = [
-          'list_id' => $list_id
-        ];
-        $post_data = json_encode($post_data);
-        $cca->apiCall("/contact_lists/$list_id", $list_id, 'DELETE');
+        \Drupal::messenger()->addStatus('Not removing Affinity Group Leader role for ' . $user->getAccountName()
+          . ' because coordinator for another Affinity Group');
       }
     }
   }
 }
 
-/**
- * Prepares json for api call that for adds or deletes CC user from 
- * a CC list.  
- * Called from code where we have the id, group_id from the Join/Leave flag
- * corresponding to the Affinity Group. From this, need to find the
- * node (AG) containing the CC list id. 
- */
-
-function makeListMembershipJSON($group_id) 
+function add_ag_taxonomy_term($entity)
 {
-  $current_user = \Drupal::currentUser();
-  $user_id = $current_user->id();
-        
-  $user_detail = User::load($user_id);
-  $user_cc_id = $user_detail->get('field_constant_contact_id')->getValue()[0]['value']; 
-
-  if (empty($user_cc_id)) {
-    return NULL;
-  }
-
-  $query = \Drupal::entityQuery('node');
-  $node_ids = $query
-    ->condition('field_affinity_group', $group_id)
-    ->execute();
-    
-  $aval =  array_values($node_ids);
-  $nid = $aval[0];
-
-  $ag = \Drupal\node\Entity\Node::load($nid);  
-
-  $fieldVal = $ag->get('field_list_id')->getValue();
-  if (!empty($fieldVal)) {   
-    $list_cc_id = $fieldVal[0]['value'];;
-  }
-    
-  if (empty($list_cc_id)) {
-    showStatus('Missing Constant Contact List Id for this Affinity Group.');
-    return NULL;
-  }
-
-  $post_data = [
-    'source' => [
-      'contact_ids' => [$user_cc_id]
-    ],
-    'list_ids' =>  [$list_cc_id]
-  ];
-  $post_data = json_encode($post_data);
-  return $post_data;
-}
-
-/**
- * Implements hook_user_login().
- * Add user to Constant Contact if we don't have a CC ID stored yet.
- */
-
-// ? should we check if we've tried this before?  What if a certain user get cca err every time
-//(but what case would this be, idn...), logging on will take a longer time?
-
-function  access_affinitygroup_user_login(UserInterface $account)
-{
-  $current_user = \Drupal::currentUser();
-
-  $user_id = $current_user->id();
-  $user_detail = User::load($user_id);
-
-  $cca_user_id = null;
-  $field_val = $user_detail->get('field_constant_contact_id')->getValue();
-  if (!empty($field_val)) {
-    $cca_user_id = $field_val[0]['value'];    
-  }
-
-  if (empty($cca_user_id)) {
-
-    $user_first_name = $user_detail->get('field_user_first_name')->getString();
-    $user_last_name = $user_detail->get('field_user_last_name')->getString();
-    $user_mail = $current_user->getEmail();
-    
-    $cca = new ConstantContactApi;
-    $cca_user_id = $cca->addContact($user_first_name, $user_last_name, $user_mail, $user_id);
-    
-    if (empty($cca_user_id)) {
-      //do we want to tell the user here that we were trying to create cc contact and could not?
-      // or just in debugging?
-    }else {
-      $user_detail->set('field_constant_contact_id', $cca_user_id);
-      $user_detail->save();
-    }
+  $ag_title = $entity->getTitle();
+  $exists = !empty(ag_taxonomy_lookup($ag_title));
+  $tid = NULL;
+  if ($exists) {
+    $tid = array_keys(ag_taxonomy_lookup($ag_title))[0];
   } else {
-    // this else just for debugging in early stages
-    //showStatus("Login and NOT attempting add of new constant contact id.");
+    $tid = create_ag_taxonomy_term($ag_title);
   }
 
+  // set entity's field_affinity_group to new term
+  $entity->set('field_affinity_group', $tid);
 }
-function showStatus($logmsg)
-{  
-  \Drupal::messenger()->addStatus($logmsg);
-}    
-/**
- * Implements hook_cron().
- */
-function access_affinitygroup_cron()
+
+function ag_taxonomy_lookup($ag_title)
 {
-  // Setting this to run once a day, may need adjustment
-  // if cron is run more frequently.
-  if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) <= 30)) {
-    $cca = new ConstantContactApi;
-    $cca->newToken();
-  }
+  // ok to pass null -- returns null if $ag_title is null
+  $lookup = taxonomy_term_load_multiple_by_name($ag_title, 'affinity_groups');
+  return $lookup;
 }
 
-/** 
- * Return error msg, or NULL if not error (in 200's)
- * todo: Perhaps we only check for 401 + just show code num otherwise
-*/
-  
-function getHttpErrMsg($httpCode) {
-
-    if ($httpCode < 300) {
-      return NULL;      
-    }
-
-    switch ($httpCode) {
-      case 400:	
-        $m = 'Bad request. Either the JSON was malformed or there was a data validation error.';
-        break;
-      case 401:
-        $m = 'The Access Token used is invalid.';
-        break;
-      case 403:
-        $m = 'Forbidden request. You lack the necessary scopes, you lack the necessary user privileges, or the application is deactivated.';
-        break;
-      case 409:
-        $m = 'Conflict. The resource you are creating or updating conflicts with an existing resource.';
-        break;
-      case 415:
-        $m = 'Unsupported Media Type; the payload must be in JSON format, and Content-Type must be application/json';
-        break;
-      case 500:	
-        $m = 'There was a problem with our internal service.';
-        break;
-      case 503:	
-        $m = 'Our internal service is temporarily unavailable.';
-        break;
-      default:
-        $m = 'HTTP error code: '. $http_code;
-    }
-    return 'Constant Contact: '.$m;
-  }
+function create_ag_taxonomy_term($ag_title)
+{
+  $term = Term::create([
+    'vid' => 'affinity_groups',
+    'name' => $ag_title,
+  ]);
+  $term->save();
+  return $term->tid->value;
+}
