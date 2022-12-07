@@ -7,12 +7,12 @@ use Drupal\user\Entity\User;
 /**
  * @file
  * Module for affinity group.
- * 
+ *
  * Code in this module implements the following:
  *  - Coordinators for Affinity Groups have their
  *    "Affinity Group Leader" role updated
  *  - Whenever an Affinity Group is saved, a taxonomy term with the same
- *    name is created. 
+ *    name is created.
  */
 
 /**
@@ -56,7 +56,7 @@ function update_ag_leader_roles($entity)
 
 function update_removed_ag_leader_roles($entity, $coordinator_ids)
 {
-  // get the original list of coordinators 
+  // get the original list of coordinators
   $original_coordinators = $entity->original
     ? $entity->original->get('field_coordinator')->getValue()
     : null;
@@ -100,7 +100,7 @@ function update_removed_ag_leader_roles($entity, $coordinator_ids)
     // \Drupal::messenger()->addStatus('all other ag coord ids = ' . print_r($all_other_coordinator_ids, true));
     // \Drupal::messenger()->addStatus('all removed coord ids = ' . print_r($removed_coordinator_ids, true));
 
-    // foreach removed coordinator, 
+    // foreach removed coordinator,
     //    if not a coordinator on any other affinity group,
     //       remove the leader role
 
@@ -122,12 +122,15 @@ function add_ag_taxonomy_term($entity)
 {
   $ag_title = $entity->getTitle();
   $exists = !empty(ag_taxonomy_lookup($ag_title));
-  if (!$exists) {
-    create_ag_taxonomy_term($ag_title);
+  $tid = NULL;
+  if ($exists) {
+    $tid = array_keys(ag_taxonomy_lookup($ag_title))[0];
+  } else {
+    $tid = create_ag_taxonomy_term($ag_title);
   }
-  
+
   // set entity's field_affinity_group to new term
-  $entity->set('field_affinity_group', $ag_title); 
+  $entity->set('field_affinity_group', $tid);
 }
 
 function ag_taxonomy_lookup($ag_title)
@@ -139,8 +142,10 @@ function ag_taxonomy_lookup($ag_title)
 
 function create_ag_taxonomy_term($ag_title)
 {
-  Term::create([
+  $term = Term::create([
     'vid' => 'affinity_groups',
     'name' => $ag_title,
-  ])->save();
+  ]);
+  $term->save();
+  return $term->tid->value;
 }
