@@ -241,7 +241,7 @@ function affinityGroupBroadcast(Drupal\Core\Entity\EntityInterface $node, $newsT
 
           // body set using a custom view mode: ccemail
           $view_builder = \Drupal::entityTypeManager()->getViewBuilder('eventseries');
-          $renderArray = $view_builder->view($node, 'ccemail');
+          $renderArray = $view_builder->view($node);
           $body = \Drupal::service('renderer')->renderPlain($renderArray);
         }
 
