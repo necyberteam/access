@@ -5,4 +5,10 @@ access_affinitygroup.constantcontact_form:
     _title: 'Constant Contact setup token'
   requirements:
     _role: 'administrator'
-
+access_affinitygroup.googlegroups_form:
+  path: '/admin/services/googlegroups-token'
+  defaults:
+    _form: '\Drupal\access_affinitygroup\Form\GoogleGroups'
+    _title: 'Google Groups setup token'
+  requirements:
+    _role: 'administrator'
