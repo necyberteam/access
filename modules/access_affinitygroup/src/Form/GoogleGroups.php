@@ -8,10 +8,10 @@ use Drupal\Core\Form\FormBase;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Google\Client;
+use Drupal\Core\Routing\TrustedRedirectResponse;
 
 /**
- * Class ConstantContact.
+ * Class GoogleGroups.
  */
 class GoogleGroups extends FormBase {
 
@@ -20,8 +20,20 @@ class GoogleGroups extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $client = new Google\Client();
-    $client->setAuthConfig('/path/to/client_credentials.json');
+    $client = new \Google\Client();
+    $client->setAuthConfig('sites/default/files/private/.keys/client_secret_109355002412-0tmn5qs0diarrlosmiriqgurvt9okf2j.apps.googleusercontent.com.json');
+    $client->addScope(\Google\Service\GroupsMigration::APPS_GROUPS_MIGRATION);
+    $redirect_uri = 'https://' . $_SERVER['HTTP_HOST'] . '/admin/services/googlegroups-token';
+    $client->setRedirectUri($redirect_uri);
+    $client->setAccessType('offline');
+    //$client->setIncludeGrantedScopes(true);
+    $auth_url = $client->createAuthUrl();
+    if (isset($_GET['code'])) {
+      $token = $client->fetchAccessTokenWithAuthCode($_GET['code']);
+      kint($token);
+    } else {
+      return new TrustedRedirectResponse($auth_url);
+    }
 
     $request = \Drupal::request();
     $code = $request->get('code');
