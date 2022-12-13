@@ -224,7 +224,8 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
 
 // user is leaving an ag; add to, if not already on, blocked list
 function addBlockedAG($agTaxonomyId, $userDetails) {
-  $userBlockedArray = $userDetails->get('field_blocked_ag_tax')->getValue();   // to do rename field
+  $userBlockedAgTids = [];
+  $userBlockedArray = $userDetails->get('field_blocked_ag_tax')->getValue();
   foreach ($userBlockedArray as $userBlock) {
     $userBlockedAgTids[] =  $userBlock['target_id'];
   }
@@ -237,7 +238,7 @@ function addBlockedAG($agTaxonomyId, $userDetails) {
 
 // user is joining an ag; remove if on the blocked list
 function removeBlockedAG($agTaxonomyId, $userDetails) {
-
+  $userBlockedTaxIds = [];
   // make list minus the newly joined ag
   $userBlockedArray = $userDetails->get('field_blocked_ag_tax')->getValue();
   $wasBlocked = false;
@@ -408,8 +409,8 @@ function shouldRun($function) {
     $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
     collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
-    //run if it's been more than 24 hours since the last run, but only do it in the overnight hours
-    if ($hoursDiff > 24 && date('G', $currentTime) >= 1 && date('G', $currentTime) < 6) {
+    //run if it's been more than 24 hours since the last run
+    if ($hoursDiff > 24 ) {
         return true;
     }
 
@@ -436,8 +437,8 @@ function shouldRun($function) {
     $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
     collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
-    //run if it's been more than 24 hours since the last run, but only do it in the overnight hours
-    if ($hoursDiff > 24 && date('G', $currentTime) >= 1 && date('G', $currentTime) < 6) {
+    //run if it's been more than 24 hours since the last run
+    if ($hoursDiff > 24) {
         return true;
     }
   }
