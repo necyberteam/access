@@ -1,0 +1,5 @@
+services:
+  access_affinitygroup.commands:
+    class: \Drupal\access_affinitygroup\Commands\AffinityGroupCommands
+    tags:
+      - { name: drush.command }
