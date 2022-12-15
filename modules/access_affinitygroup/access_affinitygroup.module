@@ -1,4 +1,11 @@
 <?php
+
+/**
+ * @file
+ */
+
+use GuzzleHttp\Client;
+use Drupal\node\Entity\Node;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\user\UserInterface;
 use Drupal\Core\Entity\EntityInterface;
@@ -6,19 +13,20 @@ use Drupal\user\Entity\User;
 use Drupal\Component\Utility\Xss;
 use Drupal\Component\Serialization\Json;
 
-// TODO: the SEND EMAIL api call is current;y commented out in sendEmailCampaign
-
-const cDevUname='';  // for devtest, put in front of emails and uname for dev; set to '' to use real names
+// @todo the SEND EMAIL api call is currently commented out in sendEmailCampaign.
+// For devtest, put in front of emails and uname for dev; set to '' to use real names.
+const cDevUname = '';
 const cAccessEmail = "supportapiaccess@access-ci.org";
 
 // cCronCheckInterval: true for production so cron just runs once/night;
 // For dev purposes, set false to run cron cider import on demand.
-// Dev can also completely disable/force the cron from the module's admin config page
-const cCronCheckInterval = true;
-//const cCronCheckInterval = false;
-
-$logCronErrors = array();  //global for collectCronLog for dev status email
-$logCronInfo = array();      //global for collectCronLog for dev status email
+// Dev can also completely disable/force the cron from the module's admin config page.
+const cCronCheckInterval = TRUE;
+// Const cCronCheckInterval = false;.
+// Global for collectCronLog for dev status email.
+$logCronErrors = [];
+// Global for collectCronLog for dev status email.
+$logCronInfo = [];
 
 /**
  * @file
@@ -39,7 +47,7 @@ $logCronInfo = array();      //global for collectCronLog for dev status email
 /**
  * Implements hook_entity_presave().
  * Handles either
- * 1) User did Join on Affinity Group.
+ * 1) User clicked Join flag on Affinity Group.
  *    We call api to add user to corresponding email list.
  * 2) Admin user saved Affinity Group form
  *    If the AG does not already have a list_id from CC,
@@ -49,53 +57,52 @@ $logCronInfo = array();      //global for collectCronLog for dev status email
  * has a corresponding flag that can be set per-user, signifying
  * whether the user belongs to the AG.
  */
-function access_affinitygroup_entity_presave(EntityInterface $entity)
-{
+function access_affinitygroup_entity_presave(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
 
-      // exit if CRON because this hook assumes there is a current user.
-      if (\Drupal::state()->get('access_affinitygroup.cronrunning', false)) {
+      // Exit if CRON because this hook assumes there is a current user.
+      if (\Drupal::state()->get('access_affinitygroup.cronrunning', FALSE)) {
         return;
       }
 
-      // user did Join the AG (using the Join button or link)
+      // User did Join the AG (using the Join button or link)
       // The flag sits on a taxonomy; the taxonomy id is used to find the AG node
       // which we need to build the JSON to send to api.
-
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
       $currentUser = \Drupal::currentUser();
       $userId = $currentUser->id();
       $userDetails = User::load($userId);
       subscribeToCCList($taxonomyId, $userDetails);
 
-      // if present, remove this AG from this user's block list
+      // If present, remove this AG from this user's block list.
       removeBlockedAG($taxonomyId, $userDetails);
-    } else {
+    }
+    else {
 
-      // affinity group edit was saved by admin user.
+      // Affinity group edit was saved by admin user.
       // If not already there, add list to constant contact.
-      // get all existing lists
-      $cca = new ConstantContactApi;
+      // get all existing lists.
+      $cca = new ConstantContactApi();
       $lists = $cca->apiCall('/contact_lists ');
       if (empty($lists)) {
         return;
       }
 
-      //debug info: here you can see all lists CC knows about along with their List IDs
-      //kint($lists);
+      // Debug info: here you can see all lists CC knows about along with their List IDs
+      // kint($lists);
       // look for this AG in the list of CC lists (title== listname)
       $title = $entity->getTitle();
-      $list_exists = false;
+      $list_exists = FALSE;
       foreach ($lists->lists as $list) {
         if ($list->name == $title) {
-          $list_exists = true;
+          $list_exists = TRUE;
           break;
         }
       }
-      // we didn't find an email list id for this AG - make it now.
+      // We didn't find an email list id for this AG - make it now.
       if (!$list_exists) {
         $get_fields = $entity->getFields();
         $summary = $get_fields['body']->summary;
@@ -104,11 +111,11 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
         $post_data = [
           'name' => $title,
           'favorite' => 0,
-          'description' => $summary
+          'description' => $summary,
         ];
         $post_data = json_encode($post_data);
 
-        // Create Constant contact list named with AG title
+        // Create Constant contact list named with AG title.
         $created_list = $cca->apiCall('/contact_lists ', $post_data, 'POST');
 
         if (!empty($created_list)) {
@@ -116,25 +123,30 @@ function access_affinitygroup_entity_presave(EntityInterface $entity)
         }
 
         if (!empty($list_id)) {
-            $entity->set('field_list_id', $list_id);
-        } else {
-            showStatus('Bad Constant Contact list id.');
+          $entity->set('field_list_id', $list_id);
+        }
+        else {
+          showStatus('Bad Constant Contact list id.');
         }
       }
     }
   }
 }
 
-// call CC API to add user to the email list corresponding to the entityId
+/**
+ * Call CC API to add user to the email list corresponding to the entityId.
+ */
 function subscribeToCCList($taxonomyId, $userDetails) {
   $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
   if (empty($postJSON)) {
     showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");
-  } else {
-    $cca = new ConstantContactApi;
+  }
+  else {
+    $cca = new ConstantContactApi();
     $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
   }
 }
+
 /**
  * Implements hook_entity_delete().
  * * Handles either
@@ -145,37 +157,36 @@ function subscribeToCCList($taxonomyId, $userDetails) {
  *
  * See notes above on presave for Join flag for Leave.
  */
-function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface $entity)
-{
+function access_affinitygroup_entity_delete(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
 
-      // user did Leave AG. This flag is related to a taxonomy; the taxonomy
+      // User did Leave AG. This flag is related to a taxonomy; the taxonomy
       // id is used to find the AG node related to the taxonomy and then the CC
       // list_id within the node for json to send to api.
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
-      //$refEntArray = $entity->referencedEntities();
-
+      // $refEntArray = $entity->referencedEntities();
       $currentUser = \Drupal::currentUser();
       $userId = $currentUser->id();
       $userDetails = User::load($userId);
 
       $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
       if (!empty($postJSON)) {
-        $cca = new ConstantContactApi;
+        $cca = new ConstantContactApi();
         $ccResponse = $cca->apiCall('/activities/remove_list_memberships', $postJSON, 'POST');
       }
-      // put this AG on this user's block list if not already there
+      // Put this AG on this user's block list if not already there.
       addBlockedAG($taxonomyId, $userDetails);
 
-    } else {
+    }
+    else {
       // AG getting deleted.
       $title = $entity->getTitle();
-      $cca = new ConstantContactApi;
+      $cca = new ConstantContactApi();
       $lists = $cca->apiCall('/contact_lists');
-      $list_exists = false;
+      $list_exists = FALSE;
       foreach ($lists->lists as $list) {
         if ($list->name == $title) {
           // Constant Contact contains affinity group
@@ -187,7 +198,7 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
 
       if (isset($list_id)) {
         $post_data = [
-          'list_id' => $list_id
+          'list_id' => $list_id,
         ];
         $post_data = json_encode($post_data);
         $cca->apiCall("/contact_lists/$list_id", $list_id, 'DELETE');
@@ -196,12 +207,14 @@ function access_affinitygroup_entity_delete(\Drupal\Core\Entity\EntityInterface 
   }
 }
 
-// user is leaving an ag; add to, if not already on, blocked list
+/**
+ * User is leaving an ag; add to, if not already on, blocked list.
+ */
 function addBlockedAG($agTaxonomyId, $userDetails) {
   $userBlockedAgTids = [];
   $userBlockedArray = $userDetails->get('field_blocked_ag_tax')->getValue();
   foreach ($userBlockedArray as $userBlock) {
-    $userBlockedAgTids[] =  $userBlock['target_id'];
+    $userBlockedAgTids[] = $userBlock['target_id'];
   }
 
   if (!in_array($agTaxonomyId, $userBlockedAgTids)) {
@@ -210,21 +223,24 @@ function addBlockedAG($agTaxonomyId, $userDetails) {
   }
 }
 
-// user is joining an ag; remove if on the blocked list
+/**
+ * User is joining an ag; remove if on the blocked list.
+ */
 function removeBlockedAG($agTaxonomyId, $userDetails) {
   $userBlockedTaxIds = [];
-  // make list minus the newly joined ag
+  // Make list minus the newly joined ag.
   $userBlockedArray = $userDetails->get('field_blocked_ag_tax')->getValue();
-  $wasBlocked = false;
+  $wasBlocked = FALSE;
   foreach ($userBlockedArray as $userBlock) {
     if ($userBlock['target_id'] !== $agTaxonomyId) {
-      $userBlockedTaxIds[] = $userBlock['target_id'] ;
-    }else {
-      $wasBlocked = true;
+      $userBlockedTaxIds[] = $userBlock['target_id'];
+    }
+    else {
+      $wasBlocked = TRUE;
     }
   }
 
-  // update the user with fresh block list only if ag was on block list
+  // Update the user with fresh block list only if ag was on block list.
   if ($wasBlocked) {
     $userDetails->set('field_blocked_ag_tax', $userBlockedTaxIds);
     $userDetails->save();
@@ -239,9 +255,7 @@ function removeBlockedAG($agTaxonomyId, $userDetails) {
  * corresponding to the Affinity Group. We use this entity id to find the
  * node (AG) containing the CC list id.
  */
-
-function makeListMembershipJSON($flagEntityId, $userDetails)
-{
+function makeListMembershipJSON($flagEntityId, $userDetails) {
   $ccIdField = $userDetails->get('field_constant_contact_id')->getValue();
   if (!empty($ccIdField)) {
     $user_cc_id = $ccIdField[0]['value'];
@@ -251,22 +265,23 @@ function makeListMembershipJSON($flagEntityId, $userDetails)
     return NULL;
   }
 
-  // find the AG node that stores the entity Id of the flag; that
+  // Find the AG node that stores the entity Id of the flag; that
   // is the one and only AG that corresponds to this flag.
   $query = \Drupal::entityQuery('node');
   $node_ids = $query
-              ->condition('field_affinity_group', $flagEntityId)
-              ->execute();
+    ->condition('field_affinity_group', $flagEntityId)
+    ->execute();
 
-  $aval =  array_values($node_ids);
+  $aval = array_values($node_ids);
   $nid = $aval[0];
 
-  $ag = \Drupal\node\Entity\Node::load($nid);
+  $ag = Node::load($nid);
 
-  // finally we can get out the CC list id stored in the AG node.
+  // Finally we can get out the CC list id stored in the AG node.
   $fieldVal = $ag->get('field_list_id')->getValue();
   if (!empty($fieldVal)) {
-    $list_cc_id = $fieldVal[0]['value'];;
+    $list_cc_id = $fieldVal[0]['value'];
+    ;
   }
 
   if (empty($list_cc_id)) {
@@ -276,9 +291,9 @@ function makeListMembershipJSON($flagEntityId, $userDetails)
 
   $post_data = [
     'source' => [
-      'contact_ids' => [$user_cc_id]
+      'contact_ids' => [$user_cc_id],
     ],
-    'list_ids' =>  [$list_cc_id]
+    'list_ids' => [$list_cc_id],
   ];
   $post_data = json_encode($post_data);
   return $post_data;
@@ -288,20 +303,18 @@ function makeListMembershipJSON($flagEntityId, $userDetails)
  * Implements hook_user_login().
  * Add user to Constant Contact if we don't have a CC ID stored yet.
  */
-
-function  access_affinitygroup_user_login(UserInterface $account)
-{
+function access_affinitygroup_user_login(UserInterface $account) {
   $current_user = \Drupal::currentUser();
 
   $user_id = $current_user->id();
   $user_detail = User::load($user_id);
 
-  $cca_user_id = null;
+  $cca_user_id = NULL;
   $field_val = $user_detail->get('field_constant_contact_id')->getValue();
   if (!empty($field_val)) {
     $cca_user_id = $field_val[0]['value'];
   }
-  // if user did not already have the CC id, try to add to CC.
+  // If user did not already have the CC id, try to add to CC.
   if (empty($cca_user_id)) {
 
     $firstName = $user_detail->get('field_user_first_name')->getString();
@@ -310,28 +323,33 @@ function  access_affinitygroup_user_login(UserInterface $account)
     $cca_user_id = addUserToConstantContact($current_user->getEmail(), $firstName, $lastName);
     if (empty($cca_user_id)) {
       showStatus("Could not add user to Constant Contact.");
-    }else {
+    }
+    else {
       $user_detail->set('field_constant_contact_id', $cca_user_id);
       $user_detail->save();
     }
-  } else {
-    // this else just for debugging in early stages
-    //showStatus("Login and NOT attempting add of new constant contact id.");
+  }
+  else {
+    // This else just for debugging in early stages
+    // showStatus("Login and NOT attempting add of new constant contact id.");.
   }
 }
 
-// Return the new ID if any.
+/**
+ * Return the new ID if any.
+ */
 function addUserToConstantContact($userEmail, $firstName, $lastName) {
-  $cca = new ConstantContactApi;
+  $cca = new ConstantContactApi();
   $ccaUserId = $cca->addContact($firstName, $lastName, $userEmail);
   return $ccaUserId;
 }
 
-function showStatus($logmsg)
-{
+/**
+ *
+ */
+function showStatus($logmsg) {
   \Drupal::messenger()->addStatus($logmsg);
 }
-
 
 /**
  * Implements hook_cron().
@@ -340,95 +358,98 @@ function showStatus($logmsg)
  * 'not authorized' return code from api calls.
  * 2) User Allocations Import
  */
-function access_affinitygroup_cron()
-{
+function access_affinitygroup_cron() {
   try {
-    \Drupal::state()->set('access_affinitygroup.cronrunning', false);
+    \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
     // 1. Refresh the Constant Contact Token
     if (shouldRun('token')) {
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
-      collectCronLog('Running cron: token' . date("Y-m-d H:i:s", $currentTime),  'i');
+      collectCronLog('Running cron: token' . date("Y-m-d H:i:s", $currentTime), 'i');
 
-      $cca = new ConstantContactApi;
+      $cca = new ConstantContactApi();
       $cca->newToken();
     }
 
     // 2. call xdusage api to get users and create/update their
     // allocations and associated affinity groups.
     if (shouldRun('users')) {
-      \Drupal::state()->set('access_affinitygroup.cronrunning', true);
+      \Drupal::state()->set('access_affinitygroup.cronrunning', TRUE);
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
-      collectCronLog('Running cron: user' . date("Y-m-d H:i:s", $currentTime),  'i');
+      collectCronLog('Running cron: user' . date("Y-m-d H:i:s", $currentTime), 'i');
 
       updateUserAllocations();
     }
-  } catch (Exception $e) {
-    collectCronLog('exception: '.$e->getMessage());
+  }
+  catch (Exception $e) {
+    collectCronLog('exception: ' . $e->getMessage());
   }  finally {
-    \Drupal::state()->set('access_affinitygroup.cronrunning', false);
+    \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
   }
   emailDevCronLog();
 }
 
-// test if the cron function should run: either 'token' for refresh cc toke,
-// or 'users' for running the allocations api.
-// we might read from module config file in future to see if function disabled
+/**
+ * Test if the cron function should run: either 'token' for refresh cc toke,
+ * or 'users' for running the allocations api.
+ * we might read from module config file in future to see if function disabled.
+ */
 function shouldRun($function) {
 
   $currentTime = \Drupal::time()->getCurrentTime();
   if ($function == 'token') {
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-t', 0);
-    $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
-    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
+    $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
+    collectCronLog("checking $function last " . date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
-    //run if it's been more than 24 hours since the last run
-    if ($hoursDiff > 24 ) {
-        return true;
+    // Run if it's been more than 24 hours since the last run.
+    if ($hoursDiff > 24) {
+      return TRUE;
     }
 
-  } else if ($function == 'users') {
+  }
+  elseif ($function == 'users') {
 
-    //showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
-    //showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
-
-    // these 2 environment booleans are off by default but can be set in the
+    // showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
+    // showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
+    // These 2 environment booleans are off by default but can be set in the
     // Constant Contact admin page.
-    if ( \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) ) {
-      return false;
+    if (\Drupal::state()->get('access_affinitygroup.alloc_cron_disable', FALSE)) {
+      return FALSE;
     }
-    if ( \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) ) {
-      return true;
+    if (\Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', FALSE)) {
+      return TRUE;
     }
 
-    if  (!cCronCheckInterval) {
-      // same as allow_ondemand, can probably get rid of this
-      return true;
+    if (!cCronCheckInterval) {
+      // Same as allow_ondemand, can probably get rid of this.
+      return TRUE;
     }
 
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);
-    $hoursDiff = round(($currentTime - $lastRun)/3600, 1);
-    collectCronLog("checking $function last ". date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
+    $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
+    collectCronLog("checking $function last " . date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
-    //run if it's been more than 24 hours since the last run
+    // Run if it's been more than 24 hours since the last run.
     if ($hoursDiff > 24) {
-        return true;
+      return TRUE;
     }
   }
 
-  return false;
+  return FALSE;
 }
 
-// Update current users with their current allocations and set their cider resrouces field (allocations), and
-// add them to associated affinity groups. If user not found in database, we creat it here.
-// run from chron
-// ciderName: this is the "Global Resource Id" (from CiDeR), aka "info_resource_id" from xdusage api aka "allocation"
-//            Example: anvil-gpu.perdue.xsede.org
-// ciderRefNum: the entity number/ the interal id for the entity of type Access ACtive Resrouces from CiDeR
-//            Example: '429'
-// variable names beginning with "xd" have to do with the info incoming from the api.
-
+/**
+ * Update current users with their current allocations and set their cider resrouces field (allocations), and
+ * add them to associated affinity groups. If user not found in database, we create it here.
+ * run from cron
+ * ciderName: this is the "Global Resource Id" (from CiDeR), aka "info_resource_id" from xdusage api aka "allocation"
+ * Example: anvil-gpu.perdue.xsede.org
+ * ciderRefNum: the entity number/ the interal id for the entity of type Access Active Resources from CiDeR
+ * Example: '429'
+ * variable names beginning with "xd" have to do with the info incoming from the api.
+ */
 function updateUserAllocations() {
   global $logCronErrors;
   global $logCronInfo;
@@ -436,225 +457,242 @@ function updateUserAllocations() {
 
   try {
     $apiBase = 'https://allocations-api.access-ci.org/acdb/xdusage';
-    //$requestUrl = $apiBase . '/v2/projects?active_only&not_expired&person_id=5723';     // ktomko
     $requestUrl = $apiBase . '/v2/projects?active_only&not_expired';
 
     $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
     if (!file_exists($path)) {
-        collectCronLog("Unable to get xsede api key.");
-        return false;
+      collectCronLog("Unable to get xsede api key.");
+      return FALSE;
     }
     $secretsData = json_decode(file_get_contents($path), TRUE);
     $apiKey = $secretsData['xdusage_api_key'];
-    $requestOpts = array('headers' => array(
-                        'XA-API-KEY' => $apiKey,
-                        'XA-AGENT'   => 'xdusage',
-                        'XA-RESOURCE' => 'support.access-ci.org',
-                        'Content-Type' => 'application/json'),
-                        'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]);
+    $requestOpts = [
+      'headers' => [
+        'XA-API-KEY' => $apiKey,
+        'XA-AGENT'   => 'xdusage',
+        'XA-RESOURCE' => 'support.access-ci.org',
+        'Content-Type' => 'application/json',
+      ],
+      'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1],
+    ];
 
-    $client = new GuzzleHttp\Client();
+    $client = new Client();
     $response = $client->request('GET', $requestUrl, $requestOpts);
 
     $responseJson = Json::decode((string) $response->getBody());
-  } catch (Exception $e) {
-      collectCronLog('xdusage api call: '.$e->getMessage());
-      return false;
+  }
+  catch (Exception $e) {
+    collectCronLog('xdusage api call: ' . $e->getMessage());
+    return FALSE;
   }
   $userCount = 0;
   $newUsers = 0;
   $newCCIds = 0;
   try {
-      // Api response is a list of projects. We want the user name and resource from each. Users can be on many projects.
-      // Compile a list of portal usernames (duplicated removed) with their associated projects (duplicates removed).
-      $xdProjectsArray = $responseJson['result'];
-      $xdAllocations = array();
+    /*
+     * Api response is a list of projects. We want the user name and resource
+     * from each. Users can be on many projects.
+     * Compile a list of portal usernames (duplicated removed) with their
+     * associated projects (duplicates removed).
+     */
+    $xdProjectsArray = $responseJson['result'];
+    $xdAllocations = [];
 
-        // assemble array of users and which resources (allocations) they use, discarding duplicates
-      foreach ($xdProjectsArray as $xdProject) {
+    // Assemble array of users and which resources (allocations) they use, discarding duplicates.
+    foreach ($xdProjectsArray as $xdProject) {
 
-        $xdUserName = $xdProject['pi_portal_username'];
-        if (array_key_exists($xdUserName, $xdAllocations))  {
-          // have user. add this rid if they don't already have in their list
-          if (array_search($xdProject['info_resource_id'], $xdAllocations[$xdUserName]) === false) {
-            array_push($xdAllocations[$xdUserName], $xdProject['info_resource_id']);
-          }
-        } else {
-          // user not on list, so add it
-          $xdAllocations[$xdUserName] = array($xdProject['info_resource_id']);
+      $xdUserName = $xdProject['pi_portal_username'];
+      if (array_key_exists($xdUserName, $xdAllocations)) {
+        // Have user. add this rid if they don't already have in their list.
+        if (array_search($xdProject['info_resource_id'], $xdAllocations[$xdUserName]) === FALSE) {
+          array_push($xdAllocations[$xdUserName], $xdProject['info_resource_id']);
         }
       }
+      else {
+        // User not on list, so add it.
+        $xdAllocations[$xdUserName] = [$xdProject['info_resource_id']];
+      }
+    }
 
-      // for each user: if user does not exist, create the user. First look for the user via
-      // the access version of the name, which is their portal name plus @access-id.org tacked on
-      // Once we have a user handle, whether newly created or existing,
-      // for each Resource Id (allocation), find related AG. Make sure user is part of that AG.
-      collectCronLog('Users from api: count '. count($xdAllocations), 'i');
+    // For each user: if user does not exist, create the user. First look for the user via
+    // the access version of the name, which is their portal name plus @access-ci.org tacked on
+    // Once we have a user handle, whether newly created or existing,
+    // for each Resource Id (allocation), find related AG. Make sure user is part of that AG.
+    collectCronLog('Users from api: count ' . count($xdAllocations), 'i');
 
-      foreach ($xdAllocations as $xdUserName => $xdUserCiderNames) {
+    foreach ($xdAllocations as $xdUserName => $xdUserCiderNames) {
 
-        try {
-          $userCount++;
-          //if ($userCount > 100)  {kint($userCount); die();}
+      try {
+        $userCount++;
+        // If ($userCount > 100)  {kint($userCount); die();}
+        $accessUserName = $xdUserName . cDevUname . '@access-ci.org';
+        collectCronLog("Processing $userCount: $accessUserName", 'd');
+        // kint("$userCount: $accessUserName");.
+        $userDetails = user_load_by_name($accessUserName);
 
-          $accessUserName = $xdUserName.cDevUname.'@access-ci.org';
-          collectCronLog("Processing $userCount: $accessUserName", 'd');
-          //kint("$userCount: $accessUserName");
+        // If we already have user, make sure they are all set with the cc id.
+        // @todo potentially, will  need to put in a check if they have
+        // changed their email or their firstname or lastname, and change it for
+        // the drual database.
+        $needCCId = TRUE;
+        if ($userDetails) {
+          $needCCId = needsCCId($userDetails);
+        }
 
-          $userDetails = user_load_by_name($accessUserName);
+        // Did not have the user, so create it. Ongoing, this is much the less frequent case
+        // so instead of storing everyone's account info in $users, go back to incoming to find user's info in one of their projects.
+        if ($userDetails === FALSE || $needCCId) {
+          $xdOneUsersProjects = array_usearch($xdProjectsArray, function ($o) use ($xdUserName) {
+            return $o['pi_portal_username'] === $xdUserName;
+          });
+          // Get just first one.
+          $xdOneUsersProjects = reset($xdOneUsersProjects);
 
-          // if we already have user, make sure they are all set with the cc id.
-          // todo: potentially, will  need to put in a check if they have
-          // changed their email or their firstname or lastname, and change it for
-          // the drual database.
-          $needCCId = true;
+        }
+        if ($userDetails === FALSE) {
+          $userDetails = createUser($xdOneUsersProjects['pi_portal_username'], $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name']);
+          // Portal email is found and set during create user.
+          $portalEmail = $userDetails->getEmail();
           if ($userDetails) {
-            $needCCId = needsCCId($userDetails);
+            $newUsers++;
           }
-
-          // did not have the user, so create it. Ongoing, this is much the less frequent case
-          // so instead of storing everyone's account info in $users, go back to incoming to find user's info in one of their projects
-          if ($userDetails === false || $needCCId) {
-            $xdOneUsersProjects = array_usearch($xdProjectsArray, function ($o) use ($xdUserName) { return $o['pi_portal_username'] === $xdUserName; });
-            $xdOneUsersProjects = reset($xdOneUsersProjects); // get just first one
-
+        }
+        if ($needCCId) {
+          // Already had user in our DB, but still need to get the email in the api.
+          $portalEmail = getEmailFromApi($xdOneUsersProjects['pi_portal_username']);
+        }
+        if ($needCCId && $userDetails) {
+          // Either new user just created, or existing user missing constant contact id.
+          if (cronAddToConstantContact($userDetails, $portalEmail, $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name'])) {
+            $newCCIds++;
           }
-          if ($userDetails === false) {
-            $userDetails = createUser($xdOneUsersProjects['pi_portal_username'], $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name']);
-            $portalEmail = $userDetails->getEmail();  // portal email is found and set during create user
-            if ($userDetails) { $newUsers++;}
-          }
-          if ($needCCId) {
-            // already had user in our DB, but still need to get the email in the api
-            $portalEmail = getEmailFromApi($xdOneUsersProjects['pi_portal_username']);
-          }
-          if ($needCCId && $userDetails) {
-            // either new user just created, or existing user missing constant contact id
-            if (cronAddToConstantContact($userDetails, $portalEmail, $xdOneUsersProjects['pi_first_name'], $xdOneUsersProjects['pi_last_name'])) {
-              $newCCIds++;
-            }
-          }
+        }
 
         // !!(todo - Should really make a lookup table for all cider rid=>entityIds)
         // map the  incoming resource names for this user to array of the internal reference numbers
         // for comparison with those in the users
-        $xdCiderRefnums= array();
+        $xdCiderRefnums = [];
         foreach ($xdUserCiderNames as $ciderName) {
 
-          // get a list of the corresponding entity ids for the incoming
-          // this can be used to compare to the existing
-          // TODO - should this be case-sensitive or not
-
+          // Get a list of the corresponding entity ids for the incoming
+          // this can be used to compare to the existing.
+          // @todo should this be case-sensitive or not.
           $query = \Drupal::entityQuery('node');
           $refnum = $query
-           ->condition('type', 'access_active_resources_from_cid')
-          ->condition('field_access_global_resource_id', $ciderName)
-          ->execute();
+            ->condition('type', 'access_active_resources_from_cid')
+            ->condition('field_access_global_resource_id', $ciderName)
+            ->execute();
 
           if (empty($refnum)) {
-            //collectCronLog("Not found in CiDeR active res: $ciderName ", 'd');
-          } else {
+            // collectCronLog("Not found in CiDeR active res: $ciderName ", 'd');.
+          }
+          else {
             array_push($xdCiderRefnums, reset($refnum));
           }
         }
 
-        // now we have a loaded userDetails whether existing or newly created. Check the user's Resources to see if they still match.
-        // now from list of resource_id for this user, check each to see which AG they are associated with. build list of AGs for this user
-        $userCiderRefnums = array();
+        // Now we have a loaded userDetails whether existing or newly created. Check the user's Resources to see if they still match.
+        // now from list of resource_id for this user, check each to see which AG they are associated with. build list of AGs for this user.
+        $userCiderRefnums = [];
         $userCiderArray = $userDetails->get('field_cider_resources')->getValue();
         foreach ($userCiderArray as $userCider) {
-          $userCiderRefnums[] =  $userCider['target_id'];
+          $userCiderRefnums[] = $userCider['target_id'];
         }
 
-        // is xd incoming list different from what user already has? if not, reset the user list
+        // Is xd incoming list different from what user already has? if not, reset the user list.
         $intersect = array_intersect(array_values($xdCiderRefnums), $userCiderRefnums);
 
         if (count($intersect) !== count($xdCiderRefnums) || count($intersect) !== count($userCiderRefnums)) {
 
-          collectCronLog('---updating user ciders; count new: '.count($xdCiderRefnums). ' was '. count($userCiderRefnums), 'd');
+          collectCronLog('---updating user ciders; count new: ' . count($xdCiderRefnums) . ' was ' . count($userCiderRefnums), 'd');
           updateUserCiderList($userDetails, $xdCiderRefnums);
         }
-          // Finally, check for AG membership in each AG corresponding to the ciderRefnum.
-          // Gather a list of associated affinity groups (unique)
-          // The Cider Refs might be associated with multiples AGs;
-          // an AG has 0 to many Cider Refs
+        // Finally, check for AG membership in each AG corresponding to the ciderRefnum.
+        // Gather a list of associated affinity groups (unique)
+        // The Cider Refs might be associated with multiples AGs;
+        // an AG has 0 to many Cider Refs.
+        $agNodes = [];
+        foreach ($xdCiderRefnums as $refnum) {
 
-          $agNodes = array();
-          foreach ($xdCiderRefnums as $refnum) {
+          $query = \Drupal::entityQuery('node');
+          $agNodeIds = $query
+            ->condition('type', 'affinity_group')
+            ->condition('field_cider_resources', $refnum)
+            ->execute();
 
-            $query = \Drupal::entityQuery('node');
-            $agNodeIds = $query
-                  ->condition('type', 'affinity_group')
-                  ->condition('field_cider_resources', $refnum)
-                  ->execute();
-
-            foreach ($agNodeIds as $id) {
-                if (!in_array($id, $agNodes)) {
-                  $agNodes[] = $id;
-                }
+          foreach ($agNodeIds as $id) {
+            if (!in_array($id, $agNodes)) {
+              $agNodes[] = $id;
             }
           }
-
-          // now we have agNodes, which is a list of all affinity groups having to do with the user's allocations.
-          // set membership will add the user to the group unless they previously blocked automembership to the ag by leaving
-
-          $userBlockedArray = $userDetails->get('field_blocked_ag_tax')->getValue();
-
-          $userBlockedAgTids = array();
-          foreach ($userBlockedArray as $userBlock) {
-            $userBlockedAgTids[] =  $userBlock['target_id'];
-          }
-
-          foreach ($agNodes as $agNid ) {
-            setUserMembership($agNid, $userDetails, $userBlockedAgTids, true);
-          }
-        } catch (Exception $e) {
-          collectCronLog("Exception for incoming user $xdUserName  " .  $e->getMessage());
         }
-      } // end foreach xdAllocation (each unique returned from api)
-    } catch (Exception $e) {
-      collectCronLog( "Exception while processing api results at $userCount " .  $e->getMessage());
-    }
-    collectCronLog("Finished Allocation import. Processed: $userCount,  New users: $newUsers, CC Ids added: $newCCIds", 'i');
-  return true;
+
+        // Now we have agNodes, which is a list of all affinity groups having to do with the user's allocations.
+        // set membership will add the user to the group unless they previously blocked automembership to the ag by leaving.
+        $userBlockedArray = $userDetails->get('field_blocked_ag_tax')->getValue();
+
+        $userBlockedAgTids = [];
+        foreach ($userBlockedArray as $userBlock) {
+          $userBlockedAgTids[] = $userBlock['target_id'];
+        }
+
+        foreach ($agNodes as $agNid) {
+          setUserMembership($agNid, $userDetails, $userBlockedAgTids, TRUE);
+        }
+      }
+      catch (Exception $e) {
+        collectCronLog("Exception for incoming user $xdUserName  " . $e->getMessage());
+      }
+    } // end foreach xdAllocation (each unique returned from api)
+  }
+  catch (Exception $e) {
+    collectCronLog("Exception while processing api results at $userCount " . $e->getMessage());
+  }
+  collectCronLog("Finished Allocation import. Processed: $userCount,  New users: $newUsers, CC Ids added: $newCCIds", 'i');
+  return TRUE;
 }
 
-// user membership for an affinity group is stored in a per-user flag (not global) on the ag.
-// $agNid - AG node id
-// $blocklist - array of taxonomy ids for blocked ags
+/**
+ * User membership for an affinity group is stored in a per-user flag (not global) on the ag.
+ * $agNid - AG node id
+ * $blocklist - array of taxonomy ids for blocked ags.
+ */
 function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
 
-  $ag = \Drupal\node\Entity\Node::load($agNid);
+  $ag = Node::load($agNid);
   $agTax = \Drupal::entityTypeManager()
     ->getStorage('taxonomy_term')
     ->loadByProperties(['name' => ($ag->get('title')->value)]);
   $agTax = reset($agTax);
 
-  // for joining only, check if ag is on block list.
+  // For joining only, check if ag is on block list.
   if ($isJoin && in_array($agTax->id(), $blockList)) {
-    collectCronLog('...user blocked '. $agTax->id(). ' '. $ag->get('title')->value, 'd');
+    collectCronLog('...user blocked ' . $agTax->id() . ' ' . $ag->get('title')->value, 'd');
     return;
   }
 
   $flagService = \Drupal::service('flag');
-  $flag = $flagService->getFlagById('affinity_group'); // replace by flag machine name
+  // Replace by flag machine name.
+  $flag = $flagService->getFlagById('affinity_group');
 
-  // check if already flagged. If not, set the join flag, and
+  // Check if already flagged. If not, set the join flag, and
   // call constant contact api to add to corresponding email group.
   $flagStatus = $flagService->getFlagging($flag, $agTax, $userDetails);
   if (!$flagStatus) {
 
     $flagService->flag($flag, $agTax, $userDetails);
     subscribeToCCList($agTax->id(), $userDetails);
-    collectCronLog("...setting membership: ".$ag->get('title')->value, 'd');
+    collectCronLog("...setting membership: " . $ag->get('title')->value, 'd');
 
-  } else {
-    //collectCronLog("...user already a member: ".$ag->get('title')->value, 'i');
+  }
+  else {
+    // collectCronLog("...user already a member: ".$ag->get('title')->value, 'i');.
   }
 }
+
 /**
- * Reset user's cider list
-*/
+ * Reset user's cider list.
+ */
 function updateUserCiderList($userDetails, $ciderRefnums) {
 
   $userDetails->set('field_cider_resources', NULL);
@@ -664,23 +702,29 @@ function updateUserCiderList($userDetails, $ciderRefnums) {
   $userDetails->save();
 }
 
+/**
+ *
+ */
 function array_usearch(array $array, callable $comparitor) {
   return array_filter(
       $array,
       function ($element) use ($comparitor) {
-          if ($comparitor($element)) {
-              return $element;
-          }
+        if ($comparitor($element)) {
+            return $element;
+        }
       }
   );
 }
-// for use with updateUserAllocations cron.
-// create the user and call the api to get their email.
+
+/**
+ * For use with updateUserAllocations cron.
+ * create the user and call the api to get their email.
+ */
 function createUser($portalName, $firstName, $lastName) {
   try {
 
-    //$portalName = $userProject['pi_portal_username'];
-    $accessName = $portalName.cDevUname.'@access-ci.org';
+    // $portalName = $userProject['pi_portal_username'];
+    $accessName = $portalName . cDevUname . '@access-ci.org';
 
     $uEmail = getEmailFromApi($portalName);
 
@@ -698,81 +742,99 @@ function createUser($portalName, $firstName, $lastName) {
     collectCronLog("User created $accessName - $uEmail ($y)", 'i');
   }
   catch (Exception $e) {
-      collectCronLog("Exception createUser $portalName: " .  $e->getMessage());
-      $u = false;
+    collectCronLog("Exception createUser $portalName: " . $e->getMessage());
+    $u = FALSE;
   }
   return $u;
 }
+
+/**
+ *
+ */
 function getEmailFromApi($portalName) {
-  // get additional user details from api, bc we need the email
+  // Get additional user details from api, bc we need the email.
   $userInfo = get_account_data_from_api($portalName);
 
-  if ($userInfo === false) {
-  // log inability to get email but continue with create
+  if ($userInfo === FALSE) {
+    // Log inability to get email but continue with create.
     $uEmail = '';
     collectCronLog("Could not get user email from API, user: $portalName");
-  }else {
-    $uEmail =  cDevUname.$userInfo['email'];
+  }
+  else {
+    $uEmail = cDevUname . $userInfo['email'];
   }
   return $uEmail;
 }
-// Boolean check if user has a CC Id.
+
+/**
+ * Boolean check if user has a CC Id.
+ */
 function needsCCId($u) {
-  $ccId = null;
+  $ccId = NULL;
   $fVal = $u->get('field_constant_contact_id')->getValue();
   if (!empty($fVal)) {
     $ccId = $fVal[0]['value'];
   }
   if (!empty($ccId)) {
-    return false;
+    return FALSE;
   }
-  return true;
+  return TRUE;
 }
 
-// send in userdetail to check for absent cc id. If not there, attempt to add.
-// return boolean success.
+/**
+ * Send in userdetail to check for absent cc id. If not there, attempt to add.
+ * return boolean success.
+ */
 function cronAddToConstantContact($u, $uEmail, $firstName, $lastName) {
 
-    $ccId = addUserToConstantContact($uEmail, $firstName, $lastName);
-    if (empty($ccId)) {
-      collectCronLog("Could not add user to Constant Contact:  $uEmail");
-      return false;
-    }else {
-      $u->set('field_constant_contact_id', $ccId);
-      $u->save();
-      collectCronLog("Id from Constant Contact:  $uEmail", 'i');
-      return true;
-    }
+  $ccId = addUserToConstantContact($uEmail, $firstName, $lastName);
+  if (empty($ccId)) {
+    collectCronLog("Could not add user to Constant Contact:  $uEmail");
+    return FALSE;
+  }
+  else {
+    $u->set('field_constant_contact_id', $ccId);
+    $u->save();
+    collectCronLog("Id from Constant Contact:  $uEmail", 'i');
+    return TRUE;
+  }
 }
 
-// collect problems adding user, etc  here to send as a deve alert email at end of cron
-// also used for logging both errors and status
-// we might do this in a file
-function collectCronLog($msg, $logType='err') {
+/**
+ * Collect problems adding user, etc  here to send as a dev alert email at end of cron
+ * also used for logging both errors and status
+ * we might do this in a file.
+ */
+function collectCronLog($msg, $logType = 'err') {
   global $logCronErrors;
   global $logCronInfo;
 
-  if ($logType==='err') {
-    $logCronErrors[] =  $msg;
+  if ($logType === 'err') {
+    $logCronErrors[] = $msg;
     \Drupal::logger('cron_affinitygroup')->error($msg);
-  } elseif ($logType==='i'){
+  }
+  elseif ($logType === 'i') {
     \Drupal::logger('cron_affinitygroup')->notice($msg);
     $logCronInfo[] = $msg;
-  } else {
+  }
+  else {
     \Drupal::logger('cron_affinitygroup')->debug($msg);
   }
 }
-// send an email with the collected cron errors to users with role: administrator.
+
+/**
+ * Send an email with the collected cron errors to users with role: administrator.
+ */
 function emailDevCronLog() {
 
   global $logCronErrors;
-  //global $logCronInfo;
-  if (empty($logCronErrors) || count($logCronErrors)==0) {
+  // Global $logCronInfo;.
+  if (empty($logCronErrors) || count($logCronErrors) == 0) {
     return;
   }
 
-  // make destination list of emails of users with administrator role
-   $userIds = \Drupal::entityQuery('user')
+  // Make destination list of emails of users with administrator role.
+  $userIds = \Drupal::entityQuery('user')
     ->condition('status', 1)
     ->condition('roles', 'administrator')
     ->execute();
@@ -780,7 +842,7 @@ function emailDevCronLog() {
   $toAddrs = '';
   $userCount = count($users);
   $iterate = 0;
-  foreach($users as $user){
+  foreach ($users as $user) {
     $iterate++;
     $toAddrs .= $user->get('mail')->getString();
     if ($userCount != $iterate) {
@@ -791,8 +853,10 @@ function emailDevCronLog() {
   $params = [];
   $params['to'] = $toAddrs;
   $body = '';
-  if (!empty($logCronErrors)) { $body =  'ERRORS: ' . implode('\n', $logCronErrors); }
-  //if (!empty($logCronInfo)) { $body = $body. '\nINFO: ' . implode('\n' , $logCronInfo);}
+  if (!empty($logCronErrors)) {
+    $body = 'ERRORS: ' . implode('\n', $logCronErrors);
+  }
+  // If (!empty($logCronInfo)) { $body = $body. '\nINFO: ' . implode('\n' , $logCronInfo);}.
   $params['body'] = $body;
   $params['title'] = 'ACCESS CRON: errors during xsede user + allocations import';
   $langcode = \Drupal::currentUser()->getPreferredLangcode();
@@ -800,27 +864,29 @@ function emailDevCronLog() {
   $key = 'access_affinitygroup';
   $mailManager = \Drupal::service('plugin.manager.mail');
   $result = $mailManager->mail($module, $key, $toAddrs, $langcode, $params, NULL, TRUE);
-  if ($result === false
+  if ($result === FALSE
     || (array_key_exists('result', $result) && !$result['result'])) {
     \Drupal::logger('cron_affinitygroup')->error("Error sending mail to " . $toAddrs);
   }
 }
 
 /**
-  * Email emailText to each AG email group in ccListIds array.
-  * Subject of email is emailTitle.
-  * See makeNewsHTML for meaning of other arguments.
-  *
-  * Steps to send email campaign from Constant Contact:
-  * Setup:
-  * - Make a POST request to create an email campaign and campaign activities.
-  * - Make a GET request to retrieve the primary_email email campaign activity.
-  * Send:
-  * - Make a PUT request to update the email campaign activity and add recipients.
-  * - Make a POST request to schedule the email campaign activity.
+ * Email emailText to each AG email group in ccListIds array.
+ * Subject of email is emailTitle.
+ * See makeNewsHTML for meaning of other arguments.
+ *
+ * Steps to send email campaign from Constant Contact:
+ * Setup:
+ * - Make a POST request to create an email campaign and campaign activities.
+ * - Make a GET request to retrieve the primary_email email campaign activity.
+ * Send:
+ * - Make a PUT request to update the email campaign activity and add recipients.
+ * - Make a POST request to schedule the email campaign activity.
  */
 
- // last 2 args are arrays
+/**
+ * Last 2 args are arrays.
+ */
 function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds) {
 
   $emailHtml = makeNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
@@ -833,6 +899,7 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
     sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds);
   }
 }
+
 /**
  * Create the Constant Contact email campaign, which is the initial setup.
  * Nothing is sent at this point. Returns the response which included the
@@ -840,28 +907,27 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
  */
 function setupEmailCampaign($emailSubject, $emailHtml) {
 
-  // for CC, must be unique name for campaign
-  $campaignName = uniqid('Access-news', true);
+  // For CC, must be unique name for campaign.
+  $campaignName = uniqid('Access-news', TRUE);
 
   $postData = [
     'name' => $campaignName,
     'email_campaign_activities' => [
       [
-      'format_type' => 5,
-      'from_name'=> 'Access Support',
-      'from_email'=> cAccessEmail,
-      'reply_to_email'=> cAccessEmail,
-      'subject'=> $emailSubject,
-      'preheader'=> $emailSubject,
-      'html_content' => $emailHtml
-      ]
-    ]
+        'format_type' => 5,
+        'from_name' => 'Access Support',
+        'from_email' => cAccessEmail,
+        'reply_to_email' => cAccessEmail,
+        'subject' => $emailSubject,
+        'preheader' => $emailSubject,
+        'html_content' => $emailHtml,
+      ],
+    ],
   ];
 
-  // note: could include irl addr in postData if we want to change it, but don't have to as cc uses addr on record for footer addres in email
-
+  // note: could include irl addr in postData if we want to change it, but don't have to as cc uses addr on record for footer address in email.
   $postData = json_encode($postData);
-  $cca = new ConstantContactApi;
+  $cca = new ConstantContactApi();
   $ccResponse = $cca->apiCall('/emails', $postData, 'POST');
 
   return $ccResponse;
@@ -872,19 +938,16 @@ function setupEmailCampaign($emailSubject, $emailHtml) {
  * set up the recipient lists, and finally, schedule for immediate sendoff.
  * ccListIds: array of CC email List Ids, one for each AG
  */
-
-function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds)
-{
-  // first, get the activity object
-  $sent = false;
-  $cca = new ConstantContactApi;
+function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
+  // first, get the activity object.
+  $sent = FALSE;
+  $cca = new ConstantContactApi();
   $ccActivity = $cca->apiCall("/emails/activities/$campaignActivityId");
 
   if (!empty($ccActivity)) {
 
-    // update activity obj with the destination cc email lists in
-    // an array with list_id from each AG group to receive news
-
+    // Update activity obj with the destination cc email lists in
+    // an array with list_id from each AG group to receive news.
     $ccActivity->contact_list_ids = $ccListIds;
 
     $ccActivity = json_encode($ccActivity);
@@ -892,18 +955,20 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds)
 
     if (!empty($ccResponse)) {
       // finally, send it, scheduled with 0 signifying: now.
-      $schedule = array('scheduled_date'=>'0');
+      $schedule = ['scheduled_date' => '0'];
       $schedule = json_encode($schedule);
-      // TODO. This is where emails are actually sent via api call to constant contact.
-      //$ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
-      $sent = true;
+      // @todo . This is where emails are actually sent via api call to constant contact.
+      // $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
+      $sent = TRUE;
     }
   }
   if ($sent) {
     showStatus("News item emailed to specified affinity groups.");
-  } else {
+  }
+  else {
     showStatus("Error while trying to email news items to affinity groups.");
   }
 }
 
-include 'src/emailContent.php';  // TODO is this a safe include... should we use a different path specifier
+// @todo is this a safe include... should we use a different path specifier.
+include 'src/emailContent.php';

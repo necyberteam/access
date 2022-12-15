@@ -1,31 +1,35 @@
 <?php
 
 /**
- * returns the HTML to send to Constant Contact
- * This functions like an email template. CC does not have API for email templates. 
- * 
- * newsBody: the html for the main part of the message
+ * @file
+ * Returns the HTML to send to Constant Contact.
+ *
+ * This functions like an email template.
+ *
+ * NewsBody: the html for the main part of the message
  * newsTitle: line at the top
  * pubDate: date string to be used with [published: xxxx]
- * agNames: list of Affinity Group names for the 'You are receiving this email through...' 
- * newsUrl: link for 'View on website' button 
+ * agNames: list of Affinity Group names for the 'You are receiving this email through...'
+ * newsUrl: link for 'View on website' button .
  */
-// todo: we will probably have to change the url of the access logo image when we close our test accounts
-// todo: this was lifted from constant contact's generated email.  replace generated names with more understandable names
+
+/**
+ * @todo we will probably have to change the url of the access logo image when we close our test accounts
+ * @todo this was lifted from constant contact's generated email.  replace generated names with more understandable names.
+ */
 function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
 
-    // build list of one or more affinity group names separated by 'or'
-    $agText = '';
-    $or = '';
-    foreach ($agNames as $agName) {
-      $agText = $agText.$or.$agName;
-      $or = ' or ';
-    }
-    $agText = 'You are receiving this email through the '.$agText.' Affinity Group.';
-    
-    // HTML with values for newsBody, newsTitle, pubdate and agText inserted
-  
-    $emailText = <<<EMAILTEXT
+  // Build list of one or more affinity group names separated by 'or'.
+  $agText = '';
+  $or = '';
+  foreach ($agNames as $agName) {
+    $agText = $agText . $or . $agName;
+    $or = ' or ';
+  }
+  $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+
+  // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
+  $emailText = <<<EMAILTEXT
     <html>
   <body>[[trackingImage]]
       <div id="yiv2621404860">
@@ -34,67 +38,67 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                   #yiv2621404860 .yiv2621404860footer-main-width {
                       width: 100% !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860footer-mobile-hidden {
                       display: none !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860footer-mobile-hidden {
                       display: none !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860footer-column {
                       display: block !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860footer-mobile-stack {
                       display: block !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860footer-mobile-stack-padding {
                       padding-top: 3px;
                   }
               }
-  
+
               #yiv2621404860 #yiv2621404860 img {}
-  
+
               #yiv2621404860 .yiv2621404860layout {
                   min-width: 100%;
               }
-  
+
               #yiv2621404860 table {
                   table-layout: fixed;
               }
-  
+
               #yiv2621404860 .yiv2621404860shell_outer-row {
                   table-layout: auto;
               }
-  
+
               #yiv2621404860 #yiv2621404860 u+.yiv2621404860body .yiv2621404860shell_outer-row {
                   width: 700px;
               }
-  
+
               #yiv2621404860 #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell p {
                   margin: 0;
                   padding: 0;
                   margin-bottom: 0;
               }
-  
+
               #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell ul,
               #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell ol {
                   padding: 0;
                   margin: 0 0 0 40px;
               }
-  
+
               #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell li {
                   padding: 0;
                   margin: 0;
               }
-  
+
               #yiv2621404860 #yiv2621404860 a {
                   text-decoration: underline;
               }
-  
+
               #yiv2621404860 #yiv2621404860 a .filtered99999 {
                   text-decoration: underline !important;
                   font-size: inherit !important;
@@ -103,7 +107,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                   line-height: inherit !important;
                   color: inherit !important;
               }
-  
+
               #yiv2621404860 #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell {}
           </style>
           <style>
@@ -114,108 +118,108 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                       padding-bottom: 10px !important;
                       padding-left: 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860button_border-row .yiv2621404860button_content-cell {
                       padding-top: 10px !important;
                       padding-right: 20px !important;
                       padding-bottom: 10px !important;
                       padding-left: 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860column .yiv2621404860content-padding-horizontal {
                       padding-left: 20px !important;
                       padding-right: 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860layout .yiv2621404860column .yiv2621404860content-padding-horizontal .yiv2621404860content-padding-horizontal {
                       padding-left: 0px !important;
                       padding-right: 0px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860layout .yiv2621404860column .yiv2621404860content-padding-horizontal .yiv2621404860block-wrapper_border-row .yiv2621404860content-padding-horizontal {
                       padding-left: 20px !important;
                       padding-right: 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860dataTable {
                       overflow: auto !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860dataTable .yiv2621404860dataTable_content {
                       width: auto !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860image--mobile-scale .yiv2621404860image_container img {
                       width: auto !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860image--mobile-center .yiv2621404860image_container img {
                       margin-left: auto !important;
                       margin-right: auto !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860layout-margin .yiv2621404860layout-margin_cell {
                       padding: 0px 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860layout-margin--uniform .yiv2621404860layout-margin_cell {
                       padding: 20px 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860scale {
                       width: 100% !important;
                       height: auto !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860stack {
                       display: block !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860hide {
                       display: none !important;
                   }
-  
+
                   #yiv2621404860 u+.yiv2621404860body .yiv2621404860shell_outer-row {
                       width: 100% !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860socialFollow_container {
                       text-align: center !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell {
                       font-size: 16px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell h1 {
                       font-size: 24px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell h2 {
                       font-size: 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text .yiv2621404860text_content-cell h3 {
                       font-size: 20px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text--sectionHeading .yiv2621404860text_content-cell {
                       font-size: 24px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text--heading .yiv2621404860text_content-cell {
                       font-size: 24px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text--dataTable .yiv2621404860text_content-cell .yiv2621404860dataTable .yiv2621404860dataTable_content-cell {
                       font-size: 14px !important;
                   }
-  
+
                   #yiv2621404860 .yiv2621404860text--dataTable .yiv2621404860text_content-cell .yiv2621404860dataTable th.yiv2621404860dataTable_content-cell {}
               }
           </style>
           <div>
-              
+
               <div lang="en-US" style="background-color:#138597;" class="yiv2621404860shell">
                   <table width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#138597;"
                       bgcolor="#138597" class="yiv2621404860shell_panel-row">
@@ -245,7 +249,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                               <td style="width:100%;" align="center"
                                                                                   valign="top"
                                                                                   class="yiv2621404860column yiv2621404860column--1 yiv2621404860scale yiv2621404860stack">
-                                                                                  
+
                                                                                   <table width="100%" border="0"
                                                                                       cellpadding="0" cellspacing="0"
                                                                                       style="table-layout:fixed;"
@@ -346,7 +350,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                               </td>
                                                                                           </tr>
                                                                                       </tbody>
-                                                                                  </table>                                                                                
+                                                                                  </table>
                                                                                   <table width="100%" border="0"
                                                                                       cellpadding="0" cellspacing="0"
                                                                                       style="table-layout:fixed;"
@@ -362,7 +366,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                           </tr>
                                                                                       </tbody>
                                                                                   </table>
-                                                                                  
+
                                                                                   <div style="line-height:20px;min-height:20px;"
                                                                                       class="yiv2621404860spacer"> </div>
                                                                                   <table width="100%" border="0"
@@ -418,14 +422,12 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                           </tr>
                       </tbody>
                   </table>
-              </div>            
+              </div>
           </div>
       </div>
   </body>
   </html>
   EMAILTEXT;
   // note: EMAILTEXT must be to the left column-wise of the last tag (php)
-  
   return $emailText;
-  }
-  
+}
