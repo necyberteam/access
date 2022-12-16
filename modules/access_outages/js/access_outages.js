@@ -11,62 +11,46 @@
  */
 document.onreadystatechange = function () {
 
-  // since current & planned outages may be sparse, the following
-  // boolean can be used for debugging / testing -- it forces the
-  // retrieval of all outages
-  const bDebugWithAllOutages = false
-
   if (document.readyState == "complete") {
-    const ciderIds = drupalSettings.ciderIds
-    // only show outages if there are any ciderIds
-    if (ciderIds.length > 0) showAgOutages(ciderIds, bDebugWithAllOutages)
+    showAgOutages()
+    showAgCiders()
   }
 }
+
+function showAgCiders() {
+  const ciderTitles = drupalSettings.ciderTitles
+  const ciderDescriptions = drupalSettings.ciderDescriptions
+  // console.log('----- ciderTitles = ' + ciderTitles)
+  
+  const cidersDiv = document.getElementById('cider-resource-descriptions')
+  for (let i = 0; i < ciderTitles.length; i++) {
+    cidersDiv.innerHTML += 
+      '<h3 class="border-bottom pb-2">' + ciderTitles[i] + '</h3>'
+      + '<p>' + ciderDescriptions[i] + '</p>'
+  }
+}
+ 
 
 /**
  * Make API calls for current & future outages, then filter them
  * for resources on the list parameter
  *
- * @param {*} ciderIds -- array of resources -- look for outages for these ids
- * @param {*} bDebugWithAllOutages -- debug with *all* outages
  */
-const showAgOutages = async function showAgOutages(ciderIds, bDebugWithAllOutages) {
+const showAgOutages = async function showAgOutages() {
+  // since current & planned outages may be sparse, the following
+  // boolean can be used for debugging / testing -- it forces the
+  // retrieval of all outages
+  const bDebugWithAllOutages = false
 
-  // make the api calls and show results
-  showCurrentOutages(ciderIds, bDebugWithAllOutages)
-  showPlannedOutages(ciderIds, bDebugWithAllOutages)
-}
+  const ciderIds = drupalSettings.ciderIds
 
-/**
- * Add the planned outages table to the DOM
- */
-function addOutageTableHtmlToDom() {
+  if (ciderIds.length > 0) {
+    // console.log('----- ciderIds = ' + ciderIds)
 
-  let outagesTableDiv = document.createElement('div')
-  outagesTableDiv.innerHTML = `<br>
-    <div class="outage-list section container">
-      <div class="row">
-        <div class="mb-3">
-          <h3 class="pb-2">Planned Downtimes</h3>
-          <div class="table-responsive">
-            <table id="outages-planned" class="display text-start table" style="display:none;">
-              <thead>
-                <tr>
-                  <th>Event</th>
-                  <th>Start</th>
-                  <th>End</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
-  container = document.getElementById('access_news')
-  container.appendChild(outagesTableDiv, container.firstChild);
+    // make the api calls and show results
+    showCurrentOutages(ciderIds, bDebugWithAllOutages)
+    showPlannedOutages(ciderIds, bDebugWithAllOutages)
+  }
 }
 
 /**
@@ -103,8 +87,8 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
 
     // add the div to the top of the page
     // (hopefully the following div id is the same on all domains)
-    let container = document.getElementById('block-views-block-affinity-group-group-2')
-    container.insertBefore(outagesCurrentDiv, container.firstChild);
+    let container = document.getElementById('affinity_group_view_top_div')
+    container.insertBefore(outagesCurrentDiv, container.firstChild)
     const outagesCurrent = document.getElementById('outages-current-p')
 
     // for all the filtered outages, add a link in a box to the outage to the
@@ -170,19 +154,19 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
         {
           data: 'Subject',
           render: function (data, type, row, meta) {
-            return type === 'display' ? `<a href="https://support.access-ci.org/outages?outageID=${row['ID']}">${data}</a>` : data;
+            return type === 'display' ? `<a href="https://support.access-ci.org/outages?outageID=${row['ID']}">${data}</a>` : data
           }
         },
         {
           data: 'OutageStart',
           render: function (data, type, row, meta) {
-            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data
           }
         },
         {
           data: 'OutageEnd',
           render: function (data, type, row, meta) {
-            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data
           }
         }
       ],
@@ -196,20 +180,53 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
 }
 
 /**
+ * Add the planned outages table to the DOM
+ */
+function addOutageTableHtmlToDom() {
+
+  let outagesTableDiv = document.createElement('div')
+  outagesTableDiv.innerHTML = `<br>
+    <div class="outage-list section container">
+      <div class="row">
+        <div class="mb-3">
+          <h3 class="pb-2">Planned Downtimes</h3>
+          <div class="table-responsive">
+            <table id="outages-planned" class="display text-start table" style="display:none;">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Start</th>
+                  <th>End</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+  container = document.getElementById('access_news')
+  container.appendChild(outagesTableDiv, container.firstChild)
+}
+
+
+/**
  * Given a list of outages, return an array containing only those with an id
  * in the ciderIds list
  *
  * @param {*} outages
  * @param {*} ciderIds
- * @returns
+ * @returns array of outages for the ciderIds
  */
 function filterOutages(outages, ciderIds) {
   let filtered = []
   Object.keys(outages).forEach(function (key) {
     if (ciderIds.indexOf(outages[key]['ResourceID']) > -1) {
-      filtered.push(outages[key]);
+      filtered.push(outages[key])
     }
-  });
-  return filtered;
+  })
+  return filtered
 }
 
