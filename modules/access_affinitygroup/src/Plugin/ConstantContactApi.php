@@ -89,7 +89,7 @@ class ConstantContactApi {
     $returned_token = $this->getAccessToken($redirectURI, $clientId, $clientSecret, $code);
     $returned_token = json_decode($returned_token);
 
-    if (!isset($returned_token->error)) {
+    if ($returned_token && !isset($returned_token->error)) {
       $this->setAccessToken($returned_token->access_token);
       $this->setRefreshToken($returned_token->refresh_token);
       \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
@@ -97,7 +97,6 @@ class ConstantContactApi {
     }
     else {
       $this->apiError($returned_token->error, $returned_token->error_description);
-
     }
   }
 
