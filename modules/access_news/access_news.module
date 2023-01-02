@@ -229,15 +229,10 @@ function affinityGroupBroadcast(Drupal\Core\Entity\EntityInterface $node, $newsT
 
           $bodyArray = $getFields['body']->getValue();
           $body = $bodyArray[0]['value'];
-        } else {
-          // newstype is eventseries.
-          // todo temp can't figure out how to get the timestamp or publish date
-          // because kint crashes on eventseries (but not event instance)
-          //$pubDateArray = $getFields['revision_timestamp']->getValue();
-          //$pubDate = $pubDateArray[0];
-          //$date = date_create_from_format('Y-m-d', $pubDate);
-          //$pubDate = date_format($date, 'm-d-Y');
-          $pubDate = date('m-d-Y');
+        }
+        else {
+          // Newstype is eventseries.
+          $pubDate = NULL;
 
           // body set using a custom view mode: ccemail
           $view_builder = \Drupal::entityTypeManager()->getViewBuilder('eventseries');

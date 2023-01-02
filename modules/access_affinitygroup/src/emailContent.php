@@ -28,9 +28,32 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
   }
   $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
+  $pubDateDisplay = NULL;
+  if ($pubDate) {
+    $pubDateDisplay = <<<PUBDATE
+        <table width="100%" border="0"
+            cellpadding="0" cellspacing="0"
+            style="table-layout:fixed;"
+            class="yiv2621404860text yiv2621404860text--padding-vertical">
+            <tbody>
+                <tr>
+                    <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
+                        align="left"
+                        valign="top"
+                        class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
+                        <p style="margin:0;">
+                            [Published Date: $pubDate]
+                        </p>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    PUBDATE;
+  }
+
   // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
   $emailText = <<<EMAILTEXT
-    <html>
+  <html>
   <body>[[trackingImage]]
       <div id="yiv2621404860">
           <style type="text/css">
@@ -339,23 +362,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                           </tr>
                                                                                       </tbody>
                                                                                   </table>
-                                                                                  <table width="100%" border="0"
-                                                                                      cellpadding="0" cellspacing="0"
-                                                                                      style="table-layout:fixed;"
-                                                                                      class="yiv2621404860text yiv2621404860text--padding-vertical">
-                                                                                      <tbody>
-                                                                                          <tr>
-                                                                                              <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
-                                                                                                  align="left"
-                                                                                                  valign="top"
-                                                                                                  class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
-                                                                                                  <p style="margin:0;">
-                                                                                                      [Published Date: $pubDate]
-                                                                                                  </p>
-                                                                                              </td>
-                                                                                          </tr>
-                                                                                      </tbody>
-                                                                                  </table>
+                                                                                  $pubDateDisplay
                                                                                   <table width="100%" border="0"
                                                                                       cellpadding="0" cellspacing="0"
                                                                                       style="table-layout:fixed;"
