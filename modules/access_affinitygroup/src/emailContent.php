@@ -60,6 +60,11 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                   }
               }
 
+              .field--name-title, .field--name-recur-type, .field--name-event-instances .field__label, .field--name-field-affinity-group-node, .field--name-field-tags {
+                display: none;
+              }
+              .field { margin: 15px 0; }
+
               #yiv2621404860 #yiv2621404860 img {}
 
               #yiv2621404860 .yiv2621404860layout {
@@ -357,7 +362,7 @@ function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
                                                                                       class="yiv2621404860text yiv2621404860text--padding-vertical">
                                                                                       <tbody>
                                                                                           <tr>
-                                                                                              <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
+                                                                                              <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:0px 40px;"
                                                                                                   align="left"
                                                                                                   valign="top"
                                                                                                   class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
