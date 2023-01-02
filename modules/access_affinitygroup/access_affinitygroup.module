@@ -1091,7 +1091,7 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
       $schedule = ['scheduled_date' => '0'];
       $schedule = json_encode($schedule);
       // @todo . This is where emails are actually sent via api call to constant contact.
-      // $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
+      $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
       $sent = TRUE;
     }
   }
