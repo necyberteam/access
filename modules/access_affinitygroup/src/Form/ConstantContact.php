@@ -18,6 +18,8 @@ class ConstantContact extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+    $alloc_cron_disable = \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', FALSE);
+    $alloc_cron_allow_ondemand = \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', FALSE);
 
     $request = \Drupal::request();
     $code = $request->get('code');
@@ -59,12 +61,36 @@ class ConstantContact extends FormBase {
     $form['submit'] = [
       '#type' => 'submit',
       '#value' => $this->t('Authorize App'),
+      '#submit' => [[$this, 'submitForm']],
     ];
 
     $form['refresh_token'] = [
       '#markup' => $link,
     ];
 
+    $form['x'] = [
+      '#markup' => '<br>Administration Allocations Import Cron Settings',
+    ];
+
+    $form['alloc_cron_disable'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Disable Allocations Import Cron'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => $alloc_cron_disable,
+    ];
+
+    $form['alloc_cron_allow_ondemand'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Allow Allocation Import Cron On-Demand'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => $alloc_cron_allow_ondemand,
+    ];
+
+    $form['savecronsettings'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Save Cron Settings'),
+      '#submit' => [[$this, 'doSaveCronSettings']],
+    ];
     return $form;
   }
 
@@ -81,7 +107,7 @@ class ConstantContact extends FormBase {
   /**
    * Implements form validation.
    *
-   * @param array $form
+   * @param array form
    *   The render array of the currently built form.
    * @param \Drupal\Core\Form\FormStateInterface $form_state
    *   Object describing the current state of the form.
@@ -113,6 +139,14 @@ class ConstantContact extends FormBase {
     $response = new RedirectResponse($cc->getAuthorizationURL($token, $redirectURI, $scope, $state));
     $response->send();
     parent::submitForm($form, $form_state);
+  }
+
+  /**
+   *
+   */
+  public function doSaveCronSettings(array &$form, FormStateInterface $form_state) {
+    \Drupal::state()->set('access_affinitygroup.alloc_cron_disable', $form_state->getValue('alloc_cron_disable'));
+    \Drupal::state()->set('access_affinitygroup.alloc_cron_allow_ondemand', $form_state->getValue('alloc_cron_allow_ondemand'));
   }
 
 }
