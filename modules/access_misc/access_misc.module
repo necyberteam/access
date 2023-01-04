@@ -20,3 +20,16 @@ function access_misc_views_post_render(ViewExecutable $view) {
     }
   }
 }
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function access_misc_entity_view(array &$build, \Drupal\Core\Entity\EntityInterface $entity, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display) {
+  if ($entity->getEntityTypeId() == "eventseries") {
+    $date = $build['event_instances'][0]['#title'];
+    $dates = explode(' - ', $date);
+    preg_match('/(.*)([AP]M) (.*)/', $dates[0], $matches0, PREG_OFFSET_CAPTURE);
+    preg_match('/([0-1]?[0-9]|2[0-3]):[0-5][0-9][AP]M.*/', $dates[1], $matches1, PREG_OFFSET_CAPTURE);
+    $build['event_instances'][0]['#title'] = $matches0[1][0] . $matches0[2][0] . ' - ' . $matches1[0][0];
+  }
+}
