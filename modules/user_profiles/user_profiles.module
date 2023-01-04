@@ -41,17 +41,29 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
       break;
     case 'user_form':
       $form['account']['name']['#access'] = FALSE;
+
+      // set these 2 fields to readonly for everyone including admin
+      $field = 'field_cider_resources';
+      $maxDelta = $form[$field]['widget']['#max_delta'];
+      for ($x = 0; $x <= $maxDelta; $x++) {
+        $form[$field]['widget'][$x]['target_id']['#attributes']['readonly'] = 'readonly';
+      }
+      $field = 'field_blocked_ag_tax';
+      $maxDelta = $form[$field]['widget']['#max_delta'];
+      for ($x = 0; $x <= $maxDelta; $x++) {
+        $form[$field]['widget'][$x]['target_id']['#attributes']['readonly'] = 'readonly';
+      }
       break;
   }
 }
 /**
  * Entity presave hook
- * 
+ *
  * Make use of the allocations-api.access-ci.org/identity/profiles/v1/people api
  * to verify that the user is not suspended before saving any entity (which includes
  * node, user, webform submission, event).  If the user is marked as suspended,
  * abort the save with an exception.
- * 
+ *
  */
 function user_profiles_entity_presave(Object $entity) {
   $current_user = \Drupal::currentUser();

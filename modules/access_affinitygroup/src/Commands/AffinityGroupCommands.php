@@ -81,6 +81,8 @@ class AffinityGroupCommands extends DrushCommands {
           else {
             // Try to add to CC.
             $cc_id = $cca->addContact($first_name, $last_name, $user->getEmail());
+            // Delay for api limit.
+            usleep(500);
           }
           $this->output()->writeln($cc_id);
           $user->set('field_constant_contact_id', $cc_id);
@@ -95,6 +97,8 @@ class AffinityGroupCommands extends DrushCommands {
         ];
         // $this->output()->writeln(var_dump($post_data));
         $cca->apiCall('/activities/add_list_memberships', json_encode($post_data), 'POST');
+        // Delay for api limit.
+        usleep(500);
       }
     }
   }
