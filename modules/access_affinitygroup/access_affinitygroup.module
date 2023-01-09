@@ -31,6 +31,8 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
+use Drupal\views\ViewExecutable;
+
 
 // @todo the SEND EMAIL api call is currently commented out in sendEmailCampaign.
 // For devtest, put in front of emails and uname for dev; set to '' to use real names.
@@ -139,6 +141,37 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
     }
   }
 }
+
+/**
+ * Implements hook_views_pre_render().
+ *
+ * Used in this case to add the CiDeR resource titles & descriptions to the view.
+ */
+function access_affinitygroup_views_pre_render(ViewExecutable $view)
+{
+  if ($view->id() == 'affinity_group' && $view->current_display == 'group') {
+
+    foreach ($view->result as $value) {
+
+      $cider_ids = $value->_entity->get('field_cider_resources')->getValue();
+      $node_storage = \Drupal::entityTypeManager()->getStorage('node');
+      $cider_text = '';
+
+      foreach ($cider_ids as $cider_id) {
+        $node = $node_storage->load($cider_id['target_id']);
+        $cider_text .= '<h3>' . $node->get('title')->value . '</h3><p>'
+            . $node->get('body')->value . '</p>';
+      }
+
+      foreach ($view->field as $id => $field) {
+        if ($id == 'nothing') {
+            $field->options['alter']['text'] = $cider_text;
+        }
+      }
+    }
+  }
+}
+
 
 /**
  * - update AG Leader roles for added or removed coordinators.
@@ -1105,3 +1138,4 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
 
 // @todo is this a safe include... should we use a different path specifier.
 include 'src/emailContent.php';
+
