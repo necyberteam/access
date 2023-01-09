@@ -1,0 +1,7 @@
+access_match_engagement.interested_content:
+  path: '/node/{node}/interested'
+  defaults:
+    _controller: '\Drupal\access_match_engagement\Controller\MatchController::interestedContent'
+    _title: ''
+  requirements:
+    _role: 'authenticated'

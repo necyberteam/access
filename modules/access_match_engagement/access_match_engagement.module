@@ -36,8 +36,8 @@ function access_match_engagement_block_build_views_block_alter(array &$build, \D
 /**
  * Implements hook_form_alter().
  */
-function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {  
-  if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {    
+function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     // Attach javascript
     $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
     $form['promote']['widget']['value']['#title'] = 'Form Accepted';
@@ -61,7 +61,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     if ( $form_id == 'node_match_engagement_form' ) {
       $form['field_node_type']['widget']['#default_value'][0] = $request_type;
     }
-    
+
     $form['fieldset_launch'] = ['#type' => 'fieldset'];
 
     $form['field-launch-presentation'] = [
@@ -76,7 +76,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $form['field-wrap-presentation-date'] = [
       '#group' => 'fieldset_launch',
     ];
-  
+
     if (!$accepted) {
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
@@ -135,6 +135,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     if (!in_array('administrator', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
+      $form['field_match_interested_users']['#access'] = FALSE;
     }
     if ($form_id == 'node_match_engagement_edit_form') {
       $node_param = \Drupal::routeMatch()->getParameter('node');

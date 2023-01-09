@@ -149,6 +149,10 @@ class MatchNodeBlock extends BlockBase implements
       }
       $type = $node->get('field_node_type')->getValue();
       $type = $type[0]['value'];
+      $nid = $node->id();
+      $interested_users = $node->get('field_match_interested_users')->getValue();
+      // Lookup user names from uid.
+      $interested_users = $this->getInterestedUsers($interested_users);
       return [
         '#type' => 'inline_template',
         '#template' => '<div class="p-3">
@@ -168,7 +172,18 @@ class MatchNodeBlock extends BlockBase implements
             <div><span class="fw-bold">{{ tags_label }}:</span> {{ tags | raw }}</div>
           {% endif %}
           <div><span class="fw-bold">{{ works_label }}</span> {{ works | raw }}</div>
-        </div>',
+        </div>
+        <a class="btn btn-primary" href="/node/{{ nid }}/interested">{{ interested_text }}</a>
+        {% if interested_users %}
+          <div class="p-3">
+            <h3>Interested Users</h3>
+              <ul>
+              {% for interested_user in interested_users %}
+                <li>{{ interested_user }}</li>
+              {% endfor %}
+              </ul>
+          </div>
+        {% endif %}',
         '#context' => [
           'consultant_label' => $this->t('Consultant'),
           'consultant' => $msc_loaded['field_consultant'],
@@ -182,9 +197,25 @@ class MatchNodeBlock extends BlockBase implements
           'works_label' => $works_label,
           'works' => $works,
           'type' => $type,
+          'interested_text' => $this->t("I'm Interested"),
+          'nid' => $nid,
+          'interested_users' => $interested_users,
         ],
       ];
     }
+  }
+
+  /**
+   * Get interested users.
+   */
+  public function getInterestedUsers($interested_users) {
+    $interested_users = array_column($interested_users, 'target_id');
+    $users = $this->entityInterface->getStorage('user')->loadMultiple($interested_users);
+    $user_names = [];
+    foreach ($users as $user) {
+      $user_names[] = $user->get('field_user_first_name')->value . ' ' . $user->get('field_user_last_name')->value;
+    }
+    return $user_names;
   }
 
   /**
