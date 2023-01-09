@@ -148,7 +148,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
  * Used in this case to add the CiDeR resource titles & descriptions to the view.
  *
  * The affinity group view has a custom text field that drupal labeled
- * 'nothing' -- the module updates that field with html listing any associated
+ * 'nothing' -- this function updates that field with html listing any associated
  * CiDeR resources, both their title & description.
  */
 function access_affinitygroup_views_pre_render(ViewExecutable $view)
