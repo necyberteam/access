@@ -102,5 +102,71 @@ class AffinityGroupCommands extends DrushCommands {
       }
     }
   }
+  /**
+   * @command access_affinitygroup:showAffinityGroups
+   * @param $agName default: show all, otherwise, only show affinity group
+   *        with this title (case-sensitive)
+   * @aliases showAffinityGroups
+   * @usage access_affinitygroup:showAffinityGroups
+   */
+  public function showAffinityGroups(string $agName='')
+  {
+    // Get all the Affinity Groups.
+    $agCount = 0;
+    $nids = \Drupal::entityQuery('node')
+    ->condition('status', 1)
+      ->condition('type', 'affinity_group')
+      ->execute();
+    $nodes = Node::loadMultiple($nids);
+
+    foreach ($nodes as $node) {
+      if (strlen($agName) > 0 && $agName <> $node->getTitle()) {
+        continue;
+      }
+      $agCount += 1;
+      $uCount = 0;
+
+      $this->io()->success($agCount . '. ' . $node->getTitle());
+
+      // If there isn't a Constant Contact list_id,
+      // trigger save to generate Constant Contact list.
+      $list_id = $node->get('field_list_id')->value;
+
+      if (!$list_id || strlen($list_id) < 1) {
+        $this->output()->writeln('NO list id');
+      } else {
+        $this->output()->writeln('list id: ' . $list_id);
+      }
+
+      // Get the Users who have flagged the associated term.
+      $term = $node->get('field_affinity_group');
+      $flag_service = \Drupal::service('flag');
+      $flags = $flag_service->getAllEntityFlaggings($term->entity);
+      foreach ($flags as $flag) {
+        $uCount += 1;
+        //$this->output()->writeln('-- '.$uCount.'.');
+        $uid = $flag->get('uid')->target_id;
+        $this->output()->writeln('-- ' . $uCount . '. '.$uid);
+        $user = User::load($uid);
+
+        $first_name = $user->get('field_user_first_name')->getString();
+        $last_name = $user->get('field_user_last_name')->getString();
+
+        // CC names can only be 50 chars.
+        $first_name = substr($first_name, 0, 49);
+        $last_name = substr($last_name, 0, 49);
+
+        $this->output()->writeln($first_name);
+        $this->output()->writeln($last_name);
+
+        // Get the Constant Contact id for the User.
+        $field_val = $user->get('field_constant_contact_id')->getValue();
+        if (!empty($field_val) && $field_val != 0) {
+          $cc_id = $field_val[0]['value'];
+        }
+        $this->output()->writeln('cc id: ' . $cc_id);
+      }
+    }
+  }
 
 }
