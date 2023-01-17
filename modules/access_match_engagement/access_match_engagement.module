@@ -18,6 +18,27 @@ use Drupal\views\ViewExecutable;
  * Implements hook_views_pre_render().
  */
 function access_match_engagement_views_pre_render(ViewExecutable $view) {
+  if (isset($view) && ($view->storage->id() == 'match_interested_users')) {
+    // kint($view->field["field_match_interested_users"]);
+    foreach ($view->field as $id => $field) {
+      if ($id == 'field_match_interested_users') {
+        // foreach ($field['fields'] as $key => $value) {
+        //   kint($key);
+        // }
+        // kint ($field->displayHandler);
+        $field->options['alter']['text'] = 'Interested';
+        // $field['fields'][$id]->content = 'my new value';
+      }
+    }
+    // foreach ($view->result as $key => $result) {
+    //   $body_value = $result->_entity->field_match_interested_users->getValue();
+    //   kint($body_value);
+    //   foreach ($result as $key_res => $res) {
+    //     kint($key_res);
+    //   }
+    // }
+    // die();
+  }
   if (isset($view) && ($view->storage->id() == 'match_engagement_view')) {
     $view->element['#attached']['library'][] = 'access_match_engagement/match_engagement_view';
   }
