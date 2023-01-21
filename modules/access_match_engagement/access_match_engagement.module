@@ -14,96 +14,10 @@ use Drupal\Core\Entity\EntityInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\views\ViewExecutable;
 
-/**
- * Implements hook_views_post_build().
- */
-function access_match_engagement_views_post_build(ViewExecutable $view) {
-  if (isset($view) && ($view->storage->id() == 'match_interested_users')) {
-    $n = 0;
-    $users = [];
-    // kint($view->field["field_match_interested_users"]);
-    foreach ($view->result as $key => $result) {
-      kint($result);
-      $body_value = $result->_entity->field_match_interested_users->getValue();
-      $current_user = "";
-      foreach ($body_value as $key_res => $res) {
-        $user_uid = $res['target_id'];
-        $user = User::load($user_uid);
-        $first_name = $user->get('field_user_first_name')->value;
-        $last_name = $user->get('field_user_last_name')->value;
-        $uid = $user->id();
-        // Get user roles
-        $roles = $user->getRoles();
-        $has_role = '';
-        if (in_array("student_champion", $roles)) {
-          $has_role = '👍';
-        } else if (in_array("mentor", $roles)) {
-          $has_role = '🧐';
-        } else {
-          $has_role = '🚫';
-        }
-        $current_user .= "<a href='/user/$uid'>$first_name $last_name</a> $has_role, ";
-      }
-      $current_user = rtrim($current_user, ', ');
-      $users[$n] = $current_user;
-      $n++;
-    }
-    $n = 0;
-    foreach ($view->field as $id => $field) {
-      kint($field);
-      if ($id == 'nothing') {
-        $field->options['alter']['text'] = $users[$n];
-        $n++;
-      }
-    }
-    die();
-  }
-}
-
  /**
  * Implements hook_views_pre_render().
  */
 function access_match_engagement_views_pre_render(ViewExecutable $view) {
-  // if (isset($view) && ($view->storage->id() == 'match_interested_users')) {
-  //   $n = 0;
-  //   $users = [];
-  //   // kint($view->field["field_match_interested_users"]);
-  //   foreach ($view->result as $key => $result) {
-  //     kint($result);
-  //     $body_value = $result->_entity->field_match_interested_users->getValue();
-  //     $current_user = "";
-  //     foreach ($body_value as $key_res => $res) {
-  //       $user_uid = $res['target_id'];
-  //       $user = User::load($user_uid);
-  //       $first_name = $user->get('field_user_first_name')->value;
-  //       $last_name = $user->get('field_user_last_name')->value;
-  //       $uid = $user->id();
-  //       // Get user roles
-  //       $roles = $user->getRoles();
-  //       $has_role = '';
-  //       if (in_array("student_champion", $roles)) {
-  //         $has_role = '👍';
-  //       } else if (in_array("mentor", $roles)) {
-  //         $has_role = '🧐';
-  //       } else {
-  //         $has_role = '🚫';
-  //       }
-  //       $current_user .= "<a href='/user/$uid'>$first_name $last_name</a> $has_role, ";
-  //     }
-  //     $current_user = rtrim($current_user, ', ');
-  //     $users[$n] = $current_user;
-  //     $n++;
-  //   }
-  //   $n = 0;
-  //   kint($view->field);
-  //   foreach ($view->field as $id => $field) {
-  //     if ($id == 'nothing') {
-  //       $field->options['alter']['text'] = $users[$n];
-  //       $n++;
-  //     }
-  //   }
-  //   die();
-  // }
   if (isset($view) && ($view->storage->id() == 'match_engagement_view')) {
     $view->element['#attached']['library'][] = 'access_match_engagement/match_engagement_view';
   }
