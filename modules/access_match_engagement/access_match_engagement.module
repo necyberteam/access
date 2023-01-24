@@ -228,6 +228,34 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
 }
 
 /**
+ * Build access_match_engagement interested Email.
+ */
+function access_match_engagement_interested_email($to_uids) {
+  $body['string'] = [
+    '#type' => 'inline_template',
+    '#template' => '<p>{{ intro }} {{ link }}.<p>',
+    '#context' => [
+      'intro' => t('New interested user alert! Please check website for {{ link }}.'),
+      'link' => "<a href='https://amp.ci/match-interested-users'>details</a>"
+    ],
+  ];
+  // Lookup each user by to_uids and add their email to the $to_email string comma separated.
+  $to_email = '';
+  foreach ($to_uids as $uid) {
+    $user = User::load($uid);
+    $to_email .= $user->getEmail() . ',';
+  }
+  // Remove the last comma.
+  $to_email = rtrim($to_email, ',');
+  $render_service = \Drupal::service('renderer');
+  $params = [];
+  $params['to'] = $to_email;
+  $params['body'] = $render_service->render($body);
+  $params['title'] = "New Interested User Alert";
+  ame_send('interested-update', $params);
+}
+
+/**
  * Build access_match_engagement accepted Email.
  */
 function access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $author, $ame_type) {
@@ -319,4 +347,14 @@ function ame_send($key, $params) {
   $mailManager = \Drupal::service('plugin.manager.mail');
   $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
   return $result;
+}
+
+/**
+ * hook_cron.
+ */
+function access_match_engagement_cron() {
+  // Send interested email at 1:00am.
+  if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5)) {
+    access_match_engagement_interested_email([1983, 100]);
+  }
 }
