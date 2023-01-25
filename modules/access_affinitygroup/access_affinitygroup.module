@@ -20,6 +20,9 @@
  *    "Affinity Group Leader" role updated
  *  - Whenever an Affinity Group is saved, a taxonomy term with the same
  *    name is created.
+ *
+ * Note: dependency on title of 'ACCESS Support' Affinity group. Change code if
+ * title changes.
  */
 
 use GuzzleHttp\Client;
@@ -52,30 +55,32 @@ $logCronInfo = [];
 /**
  * Implements hook_entity_presave().
  * Handles either
- * 1) User clicked Join flag on Affinity Group.
+ *  case 1) User clicked Join flag on Affinity Group:
  *    We call api to add user to corresponding email list.
- * 2) Admin user saved Affinity Group form
- *    If the AG does not already have a list_id from CC,
- *    we call api to create the email list.
- * 3) Update AG Leader roles for added or removed coordinators
- * 4) Ensure every Affinity Group name has a corresponding taxonomy term.
  *
- * Join and Leave AG are implemented using a drupal Flag. Each AG
- * has a corresponding flag that can be set per-user, signifying
- * whether the user belongs to the AG.
+ *   Join and Leave AG are implemented using a drupal Flag. Each AG
+ *   has a corresponding flag that can be set per-user, signifying
+ *   whether the user belongs to the AG.
+ *
+ *  case 2) Admin user saved Affinity Group form:
+ *    If the AG does not already have a list_id from CC,
+ *    we call api to create the email list,
+ *    update AG Leader roles for added or removed coordinators,
+ *    Ensure every Affinity Group name has a corresponding taxonomy term.
+ *
  */
 function access_affinitygroup_entity_presave(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
+      // case 1: User did Join the AG (using the Join button or link)
 
       // Exit if CRON because this hook assumes there is a current user.
       if (\Drupal::state()->get('access_affinitygroup.cronrunning', FALSE)) {
         return;
       }
 
-      // User did Join the AG (using the Join button or link)
       // The flag sits on a taxonomy; the taxonomy id is used to find the AG node
       // which we need to build the JSON to send to api.
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
@@ -88,10 +93,10 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
       removeBlockedAG($taxonomyId, $userDetails);
     }
     else {
+      // case 2: Affinity group edit was saved by admin user.
       update_ag_leader_roles($entity);
       add_ag_taxonomy_term($entity);
 
-      // Affinity group edit was saved by admin user.
       // If not already there, add list to constant contact.
       // get all existing lists.
       $cca = new ConstantContactApi();
@@ -320,9 +325,9 @@ function subscribeToCCList($taxonomyId, $userDetails) {
 /**
  * Implements hook_entity_delete().
  * * Handles either
- * 1) User did Leave on Affinity Group
+ *   Case 1) User did Leave on Affinity Group
  *    Remove user from the email list.
- * 2) Admin deleted Affinity Group
+ *   Case 2) Admin deleted Affinity Group
  *    Delete the corresponding CC email list.
  *
  * See notes above on presave for Join flag for Leave.
@@ -333,7 +338,7 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
 
     if (method_exists($entity, 'getFlaggableType')) {
 
-      // User did Leave AG. This flag is related to a taxonomy; the taxonomy
+      // case 1: User did Leave AG. This flag is related to a taxonomy; the taxonomy
       // id is used to find the AG node related to the taxonomy and then the CC
       // list_id within the node for json to send to api.
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
@@ -352,7 +357,7 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
 
     }
     else {
-      // AG getting deleted.
+      // case 2: AG getting deleted.
       $title = $entity->getTitle();
       $cca = new ConstantContactApi();
       $lists = $cca->apiCall('/contact_lists');
@@ -561,7 +566,7 @@ function access_affinitygroup_cron() {
 }
 
 /**
- * Test if the cron function should run: either 'token' for refresh cc toke,
+ * Test if the cron function should run: either 'token' for refresh cc token,
  * or 'users' for running the allocations api.
  * we might read from module config file in future to see if function disabled.
  */
@@ -574,7 +579,7 @@ function shouldRun($function) {
     collectCronLog("checking $function last " . date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
     // Run if it's been more than 24 hours since the last run.
-    if ($hoursDiff > 24) {
+    if ($hoursDiff >= 24) {
       return TRUE;
     }
 
@@ -619,6 +624,7 @@ function shouldRun($function) {
  * ciderRefNum: the entity number/ the interal id for the entity of type Access Active Resources from CiDeR
  * Example: '429'
  * variable names beginning with "xd" have to do with the info incoming from the api.
+ * Every user will be added to the ACCESS Support affinity group.
  */
 function updateUserAllocations() {
   global $logCronErrors;
@@ -626,6 +632,13 @@ function updateUserAllocations() {
   collectCronLog('Running updateUserAllocations.', 'i');
 
   try {
+    // get access support affinity group node for later
+    $nArray = \Drupal::entityQuery('node')
+                            ->condition('type', 'affinity_group')
+                            ->condition('title', 'ACCESS Support')
+                            ->execute();
+    $accessSupportNodeId = empty($nArray) ? 0 :  array_values($nArray)[0];
+
     $apiBase = 'https://allocations-api.access-ci.org/acdb/xdusage';
     $requestUrl = $apiBase . '/v2/projects?active_only&not_expired';
 
@@ -673,7 +686,7 @@ function updateUserAllocations() {
 
       $xdUserName = $xdProject['pi_portal_username'];
       if (array_key_exists($xdUserName, $xdAllocations)) {
-        // Have user. add this rid if they don't already have in their list.
+        // Have user. add this rid if they don't already have in the list we are gathering for this use.
         if (array_search($xdProject['info_resource_id'], $xdAllocations[$xdUserName]) === FALSE) {
           array_push($xdAllocations[$xdUserName], $xdProject['info_resource_id']);
         }
@@ -697,7 +710,6 @@ function updateUserAllocations() {
         // If ($userCount > 100)  {kint($userCount); die();}
         $accessUserName = $xdUserName . cDevUname . '@access-ci.org';
         collectCronLog("Processing $userCount: $accessUserName", 'd');
-        // kint("$userCount: $accessUserName");.
         $userDetails = user_load_by_name($accessUserName);
 
         // If we already have user, make sure they are all set with the cc id.
@@ -740,7 +752,7 @@ function updateUserAllocations() {
 
         // !!(todo - Should really make a lookup table for all cider rid=>entityIds)
         // map the  incoming resource names for this user to array of the internal reference numbers
-        // for comparison with those in the users
+        // for comparison with those in the user's existing list of resource names
         $xdCiderRefnums = [];
         foreach ($xdUserCiderNames as $ciderName) {
 
@@ -774,7 +786,7 @@ function updateUserAllocations() {
 
         if (count($intersect) !== count($xdCiderRefnums) || count($intersect) !== count($userCiderRefnums)) {
 
-          collectCronLog('---updating user ciders; count new: ' . count($xdCiderRefnums) . ' was ' . count($userCiderRefnums), 'd');
+          collectCronLog('---updating user ciders; count new: ' . count($xdCiderRefnums) . ' was ' . count($userCiderRefnums), 'i');
           updateUserCiderList($userDetails, $xdCiderRefnums);
         }
         // Finally, check for AG membership in each AG corresponding to the ciderRefnum.
@@ -796,6 +808,8 @@ function updateUserAllocations() {
             }
           }
         }
+        // and, we add every user to ACCESS Support AG.
+        $agNodes[] = $accessSupportNodeId;
 
         // Now we have agNodes, which is a list of all affinity groups having to do with the user's allocations.
         // set membership will add the user to the group unless they previously blocked automembership to the ag by leaving.
@@ -852,8 +866,7 @@ function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
 
     $flagService->flag($flag, $agTax, $userDetails);
     subscribeToCCList($agTax->id(), $userDetails);
-    collectCronLog("...setting membership: " . $ag->get('title')->value, 'd');
-
+    collectCronLog("...add member: " . $ag->get('title')->value . ': ' . $userDetails->get('field_user_last_name')->getString(), 'i');
   }
   else {
     // collectCronLog("...user already a member: ".$ag->get('title')->value, 'i');.
