@@ -578,8 +578,8 @@ function shouldRun($function) {
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
     collectCronLog("checking $function last " . date("Y-m-d H:i:s", $lastRun) . " now " . date("Y-m-d H:i:s", $currentTime) . "; hours diff $hoursDiff ", 'd');
 
-    // Run if it's been more than 24 hours since the last run.
-    if ($hoursDiff >= 24) {
+    // Run if it's been more than 22 hours since the last run.
+    if ($hoursDiff >= 22) {
       return TRUE;
     }
 
