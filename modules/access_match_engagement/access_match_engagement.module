@@ -19,6 +19,7 @@ use Drupal\views\ViewExecutable;
  */
 function access_match_engagement_views_pre_render(ViewExecutable $view) {
   if (isset($view) && ($view->storage->id() == 'match_engagement_view')) {
+    access_match_engagement_interested_email([1983]);
     $view->element['#attached']['library'][] = 'access_match_engagement/match_engagement_view';
   }
 }
@@ -355,6 +356,11 @@ function ame_send($key, $params) {
 function access_match_engagement_cron() {
   // Send interested email at 1:00am.
   if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5)) {
-    access_match_engagement_interested_email([1983, 100]);
+    // Lookup users by role.
+    $uids = \Drupal::entityQuery('user')
+      ->condition('status', 1)
+      ->condition('roles', 'match_pm')
+      ->execute();
+    access_match_engagement_interested_email($uids);
   }
 }
