@@ -253,6 +253,8 @@ function access_match_engagement_interested_email($to_uids) {
   $params['to'] = $to_email;
   $params['body'] = $render_service->render($body);
   $params['title'] = "New Interested User Alert";
+  // Add logger message of sending interested email.
+  \Drupal::logger('access_match_engagement')->notice('Sending interested email to: ' . $to_email);
   ame_send('interested-update', $params);
 }
 
