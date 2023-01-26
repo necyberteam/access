@@ -19,7 +19,6 @@ use Drupal\views\ViewExecutable;
  */
 function access_match_engagement_views_pre_render(ViewExecutable $view) {
   if (isset($view) && ($view->storage->id() == 'match_engagement_view')) {
-    access_match_engagement_interested_email([1983]);
     $view->element['#attached']['library'][] = 'access_match_engagement/match_engagement_view';
   }
 }
@@ -251,7 +250,7 @@ function access_match_engagement_interested_email($to_uids) {
   $render_service = \Drupal::service('renderer');
   $params = [];
   $params['to'] = $to_email;
-  $params['body'] = $render_service->render($body);
+  $params['body'] = $render_service->renderRoot($body);
   $params['title'] = "New Interested User Alert";
   // Add logger message of sending interested email.
   \Drupal::logger('access_match_engagement')->notice('Sending interested email to: ' . $to_email);
