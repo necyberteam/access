@@ -1,0 +1,15 @@
+<?php
+
+/**
+ * @file
+ * Module updates.
+ */
+
+/**
+ * hook_update.
+ */
+function access_match_engagement_update_8001() {
+  $config = \Drupal::configFactory()->getEditable('access_match_engagement.settings');
+  $config->set('interested', 0);
+  $config->save();
+}

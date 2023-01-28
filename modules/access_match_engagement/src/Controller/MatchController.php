@@ -26,6 +26,10 @@ class MatchController extends ControllerBase {
         $interested_users[] = ['target_id' => $current_user];
         // Get current user.
         $current_user = \Drupal::currentUser();
+        \Drupal::logger('access_match_engagement')->notice('User @current_user added to interested list', ['@current_user' => $current_user->getAccountName()]);
+        $config = \Drupal::configFactory()->getEditable('access_match_engagement.settings');
+        $config->set('interested', 1);
+        $config->save();
         // Update node field.
         $node->set('field_match_interested_users', $interested_users);
         $node->save();
