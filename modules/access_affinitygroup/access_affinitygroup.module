@@ -555,6 +555,7 @@ function access_affinitygroup_cron() {
       collectCronLog('Running cron: user' . date("Y-m-d H:i:s", $currentTime), 'i');
 
       updateUserAllocations();
+      // emailDevCronLog(); // this function needs to be fixed
     }
   }
   catch (Exception $e) {
@@ -562,7 +563,6 @@ function access_affinitygroup_cron() {
   }  finally {
     \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
   }
-  emailDevCronLog();
 }
 
 /**
@@ -1006,7 +1006,8 @@ function collectCronLog($msg, $logType = 'err') {
 }
 
 /**
- * Send an email with the collected cron errors to users with role: administrator.
+ * Send an email with the collected cron errors to users with role: cyberdevs.
+ * TODO: This function does not work correctly at this time.
  */
 function emailDevCronLog() {
 
@@ -1019,7 +1020,7 @@ function emailDevCronLog() {
   // Make destination list of emails of users with administrator role.
   $userIds = \Drupal::entityQuery('user')
     ->condition('status', 1)
-    ->condition('roles', 'administrator')
+    ->condition('roles', 'cyberdevs')
     ->execute();
   $users = User::loadMultiple($userIds);
   $toAddrs = '';
