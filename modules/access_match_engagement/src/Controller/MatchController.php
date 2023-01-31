@@ -38,8 +38,8 @@ class MatchController extends ControllerBase {
     }
     \Drupal::service('page_cache_kill_switch')->trigger();
     // Redirect to node.
-    $response = new RedirectResponse('/node/' . $nid);
-    $response->send();
+    $url = Url::fromRoute('entity.node.canonical', ['node' => $nid]);
+    return new RedirectResponse($url->toString());
   }
 
 }
