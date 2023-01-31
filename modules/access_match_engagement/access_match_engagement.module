@@ -234,7 +234,7 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
 function access_match_engagement_interested_email($to_uids) {
   $body['string'] = [
     '#type' => 'inline_template',
-    '#template' => '<p>{{ intro }} {{ link }}.<p>',
+    '#template' => '<p>{{ intro }} {{ link | raw }}.<p>',
     '#context' => [
       'intro' => t('New interested user alert! Please check website for '),
       'link' => "<a href='https://amp.ci/match-interested-users'>details</a>"
