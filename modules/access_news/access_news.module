@@ -6,8 +6,14 @@
 
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\node\Entity\Node;
 use Drupal\user\Entity\User;
+use Drupal\recurring_events\Entity\EventSeries;
+use Drupal\recurring_events\Entity\EventInstance;
+use Drupal\recurring_events\EventInterface;
+use Drupal\recurring_events\Plugin\ComputedField\EventInstances;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 
 /**
  * Implements hook_form_alter().
@@ -261,7 +267,183 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
     }
   }
 }
+/**
+ *
+ */
+ function weeklyNewsReport() {
+  $currentTime = (new DrupalDateTime())->getTimestamp();
 
+    // gather all news published from 7 days ago until now.
+  $lastWeek = new DrupalDateTime('last tuesday');
+  $d1 = makeQueryDateTime($lastWeek);
+  $d2 = makeQueryDateTime($currentTime);
+
+  $newsHTML = newsRangeView($d1, $d2, TRUE);
+  Drupal::logger('cron_accessnews')->notice('news:from '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
+
+  // gather all upcoming events for the next month (this date to +1 month)
+  $d1 = makeQueryDateTime($currentTime);
+  $d2 = makeQueryDateTime('+1 month');
+  Drupal::logger('cron_accessnews')->notice('news:from '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
+
+  $eventHTML = eventsRangeView($d1, $d2, TRUE);
+
+  // put wrapper html
+  $emailHTML = makeNewsReportHTML($newsHTML, $eventHTML);
+
+  // create constant contact campaign. this does not send it
+   $ccResponse = setupEmailCampaign('ACCESS Weekly News and Events', $emailHTML);
+
+  if (!empty($ccResponse)) {
+    $campaignId = $ccResponse->campaign_id;
+    $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
+  }
+
+  // send email to xx saying the draft is ready
+  return($emailHTML);  // temp return for drush
+}
+// todo put in the style wrapper
+function makeNewsReportHTML($news, $event) {
+  $h = '<div class="access-news-rollup-email">'. $news . $event . '</div>';
+  return $h;
+}
+// the date/times should have 0 for time for the end date; if not
+// the date should be +1 from needed date
+function newsRangeView($fromDate, $toDate) {
+
+  $listDisplay = '';
+  try {
+    $nids = \Drupal::entityQuery('node')
+            ->condition('field_published_date.value', $fromDate, '>=')
+            ->condition('field_published_date.value', $toDate, '<')
+            ->condition('type', 'access_news')
+            ->execute();
+
+    $nodes = Node::loadMultiple($nids);
+    $nCount = 0;
+
+    foreach ($nodes as $node) {
+      try {
+            $nCount += 1;
+
+            $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('node');
+            $renderArray = $viewBuilder->view($node, 'alt_teaser');
+            $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
+
+      }
+      catch (Exception $e) {
+          $itemDisplay = 'Error retrieving events: ' . $e->getMessage();
+      }
+
+      $listDisplay = $listDisplay . '<hr><br><div class="access-news-list-item">' . $itemDisplay . '</div>';
+    } // end for
+
+    $listDisplay = '<div class="access-news-rollup-list">' . $listDisplay . '</div>';
+  } catch (Exception $e) {
+    $listDisplay = 'Error retrieving events: ' . $e->getMessage();
+  }
+  return $listDisplay;
+}
+
+function eventsRangeView($fromDate, $toDate) {
+
+  $listDisplay = '';
+  $eCount = 0;
+  try {
+    $eids = \Drupal::entityQuery('eventinstance')
+            ->condition('status', 1)
+            ->condition('date.value', $fromDate, '>=')
+            ->condition('date.value', $toDate, '<')
+            ->sort('date.value', 'ASC')
+            ->execute();
+
+    $eventNodes = EventInstance::loadMultiple($eids);
+    foreach ($eventNodes as $enode) {
+      try {
+        $eCount += 1;
+        $fields = $enode->getFields();
+        $titleArray = $fields['title']->getValue();
+        $title = $titleArray[0]['value'];
+
+            //$this->output()->writeln($eCount . '. ' . $title);
+            //$this->output()->writeln('status:' . $enode->get('status')->value);
+            //$this->output()->writeln('date:' . $enode->get('date')->value);
+            //$this->output()->writeln('');
+
+        // get the custom view display eventinstance.email_summary
+        $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('eventinstance');
+        $renderArray = $viewBuilder->view($enode, 'rollup_list');
+        $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
+      }
+      catch (Exception $e) {
+        $itemDisplay = 'Error retrieving events: ' . $e->getMessage();
+      }
+      $listDisplay = $listDisplay . '<hr><br><div>' . $itemDisplay . '</div>';
+    } // end for
+
+    $listDisplay =  '<div class="access-news-rollup-list">' . $listDisplay . '</div>';
+  } catch (Exception $e) {
+    $listDisplay = 'Error retrieving events: ' . $e->getMessage();
+  }
+  return $listDisplay;
+}
+// pass in 24-hr UTC  time in format yyyy-mm-dd hh:mm
+// ex for 3:30 pm new york time: 2022-12-31 20:30
+// this will make UTC (GMT) string suitable for database queries
+function makeQueryDateTime(string $dt)
+{
+  $ts = (new DrupalDateTime())->getTimestamp();
+  $date1 = new DrupalDateTime($dt, 'UTC');
+  $date1->setTimezone(new \DateTimezone(DateTimeItemInterface::STORAGE_TIMEZONE));
+  return( $date1->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT));
+}
+
+/**
+ * Implements hook_cron().
+ */
+function access_news_cron() {
+    \Drupal::logger('cron_accessnews')->notice('In Ac News Cron');
+
+  try {
+    if (accessNewsCronShouldRun()) {
+
+      $currentTime = \Drupal::time()->getCurrentTime();  // ny timezone
+      \Drupal::state()->set('access_news.crontime-rollupnews', $currentTime);
+      \Drupal::logger('cron_accessnews')->notice('SHOULD RUN Ac News Cron');
+      weeklyNewsReport();
+    //  $cca = new ConstantContactApi();
+    //  $cca->newToken();
+    }
+  }
+  catch (Exception $e) {
+    \Drupal::logger('cron_accessnews')->error('exception: ' . $e->getMessage());
+  }  finally {
+  }
+}
+
+function accessNewsCronShouldRun() {
+  // Want to run once on tuesdays after 8 am. We assume the calling cron job runs every hour.
+  // (Do we want to do an admin configurable day/time for this?)
+ return true;
+  $currentTime = \Drupal::time()->getCurrentTime();  // in america/ny timezone
+  \Drupal::logger('cron_accessnews')->notice('date is '.date('D, d M Y H:i:s e', $currentTime));
+  $dayOfWeek = date('w', $currentTime);
+  \Drupal::logger('cron_accessnews')->notice('dow is '. $dayOfWeek);
+
+  if ($dayOfWeek == '0') {  // 2 is Tuesday
+    $lastRun = \Drupal::state()->get('access_news.crontime-rollupnews', 0);
+    $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
+    \Drupal::logger('cron_accessnews')->notice("$function last "
+                                                . date("Y-m-d H:i:s e", $lastRun)
+                                                . " now " . date("Y-m-d H:i:s e", $currentTime)
+                                                . "; hours diff $hoursDiff ");
+    // and make sure it hasn't been run yet this Tueday
+    if ($hoursDiff >= 24) {
+      return TRUE;
+    }
+  }
+  return FALSE;
+}
 /**
  * Implements hook_theme().
  */

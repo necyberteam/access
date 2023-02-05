@@ -6,6 +6,13 @@ use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drush\Commands\DrushCommands;
 use Drupal\node\Entity\Node;
 use Drupal\user\Entity\User;
+use Drupal\recurring_events\Entity\EventSeries;
+use Drupal\recurring_events\Entity\EventInstance;
+use Drupal\recurring_events\EventInterface;
+use Drupal\recurring_events\Plugin\ComputedField\EventInstances;
+use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
+
 
 /**
  * A Drush commandfile for Affinity Groups.
@@ -14,7 +21,6 @@ use Drupal\user\Entity\User;
  */
 class AffinityGroupCommands extends DrushCommands
 {
-
     /**
      * Add existing Affinity Group members to Constant Contact lists.
      *
@@ -176,5 +182,208 @@ class AffinityGroupCommands extends DrushCommands
                 }
             }
         }
+    }
+
+    /**
+     * @command access_affinitygroup:showNews
+     *
+     * @aliases showNews
+     * @usage   access_affinitygroup:showNews
+     */
+    public function showNews()
+    {
+        // Get all the News.
+        $nCount = 0;
+
+        //->condition('status', 1)
+        $nids = \Drupal::entityQuery('node')
+            ->condition('type', 'access_news')
+            ->condition('status', 1)
+            ->execute();
+        $nodes = Node::loadMultiple($nids);
+
+        foreach ($nodes as $node) {
+            break;
+            $agCount += 1;
+
+            $this->output()->writeln($agCount . '. ' . $node->getTitle());
+            //This works the same as for events, but events doesn't have getTitle()
+            //$this->output()->writeln($node->getCreated());
+            $this->output()->writeln('status:' . $node->get('status')->value);
+              //  $this->output()->writeln($node->get('body')->summary);  // show just summary,
+            //which only has something if spefically set. otherwise we need to override with a trunc of body.
+            //$this->output()->writeln($node->get('body')->summary);   // show whole body
+            $this->output()->writeln($node->get('field_published_date')->value);
+        }
+
+        $fmDate1 = $this->makeDateTime('10/01/2022');
+        $fmDate2 = $this->makeDateTime('02/10/2023');
+
+        $this->output()->writeln('from: '.$fmDate1);
+        $this->output()->writeln('to:   '.$fmDate2);
+
+        $nids = \Drupal::entityQuery('node')
+            ->condition('field_published_date.value', $fmDate1, '>=')
+            ->condition('field_published_date.value', $fmDate2, '<=')
+            ->condition('type', 'access_news')
+            ->execute();
+
+        $nodes = Node::loadMultiple($nids);
+
+        $nCount = 0;
+        foreach ($nodes as $node) {
+            $nCount += 1;
+
+            $this->output()->writeln($nCount . '. ' . $node->getTitle());
+            $this->output()->writeln($node->get('field_published_date')->value);
+
+            $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
+            $renderArray = $view_builder->view($node, 'alt_teaser');
+            $display = \Drupal::service('renderer')->renderPlain($renderArray);
+            $this->output()->writeln($display);
+        }
+    }
+
+    // pass in 24-hr UTC  time in format yyyy-mm-dd hh:mm
+    // ex for 3:30 pm new york time: 2022-12-31 :30
+    // this will make UTC (GMT) string suitable for database queries
+    private function makeDateTime(string $dt)
+    {
+         $ts = (new DrupalDateTime())->getTimestamp();
+        //$date1 = DrupalDateTime::createFromFormat('d.m.Y H:i:s', '07.03.2012 01:30:00');
+
+        $date1 = new DrupalDateTime($dt, 'UTC');
+
+        //$date1 = DrupalDateTime::createFromFormat('m/d/Y H:i', $dt);
+        //$date1 = DrupalDateTime::createFromFormat('m/d/Y H:i', $dt);
+        $this->output()->writeln('date1: ' . $date1);
+        //   $this->output()->writeln('ts: '. $ts);
+        //   $this->output()->writeln('ts formatted: '. date('D, d M Y H:i:s e', $ts));
+        $this->output()->writeln('');
+        // NOTE This way of filling in date puts in default UTC time. Should really put in 0's for time.
+        //$this->output()->writeln($date1);
+        $date1->setTimezone(new \DateTimezone(DateTimeItemInterface::STORAGE_TIMEZONE));
+        return( $date1->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT));
+    }
+
+    /**
+     * @command access_affinitygroup:showEventsI
+     *
+     * @aliases showEventsI
+     * @usage   access_affinitygroup:showEventsI
+     *
+     * List all event instances
+     * Modify entityQuery call to specify conditions
+     */
+    public function showEventsI()
+    {
+        $fmDate1 = $this->makeDateTime('2023-02-13 19:00'); //UTC
+        $fmDate2 = $this->makeDateTime('2023-02-14 00:00'); // want everything before but not including this time.
+
+        //$fmDate1 = new DrupalDateTime('2023-02-13 22:00', 'UTC'); // this is the storage format for event date (UTC aka GMT)
+        //$fmDate2 = new DrupalDateTime('2023-02-14 00:00', 'UTC');
+
+        $this->output()->writeln($fmDate1);
+        $this->output()->writeln($fmDate2);
+
+        // Get all event instances (published: status=1)
+        // in the date range
+        $evCount = 0;
+        $eids = \Drupal::entityQuery('eventinstance')
+            ->condition('status', 1)
+            ->condition('date.value', $fmDate1, '>=')
+            ->condition('date.value', $fmDate2, '<')
+            ->execute();
+
+        $eventNodes = EventInstance::loadMultiple($eids);
+        //kint($eids);
+        //kint($nodes);
+
+        foreach ($eventNodes as $enode) {
+
+            $fields = $enode->getFields();
+            $titleArray = $fields['title']->getValue();
+            $title = $titleArray[0]['value'];
+            $eCount += 1;
+
+
+            $this->output()->writeln($eCount . '. ' . $title);
+            $this->output()->writeln('status:' . $enode->get('status')->value);
+            $this->output()->writeln('date:' . $enode->get('date')->value);
+            $this->output()->writeln('');
+
+            // $enode->get('date')->value is in UTC 2023-02-13T19:33:00  (this was input as 2:33 pm NY time)
+
+            // get the custom view display eventinstance.email_summary
+            $view_builder = \Drupal::entityTypeManager()->getViewBuilder('eventinstance');
+            $renderArray = $view_builder->view($enode, 'rollup_list');
+            $display = \Drupal::service('renderer')->renderPlain($renderArray);
+
+            //$this->output()->writeln($display);
+
+             //TEMP
+        }
+    }
+    /**
+     * @command access_affinitygroup:showEventsS
+     *
+     * @aliases showEventsS
+     * @usage   access_affinitygroup:showEventsS
+     *
+     * Get all eventseries.
+     */
+    public function showEventsS()
+    {
+        $eCount = 0;
+
+        $nids = \Drupal::entityQuery('eventseries')
+            ->condition('status', 1)
+            ->execute();
+
+        $nodes = EventSeries::loadMultiple($nids);
+
+        foreach ($nodes as $node) {
+
+            $eCount += 1;
+
+            $fields = $node->getFields();
+            $titleArray = $fields['title']->getValue();
+            $title = $titleArray[0]['value'];
+
+            $this->output()->writeln($eCount . '. ' . $title);
+            $this->output()->writeln('status:' . $node->get('status')->value);
+            //$this->output()->writeln($node->get('body')->summary);  // show just summary,
+            //$this->output()->writeln($node->get('body')->value);
+
+            $view_builder = \Drupal::entityTypeManager()->getViewBuilder('eventinstance');
+            //$renderArray = $view_builder->view($node);
+            //$this->output()->writeln('c-----------');
+            $body = '';
+            //$body = \Drupal::service('renderer')->renderPlain($renderArray);
+            //$this->output()->writeln('d-----------');
+            //$this->output()->writeln($body);
+            //$this->output()->writeln('e-----------');
+
+            //$this->output()->writeln($node->getCreated());
+
+            //                $this->output()->writeln($node->get('status')->value);
+            //               $this->output()->writeln($node->get('body')->summary);  // show just summary,
+            //which only has something if spefically set. otherwise we need to override with a trunc of body.
+            //$this->output()->writeln($node->get('body')->summary);   // show whole body
+            //             $this->output()->writeln($node->get('field_published_date')->value);
+        }
+    }
+
+    /**
+     * @command access_affinitygroup:newsRollup
+     *
+     * @aliases newsRollup
+     * @usage   access_affinitygroup:newsRollup
+     */
+    public function newsRollup()
+    {
+        $retval = weeklyNewsReport();
+        $this->output()->writeln('return is: '.$retval);
+
     }
 }
