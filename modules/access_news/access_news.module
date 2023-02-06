@@ -268,24 +268,41 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
   }
 }
 /**
+ * weeklyNewsReport()
  *
+ *  Roll up all the news from the past week and events for the coming month.
+ *  Make html display of these items for Constant Contact email.
+ *  Set up the Constant Contact campaign, but don't send it.
  */
  function weeklyNewsReport() {
-  $currentTime = (new DrupalDateTime())->getTimestamp();
 
+  try {
     // gather all news published from 7 days ago until now.
-  $lastWeek = new DrupalDateTime('last tuesday');
-  $d1 = makeQueryDateTime($lastWeek);
-  $d2 = makeQueryDateTime($currentTime);
+    $currentTime = new DrupalDateTime('now');  // includes time
+    $lastWeek = new DrupalDateTime('last tuesday');
 
-  $newsHTML = newsRangeView($d1, $d2, TRUE);
-  Drupal::logger('cron_accessnews')->notice('news:from '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
+    $nextMonth = new DrupalDateTime('today+1 month');
+    $today = new DrupalDateTime('today');  // without time
 
+    Drupal::logger('cron_accessnews')->notice('nextMonth' . $nextMonth);
+    Drupal::logger('cron_accessnews')->notice('lastweek: '.$lastWeek);
+
+    Drupal::logger('cron_accessnews')->notice('currentTime: '.$currentTime);
+    Drupal::logger('cron_accessnews')->notice('today: '.$today);
+
+    $d1 = makeQueryDateTime($lastWeek);
+    $d2 = makeQueryDateTime($currentTime);
+    Drupal::logger('cron_accessnews')->notice('d2: '.$d2);
+    $newsHTML = newsRangeView($d1, $d2, TRUE);
+  Drupal::logger('cron_accessnews')->notice('news from: '. $d1. ' to: '. $d2);
+  //Drupal::logger('cron_accessnews')->notice('news from: '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
+Drupal::logger('cron_accessnews')->notice('foo3');
   // gather all upcoming events for the next month (this date to +1 month)
-  $d1 = makeQueryDateTime($currentTime);
-  $d2 = makeQueryDateTime('+1 month');
-  Drupal::logger('cron_accessnews')->notice('news:from '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
 
+  $d1 = makeQueryDateTime($currentTime);
+  $d2 = makeQueryDateTime($nextMonth);
+  //Drupal::logger('cron_accessnews')->notice('events from: '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
+  Drupal::logger('cron_accessnews')->notice('events from: '. $d1. ' to: '. $d2);
   $eventHTML = eventsRangeView($d1, $d2, TRUE);
 
   // put wrapper html
@@ -299,6 +316,9 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
     $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
   }
 
+  } catch (Exception $e) {
+    \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
+  }
   // send email to xx saying the draft is ready
   return($emailHTML);  // temp return for drush
 }
@@ -324,15 +344,14 @@ function newsRangeView($fromDate, $toDate) {
 
     foreach ($nodes as $node) {
       try {
-            $nCount += 1;
+        $nCount += 1;
 
-            $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('node');
-            $renderArray = $viewBuilder->view($node, 'alt_teaser');
-            $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
-
+        $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('node');
+        $renderArray = $viewBuilder->view($node, 'alt_teaser');
+        $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
       }
       catch (Exception $e) {
-          $itemDisplay = 'Error retrieving events: ' . $e->getMessage();
+        $itemDisplay = 'Error retrieving news item: ' . $e->getMessage();
       }
 
       $listDisplay = $listDisplay . '<hr><br><div class="access-news-list-item">' . $itemDisplay . '</div>';
@@ -340,7 +359,7 @@ function newsRangeView($fromDate, $toDate) {
 
     $listDisplay = '<div class="access-news-rollup-list">' . $listDisplay . '</div>';
   } catch (Exception $e) {
-    $listDisplay = 'Error retrieving events: ' . $e->getMessage();
+    $listDisplay = 'Error retrieving news: ' . $e->getMessage();
   }
   return $listDisplay;
 }
@@ -365,18 +384,13 @@ function eventsRangeView($fromDate, $toDate) {
         $titleArray = $fields['title']->getValue();
         $title = $titleArray[0]['value'];
 
-            //$this->output()->writeln($eCount . '. ' . $title);
-            //$this->output()->writeln('status:' . $enode->get('status')->value);
-            //$this->output()->writeln('date:' . $enode->get('date')->value);
-            //$this->output()->writeln('');
-
         // get the custom view display eventinstance.email_summary
         $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('eventinstance');
         $renderArray = $viewBuilder->view($enode, 'rollup_list');
         $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
       }
       catch (Exception $e) {
-        $itemDisplay = 'Error retrieving events: ' . $e->getMessage();
+        $itemDisplay = 'Error retrieving event item ' . $e->getMessage();
       }
       $listDisplay = $listDisplay . '<hr><br><div>' . $itemDisplay . '</div>';
     } // end for
@@ -392,7 +406,6 @@ function eventsRangeView($fromDate, $toDate) {
 // this will make UTC (GMT) string suitable for database queries
 function makeQueryDateTime(string $dt)
 {
-  $ts = (new DrupalDateTime())->getTimestamp();
   $date1 = new DrupalDateTime($dt, 'UTC');
   $date1->setTimezone(new \DateTimezone(DateTimeItemInterface::STORAGE_TIMEZONE));
   return( $date1->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT));
@@ -437,7 +450,7 @@ function accessNewsCronShouldRun() {
                                                 . date("Y-m-d H:i:s e", $lastRun)
                                                 . " now " . date("Y-m-d H:i:s e", $currentTime)
                                                 . "; hours diff $hoursDiff ");
-    // and make sure it hasn't been run yet this Tueday
+    // run if it hasn't been run this tuesday
     if ($hoursDiff >= 24) {
       return TRUE;
     }

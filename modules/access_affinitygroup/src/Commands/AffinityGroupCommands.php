@@ -216,15 +216,17 @@ class AffinityGroupCommands extends DrushCommands
             $this->output()->writeln($node->get('field_published_date')->value);
         }
 
-        $fmDate1 = $this->makeDateTime('10/01/2022');
-        $fmDate2 = $this->makeDateTime('02/10/2023');
+        $currentTime = new DrupalDateTime('now');
+        $lastWeek = new DrupalDateTime('last tuesday');
+        $fmDate1 = $this->makeDateTime($lastWeek); //UTC
+        $fmDate2 = $this->makeDateTime($currentTime); // want everything before but not including this time.
 
         $this->output()->writeln('from: '.$fmDate1);
         $this->output()->writeln('to:   '.$fmDate2);
 
         $nids = \Drupal::entityQuery('node')
             ->condition('field_published_date.value', $fmDate1, '>=')
-            ->condition('field_published_date.value', $fmDate2, '<=')
+            ->condition('field_published_date.value', $fmDate2, '<')
             ->condition('type', 'access_news')
             ->execute();
 
@@ -249,7 +251,7 @@ class AffinityGroupCommands extends DrushCommands
     // this will make UTC (GMT) string suitable for database queries
     private function makeDateTime(string $dt)
     {
-         $ts = (new DrupalDateTime())->getTimestamp();
+         //$ts = (new DrupalDateTime())->getTimestamp();
         //$date1 = DrupalDateTime::createFromFormat('d.m.Y H:i:s', '07.03.2012 01:30:00');
 
         $date1 = new DrupalDateTime($dt, 'UTC');
@@ -277,22 +279,26 @@ class AffinityGroupCommands extends DrushCommands
      */
     public function showEventsI()
     {
-        $fmDate1 = $this->makeDateTime('2023-02-13 19:00'); //UTC
-        $fmDate2 = $this->makeDateTime('2023-02-14 00:00'); // want everything before but not including this time.
+        $currentTime = new DrupalDateTime('today');
+        $nextMonth = new DrupalDateTime('today+1 month');
 
-        //$fmDate1 = new DrupalDateTime('2023-02-13 22:00', 'UTC'); // this is the storage format for event date (UTC aka GMT)
-        //$fmDate2 = new DrupalDateTime('2023-02-14 00:00', 'UTC');
+        $this->output()->writeln($nextMonth);
+        //$fmDate1 = $this->makeDateTime('2023-02-13 19:00'); //UTC
+        //$fmDate2 = $this->makeDateTime('2023-02-14 00:00'); // want everything before but not including this time.
+        $fmDate1 = $this->makeDateTime($currentTime); //UTC
+        $fmDate2 = $this->makeDateTime($nextMonth); // want everything before but not including this time.
 
         $this->output()->writeln($fmDate1);
         $this->output()->writeln($fmDate2);
 
         // Get all event instances (published: status=1)
         // in the date range
-        $evCount = 0;
+        $eCount = 0;
         $eids = \Drupal::entityQuery('eventinstance')
             ->condition('status', 1)
             ->condition('date.value', $fmDate1, '>=')
             ->condition('date.value', $fmDate2, '<')
+            ->sort('date.value', 'ASC')
             ->execute();
 
         $eventNodes = EventInstance::loadMultiple($eids);
@@ -308,7 +314,7 @@ class AffinityGroupCommands extends DrushCommands
 
 
             $this->output()->writeln($eCount . '. ' . $title);
-            $this->output()->writeln('status:' . $enode->get('status')->value);
+            //$this->output()->writeln('status:' . $enode->get('status')->value);
             $this->output()->writeln('date:' . $enode->get('date')->value);
             $this->output()->writeln('');
 
