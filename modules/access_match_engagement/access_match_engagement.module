@@ -237,7 +237,7 @@ function access_match_engagement_interested_email($to_uids) {
     '#template' => '<p>{{ intro }} {{ link | raw }}.<p>',
     '#context' => [
       'intro' => t('New interested user alert! Please check website for '),
-      'link' => "<a href='https://amp.ci/match-interested-users'>details</a>"
+      'link' => "<a href='https://support.access-ci.org/match-interested-users'>details</a>"
     ],
   ];
   // Lookup each user by to_uids and add their email to the $to_email string comma separated.
