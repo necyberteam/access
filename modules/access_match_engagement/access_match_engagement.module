@@ -14,7 +14,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\views\ViewExecutable;
 
-/**
+ /**
  * Implements hook_views_pre_render().
  */
 function access_match_engagement_views_pre_render(ViewExecutable $view) {
@@ -36,8 +36,8 @@ function access_match_engagement_block_build_views_block_alter(array &$build, \D
 /**
  * Implements hook_form_alter().
  */
-function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {  
-  if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {    
+function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     // Attach javascript
     $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
     $form['promote']['widget']['value']['#title'] = 'Form Accepted';
@@ -61,7 +61,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     if ( $form_id == 'node_match_engagement_form' ) {
       $form['field_node_type']['widget']['#default_value'][0] = $request_type;
     }
-    
+
     $form['fieldset_launch'] = ['#type' => 'fieldset'];
 
     $form['field-launch-presentation'] = [
@@ -76,7 +76,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $form['field-wrap-presentation-date'] = [
       '#group' => 'fieldset_launch',
     ];
-  
+
     if (!$accepted) {
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
@@ -135,6 +135,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     if (!in_array('administrator', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
+      $form['field_match_interested_users']['#access'] = FALSE;
     }
     if ($form_id == 'node_match_engagement_edit_form') {
       $node_param = \Drupal::routeMatch()->getParameter('node');
@@ -180,6 +181,7 @@ function access_match_engagement_mail($key, &$message, $params) {
   switch ($key) {
   case 'ame-admin-update':
   case 'ame-accepted-update':
+  case 'interested-update':
     $message['from'] = \Drupal::config('system.site')->get('mail');
     $message['subject'] = $params['title'];
     $message['body'][] = $params['body'];
@@ -224,6 +226,36 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
       $entity->set('field_email_user', 0);
     }
   }
+}
+
+/**
+ * Build access_match_engagement interested Email.
+ */
+function access_match_engagement_interested_email($to_uids) {
+  $body['string'] = [
+    '#type' => 'inline_template',
+    '#template' => '<p>{{ intro }} {{ link | raw }}.<p>',
+    '#context' => [
+      'intro' => t('New interested user alert! Please check website for '),
+      'link' => "<a href='https://support.access-ci.org/match-interested-users'>details</a>"
+    ],
+  ];
+  // Lookup each user by to_uids and add their email to the $to_email string comma separated.
+  $to_email = '';
+  foreach ($to_uids as $uid) {
+    $user = User::load($uid);
+    $to_email .= $user->getEmail() . ',';
+  }
+  // Remove the last comma.
+  $to_email = rtrim($to_email, ',');
+  $render_service = \Drupal::service('renderer');
+  $params = [];
+  $params['to'] = $to_email;
+  $params['body'] = $render_service->renderRoot($body);
+  $params['title'] = "New Interested User Alert";
+  // Add logger message of sending interested email.
+  \Drupal::logger('access_match_engagement')->notice('Sending interested email to: ' . $to_email);
+  ame_send('interested-update', $params);
 }
 
 /**
@@ -318,4 +350,24 @@ function ame_send($key, $params) {
   $mailManager = \Drupal::service('plugin.manager.mail');
   $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
   return $result;
+}
+
+/**
+ * hook_cron.
+ */
+function access_match_engagement_cron() {
+  // todo: once working, limit to run on production only.
+  $config = \Drupal::configFactory()->getEditable('access_match_engagement.settings');
+  $interested_status = $config->get('interested');
+  // Send interested email at 1:00am.
+  if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5) && $interested_status == 1 ) {
+    // Lookup users by role.
+    $uids = \Drupal::entityQuery('user')
+      ->condition('status', 1)
+      ->condition('roles', 'match_pm')
+      ->execute();
+    access_match_engagement_interested_email($uids);
+    $config->set('interested', 0);
+    $config->save();
+  }
 }
