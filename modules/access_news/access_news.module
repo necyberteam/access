@@ -277,23 +277,29 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
  function weeklyNewsReport() {
 
   try {
-    // gather all news published from 7 days ago until now.
-    $currentTime = new DrupalDateTime('now');  // includes time
-    $lastWeek = new DrupalDateTime('last tuesday');
+    // gather all news published from 7 days ago until yesterday.
+    // need to make dates for searching on published_date (not date+time)
+    $dtLastWeek = new \DateTime('-7 days');
+    $dtYesterday = new \DateTime('yesterday');
 
-    $nextMonth = new DrupalDateTime('today+1 month');
-    $today = new DrupalDateTime('today');     // time is 0
+    $d1 = DrupalDateTime::createFromDateTime($dtLastWeek)
+            ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
+    $d2 = DrupalDateTime::createFromDateTime($dtYesterday)
+            ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
 
-    $d1 = makeQueryDateTime($lastWeek);
-    $d2 = makeQueryDateTime($currentTime);
     $newsHTML = newsRangeView($d1, $d2, TRUE);
     Drupal::logger('cron_accessnews')->notice('Rolling up news from: '. $d1. ' to: '. $d2);
 
-  // gather all upcoming events for the next month (this date to +1 month)
+    // gather all upcoming events for the next month (this date to +1 month)
+    $timezone = new \DateTimeZone(DateTimeItemInterface::STORAGE_TIMEZONE);
+    $dtCurrent = new \DateTime('today', $timezone);
+    $dtNextMonth = new \DateTime('today+1 month + 2 day', $timezone);
 
-    $d1 = makeQueryDateTime($currentTime);
-    $d2 = makeQueryDateTime($nextMonth);
-    //Drupal::logger('cron_accessnews')->notice('events from: '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
+    $d1 = DrupalDateTime::createFromDateTime($dtCurrent)
+            ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+    $d2 = DrupalDateTime::createFromDateTime($dtNextMonth)
+            ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+
     Drupal::logger('cron_accessnews')->notice('Rolling up events from: '. $d1. ' to: '. $d2);
     $eventHTML = eventsRangeView($d1, $d2, TRUE);
 
@@ -325,8 +331,6 @@ function makeNewsReportHTML($news, $event) {
 /**
  * newsRangeView
  * Return html list of news in this date range.
- * Note: the date/times should have 0 for time for the end date; if not
- * the date should be +1 from needed date.
  */
 function newsRangeView($fromDate, $toDate) {
 
@@ -334,7 +338,7 @@ function newsRangeView($fromDate, $toDate) {
   try {
     $nids = \Drupal::entityQuery('node')
             ->condition('field_published_date.value', $fromDate, '>=')
-            ->condition('field_published_date.value', $toDate, '<')
+            ->condition('field_published_date.value', $toDate, '<=')
             ->condition('type', 'access_news')
             ->execute();
 
@@ -364,6 +368,8 @@ function newsRangeView($fromDate, $toDate) {
 }
 /**
  * eventsRangeView
+ * Note: the date/times should have 0 for time for the end date; if not
+ * the date should be +1 from needed date.
  * Return html list of news in this date range.
  */
 function eventsRangeView($fromDate, $toDate) {
@@ -403,21 +409,10 @@ function eventsRangeView($fromDate, $toDate) {
   }
   return $listDisplay;
 }
-// pass in 24-hr UTC  time in format yyyy-mm-dd hh:mm
-// ex for 3:30 pm new york time: 2022-12-31 20:30
-// this will make UTC (GMT) string suitable for database queries
-function makeQueryDateTime(string $dt)
-{
-  $date1 = new DrupalDateTime($dt, 'UTC');
-  $date1->setTimezone(new \DateTimezone(DateTimeItemInterface::STORAGE_TIMEZONE));
-  return( $date1->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT));
-}
-
 /**
  * Implements hook_cron().
  */
 function access_news_cron() {
-
   try {
     if (accessNewsCronShouldRun()) {
 
@@ -428,22 +423,22 @@ function access_news_cron() {
   }
   catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('exception: ' . $e->getMessage());
-  }  finally {
   }
 }
 /**
   * accessNewsCronShouldRun
   * Returns true if it's time to run the news+events rollup.
-  * Want to run once on tuesdays after 8 am. We assume the calling cron job runs every hour.
+  * Want to run once on tuesdays after 3 am. We assume the calling cron job runs every hour.
  */
-
 function accessNewsCronShouldRun() {
 
   $currentTime = \Drupal::time()->getCurrentTime();  // in america/ny timezone
   $dayOfWeek = date('w', $currentTime);
+  $hour = intval(date('H', $currentTime));
 
   // 2 is Tuesday
-  if ($dayOfWeek == '2') {
+  if ($dayOfWeek == '2' && $hour > 3) {
+
     $lastRun = \Drupal::state()->get('access_news.crontime-rollupnews', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
 
