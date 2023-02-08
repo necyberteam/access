@@ -282,53 +282,52 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
     $lastWeek = new DrupalDateTime('last tuesday');
 
     $nextMonth = new DrupalDateTime('today+1 month');
-    $today = new DrupalDateTime('today');  // without time
-
-    Drupal::logger('cron_accessnews')->notice('nextMonth' . $nextMonth);
-    Drupal::logger('cron_accessnews')->notice('lastweek: '.$lastWeek);
-
-    Drupal::logger('cron_accessnews')->notice('currentTime: '.$currentTime);
-    Drupal::logger('cron_accessnews')->notice('today: '.$today);
+    $today = new DrupalDateTime('today');     // time is 0
 
     $d1 = makeQueryDateTime($lastWeek);
     $d2 = makeQueryDateTime($currentTime);
-    Drupal::logger('cron_accessnews')->notice('d2: '.$d2);
     $newsHTML = newsRangeView($d1, $d2, TRUE);
-  Drupal::logger('cron_accessnews')->notice('news from: '. $d1. ' to: '. $d2);
-  //Drupal::logger('cron_accessnews')->notice('news from: '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
-Drupal::logger('cron_accessnews')->notice('foo3');
+    Drupal::logger('cron_accessnews')->notice('Rolling up news from: '. $d1. ' to: '. $d2);
+
   // gather all upcoming events for the next month (this date to +1 month)
 
-  $d1 = makeQueryDateTime($currentTime);
-  $d2 = makeQueryDateTime($nextMonth);
-  //Drupal::logger('cron_accessnews')->notice('events from: '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
-  Drupal::logger('cron_accessnews')->notice('events from: '. $d1. ' to: '. $d2);
-  $eventHTML = eventsRangeView($d1, $d2, TRUE);
+    $d1 = makeQueryDateTime($currentTime);
+    $d2 = makeQueryDateTime($nextMonth);
+    //Drupal::logger('cron_accessnews')->notice('events from: '.date('D, d M Y H:i:s e', $d1). ' to: '.date('D, d M Y H:i:s e', $d2));
+    Drupal::logger('cron_accessnews')->notice('Rolling up events from: '. $d1. ' to: '. $d2);
+    $eventHTML = eventsRangeView($d1, $d2, TRUE);
 
-  // put wrapper html
-  $emailHTML = makeNewsReportHTML($newsHTML, $eventHTML);
+    // put wrapper html
+    $emailHTML = makeNewsReportHTML($newsHTML, $eventHTML);
 
-  // create constant contact campaign. this does not send it
-   $ccResponse = setupEmailCampaign('ACCESS Weekly News and Events', $emailHTML);
+    // create constant contact campaign. this does not send it
+    $ccResponse = setupEmailCampaign('ACCESS Weekly News and Events', $emailHTML);
 
-  if (!empty($ccResponse)) {
-    $campaignId = $ccResponse->campaign_id;
-    $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
-  }
-
+    if (!empty($ccResponse)) {
+      $campaignId = $ccResponse->campaign_id;
+      $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
+    }
   } catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
   }
-  // send email to xx saying the draft is ready
-  return($emailHTML);  // temp return for drush
+  // todo: send email to xx saying the draft is ready
+  //return($emailHTML);  // temp return for drush
+  return;
 }
-// todo put in the style wrapper
+/**
+ * wrap up the news and events list with HTML for Constant Contact email
+ */
+
 function makeNewsReportHTML($news, $event) {
   $h = '<div class="access-news-rollup-email">'. $news . $event . '</div>';
   return $h;
 }
-// the date/times should have 0 for time for the end date; if not
-// the date should be +1 from needed date
+/**
+ * newsRangeView
+ * Return html list of news in this date range.
+ * Note: the date/times should have 0 for time for the end date; if not
+ * the date should be +1 from needed date.
+ */
 function newsRangeView($fromDate, $toDate) {
 
   $listDisplay = '';
@@ -363,7 +362,10 @@ function newsRangeView($fromDate, $toDate) {
   }
   return $listDisplay;
 }
-
+/**
+ * eventsRangeView
+ * Return html list of news in this date range.
+ */
 function eventsRangeView($fromDate, $toDate) {
 
   $listDisplay = '';
@@ -415,17 +417,13 @@ function makeQueryDateTime(string $dt)
  * Implements hook_cron().
  */
 function access_news_cron() {
-    \Drupal::logger('cron_accessnews')->notice('In Ac News Cron');
 
   try {
     if (accessNewsCronShouldRun()) {
 
       $currentTime = \Drupal::time()->getCurrentTime();  // ny timezone
       \Drupal::state()->set('access_news.crontime-rollupnews', $currentTime);
-      \Drupal::logger('cron_accessnews')->notice('SHOULD RUN Ac News Cron');
       weeklyNewsReport();
-    //  $cca = new ConstantContactApi();
-    //  $cca->newToken();
     }
   }
   catch (Exception $e) {
@@ -433,24 +431,23 @@ function access_news_cron() {
   }  finally {
   }
 }
+/**
+  * accessNewsCronShouldRun
+  * Returns true if it's time to run the news+events rollup.
+  * Want to run once on tuesdays after 8 am. We assume the calling cron job runs every hour.
+ */
 
 function accessNewsCronShouldRun() {
-  // Want to run once on tuesdays after 8 am. We assume the calling cron job runs every hour.
-  // (Do we want to do an admin configurable day/time for this?)
- return true;
-  $currentTime = \Drupal::time()->getCurrentTime();  // in america/ny timezone
-  \Drupal::logger('cron_accessnews')->notice('date is '.date('D, d M Y H:i:s e', $currentTime));
-  $dayOfWeek = date('w', $currentTime);
-  \Drupal::logger('cron_accessnews')->notice('dow is '. $dayOfWeek);
 
-  if ($dayOfWeek == '0') {  // 2 is Tuesday
+  $currentTime = \Drupal::time()->getCurrentTime();  // in america/ny timezone
+  $dayOfWeek = date('w', $currentTime);
+
+  // 2 is Tuesday
+  if ($dayOfWeek == '2') {
     $lastRun = \Drupal::state()->get('access_news.crontime-rollupnews', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
-    \Drupal::logger('cron_accessnews')->notice("$function last "
-                                                . date("Y-m-d H:i:s e", $lastRun)
-                                                . " now " . date("Y-m-d H:i:s e", $currentTime)
-                                                . "; hours diff $hoursDiff ");
-    // run if it hasn't been run this tuesday
+
+    // run if it hasn't been run this tuesday already
     if ($hoursDiff >= 24) {
       return TRUE;
     }
