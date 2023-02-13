@@ -216,17 +216,20 @@ class AffinityGroupCommands extends DrushCommands
             $this->output()->writeln($node->get('field_published_date')->value);
         }
 
-        $currentTime = new DrupalDateTime('now');
-        $lastWeek = new DrupalDateTime('last tuesday');
-        $fmDate1 = $this->makeDateTime($lastWeek); //UTC
-        $fmDate2 = $this->makeDateTime($currentTime); // want everything before but not including this time.
+        $dtLastWeek = new \DateTime('-7 days');
+        $dtYesterday = new \DateTime('yesterday');
+
+        $fmDate1 = DrupalDateTime::createFromDateTime($dtLastWeek)->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
+        $fmDate2 = DrupalDateTime::createFromDateTime($dtYesterday)->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
 
         $this->output()->writeln('from: '.$fmDate1);
         $this->output()->writeln('to:   '.$fmDate2);
 
+        //$a = $ddtA->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
+
         $nids = \Drupal::entityQuery('node')
             ->condition('field_published_date.value', $fmDate1, '>=')
-            ->condition('field_published_date.value', $fmDate2, '<')
+            ->condition('field_published_date.value', $fmDate2, '<=')
             ->condition('type', 'access_news')
             ->execute();
 
@@ -241,31 +244,9 @@ class AffinityGroupCommands extends DrushCommands
 
             $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
             $renderArray = $view_builder->view($node, 'alt_teaser');
-            $display = \Drupal::service('renderer')->renderPlain($renderArray);
-            $this->output()->writeln($display);
+            //  $display = \Drupal::service('renderer')->renderPlain($renderArray);
+            //$this->output()->writeln($display);
         }
-    }
-
-    // pass in 24-hr UTC  time in format yyyy-mm-dd hh:mm
-    // ex for 3:30 pm new york time: 2022-12-31 :30
-    // this will make UTC (GMT) string suitable for database queries
-    private function makeDateTime(string $dt)
-    {
-         //$ts = (new DrupalDateTime())->getTimestamp();
-        //$date1 = DrupalDateTime::createFromFormat('d.m.Y H:i:s', '07.03.2012 01:30:00');
-
-        $date1 = new DrupalDateTime($dt, 'UTC');
-
-        //$date1 = DrupalDateTime::createFromFormat('m/d/Y H:i', $dt);
-        //$date1 = DrupalDateTime::createFromFormat('m/d/Y H:i', $dt);
-        $this->output()->writeln('date1: ' . $date1);
-        //   $this->output()->writeln('ts: '. $ts);
-        //   $this->output()->writeln('ts formatted: '. date('D, d M Y H:i:s e', $ts));
-        $this->output()->writeln('');
-        // NOTE This way of filling in date puts in default UTC time. Should really put in 0's for time.
-        //$this->output()->writeln($date1);
-        $date1->setTimezone(new \DateTimezone(DateTimeItemInterface::STORAGE_TIMEZONE));
-        return( $date1->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT));
     }
 
     /**
@@ -279,14 +260,14 @@ class AffinityGroupCommands extends DrushCommands
      */
     public function showEventsI()
     {
-        $currentTime = new DrupalDateTime('today');
-        $nextMonth = new DrupalDateTime('today+1 month');
+        $timezone = new \DateTimeZone(DateTimeItemInterface::STORAGE_TIMEZONE);
+        $dtCurrent = new \DateTime('today', $timezone);
+        $dtNextMonth = new \DateTime('today+1 month + 2 day', $timezone);
 
-        $this->output()->writeln($nextMonth);
-        //$fmDate1 = $this->makeDateTime('2023-02-13 19:00'); //UTC
-        //$fmDate2 = $this->makeDateTime('2023-02-14 00:00'); // want everything before but not including this time.
-        $fmDate1 = $this->makeDateTime($currentTime); //UTC
-        $fmDate2 = $this->makeDateTime($nextMonth); // want everything before but not including this time.
+        $fmDate1 = DrupalDateTime::createFromDateTime($dtCurrent)
+                    ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+        $fmDate2 = DrupalDateTime::createFromDateTime($dtNextMonth)
+                    ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
 
         $this->output()->writeln($fmDate1);
         $this->output()->writeln($fmDate2);
@@ -389,7 +370,5 @@ class AffinityGroupCommands extends DrushCommands
     public function newsRollup()
     {
         $retval = weeklyNewsReport();
-        $this->output()->writeln('return is: '.$retval);
-
     }
 }

@@ -36,8 +36,6 @@ use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 use Drupal\views\ViewExecutable;
 
-
-// @todo the SEND EMAIL api call is currently commented out in sendEmailCampaign.
 // For devtest, put in front of emails and uname for dev; set to '' to use real names.
 const cDevUname = '';
 const cAccessEmail = "supportapiaccess@access-ci.org";
@@ -1073,13 +1071,15 @@ function emailDevCronLog() {
  */
 function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds) {
 
-  $emailHtml = makeNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
-  $ccResponse = setupEmailCampaign($emailTitle, $emailHtml);
+  // For CC, must be unique name for campaign.
+  $campaignName = uniqid('Access-news', TRUE);
+  $emailHtml = makeNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);   // replace with next line
+  // $emailHtml = ccNewsSingleHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);  // the new one
+  $ccResponse = setupEmailCampaign($emailTitle, $emailHtml, $campaignName);
 
   if (!empty($ccResponse)) {
     $campaignId = $ccResponse->campaign_id;
     $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
-
     sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds);
   }
 }
@@ -1088,11 +1088,9 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
  * Create the Constant Contact email campaign, which is the initial setup.
  * Nothing is sent at this point. Returns the response which included the
  * campaign id and campaign activity id needed for step leading to send.
+ * campaignName must be unique to the cc account.
  */
-function setupEmailCampaign($emailSubject, $emailHtml) {
-
-  // For CC, must be unique name for campaign.
-  $campaignName = uniqid('Access-news', TRUE);
+function setupEmailCampaign($emailSubject, $emailHtml, $campaignName) {
 
   $postData = [
     'name' => $campaignName,
@@ -1154,6 +1152,8 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
   }
 }
 
-// @todo is this a safe include... should we use a different path specifier.
+// this include for constant contant wrapper html will become obsolete
 include 'src/emailContent.php';
+// this is the new email wrapper
+include 'src/ccNewsWrapper.php';
 

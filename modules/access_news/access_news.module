@@ -304,15 +304,12 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
     $eventHTML = eventsRangeView($d1, $d2, TRUE);
 
     // put wrapper html
-    $emailHTML = makeNewsReportHTML($newsHTML, $eventHTML);
+    $emailHTML = ccNewsRollupHTML($newsHTML, $eventHTML);
 
     // create constant contact campaign. this does not send it
-    $ccResponse = setupEmailCampaign('ACCESS Weekly News and Events', $emailHTML);
+    $campaignName = uniqid('Access-news-weekly-rollup', TRUE);
+    $ccResponse = setupEmailCampaign('ACCESS Weekly News and Events', $emailHTML, $campaignName);
 
-    if (!empty($ccResponse)) {
-      $campaignId = $ccResponse->campaign_id;
-      $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
-    }
   } catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
   }
@@ -320,14 +317,7 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
   //return($emailHTML);  // temp return for drush
   return;
 }
-/**
- * wrap up the news and events list with HTML for Constant Contact email
- */
 
-function makeNewsReportHTML($news, $event) {
-  $h = '<div class="access-news-rollup-email">'. $news . $event . '</div>';
-  return $h;
-}
 /**
  * newsRangeView
  * Return html list of news in this date range.
@@ -411,6 +401,7 @@ function eventsRangeView($fromDate, $toDate) {
 }
 /**
  * Implements hook_cron().
+ * Do the weekly news and events rollup if it's time.
  */
 function access_news_cron() {
   try {
