@@ -1,0 +1,7 @@
+access_misc.jira_vars_form:
+  path: '/admin/services/create-ticket-form-vars'
+  defaults:
+    _form: '\Drupal\access_misc\Form\JiraVars'
+    _title: 'Update the Create Ticket button variable names'
+  requirements:
+    _role: 'administrator'

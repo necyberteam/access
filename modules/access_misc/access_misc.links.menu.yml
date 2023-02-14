@@ -1,0 +1,5 @@
+access_misc.jira_vars_form:
+  title: 'Create Ticket Jira Variables'
+  description: 'Update the variables in the Jira form for the link created to submit tickets'
+  route_name: access_misc.jira_vars_form
+  parent: 'system.admin_config_services'
