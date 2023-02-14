@@ -41,9 +41,8 @@ class CreateTicket extends BlockBase {
   /**
    * {@inheritdoc}
    */
-  public function getCacheContexts() {
-    // Vary caching of this block per user.
-    return Cache::mergeContexts(parent::getCacheContexts(), ['user']);
+  public function getCacheMaxAge() {
+    return 0;
   }
 
 }
