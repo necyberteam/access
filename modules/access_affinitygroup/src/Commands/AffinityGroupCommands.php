@@ -283,8 +283,6 @@ class AffinityGroupCommands extends DrushCommands
             ->execute();
 
         $eventNodes = EventInstance::loadMultiple($eids);
-        //kint($eids);
-        //kint($nodes);
 
         foreach ($eventNodes as $enode) {
 
@@ -292,7 +290,6 @@ class AffinityGroupCommands extends DrushCommands
             $titleArray = $fields['title']->getValue();
             $title = $titleArray[0]['value'];
             $eCount += 1;
-
 
             $this->output()->writeln($eCount . '. ' . $title);
             //$this->output()->writeln('status:' . $enode->get('status')->value);
@@ -370,5 +367,6 @@ class AffinityGroupCommands extends DrushCommands
     public function newsRollup()
     {
         $retval = weeklyNewsReport();
+        $this->output()->writeln($retval);
     }
 }

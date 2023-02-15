@@ -307,7 +307,7 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
     $emailHTML = ccNewsRollupHTML($newsHTML, $eventHTML);
 
     // create constant contact campaign. this does not send it
-    $campaignName = uniqid('Access-news-weekly-rollup', TRUE);
+    $campaignName = uniqid('Access-news-weekly-rollup-', TRUE);
     $ccResponse = setupEmailCampaign('ACCESS Weekly News and Events', $emailHTML, $campaignName);
 
   } catch (Exception $e) {
@@ -321,10 +321,13 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 /**
  * newsRangeView
  * Return html list of news in this date range.
+ * Each item shows Title, date, time, excerpt, location, link to news item
  */
 function newsRangeView($fromDate, $toDate) {
 
   $listDisplay = '';
+  $divider = dividerHTML();
+
   try {
     $nids = \Drupal::entityQuery('node')
             ->condition('field_published_date.value', $fromDate, '>=')
@@ -334,23 +337,39 @@ function newsRangeView($fromDate, $toDate) {
 
     $nodes = Node::loadMultiple($nids);
     $nCount = 0;
-
     foreach ($nodes as $node) {
+
       try {
         $nCount += 1;
 
+        $title = $node->getTitle();
         $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('node');
         $renderArray = $viewBuilder->view($node, 'alt_teaser');
+
         $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
+
+        $pubDate = $node->field_published_date[0]->view('alt_teaser');
+        $pubDateDisp = \Drupal::service('renderer')->renderPlain($pubDate);
+
+        $body = $node->body[0]->view('alt_teaser');
+        $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
+
+        $newsUrl = $node->toUrl()->setAbsolute()->toString();
+
+        if ($nCount > 1) {
+          $listDisplay = $listDisplay . $divider;
+        }
+        $itemDisplay = newsItemHTML($title, $pubDateDisp, $bodyDisp, $newsUrl);
       }
       catch (Exception $e) {
         $itemDisplay = 'Error retrieving news item: ' . $e->getMessage();
       }
 
-      $listDisplay = $listDisplay . '<hr><br><div class="access-news-list-item">' . $itemDisplay . '</div>';
+      $listDisplay = $listDisplay . $itemDisplay;
     } // end for
 
-    $listDisplay = '<div class="access-news-rollup-list">' . $listDisplay . '</div>';
+    $sectionHeader = sectionHeadHTML("News");
+    $listDisplay = $sectionHeader . $listDisplay;
   } catch (Exception $e) {
     $listDisplay = 'Error retrieving news: ' . $e->getMessage();
   }
@@ -366,6 +385,7 @@ function eventsRangeView($fromDate, $toDate) {
 
   $listDisplay = '';
   $eCount = 0;
+  $divider = dividerHTML();
   try {
     $eids = \Drupal::entityQuery('eventinstance')
             ->condition('status', 1)
@@ -382,18 +402,34 @@ function eventsRangeView($fromDate, $toDate) {
         $titleArray = $fields['title']->getValue();
         $title = $titleArray[0]['value'];
 
-        // get the custom view display eventinstance.email_summary
-        $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('eventinstance');
-        $renderArray = $viewBuilder->view($enode, 'rollup_list');
-        $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
+        $eventUrl = $enode->toUrl()->setAbsolute()->toString();
+
+        $dateTime = $enode->date[0]->view('rollup_list');
+        $dateTimeDisp = \Drupal::service('renderer')->renderPlain($dateTime); // TODO - show formatted.
+
+        $body = empty($enode->description[0]) ? '' : $enode->description[0]->view('rollup_list');
+        $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
+
+        $location = empty($enode->location[0]) ? '' : $enode->location[0]->view('rollup_list');
+        $locationDisp = \Drupal::service('renderer')->renderPlain($location);
+
+        if ($eCount > 1) {
+          $listDisplay = $listDisplay . $divider;
+        }
+
+        $itemDisplay = eventItemHTML($title, $dateTimeDisp, $bodyDisp, $locationDisp, $eventUrl);
       }
       catch (Exception $e) {
+        //kint("EXCEPTION  at $eCount: ". $e->getMessage());
         $itemDisplay = 'Error retrieving event item ' . $e->getMessage();
       }
-      $listDisplay = $listDisplay . '<hr><br><div>' . $itemDisplay . '</div>';
+
+      $listDisplay = $listDisplay . $itemDisplay;
     } // end for
 
-    $listDisplay =  '<div class="access-news-rollup-list">' . $listDisplay . '</div>';
+    $sectionHeader = sectionHeadHTML("Events");
+    $listDisplay =  $sectionHeader . $listDisplay;
+
   } catch (Exception $e) {
     $listDisplay = 'Error retrieving events: ' . $e->getMessage();
   }
