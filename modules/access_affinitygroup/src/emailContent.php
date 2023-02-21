@@ -4,7 +4,7 @@
  * @file
  * Returns the HTML to send to Constant Contact.
  *
- * This functions like an email template.
+ * This is the email template for affinity groups in the Community category.
  *
  * NewsBody: the html for the main part of the message
  * newsTitle: line at the top
@@ -17,7 +17,7 @@
  * @todo we will probably have to change the url of the access logo image when we close our test accounts
  * @todo this was lifted from constant contact's generated email.  replace generated names with more understandable names.
  */
-function makeNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
+function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
 
   // Build list of one or more affinity group names separated by 'or'.
   $agText = '';

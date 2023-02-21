@@ -3,19 +3,13 @@
  * @file
  * Returns the HTML to send to Constant Contact.
  *
- * This functions like an email template.
- *
- * NewsBody: the html for the main part of the message
- * newsTitle: line at the top
- * pubDate: date string to be used with [published: xxxx]
- * agNames: list of Affinity Group names for the 'You are receiving this email through...'
- * newsUrl: link for 'View on website' button .
+ * This is the Access Support email template.
  */
 
- //
+ // used in weekly news rollup
 function sectionHeadHTML($titleText)
 {
-  $sectionHead = <<<SECTIONHEADHTML
+    $sectionHead = <<<SECTIONHEADHTML
     <table class="layout layout-feature layout-1-column" style="table-layout:fixed; background-color=#ffffff;" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
       <tr>
         <td class="column column--1 scale stack" style="width:100%;" align="center" valign="top">
@@ -32,32 +26,33 @@ function sectionHeadHTML($titleText)
       </tr>
     </table>
 SECTIONHEADHTML;
-  return $sectionHead;
+    return $sectionHead;
 }
 
+ // use in weekly news rollup
 function newsItemHTML($title, $pubDate, $body, $articleUrl)
 {
     $main = "<div>
       <span>Published: $pubDate</span>
-      <br><p>$body</p>
+      <br>$body
       </div>";
     return itemHTML($title, $main, $articleUrl, "News");
 }
 
-// each event or news it
+ // use in weekly news rollup
 function eventItemHTML($title, $eventDate, $description, $location, $articleUrl)
 {
-  $main = "<div>
+    $main = "<div>
         <span>$eventDate</span>
         <span>$description</span>
         <p>Location: $location</p>
       </div>";
-  return itemHTML($title, $main, $articleUrl, "Event");
+    return itemHTML($title, $main, $articleUrl, "Event");
 }
-// each event or news it
+ // used in weekly news rollup - each news or event item
 function itemHTML($title, $main, $itemUrl, $itemType)
 {
-  $article = <<<ARTICLEHTML
+    $article = <<<ARTICLEHTML
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
@@ -81,35 +76,36 @@ function itemHTML($title, $main, $itemUrl, $itemType)
     </tr>
   </table>
 ARTICLEHTML;   // this text must positioned to the left of end html
-  return $article;
+    return $article;
 }
 
 // a line between articles
 function dividerHTML()
 {
-    $divider = <<<DIVIDERHTML
+  $divider = <<<DIVIDERHTML
   <table class="layout=layout--1-column" style="table-layout:fixed;"width="100%" border="0" cellpadding="0" cellspacing="0">
-                          <tr>
-                            <td class="column column--1 scale stack" style="width:100%;"align="center" valign="top">
-                              <table class="divider" width="100%" cellpadding="0" cellspacing="0" border="0">
-                                <tr>
-                                  <td class="divider_container content-padding-horizontal" style="padding: 10px 40px;" width="100%" align="center" valign="top">
-                                    <table class="divider_content-row" style="height:1px; width:100%;" cellpadding="0" cellspacing="0" border="0">
-                                      <tr>
-                                        <td class="divider_content-cell" style="background-color:#d6d6d6; height:1px; line-height:1px; padding-bottom:0px; border-bottom-width:0px;" height="1" align="center" bgcolor="#d6d6d6">
-                                        </td>
-                                      </tr>
-                                    </table>
-                                  </td>
-                                </tr>
-                              </table>
-                            </td>
-                          </tr>
+    <tr>
+      <td class="column column--1 scale stack" style="width:100%;"align="center" valign="top">
+        <table class="divider" width="100%" cellpadding="0" cellspacing="0" border="0">
+          <tr>
+            <td class="divider_container content-padding-horizontal" style="padding: 10px 40px;" width="100%" align="center" valign="top">
+              <table class="divider_content-row" style="height:1px; width:100%;" cellpadding="0" cellspacing="0" border="0">
+                <tr>
+                  <td class="divider_content-cell" style="background-color:#d6d6d6; height:1px; line-height:1px; padding-bottom:0px; border-bottom-width:0px;" height="1" align="center" bgcolor="#d6d6d6">
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
   </table>
-DIVIDERHTML;
-    return $divider;
+DIVIDERHTML;  // statement must be left of end of html
+  return $divider;
 }
 
+// inner wrapper for the weekly news and events rollup.
 function ccNewsRollupHTML($news, $events)
 {
   $newsBody = '<div class="access-news-rollup-email">'
@@ -118,33 +114,56 @@ function ccNewsRollupHTML($news, $events)
               . '<div class="access-news-rollup-events">' . $events . '</div>'
               . '</div>';
 
-  return ccNewsCommonHTML($newsBody);
+  return ccNewsCommonHTML($newsBody, '');
 }
 
-function ccNewsSingleHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl)
-{
-    // Build list of one or more affinity group names separated by 'or'.
-    // todo - add in button and title
-    $agText = '';
-    $or = '';
-    foreach ($agNames as $agName) {
-        $agText = $agText . $or . $agName;
-        $or = ' or ';
-    }
-    $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+// for a single news or event item, broadcast to one or more affinity groups
+// this is the Access template used for affinity groups that are not of the
+// "Community" category.
 
-    $pubDateDisplay = '';
-    if ($pubDate) {
-        $pubDateDisplay = <<<PUBDATE
-        <table width="100%" border="0"
-          cellpadding="0" cellspacing="0"
-          style="table-layout:fixed;"
-          class="ag-table">
-          <tbody>
+function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
+{
+  // Build list of one or more affinity group names separated by 'or'.
+  $agText = '';
+  $or = '';
+  foreach ($agNames as $agName) {
+    $agText = $agText . $or . $agName;
+    $or = ' or ';
+  }
+  $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+
+    // line at the top that lists AG groups
+  $topExtra = <<<TOPEXTRA
+  <table style="background-color:#1a5b6e;table-layout:fixed;" width="100%" border="0" cellpadding="0" cellspacing="0"  bgcolor="#1a5b6e">
+    <tbody>
+      <tr>
+        <td style="width:100%;" align="center" valign="top ">
+          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed; ">
+            <tbody>
+              <tr>
+                <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;"
+                  align="left" valign="top">
+                  <p style="margin:0;padding:5px;">
+                    <span style="color:rgb(255, 255, 255);">$agText</span>
+                  </p>
+                </td>
+              </tr>
+            </tbody>
+          </table>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+TOPEXTRA;
+
+  $pubDateDisplay = '';
+  if ($pubDate) {
+    $pubDateDisplay = <<<PUBDATE
+      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
+        <tbody>
           <tr>
-            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px;"
-                        align="left"
-                        valign="top">
+            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;"
+                        align="left" valign="top">
               <p style="margin:0;">
                 [Published Date: $pubDate]
               </p>
@@ -153,14 +172,53 @@ function ccNewsSingleHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl)
         </tbody>
       </table>
     PUBDATE;
-    }
-    return ccNewsCommonHTML($newsBody);
+  }
+
+  $newsItem = <<<SINGLENEWS
+  <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
+    <tr>
+      <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
+        <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
+          <tr>
+            <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
+                      font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px 10px 40px;" align="left" valign="top">
+              <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 20px 0px">
+                $title
+              </h3>
+              <br>
+              $pubDateDisplay
+              <p style="margin:0;"><span style="font-size: 14px;">$main</span></p>
+              <p style="margin: 0;"><br></p>
+
+              <table style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
+                border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
+                <tbody>
+                  <tr>
+                    <td style="padding:10px 15px;" align="center">
+                      <a href="$newsUrl" rel="nofollow noopener noreferrer"
+                        style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;word-wrap:break-word;font-weight:bold;text-decoration:none;">
+                          VIEW ON WEBSITE
+                      </a>
+                    </td>
+                  </tr>
+                  </tbody>
+                </table>
+            </td>
+          </tr>
+        </table>
+      </td>
+    </tr>
+  </table>
+SINGLENEWS;   // this text must positioned to the left of end html
+  return ccNewsCommonHTML($newsItem, $topExtra);
 }
 
-function ccNewsCommonHTML($newsBody)
+// Access Constant Contact Template common to broadcast news and events,
+// and the weekly news+events rollup.
+
+function ccNewsCommonHTML($newsBody, $topExtra)
 {
-     // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
-    $emailText = <<<EMAILTEXT
+  $emailText = <<<EMAILTEXT
 <html lang="en-US">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -234,7 +292,7 @@ function ccNewsCommonHTML($newsBody)
 
       .text .text_content-cell ul,
       .text .text_content-cell ol {
-        paddi=ng: 0;
+        padding: 0;
         margin: 0 0 0 40px;
       }
 
@@ -268,8 +326,7 @@ function ccNewsCommonHTML($newsBody)
     <!--[if gte mso 9]>
 				<style id="ol-styles">
 	/* OUTLOOK-SPECIFIC STYLES */ li { text-indent: -1em; padding: 0; margin: 0; /* line-height: 1.2; Remove after testing */ }
-	ul, ol { padding: 0; margi=
-		n: 0 0 0 40px; }
+	ul, ol { padding: 0; margin: 0 0 0 40px; }
 	p { margin: 0; padding: 0; margin-bottom: 0; }=20
 	</style>
 				<![endif]-->
@@ -397,6 +454,7 @@ function ccNewsCommonHTML($newsBody)
                   <table class="shell_content-row" width="100%" align="center" border="0" cellpadding="0" cellspacing="0">
                     <tr>
                       <td class="shell_content-cell" style="background-color: #FFFFFF; padding: 0; border: 0px solid #3e3e3e;" align="center" valign="top" bgcolor="#FFFFFF">
+                        $topExtra
                         <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td class="column column--1 scale stack" style="width: 100%;"  align="center" valign="top">
@@ -410,9 +468,7 @@ function ccNewsCommonHTML($newsBody)
                             </td>
                           </tr>
                         </table>
-
                         $newsBody
-
                         <table class="layout layout-1-column" style="table-layout: fixed;"  width="100%" border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td class="column column-1 scale stack" style="width: 100%;"  align="center" valign="top">
@@ -420,6 +476,7 @@ function ccNewsCommonHTML($newsBody)
                             </td>
                           </tr>
                         </table>
+
                         <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;min-width:100%">
                           <tbody>
                             <tr>
@@ -445,6 +502,7 @@ function ccNewsCommonHTML($newsBody)
                             </tr>
                           </tbody>
                         </table>
+
                         <table class="layout-margin"  width="100%" border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td class="layout-margin_cell" style="padding: 0px 40px;" align="center" valign="top">
@@ -520,6 +578,6 @@ function ccNewsCommonHTML($newsBody)
   </body>
   </html>
 EMAILTEXT;
-    // note: EMAILTEXT must be to the left column-wise of the last tag (php)
-    return $emailText;
+  // note: EMAILTEXT must be to the left column-wise of the last tag (php)
+  return $emailText;
 }

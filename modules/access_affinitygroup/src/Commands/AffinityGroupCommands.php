@@ -117,12 +117,15 @@ class AffinityGroupCommands extends DrushCommands
      *                  with this title (case-sensitive)
      * @option  uidonly
      *         Only show user ids in list, not names or cc ids
+     * @option  headonly
+     *          Don't show members; just list the groups
      * @aliases showAffinityGroups
      * @usage   access_affinitygroup:showAffinityGroups
      */
-    public function showAffinityGroups(string $agName='', $options = ['uidonly' => false])
+    public function showAffinityGroups(string $agName='', $options = ['uidonly' => false, 'headonly' => false])
     {
         $uidOnly = $options['uidonly'];
+        $headOnly = $options['headonly'];
 
         // Get all the Affinity Groups.
         $agCount = 0;
@@ -150,6 +153,15 @@ class AffinityGroupCommands extends DrushCommands
             } else {
                 $this->output()->writeln('list id: ' . $list_id);
             }
+
+            $agCat = $node->get('field_affinity_group_category')->value;
+            if (empty($agCat)) {
+                $this->output()->writeln('NO category');
+            } else {
+                $this->output()->writeln('category: ' . $agCat);
+            }
+
+            if ($headOnly) { continue;}
 
             // Get the Users who have flagged the associated term.
             $term = $node->get('field_affinity_group');

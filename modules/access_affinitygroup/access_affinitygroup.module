@@ -1067,14 +1067,26 @@ function emailDevCronLog() {
  */
 
 /**
- * Last 2 args are arrays.
+ *  emailText - body of email. This will be wrapped with email html template
+ *  emailTitle
+ *  pubDate - published date for display in email
+ *  agNames - array of affinity group names for broadcast (for display in email)
+ *  ccListIds - array of constant contact list ids corresponding to the affinity groups
+ *  communityTemplate - which email template to use.
+ *             If true, we use community template, otherwise use the access support template.
  */
-function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds) {
+function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds, $communityTemplate) {
 
   // For CC, must be unique name for campaign.
   $campaignName = uniqid('Access-news', TRUE);
-  $emailHtml = makeNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);   // replace with next line
-  // $emailHtml = ccNewsSingleHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);  // the new one
+
+  // Either use email template for access or community
+  if ($communityTemplate) {
+    $emailHtml = ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
+  } else {
+    $emailHtml = ccAccessNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
+  }
+
   $ccResponse = setupEmailCampaign($emailTitle, $emailHtml, $campaignName);
 
   if (!empty($ccResponse)) {
