@@ -197,7 +197,6 @@ function access_news_entity_update(EntityInterface $node) {
  * Should also be in published state, but that is checked before we get here.
  * After send attempt, uncheck the broadcast option.
  * Meant to be used by both News items and Events Series
- * (TODO - event instances TDB)
  * $newsType is eventseries or access_news (or tdb: eventinstance)
  */
 function affinityGroupBroadcast(EntityInterface $node, $newsType) {
@@ -205,9 +204,11 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
   $getFields = $node->getFields();
   $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
   $broadcastToAGs = $broadcastArray[0]['value'];
+  $useCommunityTemplate = null;
 
   // Find the node ids for the AGs.  If AGs have been specified, get the
   // corresponding Constant Contact email list ids from the nodes.
+
   if ($broadcastToAGs) {
     $agNodes = $node->get('field_affinity_group_node');
     if (count($agNodes)) {
@@ -225,6 +226,13 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 
         $ccListId = $ag->get('field_list_id')->value;
         array_push($ccListIdArray, $ccListId);
+
+        // We decide which email template to use (community or access)
+        // looking at the type of the first AG only in send list.
+        if ($useCommunityTemplate == null) {
+          $agCat = $ag->get('field_affinity_group_category')->value;
+          $useCommunityTemplate = ($agCat == 'Community');
+        }
       }
 
       if (!count($ccListIdArray)) {
@@ -262,7 +270,8 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
         // and edit, they will need to check the box again.
         $node->set('field_broadcast_affinity_groups', [0]);
         $node->save();
-        emailToAffinityGroups($body, $title, $pubDate, $agNames, $newsUrl, $ccListIdArray);
+        emailToAffinityGroups($body, $title, $pubDate, $agNames,
+                              $newsUrl, $ccListIdArray, $useCommunityTemplate);
       }
     }
   }
@@ -302,6 +311,7 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 
     Drupal::logger('cron_accessnews')->notice('Rolling up events from: '. $d1. ' to: '. $d2);
     $eventHTML = eventsRangeView($d1, $d2, TRUE);
+
 
     // put wrapper html
     $emailHTML = ccNewsRollupHTML($newsHTML, $eventHTML);
