@@ -414,8 +414,16 @@ function eventsRangeView($fromDate, $toDate) {
 
         $eventUrl = $enode->toUrl()->setAbsolute()->toString();
 
-        $dateTime = $enode->date[0]->view('rollup_list');
-        $dateTimeDisp = \Drupal::service('renderer')->renderPlain($dateTime); // TODO - show formatted.
+        // event date-time is stored as array of 'value' and
+        // 'end_value' in UTC format
+
+        $startDateTime = $enode->date[0]->getValue()['value'];
+
+        // TODO  - what is required to show for timezone-- zone of the event?
+        // Times are stored in UTC.
+        $eventTime = new DrupalDateTime($startDateTime, 'UTC');
+        $eventTime->setTimezone(new \DateTimeZone('America/New_York'));
+        $dateTimeDisp =  $eventTime->format('M d, Y g:i a') . ' EST';
 
         $body = empty($enode->description[0]) ? '' : $enode->description[0]->view('rollup_list');
         $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
