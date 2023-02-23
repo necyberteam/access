@@ -32,18 +32,11 @@ class JiraVars extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $config = \Drupal::configFactory()->getEditable('access_misc.settings');
-    $email_var = $config->get('email_var', 'customfield_10026');
+    $misc_var = $config->get('misc_var', 'customfield_10026');
     $access_id = $config->get('access_id_var', 'customfield_10027');
 
     $form['description'] = [
       '#markup' => $this->t('Set the names of the variables for constant contact that are used on the CreateTicket block for the email and access id fields.'),
-    ];
-    $form['email_var'] = [
-      '#type' => 'textfield',
-      '#title' => $this->t('Email Field'),
-      '#default_value' => $email_var,
-      '#required' => TRUE,
-      '#description' => $this->t('Name of the field variable in constant contact for email.'),
     ];
     $form['access_id_var'] = [
       '#type' => 'textfield',
@@ -51,6 +44,13 @@ class JiraVars extends FormBase {
       '#default_value' => $access_id,
       '#required' => TRUE,
       '#description' => $this->t('Name of the field variable in constant contact for the access id.'),
+    ];
+    $form['misc_var'] = [
+      '#type' => 'textfield',
+      '#title' => $this->t('Misc Field'),
+      '#default_value' => $misc_var,
+      '#required' => FALSE,
+      '#description' => $this->t('Add in misc variables to set values.'),
     ];
 
     $form['submit'] = [
@@ -67,7 +67,7 @@ class JiraVars extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = \Drupal::configFactory()->getEditable('access_misc.settings');
-    $config->set('email_var', $form_state->getValue('email_var'));
+    $config->set('misc_var', $form_state->getValue('misc_var'));
     $config->set('access_id_var', $form_state->getValue('access_id_var'));
     $config->save();
   }

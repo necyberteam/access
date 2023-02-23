@@ -22,14 +22,13 @@ class CreateTicket extends BlockBase {
     $username = explode('@', $username);
     $username = $username[0];
     $config = \Drupal::configFactory()->getEditable('access_misc.settings');
-    $email_var = $config->get('email_var', 'customfield_10026');
-    $access_id = $config->get('access_id_var', 'customfield_10027');
+    $misc_var = $config->get('misc_var') !== '' ? '&' . $config->get('misc_var') : '';
+    $access_id = $config->get('access_id_var');
     $link = [
       '#type' => 'inline_template',
-      '#template' => '<a class="btn btn-primary" href="https://cyberteamportal.atlassian.net/servicedesk/customer/portal?{{ custom_emaiil_var }}={{ email }}&{{ access_id }}={{ accessid }}">Create a Ticket</a>',
+      '#template' => '<a class="btn btn-primary" href="https://access-ci.atlassian.net/servicedesk/customer/portal/3/create/26?{{ access_id }}={{ accessid }}{{ custom_misc_var }}">Create a Ticket</a>',
       '#context' => [
-        'email' => \Drupal::currentUser()->getEmail(),
-        'custom_emaiil_var' => $email_var,
+        'custom_misc_var' => $misc_var,
         'access_id' => $access_id,
         'accessid' => $username,
       ],
