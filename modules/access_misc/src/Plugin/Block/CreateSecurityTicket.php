@@ -8,11 +8,11 @@ use Drupal\Core\Block\BlockBase;
  * Provides a 'Create Ticket Button' Block.
  *
  * @Block(
- *   id = "create_ticket_button",
- *   admin_label = "Create Ticket button",
+ *   id = "create_security_ticket_button",
+ *   admin_label = "Create Security Ticket button",
  * )
  */
-class CreateTicket extends BlockBase {
+class CreateSecurityTicket extends BlockBase {
 
   /**
    * {@inheritdoc}
@@ -26,7 +26,7 @@ class CreateTicket extends BlockBase {
     $access_id = $config->get('access_id_var');
     $link = [
       '#type' => 'inline_template',
-      '#template' => '<a class="btn btn-primary" href="https://access-ci.atlassian.net/servicedesk/customer/portal/2/group/3/create/17?{{ access_id }}={{ accessid }}{{ custom_misc_var }}">Create a Ticket</a>',
+      '#template' => '<a class="btn btn-primary" href="https://access-ci.atlassian.net/servicedesk/customer/portal/3/create/26?{{ access_id }}={{ accessid }}{{ custom_misc_var }}">Create a Security Ticket</a>',
       '#context' => [
         'custom_misc_var' => $misc_var,
         'access_id' => $access_id,

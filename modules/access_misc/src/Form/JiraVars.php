@@ -32,8 +32,8 @@ class JiraVars extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $config = \Drupal::configFactory()->getEditable('access_misc.settings');
-    $misc_var = $config->get('misc_var', 'customfield_10026');
-    $access_id = $config->get('access_id_var', 'customfield_10027');
+    $misc_var = $config->get('misc_var');
+    $access_id = $config->get('access_id_var');
 
     $form['description'] = [
       '#markup' => $this->t('Set the names of the variables for constant contact that are used on the CreateTicket block for the email and access id fields.'),
