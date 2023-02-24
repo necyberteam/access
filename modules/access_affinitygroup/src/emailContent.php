@@ -14,22 +14,27 @@
  */
 
 /**
- * @todo we will probably have to change the url of the access logo image when we close our test accounts
  * @todo this was lifted from constant contact's generated email.  replace generated names with more understandable names.
- */
-function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl) {
-
+ * newsBody: the next text
+ * newsTitle: headline
+ * pubDate: date to display
+ * agNames: array of affinity group names for top line
+ * newsUrl: for button link to news item
+ * logoUrl: url for logo image, or null for none.
+  */
+function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl, $logoUrl)
+{
   // Build list of one or more affinity group names separated by 'or'.
-  $agText = '';
-  $or = '';
-  foreach ($agNames as $agName) {
+    $agText = '';
+    $or = '';
+foreach ($agNames as $agName) {
     $agText = $agText . $or . $agName;
     $or = ' or ';
-  }
-  $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+}
+    $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
-  $pubDateDisplay = NULL;
-  if ($pubDate) {
+    $pubDateDisplay = null;
+if ($pubDate) {
     $pubDateDisplay = <<<PUBDATE
         <table width="100%" border="0"
             cellpadding="0" cellspacing="0"
@@ -42,17 +47,36 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
                         valign="top"
                         class="yiv2621404860text_content-cell yiv2621404860content-padding-horizontal">
                         <p style="margin:0;">
-                            [Published Date: $pubDate]
+                            $pubDate
                         </p>
                     </td>
                 </tr>
             </tbody>
         </table>
     PUBDATE;
-  }
+    }
 
-  // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
-  $emailText = <<<EMAILTEXT
+    $logoDisplay = '';
+    if ($logoUrl != NULL) {
+        $logoDisplay = <<<LOGOHTML
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" class="yiv2621404860image yiv2621404860image--padding-vertical yiv2621404860image--mobile-scale yiv2621404860image--mobile-center">
+            <tbody>
+                <tr>
+                    <td align="left" valign="top" style="padding:10px 40px;" class="yiv2621404860image_container yiv2621404860content-padding-horizontal">
+                        <img width="240"
+                            src="$logoUrl"
+                            alt="Affinity group logo"
+                            style="display:block;height:auto;max-width:100%;"
+                            class="yiv2621404860image_content">
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+    LOGOHTML;
+    }
+
+    // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
+    $emailText = <<<EMAILTEXT
   <html>
   <body>[[trackingImage]]
       <div id="yiv2621404860">
@@ -323,24 +347,7 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
                                                                               <td style="width:100%;" align="center"
                                                                                   valign="top"
                                                                                   class="yiv2621404860column yiv2621404860column--1 yiv2621404860scale yiv2621404860stack">
-                                                                                  <table width="100%" border="0"
-                                                                                      cellpadding="0" cellspacing="0"
-                                                                                      class="yiv2621404860image yiv2621404860image--padding-vertical yiv2621404860image--mobile-scale yiv2621404860image--mobile-center">
-                                                                                      <tbody>
-                                                                                          <tr>
-                                                                                              <td align="left"
-                                                                                                  valign="top"
-                                                                                                  style="padding:10px 40px;"
-                                                                                                  class="yiv2621404860image_container yiv2621404860content-padding-horizontal">
-                                                                                                  <img width="240"
-                                                                                                      src="https://ecp.yusercontent.com/mail?url=https%3A%2F%2Ffiles.constantcontact.com%2F611b8b84901%2F3769f037-6aeb-4d73-baae-408c17803a76.jpg%3Frdr%3Dtrue&amp;t=1666141473&amp;ymreqid=e44e9186-6cc5-04bd-1ceb-710003012600&amp;sig=tCKknf09uZ.wgIRKOMIdqw--~D"
-                                                                                                      alt=""
-                                                                                                      style="display:block;height:auto;max-width:100%;"
-                                                                                                      class="yiv2621404860image_content">
-                                                                                              </td>
-                                                                                          </tr>
-                                                                                      </tbody>
-                                                                                  </table>
+                                                                                  $logoDisplay
                                                                                   <div style="line-height:10px;min-height:10px;"
                                                                                       class="yiv2621404860spacer"> </div>
                                                                                   <table width="100%" border="0"
@@ -439,7 +446,7 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
       </div>
   </body>
   </html>
-  EMAILTEXT;
-  // note: EMAILTEXT must be to the left column-wise of the last tag (php)
-  return $emailText;
+EMAILTEXT;
+    // note: EMAILTEXT must be to the left column-wise of the last tag (php)
+    return $emailText;
 }

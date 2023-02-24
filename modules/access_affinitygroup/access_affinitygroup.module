@@ -1075,14 +1075,14 @@ function emailDevCronLog() {
  *  communityTemplate - which email template to use.
  *             If true, we use community template, otherwise use the access support template.
  */
-function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds, $communityTemplate) {
+function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds, $communityTemplate, $logoUrl) {
 
   // For CC, must be unique name for campaign.
-  $campaignName = uniqid('Access-news', TRUE);
+  $campaignName = uniqid('Access News: '.$agNames[0].'- '.$pubDate.' ', FALSE);
 
   // Either use email template for access or community
   if ($communityTemplate) {
-    $emailHtml = ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
+    $emailHtml = ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $logoUrl);
   } else {
     $emailHtml = ccAccessNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
   }

@@ -161,7 +161,17 @@ class AffinityGroupCommands extends DrushCommands
                 $this->output()->writeln('category: ' . $agCat);
             }
 
-            if ($headOnly) { continue;}
+            // logo
+            if (!empty($node->get('field_image')->entity)) {
+                $uri = $node->get('field_image')->entity->getFileUri();
+                $absUrl = \Drupal::service('file_url_generator')->generateAbsoluteString($uri);
+                $this->output()->writeln('image uri: '.$uri);
+            } else {
+                $this->output()->writeln('NO image uri');
+            }
+
+            if ($headOnly) { continue;
+            }
 
             // Get the Users who have flagged the associated term.
             $term = $node->get('field_affinity_group');
@@ -214,20 +224,6 @@ class AffinityGroupCommands extends DrushCommands
             ->execute();
         $nodes = Node::loadMultiple($nids);
 
-        foreach ($nodes as $node) {
-            break;
-            $agCount += 1;
-
-            $this->output()->writeln($agCount . '. ' . $node->getTitle());
-            //This works the same as for events, but events doesn't have getTitle()
-            //$this->output()->writeln($node->getCreated());
-            $this->output()->writeln('status:' . $node->get('status')->value);
-              //  $this->output()->writeln($node->get('body')->summary);  // show just summary,
-            //which only has something if spefically set. otherwise we need to override with a trunc of body.
-            //$this->output()->writeln($node->get('body')->summary);   // show whole body
-            $this->output()->writeln($node->get('field_published_date')->value);
-        }
-
         $dtLastWeek = new \DateTime('-7 days');
         $dtYesterday = new \DateTime('yesterday');
 
@@ -257,7 +253,10 @@ class AffinityGroupCommands extends DrushCommands
             $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
             $renderArray = $view_builder->view($node, 'alt_teaser');
             //  $display = \Drupal::service('renderer')->renderPlain($renderArray);
-            //$this->output()->writeln($display);
+
+
+            $newsUrl = $node->toUrl()->setAbsolute()->toString();
+            $this->output()->writeln($newsUrl);
         }
     }
 
