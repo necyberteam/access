@@ -335,7 +335,7 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
     // create constant contact campaign. this does not send it
     $campaignName = uniqid('Access Weekly Digest: '  .date('n/j/y').' ', FALSE);
 
-    $ccResponse = setupEmailCampaign('ACCESS Weekly News and Events', $emailHTML, $campaignName);
+    $ccResponse = setupEmailCampaign('The ACCESS Support Digest // ' . date('F j, Y'), $emailHTML, $campaignName);
 
   } catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
@@ -396,7 +396,7 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
       $listDisplay = $listDisplay . $itemDisplay;
     } // end for
 
-    $sectionHeader = sectionHeadHTML("News");
+    $sectionHeader = sectionHeadHTML("The ACCESS Support Digest // " . date('F j, Y'));
     $listDisplay = $sectionHeader . $listDisplay;
   } catch (Exception $e) {
     $listDisplay = 'Error retrieving news: ' . $e->getMessage();
@@ -436,14 +436,27 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
 
         // event date-time is stored as array of 'value' and
         // 'end_value' in UTC format
-
         $startDateTime = $enode->date[0]->getValue()['value'];
+        $endDateTime = $enode->date[0]->getValue()['end_value'];
 
         // TODO  - what is required to show for timezone-- zone of the event?
         // Times are stored in UTC.
-        $eventTime = new DrupalDateTime($startDateTime, 'UTC');
-        $eventTime->setTimezone(new \DateTimeZone('America/New_York'));
-        $dateTimeDisp =  $eventTime->format('F d, Y g:i a') . ' EST';
+        $startEvent = new DrupalDateTime($startDateTime, 'UTC');
+        $startEvent->setTimezone(new \DateTimeZone('America/New_York'));
+
+        $endEvent = new DrupalDateTime($endDateTime, 'UTC');
+        $endEvent->setTimezone(new \DateTimeZone('America/New_York'));
+
+        if ($startEvent->format('dmy') == $endEvent->format('dmy')) {
+          $endDisplay = $endEvent->format('g:i a');
+        } else {
+          $endDisplay = $endEvent->format('n/j/Y g:i a');
+        }
+
+         // Include end date only if different
+         // display ex: 2/21/2023 4:00 PM - 6:30 PM EST
+        $dateTimeDisp =  $startEvent->format('n/j/Y g:i a')
+                        . ' - ' . $endDisplay . ' EST';
 
         $body = empty($enode->description[0]) ? '' : $enode->description[0]->view('rollup_list');
         $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
@@ -465,7 +478,7 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
       $listDisplay = $listDisplay . $itemDisplay;
     } // end for
 
-    $sectionHeader = sectionHeadHTML("Events");
+    $sectionHeader = sectionHeadHTML("Events and Trainings");
     $listDisplay =  $sectionHeader . $listDisplay;
 
   } catch (Exception $e) {
