@@ -1,0 +1,7 @@
+community_persona.page:
+  path: '/community-persona'
+  defaults:
+    _controller: '\Drupal\community_persona\Controller\CommunityPersonaController::communityPersona'
+    _title: 'Community Persona'
+  requirements:
+    _role: 'authenticated'
