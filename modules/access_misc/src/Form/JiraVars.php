@@ -4,6 +4,7 @@ namespace Drupal\access_misc\Form;
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Form\FormBase;
+use Drupal\Component\Utility\Xss;
 
 /**
  * Creates a form to update variables for the submit ticket button.
@@ -52,6 +53,7 @@ class JiraVars extends FormBase {
       '#required' => FALSE,
       '#description' => $this->t('Add in misc variables to set values.'),
     ];
+    $form['tokens'] = \Drupal::service('token.tree_builder')->buildRenderable(['user']);
 
     $form['submit'] = [
       '#type' => 'submit',
@@ -67,8 +69,10 @@ class JiraVars extends FormBase {
    */
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $config = \Drupal::configFactory()->getEditable('access_misc.settings');
-    $config->set('misc_var', $form_state->getValue('misc_var'));
-    $config->set('access_id_var', $form_state->getValue('access_id_var'));
+    $misc_var = Xss::filter($form_state->getValue('misc_var'));
+    $access_id = Xss::filter($form_state->getValue('access_id_var'));
+    $config->set('misc_var', $misc_var);
+    $config->set('access_id_var', $access_id);
     $config->save();
   }
 

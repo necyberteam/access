@@ -22,7 +22,15 @@ class CreateTicket extends BlockBase {
     $username = explode('@', $username);
     $username = $username[0];
     $config = \Drupal::configFactory()->getEditable('access_misc.settings');
-    $misc_var = $config->get('misc_var') !== '' ? '&' . $config->get('misc_var') : '';
+    $token_data = [
+      'user' => \Drupal::currentUser(),
+    ];
+    $token_service = \Drupal::token();
+    $token_options = [
+      'clear' => TRUE,
+    ];
+    $misc_text = $token_service->replace($config->get('misc_var'), $token_data, $token_options);
+    $misc_var = $config->get('misc_var') !== '' ? '&' . $misc_text : '';
     $access_id = $config->get('access_id_var');
     $link = [
       '#type' => 'inline_template',
