@@ -37,9 +37,13 @@ SECTIONHEADHTML;
  // use in weekly news rollup
 function newsItemHTML($title, $pubDate, $body, $articleUrl)
 {
-    $main = "<div>
+    $main = "<div  class=\"digest-news-body\">
       <span>$pubDate</span>
-      <br><br>$body
+      <br>
+      <p>
+      $body
+      </p>
+      <br>
       </div>";
     return itemHTML($title, $main, $articleUrl, "News Link");
 }
@@ -68,7 +72,7 @@ function itemHTML($titleText, $main, $itemUrl, $itemLinkText)
             <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 20px 10px 40px;" align="left" valign="top">
             $title
 
-              <p style="margin:0;"><span style="font-size: 14px;">$main</span></p>
+              <div><span style="font-size: 14px;">$main</span></div>
 
               <table border="0" cellpadding="0" cellspacing="0" bgcolor="#48c0b9"
                     style="table-layout:fixed;width:inherit;border-radius:2px;border-spacing:0px;background-color:rgb(72,192,185);border:none">
@@ -158,7 +162,7 @@ function ccNewsRollupHTML($news, $events)
 }
 
 // for a single news or event item, broadcast to one or more affinity groups
-// this is the Access template used for affinity groups that are not of the
+// this is the Access template used for affinity groups that are NOT of the
 // "Community" category.
 
 function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
@@ -171,6 +175,8 @@ function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
         $or = ' or ';
     }
     $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+
+    $titleDisplay = titleHTML($title);
 
     // line at the top that lists AG groups
     $topExtra = <<<TOPEXTRA
@@ -205,7 +211,7 @@ TOPEXTRA;
             <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;"
                         align="left" valign="top">
               <p style="margin:0;">
-                [Published Date: $pubDate]
+                $pubDate
               </p>
             </td>
           </tr>
@@ -222,10 +228,13 @@ TOPEXTRA;
           <tr>
             <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
                       font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px 10px 40px;" align="left" valign="top">
+              $titleDisplay
               <br>
               $pubDateDisplay
-              <p style="margin:0;"><span style="font-size: 14px;">$main</span></p>
-              <p style="margin: 0;"><br></p>
+              <span style="font-size: 14px;">$main</span>
+              <p style="margin: 0;">
+                <br>
+              </p>
 
               <table style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
                 border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
@@ -254,7 +263,7 @@ SINGLENEWS;   // this text must positioned to the left of end html
 function titleHTML($titleText)
 {
     $t = <<<TITLE
-    <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 0px 0px 20px 0px">
+    <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 0px 0px 8px 0px">
       $titleText
     </h3>
   TITLE;
@@ -268,8 +277,8 @@ function imageUrl($imageFileName)
     return(\Drupal::service('file_url_generator')->generateAbsoluteString($uri));
 }
 
-// Access Constant Contact Template common to broadcast news and events,
-// and the weekly news+events rollup.
+// Access Constant Contact Template wrapping common to broadcast news and events,
+// and also the weekly news+events rollup.
 function ccNewsCommonHTML($newsBody, $topExtra)
 {
     $imgLogo = imageUrl('access_support_masthead.jpg');
@@ -310,7 +319,6 @@ function ccNewsCommonHTML($newsBody, $topExtra)
           padding-top: 3px;
         }
       }
-
       /* IE: correctly scale images with w/h attbs */
       img {
         -ms-interpolation-mode: bicubic;
@@ -368,6 +376,10 @@ function ccNewsCommonHTML($newsBody, $topExtra)
         color:rgb(72,192,185);
         font-weight:bold;
 
+      }
+      /* needed because body is sometimes wrapped in a p */
+      .digest-news-body p {
+        padding: 0px;
       }
 
       /* iOS: Autolink styles inherited*/

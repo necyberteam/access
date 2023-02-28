@@ -370,13 +370,16 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
         $nCount += 1;
 
         $title = $node->getTitle();
-        $viewBuilder = \Drupal::entityTypeManager()->getViewBuilder('node');
-        $renderArray = $viewBuilder->view($node, 'alt_teaser');
-
-        $itemDisplay = \Drupal::service('renderer')->renderPlain($renderArray);
-
         $pubDate = $node->field_published_date[0]->view('alt_teaser');
         $pubDateDisp = \Drupal::service('renderer')->renderPlain($pubDate);
+
+        // For body section, meant to be a snippet, this will return either a nicely
+        // truncated version of the body (the length is configured on site via
+        // /admin/structure/types/manage/access_news/display/alt_teaser )
+        // or, if the user has set the "custom summary", will return that instead.
+        // TODO:  The body is returned with <p>body</p> markup, but the summary is not.
+        // (need to distiguish because the news items with and without custom summary
+        //  will have different spacing in the digest.  Or do something with css)
 
         $body = $node->body[0]->view('alt_teaser');
         $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
