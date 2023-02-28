@@ -3,6 +3,8 @@
 namespace Drupal\access_misc\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use Drupal\Core\Cache\Cache;
+use Drupal\access_misc\Plugin\JiraLink;
 
 /**
  * Provides a 'Create Ticket Button' Block.
@@ -18,38 +20,27 @@ class CreateTicket extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
-    $username = \Drupal::currentUser()->getAccountName();
-    $username = explode('@', $username);
-    $username = $username[0];
-    $config = \Drupal::configFactory()->getEditable('access_misc.settings');
-    $token_data = [
-      'user' => \Drupal::currentUser(),
-    ];
-    $token_service = \Drupal::token();
-    $token_options = [
-      'clear' => TRUE,
-    ];
-    $misc_text = $token_service->replace($config->get('misc_var'), $token_data, $token_options);
-    $misc_var = $config->get('misc_var') !== '' ? '&' . $misc_text : '';
-    $access_id = $config->get('access_id_var');
-    $link = [
-      '#type' => 'inline_template',
-      '#template' => '<a class="btn btn-primary" href="https://access-ci.atlassian.net/servicedesk/customer/portal/2/group/3/create/17?{{ access_id }}={{ accessid }}{{ custom_misc_var }}">Create a Ticket</a>',
-      '#context' => [
-        'custom_misc_var' => $misc_var,
-        'access_id' => $access_id,
-        'accessid' => $username,
-      ],
-    ];
-
-    return $link;
+    $link = new JiraLink('https://access-ci.atlassian.net/servicedesk/customer/portal/2/group/3/create/17', t('Create Ticket'));
+    return $link->getLink();
   }
 
   /**
    * {@inheritdoc}
    */
-  public function getCacheMaxAge() {
-    return 0;
+  public function getCacheTags() {
+    if ($user = \Drupal::currentUser()) {
+      return Cache::mergeTags(parent::getCacheTags(), array('user:' . $user->id()));
+    } else {
+      return parent::getCacheTags();
+    }
+  }
+
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getCacheContexts() {
+    return Cache::mergeContexts(parent::getCacheContexts(), array('user'));
   }
 
 }
