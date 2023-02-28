@@ -6,6 +6,9 @@
  * This is the Access Support email template.
  * A different file contains the template used for news+events from Affinity Groups
  * of the Community category.
+ * Using this template, we send 2 types of emails:
+ *  a) the weekly digest of news and event (aka "rollup" in the code)
+ *  b) an individual news item or event "broadcast" as  email to an affinity group (perhaps multiple; not decided)
  */
 
  // used in weekly news rollup
@@ -53,8 +56,9 @@ function eventItemHTML($title, $eventDate, $description, $location, $articleUrl)
 }
  // used in weekly news rollup - each news or event item
  // with a link at the bottom to the event
-function itemHTML($title, $main, $itemUrl, $itemLinkText)
+function itemHTML($titleText, $main, $itemUrl, $itemLinkText)
 {
+    $title = titleHTML($titleText);
     $article = <<<ARTICLEHTML
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
@@ -62,13 +66,9 @@ function itemHTML($title, $main, $itemUrl, $itemLinkText)
         <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
           <tr>
             <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 20px 10px 40px;" align="left" valign="top">
-              <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0;">
-                $title
-              </h3>
+            $title
 
-              <p style="margin:0;"><br></p>
               <p style="margin:0;"><span style="font-size: 14px;">$main</span></p>
-              <p style="margin: 0;"><br></p>
 
               <table border="0" cellpadding="0" cellspacing="0" bgcolor="#48c0b9"
                     style="table-layout:fixed;width:inherit;border-radius:2px;border-spacing:0px;background-color:rgb(72,192,185);border:none">
@@ -108,7 +108,9 @@ function dividerHTML()
             <td class="divider_container content-padding-horizontal" style="padding: 10px 40px;" width="100%" align="center" valign="top">
               <table class="divider_content-row" style="height:1px; width:100%;" cellpadding="0" cellspacing="0" border="0">
                 <tr>
-                  <td class="divider_content-cell" style="background-color:#d6d6d6; height:1px; line-height:1px; padding-bottom:0px; border-bottom-width:0px;" height="1" align="center" bgcolor="#d6d6d6">
+                  <td class="divider_content-cell"
+                      style="background-color:#d6d6d6; height:1px; line-height:1px; padding-bottom:0px; border-bottom-width:0px;"
+                      height="1" align="center" bgcolor="#d6d6d6">
                   </td>
                 </tr>
               </table>
@@ -122,6 +124,21 @@ DIVIDERHTML;  // statement must be left of end of html
     return $divider;
 }
 
+// static bottom section of digest
+// might want to mkae this into drupal content item like a kind of news
+function ccRollupBottomHTML()
+{
+    $x =
+        dividerHTML() .
+        sectionHeadHTML("Join Affinity Groups") .
+        ccRollupBottomStatic1() .
+        dividerHTML() .
+        sectionHeadHTML("Share with the ACCESS Community") .
+        ccRollupBottomStatic2();
+
+        return ($x);
+}
+
 // inner wrapper for the weekly news and events rollup.
 function ccNewsRollupHTML($news, $events)
 {
@@ -129,6 +146,12 @@ function ccNewsRollupHTML($news, $events)
               . '<div class="access-news-rollup-news">' . $news . '</div>'
               . dividerHTML()
               . '<div class="access-news-rollup-events">' . $events . '</div>'
+              . dividerHTML()
+              . sectionHeadHTML("Join Affinity Groups")
+              . ccRollupBottomStatic1()
+              . dividerHTML()
+              . sectionHeadHTML("Share with the ACCESS Community")
+              . ccRollupBottomStatic2()
               . '</div>';
 
     return ccNewsCommonHTML($newsBody, '');
@@ -199,9 +222,6 @@ TOPEXTRA;
           <tr>
             <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
                       font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px 10px 40px;" align="left" valign="top">
-              <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 20px 0px">
-                $title
-              </h3>
               <br>
               $pubDateDisplay
               <p style="margin:0;"><span style="font-size: 14px;">$main</span></p>
@@ -230,7 +250,16 @@ SINGLENEWS;   // this text must positioned to the left of end html
     return ccNewsCommonHTML($newsItem, $topExtra);
 }
 
-
+// news or event title formatting
+function titleHTML($titleText)
+{
+    $t = <<<TITLE
+    <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 0px 0px 20px 0px">
+      $titleText
+    </h3>
+  TITLE;
+    return ($t);
+}
 // returns complete url with host and full path
 // we assume all of our images are in the sites/default/files/inline_images dir
 function imageUrl($imageFileName)
@@ -238,12 +267,17 @@ function imageUrl($imageFileName)
     $uri = 'public://inline-images/'.$imageFileName;
     return(\Drupal::service('file_url_generator')->generateAbsoluteString($uri));
 }
+
 // Access Constant Contact Template common to broadcast news and events,
 // and the weekly news+events rollup.
 function ccNewsCommonHTML($newsBody, $topExtra)
 {
     $imgLogo = imageUrl('access_support_masthead.jpg');
-    // todo do this for the NSF logo and social media images as well
+    $fbIcon = imageUrl('circleIconFacebook.png');
+    $twIcon = imageUrl('circleIconTwitter.png');
+    $ytIcon = imageUrl('circleIconYoutube.png');
+    $nsfLogo = \Drupal::request()->getSchemeAndHttpHost()
+              . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
 
     $emailText = <<<EMAILTEXT
   <html lang="en-US">
@@ -331,6 +365,9 @@ function ccNewsCommonHTML($newsBody, $topExtra)
       /* Text Link Style Reset */
       a {
         text-decoration: underline;
+        color:rgb(72,192,185);
+        font-weight:bold;
+
       }
 
       /* iOS: Autolink styles inherited*/
@@ -480,7 +517,9 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                   <table class="shell_content-row" width="100%" align="center" border="0" cellpadding="0" cellspacing="0">
                     <tr>
                       <td class="shell_content-cell" style="background-color: #FFFFFF; padding: 0; border: 0px solid #3e3e3e;" align="center" valign="top" bgcolor="#FFFFFF">
+
                         $topExtra
+
                         <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td class="column column--1 scale stack" style="width: 100%;"  align="center" valign="top">
@@ -496,7 +535,9 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                             </td>
                           </tr>
                         </table>
+
                         $newsBody
+
                         <table class="layout layout-1-column" style="table-layout: fixed;"  width="100%" border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td class="column column-1 scale stack" style="width: 100%;"  align="center" valign="top">
@@ -516,8 +557,8 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                                         <table cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;height:1px;width:680px">
                                           <tbody>
                                             <tr>
-                                              <td height="1" align="center" bgcolor="#ffc42d" style="padding-bottom:4px;background-color:rgb(255,196,45);height:1px;line-height:1px;border-bottom-width:0px">
-                                                <img alt="" width="5" height="1" border="0" hspace="0" vspace="0" src="https://ci5.googleusercontent.com/proxy/prjVWi9agcvHo6wWwSY0NoWHiaFTUW1GFE88HIUk5LrHN5aeEIX3D6pJtDlEPNI6Dvf_Ou5XHLexQ1ajT_5sVXHMGfcLsqoinYvkNDmXc8HzvBff2Y637Q=s0-d-e1-ft#https://imgssl.constantcontact.com/letters/images/1101116784221/S.gif" style="display:block;height:1px;width:5px" class="CToWUd" data-bit="iit">
+                                              <td height="1" align="center" bgcolor="#ffc42d"
+                                                  style="padding-bottom:4px;background-color:rgb(255,196,45);height:1px;line-height:1px;border-bottom-width:0px">
                                               </td>
                                             </tr>
                                           </tbody>
@@ -536,17 +577,19 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                             <td class="layout-margin_cell" style="padding: 0px 40px;" align="center" valign="top">
                               <table class="layout layout--feature layout--3-column" style="table-layout: fixed; background-=color: #ffffff;"  width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
                                 <tr>
-                                  <td class="column column--1 scale stack" style="width: 26.666666666666668%;"  align="center" valign="top">
+
+                                  <td class="column column--1 scale stack" style="width: 24%;"  align="center" valign="top">
                                     <table class="image image--padding-vertical image--mobile-scale image--mobile-center" width="100%" border="0" cellpadding="0" cellspacing="0">
                                       <tr>
                                         <td class="image_container" align="left" valign="top" style="padding-top: 10px; padding-bottom: 10px;">
-                                          <img width="57" src="https://ci4.googleusercontent.com/proxy/XTJRnLcGEN8vcECltITxUb87f469mKhli-sgrkRAe5vwV5R8_pCDInobTFomC9a24LMgxyLCHtl-yjIDn27LICPhEgNgTH20RGXR-b9Wn0JnFnbVFs6lTA34A49a5Uz0JtG7jRRw3EN5=s0-d-e1-ft#https://files.constantcontact.com/db08bd92701/05cdd7b8-409b-4fa9-9b1b-9082d1037230.png"
-                                            alt="" style="display:block;height:auto;max-width:100%" class="CToWUd" data-bit="iit">
+                                          <img width="57" src="$nsfLogo"
+                                            alt="National Science Foundation logo" style="display:block;height:auto;max-width:100%">
                                         </td>
                                       </tr>
                                     </table>
                                   </td>
-                                  <td class="column column--2 scale stack" style="width: 48.33333333333333%;"  align="center" valign="top">
+
+                                  <td class="column column--2 scale stack" style="width: 49%;"  align="center" valign="top">
                                     <table class="text text--feature text--padding-vertical"  width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
                                       <tr>
                                         <td class="text_content-cell=content-padding-horizontal" style="line-height:1; text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px; display:block; word-wrap:break-word; padding: 10px;" align="left" valign="top">
@@ -563,24 +606,28 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                                       </tr>
                                     </table>
                                   </td>
-                                  <td class="column column--3 scale stack" style="width: 25%;"  align="center" valign="top">
+
+                                  <td class="column column--3 scale stack" style="width: 27%;"  align="center" valign="top">
                                     <div class="spacer" style="line-height: 11px; height: 11px;"></div>
                                     <table class="socialFollow socialFollow--padding-vertical" width="100%" cellpadding="0" cellspacing="0" border="0">
                                       <tr>
                                         <td width="100%" align="center" valign="top" style="padding-top:10px;padding-bottom:10px;height:1px;line-height:0px">
                                           <a href="https://www.facebook.com/ACCESSforCI" target="_blank">
-                                            <img alt="Facebook" width="32" border="0" src="https://ci4.googleusercontent.com/proxy/HTcbG0BDzlzD0DQKJANALNz3Vn16NQjwroYvvNz26oC0PrmKyQ0uVWwIp_JvfkhAnOoVrMqgwLGth8yKiCcyf-MJg9JIC2bjdg6X0x8g2tTehjahFI1mePxU5BC56r3qwlKPgbI_BRrH5Ej1zLMM92Kb-6mjOJGm=s0-d-e1-ft#https://imgssl.constantcontact.com/letters/images/CPE/SocialIcons/circles/circleWhite_Facebook_v4.png" style="display:inline-block;margin:0px;padding:0px" class="CToWUd" data-bit="iit">
+                                            <img alt="Facebook" width="32" border="0" src="$fbIcon" style="display:inline-block;margin:0px;padding:0px">
                                           </a>
-                                          <span>&nbsp;</span>&nbsp; <a href="https://twitter.com/ACCESSforCI" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://twitter.com/ACCESSforCI&amp;source=gmail&amp;ust=1676144118866000&amp;usg=AOvVaw1hi9dqnQwSUDV8VDvhgPqX">
-                                            <img alt="Twitter" width="32" border="0" src="https://ci5.googleusercontent.com/proxy/ZfcNmeziv71YfR7wivUIknGGYQ9-eShgGhYER3eWs9V9WWfCTKP4PBL2QtUIsHwcbIiRVdnqOPr1oGadYeCnfJ8xKEEc4woFHfNZP7FDQI3D4LDtqunc9SNS3zkrPPerjsJxpmsW9IuS8tMm7okEqS7bZrjDve0=s0-d-e1-ft#https://imgssl.constantcontact.com/letters/images/CPE/SocialIcons/circles/circleWhite_Twitter_v4.png" style="display:inline-block;margin:0px;padding:0px" class="CToWUd" data-bit="iit">
+                                          <span>&nbsp;</span>&nbsp;
+                                          <a href="https://twitter.com/ACCESSforCI" target="_blank" >
+                                            <img alt="Twitter" width="32" border="0" src="$twIcon" style="display:inline-block;margin:0px;padding:0px">
                                           </a>
-                                          <span>&nbsp;</span>&nbsp; <a href="https://www.youtube.com/c/ACCESSforCI" style="text-decoration:underline" target="_blank" data-saferedirecturl="https://www.google.com/url?q=https://www.youtube.com/c/ACCESSforCI&amp;source=gmail&amp;ust=1676144118866000&amp;usg=AOvVaw10zl53x7EHshHVzJ9eQ2MG">
-                                            <img alt="YouTube" width="32" border="0" src="https://ci3.googleusercontent.com/proxy/NidNTOOWfPeiMCn_0zdk1PGUlNj-tY9YYRmAR5uNWDZVrAxhQI_loLg6m7F_ycJFMyGcQ99v82H5od0fwyrHPuIZKIhSLKfbrHtO-zVpKHlWBwTbZi8pKZ7L0e5KBeZ1flKQxhZF18gcUyp3TrKVEJAT-HK7JwI=s0-d-e1-ft#https://imgssl.constantcontact.com/letters/images/CPE/SocialIcons/circles/circleWhite_YouTube_v4.png" style="display:inline-block;margin:0px;padding:0px" class="CToWUd" data-bit="iit">
+                                          <span>&nbsp;</span>&nbsp;
+                                          <a href="https://www.youtube.com/c/ACCESSforCI"  target="_blank">
+                                            <img alt="YouTube" width="32" border="0" src="$ytIcon" style="display:inline-block;margin:0px;padding:0px">
                                           </a>
                                         </td>
                                       </tr>
                                     </table>
                                   </td>
+
                                 </tr>
                               </table>
                             </td>
@@ -609,3 +656,123 @@ function ccNewsCommonHTML($newsBody, $topExtra)
     // note: EMAILTEXT must be to the left column-wise of the last tag (php)
     return $emailText;
 }
+
+// "Join Affinity Groups" section
+// possible do this through a news item, but for now, we have an extra image here we need to show
+function ccRollupBottomStatic1()
+{
+    $teamImageUrl = imageUrl('team-looking-at-screen_0.jpg');
+    $title = titleHTML('Ensure you keep receiving updates!');
+    $bodyText = "Join Affinity Groups to get updates about things you care about. If you have allocations, you will automatically become a member of Affinity Groups
+                associated with your allocations. Join the ACCESS Support Affinity Group to continue to receive these weekly digests.";
+    $buttonText = "See Affinity Groups";
+    $buttonUrl = \Drupal::request()->getSchemeAndHttpHost() . '/affinity_groups';
+
+    $html = <<<ROLLUPSTATIC1
+    <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">
+      <tbody>
+        <tr>
+          <td class="column scale stack" style="width:65%" align="center" valign="top">
+            <table class="text" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed">
+              <tbody>
+                <tr>
+                  <td class="text_content-cell content-padding-horizontal"
+                    style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 20px 10px 40px"
+                    align="left" valign="top">
+
+                    $title
+
+                    <span style="color:rgb(0,0,0)">$bodyText</span>
+
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed">
+              <tbody>
+                <tr>
+                  <td class="content-padding-horizontal" align="left" style="padding:10px 20px 10px 40px">
+                  <table style="width:inherit;border-radius:2px;border-spacing:0;background-color:#48c0b9;border:none"
+                          border="0" cellpadding="0" cellspacing="0" bgcolor="#48c0b9">
+                    <tbody>
+                      <tr>
+                        <td class="button_content-cell" style="padding:10px 15px" align="center">
+                          <a href="$buttonUrl"
+                            style="color:#ffffff;font-family:Roboto,sans-serif;font-size:16px;word-wrap:break-word;font-weight:bold;text-decoration:none"
+                            target="_blank">
+                            $buttonText
+                          </a>
+                        </td>
+                      </tr>
+                  </tbody>
+                </table>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+      <td class="column scale stack" style="width:35%" align="center" valign="top">
+      <table class="image--mobile-scale image--mobile-center" width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tbody>
+          <tr>
+            <td class="image_container content-padding-horizontal" align="center" valign="top" style="padding:10px 40px 10px 20px">
+              <img width="200" src="$teamImageUrl"
+                  alt="team looking at screen" style="display:block;height:auto;max-width:100%">
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </td>
+    </tr>
+    </tbody>
+    </table>
+  ROLLUPSTATIC1;
+    // note: ROLLUPSTATIC1 must be to the left column-wise of the last tag (php)
+    return $html;
+}
+
+// "Share with the ACCESS Community" section.
+function ccRollupBottomStatic2()
+{
+    $title = titleHTML('Do you have news or trainings to share?');
+    $newsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/news';
+    $eventsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/events';
+
+    $bodyHtml = <<<BODY
+      <span>Add your </span>
+      <a href="$newsUrl">news</a>
+      <span> or </span>
+      <a href="$eventsUrl">event</a>
+      <span> on the ACCESS Support website and we will include it in our digest.</span>
+    BODY;
+
+    $html = <<<ROLLUPSTATIC2
+    <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">
+      <tbody>
+        <tr>
+          <td class="column scale stack" style="width:100%" align="center" valign="top">
+            <table class="text" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed">
+              <tbody>
+                <tr>
+                  <td class="text_content-cell content-padding-horizontal"
+                      style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px"
+                      align="left"
+                      valign="top">
+
+                      $title
+
+                      $bodyHtml
+
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+ROLLUPSTATIC2;
+    return $html;
+}
+
+//                     style="font-family:Roboto,sans-serif;text-decoration:underline;color:rgb(72,192,185);font-weight:bold" target="_blank">

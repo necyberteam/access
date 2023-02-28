@@ -499,7 +499,7 @@ function access_news_cron() {
 
       $currentTime = \Drupal::time()->getCurrentTime();  // ny timezone
       \Drupal::state()->set('access_news.crontime-rollupnews', $currentTime);
-      weeklyNewsReport();
+      weeklyNewsReport(false);
     }
   }
   catch (Exception $e) {
