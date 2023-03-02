@@ -17,6 +17,7 @@ class CommunityPersonaController extends ControllerBase {
   public function communityPersona() {
     // My Affinity Groups
     $current_user = \Drupal::currentUser();
+    $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($current_user->id());
     $query = \Drupal::database()->select('flagging', 'fl');
     $query->condition('fl.uid', $current_user->id());
     $query->condition('fl.flag_id', 'affinity_group');
@@ -45,6 +46,11 @@ class CommunityPersonaController extends ControllerBase {
     $build_affinity_link = $affinity_renderable;
     $build_affinity_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Interests
+    $roles = $user_entity->getRoles();
+    $interest_class = "d-none";
+    if (in_array('student', $roles) || in_array('student_champ', $roles)) {
+      $interest_class = "";
+    }
     $term_interest = \Drupal::database()->select('flagging', 'fl');
     $term_interest->condition('fl.uid', $current_user->id());
     $term_interest->condition('fl.flag_id', 'interest');
@@ -122,12 +128,17 @@ class CommunityPersonaController extends ControllerBase {
     $match_engagement_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($results);
     $match_link = $match_engagement_nodes == NULL ?
       '<p>' . t('You currently have not requested any Match Engagements. Click below to request.') . "</p>"
-      :'<ul>';
-    if ($match_link == "<ul>") {
+      :"<ul class='list-unstyled'>";
+    $n = 1;
+    if ($match_link == "<ul class='list-unstyled'>") {
       foreach ($match_engagement_nodes as $match_engagement_node) {
+        $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
         $title = $match_engagement_node->getTitle();
+        $field_status = $match_engagement_node->get('field_status')->getValue();
+        $status = $field_status[0]['value'];
         $nid = $match_engagement_node->id();
-        $match_link .= "<li><a href='/node/$nid'>$title</a></li>";
+        $match_link .= "<li class='d-flex justify-content-between p-3 $stripe_class'><div class='text-truncate' style='max-width: 700px;'><a href='/node/$nid'>$title</a></div><div>$status</div></li>";
+        $n++;
       }
       $match_link .= '</ul>';
     }
@@ -146,7 +157,7 @@ class CommunityPersonaController extends ControllerBase {
               {{ affinity_link }}
             </div>
         </div>
-        <div class="border border-secondary my-3">
+        <div class="border border-secondary my-3 {{ interest_class }}">
           <div class="text-white p-3 bg-dark d-flex justify-content-between">
             <span class="h4 text-white">{{ mi_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
@@ -190,6 +201,7 @@ class CommunityPersonaController extends ControllerBase {
         'mi_title' => t('My Interest'),
         'my_interests' => $my_interests,
         'edit_interest_link' => $edit_interest_renderable,
+        'interest_class' => $interest_class,
         'me_title' => t('My Expertise'),
         'my_skills' => $my_skills,
         'edit_skill_link' => $edit_skill_renderable,
