@@ -68,10 +68,10 @@ class PersonaBlock extends BlockBase {
                           <div><i class="text-dark fa-regular fa-circle-info"></i> {{ cssn_more }}</div>
                         </div>
                         <div class="d-flex justify-content-between border-top border-bottom mb-3 py-3 border-secondary">
-                          <div><b>Roles:</b><br />{{ roles | raw }}</div>
+                          <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
                           <div><i class="text-dark fa-solid fa-pen-to-square"></i> <a href="#" class="text-dark">Edit Roles</a></div>
                         </div>
-                        <p><b>Program:</b><br /> {{ program }}</p>
+                        <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
                       </div>',
       '#context' => [
         'first_name' => $first_name,
@@ -81,7 +81,9 @@ class PersonaBlock extends BlockBase {
         'cssn_indicator' => $cssn_indicator,
         'cssn_more' => $cssn_more,
         'roles' => $roles,
+        'role_text' => t('Roles'),
         'program' => $program,
+        'program_text' => t('Programs')
       ],
     ];
     return $persona_block;
