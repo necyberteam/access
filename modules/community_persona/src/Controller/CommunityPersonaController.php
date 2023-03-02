@@ -126,6 +126,11 @@ class CommunityPersonaController extends ControllerBase {
       ->condition('type', 'match_engagement')
       ->execute();
     $match_engagement_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($results);
+    $interested_query = \Drupal::entityQuery('node')
+            ->condition('type', 'match_engagement')
+            ->condition('field_match_interested_users', $current_user->id())
+            ->execute();
+    $match_engagement_interested_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($interested_query);
     $match_link = $match_engagement_nodes == NULL ?
       '<p>' . t('You currently have not requested any Match Engagements. Click below to request.') . "</p>"
       :"<ul class='list-unstyled'>";
@@ -137,7 +142,14 @@ class CommunityPersonaController extends ControllerBase {
         $field_status = $match_engagement_node->get('field_status')->getValue();
         $status = $field_status[0]['value'];
         $nid = $match_engagement_node->id();
-        $match_link .= "<li class='d-flex justify-content-between p-3 $stripe_class'><div class='text-truncate' style='max-width: 700px;'><a href='/node/$nid'>$title</a></div><div>$status</div></li>";
+        $match_link .= "<li class='d-flex justify-content-between p-3 $stripe_class'><div class='text-truncate' style='max-width: 700px;'><a href='/node/$nid'>$title</a></div class='font-weight-bold'><div>$status</div></li>";
+        $n++;
+      }
+      foreach ($match_engagement_interested_nodes as $match_engagement_interested_node) {
+        $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
+        $title = $match_engagement_interested_node->getTitle();
+        $nid = $match_engagement_interested_node->id();
+        $match_link .= "<li class='d-flex justify-content-between p-3 $stripe_class'><div class='text-truncate' style='max-width: 700px;'><a href='/node/$nid'>$title</a></div><div class='font-weight-bold'>Interested</div></li>";
         $n++;
       }
       $match_link .= '</ul>';
