@@ -1,5 +1,4 @@
 <?php
-
 namespace Drupal\access_affinitygroup\Commands;
 
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
@@ -12,7 +11,6 @@ use Drupal\recurring_events\EventInterface;
 use Drupal\recurring_events\Plugin\ComputedField\EventInstances;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
-
 
 /**
  * A Drush commandfile for Affinity Groups.
@@ -246,17 +244,26 @@ class AffinityGroupCommands extends DrushCommands
         $nCount = 0;
         foreach ($nodes as $node) {
             $nCount += 1;
-
+            $this->output()->writeln('--------------------------------------------------');
             $this->output()->writeln($nCount . '. ' . $node->getTitle());
             $this->output()->writeln($node->get('field_published_date')->value);
 
             $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
-            $renderArray = $view_builder->view($node, 'alt_teaser');
-            //  $display = \Drupal::service('renderer')->renderPlain($renderArray);
+            $renderArray = $view_builder->view($node, 'newsBody');
+//            $renderArray = $view_builder->view($node);
+              $display = \Drupal::service('renderer')->renderPlain($renderArray);
+            $this->output()->writeln($display);
 
+            $this->output()->writeln('---');
+
+            $getFields = $node->getFields();
+            $bodyArray = $getFields['body']->getValue();
+            $body = $bodyArray[0]['value'];
+            $display = check_markup($body, 'basic_html');
+            $this->output()->writeln($display);
 
             $newsUrl = $node->toUrl()->setAbsolute()->toString();
-            $this->output()->writeln($newsUrl);
+
         }
     }
 
@@ -377,7 +384,7 @@ class AffinityGroupCommands extends DrushCommands
      */
     public function newsRollup()
     {
-        $retval = weeklyNewsReport();
+        $retval = weeklyNewsReport(true);
         $this->output()->writeln($retval);
     }
 }

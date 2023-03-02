@@ -265,8 +265,11 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
           // Reverse the date.
           $pubDate = date_format($date, 'F j, Y');
 
+          // check_markup applies all the filters that are set for the
+          // basic_html for security and also to add host to img src, for example
+          // We don't use the renderer because we need to separate the title
           $bodyArray = $getFields['body']->getValue();
-          $body = $bodyArray[0]['value'];
+          $body = check_markup($bodyArray[0]['value'], 'basic_html');
         }
         else {
           // Newstype is eventseries.
