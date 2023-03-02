@@ -15,6 +15,7 @@ class CommunityPersonaController extends ControllerBase {
    * Build content to display on page.
    */
   public function communityPersona() {
+    // My Affinity Groups
     $current_user = \Drupal::currentUser();
     $query = \Drupal::database()->select('flagging', 'fl');
     $query->condition('fl.uid', $current_user->id());
@@ -42,7 +43,27 @@ class CommunityPersonaController extends ControllerBase {
     $affinity_link = Link::fromTextAndUrl('See all Affinity Groups', $affinity_url);
     $affinity_renderable = $affinity_link->toRenderable();
     $build_affinity_link = $affinity_renderable;
-    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm'];
+    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    // My Interests
+    $term_interest = \Drupal::database()->select('flagging', 'fl');
+    $term_interest->condition('fl.uid', $current_user->id());
+    $term_interest->condition('fl.flag_id', 'interest');
+    $term_interest->fields('fl', ['entity_id']);
+    $flagged_interests = $term_interest->execute()->fetchCol();
+    $my_interests = $flagged_interests == NULL ?
+      '<p>' . t('You currently have not added any interests. Click Edit interests to add.') . "</p>"
+      :'';
+    if ($my_interests == "") {
+      foreach ($flagged_interests as $flagged_interest) {
+        $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
+        $my_interests .= "<div class='border border-black m-1 p-1'>";
+        $my_interests .= "<a class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "</div>";
+      }
+    }
+    $edit_interest_url = Url::fromUri('internal:/add-interest');
+    $edit_interest_link = Link::fromTextAndUrl('Edit interests', $edit_interest_url);
+    $edit_interest_renderable = $edit_interest_link->toRenderable();
     // My Expertise
     $term = \Drupal::database()->select('flagging', 'fl');
     $term->condition('fl.uid', $current_user->id());
@@ -87,7 +108,7 @@ class CommunityPersonaController extends ControllerBase {
     $webform_link = Link::fromTextAndUrl('Contribute to Knowledge Base', $webform_url);
     $webform_renderable = $webform_link->toRenderable();
     $build_webform_link = $webform_renderable;
-    $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm'];
+    $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Match Engagements
     $query = \Drupal::entityQuery('node');
     $group = $query
@@ -114,7 +135,7 @@ class CommunityPersonaController extends ControllerBase {
     $match_engage_link = Link::fromTextAndUrl('Request an Engagement', $match_engage_url);
     $match_engage_renderable = $match_engage_link->toRenderable();
     $build_match_engage_link = $match_engage_renderable;
-    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm'];
+    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
       '#template' => '<div class="border border-secondary my-3">
@@ -127,8 +148,17 @@ class CommunityPersonaController extends ControllerBase {
         </div>
         <div class="border border-secondary my-3">
           <div class="text-white p-3 bg-dark d-flex justify-content-between">
+            <span class="h4 text-white">{{ mi_title }}</span>
+            <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
+          </div>
+          <div class="d-flex p-3">
+            {{ my_interests|raw }}
+          </div>
+        </div>
+        <div class="border border-secondary my-3">
+          <div class="text-white p-3 bg-dark d-flex justify-content-between">
             <span class="h4 text-white">{{ me_title }}</span>
-            <span>{{ edit_skill_link }}</span>
+            <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_skill_link }}</span>
           </div>
           <div class="d-flex p-3">
             {{ my_skills|raw }}
@@ -157,6 +187,9 @@ class CommunityPersonaController extends ControllerBase {
         'ag_intro' => t('Connected with researchers of common interests.'),
         'user_affinity_groups' => $user_affinity_groups,
         'affinity_link' => $build_affinity_link,
+        'mi_title' => t('My Interest'),
+        'my_interests' => $my_interests,
+        'edit_interest_link' => $edit_interest_renderable,
         'me_title' => t('My Expertise'),
         'my_skills' => $my_skills,
         'edit_skill_link' => $edit_skill_renderable,
