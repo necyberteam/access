@@ -32,11 +32,13 @@ class CommunityPersonaController extends ControllerBase {
         $query->condition('ti.tid', $affinity_group);
         $query->fields('ti', ['nid']);
         $affinity_group_nid = $query->execute()->fetchCol();
-        $affinity_group_loaded = \Drupal::entityTypeManager()->getStorage('node')->load($affinity_group_nid[0]);
-        $url = Url::fromRoute('entity.node.canonical', array('node' => $affinity_group_loaded->id()));
-        $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
-        $link = $project_link->toString()->__toString();
-        $user_affinity_groups .= "<li>$link</li>";
+        if (isset($affinity_group_nid[0])) {
+          $affinity_group_loaded = \Drupal::entityTypeManager()->getStorage('node')->load($affinity_group_nid[0]);
+          $url = Url::fromRoute('entity.node.canonical', array('node' => $affinity_group_loaded->id()));
+          $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
+          $link = $project_link->toString()->__toString();
+          $user_affinity_groups .= "<li>$link</li>";
+        }
       }
       $user_affinity_groups .= '</ul>';
     }
