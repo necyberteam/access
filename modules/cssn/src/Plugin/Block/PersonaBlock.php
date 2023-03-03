@@ -1,9 +1,8 @@
 <?php
 
-namespace Drupal\community_persona\Plugin\Block;
+namespace Drupal\cssn\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
-use Drupal\Core\Cache\Cache;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
 
@@ -11,7 +10,7 @@ use Drupal\Core\Link;
  * Provides a 'Community Persona' Block.
  *
  * @Block(
- *   id = "community_persona_block",
+ *   id = "cssn_block",
  *   admin_label = "Community persona block",
  * )
  */
@@ -27,6 +26,10 @@ class PersonaBlock extends BlockBase {
     $last_name = $user_entity->get('field_user_last_name')->value;
     $institution = $user_entity->get('field_institution')->value;
     $roles = $user_entity->getRoles();
+    $key = array_search('authenticated', $roles);
+    if ($key !== false) {
+      unset($roles[$key]);
+    }
     $roles = implode('<br />', $roles);
     $current_user = \Drupal::currentUser();
     $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($current_user->id());
@@ -90,20 +93,9 @@ class PersonaBlock extends BlockBase {
   }
 
   /**
-   * {@inheritdoc}
+   * @return int
    */
-  public function getCacheTags() {
-    if ($user = \Drupal::currentUser()) {
-      return Cache::mergeTags(parent::getCacheTags(), array('user:' . $user->id()));
-    } else {
-      return parent::getCacheTags();
-    }
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  public function getCacheContexts() {
-    return Cache::mergeContexts(parent::getCacheContexts(), array('user'));
+  public function getCacheMaxAge() {
+    return 0;
   }
 }

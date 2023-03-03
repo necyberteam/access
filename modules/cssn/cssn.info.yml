@@ -1,5 +1,5 @@
-name: Community Persona
-description: 'Community Persona Page'
+name: CSSN
+description: 'Computational Science and Support Network'
 type: module
 core_version_requirement: ^9.4 || ^10
 package: Custom

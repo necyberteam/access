@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\community_persona\Controller;
+namespace Drupal\cssn\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Url;
@@ -134,7 +134,7 @@ class CommunityPersonaController extends ControllerBase {
             ->execute();
     $match_engagement_interested_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($interested_query);
     $match_link = $match_engagement_nodes == NULL ?
-      '<p>' . t('You currently have not requested any Match Engagements. Click below to request.') . "</p>"
+      '<p>' . t('You are not currently involved with any MATCH Engagements.') . "</p>"
       :"<ul class='list-unstyled'>";
     $n = 1;
     if ($match_link == "<ul class='list-unstyled'>") {
@@ -156,15 +156,15 @@ class CommunityPersonaController extends ControllerBase {
       }
       $match_link .= '</ul>';
     }
-    $match_engage_url = Url::fromUri('internal:/matchplus');
-    $match_engage_link = Link::fromTextAndUrl('Request an Engagement', $match_engage_url);
+    $match_engage_url = Url::fromUri('internal:/engagements');
+    $match_engage_link = Link::fromTextAndUrl('See all engagements', $match_engage_url);
     $match_engage_renderable = $match_engage_link->toRenderable();
     $build_match_engage_link = $match_engage_renderable;
     $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
       '#template' => '<div class="border border-secondary my-3">
-          <div class="text-white h4 p-3 bg-dark">{{ ag_title }}</div>
+          <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
             <div class="p-3">
               <p>{{ ag_intro }}</p>
               {{ user_affinity_groups|raw }}
@@ -172,8 +172,8 @@ class CommunityPersonaController extends ControllerBase {
             </div>
         </div>
         <div class="border border-secondary my-3 {{ interest_class }}">
-          <div class="text-white p-3 bg-dark d-flex justify-content-between">
-            <span class="h4 text-white">{{ mi_title }}</span>
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0 text-transform">{{ mi_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
           </div>
           <div class="d-flex p-3">
@@ -181,8 +181,8 @@ class CommunityPersonaController extends ControllerBase {
           </div>
         </div>
         <div class="border border-secondary my-3">
-          <div class="text-white p-3 bg-dark d-flex justify-content-between">
-            <span class="h4 text-white">{{ me_title }}</span>
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0 text-transform">{{ me_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_skill_link }}</span>
           </div>
           <div class="d-flex p-3">
@@ -190,8 +190,8 @@ class CommunityPersonaController extends ControllerBase {
           </div>
         </div>
         <div class="border border-secondary my-3">
-          <div class="text-white p-3 bg-dark d-flex justify-content-between">
-            <span class="h4 text-white">{{ ws_title }}</span>
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 m-0 text-white">{{ ws_title }}</span>
           </div>
           <div class="p-3">
             {{ ws_links|raw }}
@@ -199,8 +199,8 @@ class CommunityPersonaController extends ControllerBase {
           </div>
         </div>
         <div class="border border-secondary my-3">
-          <div class="text-white p-3 bg-dark d-flex justify-content-between">
-            <span class="h4 text-white">{{ match_title }}</span>
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 m-0 text-white">{{ match_title }}</span>
           </div>
           <div class="p-3">
             {{ match_links|raw }}
@@ -212,14 +212,14 @@ class CommunityPersonaController extends ControllerBase {
         'ag_intro' => t('Connected with researchers of common interests.'),
         'user_affinity_groups' => $user_affinity_groups,
         'affinity_link' => $build_affinity_link,
-        'mi_title' => t('My Interest'),
+        'mi_title' => t('My Interests'),
         'my_interests' => $my_interests,
         'edit_interest_link' => $edit_interest_renderable,
         'interest_class' => $interest_class,
         'me_title' => t('My Expertise'),
         'my_skills' => $my_skills,
         'edit_skill_link' => $edit_skill_renderable,
-        'match_title' => t('My Match Engagements'),
+        'match_title' => t('My MATCH Engagements'),
         'match_links' => $match_link,
         'request_match_link' => $build_match_engage_link,
         'ws_title' => t('My Knowledge Base Contributions'),
@@ -227,6 +227,9 @@ class CommunityPersonaController extends ControllerBase {
         'request_webform_link' => $build_webform_link,
       ],
     ];
+
+    // Deny any page caching on the current request.
+    \Drupal::service('page_cache_kill_switch')->trigger();
 
     return $persona_page;
   }

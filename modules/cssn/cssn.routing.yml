@@ -1,0 +1,7 @@
+cssn.page:
+  path: '/community-persona'
+  defaults:
+    _controller: '\Drupal\cssn\Controller\CommunityPersonaController::communityPersona'
+    _title: 'Community Persona'
+  requirements:
+    _role: 'authenticated'
