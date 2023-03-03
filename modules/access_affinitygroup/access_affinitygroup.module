@@ -36,8 +36,6 @@ use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 use Drupal\views\ViewExecutable;
 
-
-// @todo the SEND EMAIL api call is currently commented out in sendEmailCampaign.
 // For devtest, put in front of emails and uname for dev; set to '' to use real names.
 const cDevUname = '';
 const cAccessEmail = "supportapiaccess@access-ci.org";
@@ -1071,17 +1069,31 @@ function emailDevCronLog() {
  */
 
 /**
- * Last 2 args are arrays.
+ *  emailText - body of email. This will be wrapped with email html template
+ *  emailTitle
+ *  pubDate - published date for display in email
+ *  agNames - array of affinity group names for broadcast (for display in email)
+ *  ccListIds - array of constant contact list ids corresponding to the affinity groups
+ *  communityTemplate - which email template to use.
+ *             If true, we use community template, otherwise use the access support template.
  */
-function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds) {
+function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds, $communityTemplate, $logoUrl) {
 
-  $emailHtml = makeNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
-  $ccResponse = setupEmailCampaign($emailTitle, $emailHtml);
+  // For CC, must be unique name for campaign.
+  $campaignName = uniqid('Access News: '.$agNames[0].'- '.$pubDate.' ', FALSE);
+
+  // Either use email template for access or community
+  if ($communityTemplate) {
+    $emailHtml = ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $logoUrl);
+  } else {
+    $emailHtml = ccAccessNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
+  }
+
+  $ccResponse = setupEmailCampaign($emailTitle, $emailHtml, $campaignName);
 
   if (!empty($ccResponse)) {
     $campaignId = $ccResponse->campaign_id;
     $campaignActivityId = $ccResponse->campaign_activities[0]->campaign_activity_id;
-
     sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds);
   }
 }
@@ -1090,11 +1102,9 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
  * Create the Constant Contact email campaign, which is the initial setup.
  * Nothing is sent at this point. Returns the response which included the
  * campaign id and campaign activity id needed for step leading to send.
+ * campaignName must be unique to the cc account.
  */
-function setupEmailCampaign($emailSubject, $emailHtml) {
-
-  // For CC, must be unique name for campaign.
-  $campaignName = uniqid('Access-news', TRUE);
+function setupEmailCampaign($emailSubject, $emailHtml, $campaignName) {
 
   $postData = [
     'name' => $campaignName,
@@ -1156,6 +1166,8 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
   }
 }
 
-// @todo is this a safe include... should we use a different path specifier.
+// this include for constant contant wrapper html will become obsolete
 include 'src/emailContent.php';
+// this is the new email wrapper
+include 'src/ccNewsWrapper.php';
 

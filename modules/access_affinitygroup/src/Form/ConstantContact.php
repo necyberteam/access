@@ -91,6 +91,13 @@ class ConstantContact extends FormBase {
       '#value' => $this->t('Save Cron Settings'),
       '#submit' => [[$this, 'doSaveCronSettings']],
     ];
+
+    $form['runNewsDigest'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Generate Digest'),
+      '#submit' => [[$this, 'doGenerateDigest']],
+    ];
+
     return $form;
   }
 
@@ -140,13 +147,14 @@ class ConstantContact extends FormBase {
     $response->send();
     parent::submitForm($form, $form_state);
   }
-
-  /**
-   *
-   */
   public function doSaveCronSettings(array &$form, FormStateInterface $form_state) {
     \Drupal::state()->set('access_affinitygroup.alloc_cron_disable', $form_state->getValue('alloc_cron_disable'));
     \Drupal::state()->set('access_affinitygroup.alloc_cron_allow_ondemand', $form_state->getValue('alloc_cron_allow_ondemand'));
+  }
+
+  // generate the access_news weekly digest (normally run weekly via cron)
+  public function doGenerateDigest() {
+    weeklyNewsReport(true);
   }
 
 }
