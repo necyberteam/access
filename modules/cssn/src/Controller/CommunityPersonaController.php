@@ -65,7 +65,7 @@ class CommunityPersonaController extends ControllerBase {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
         $my_interests .= "<div class='border border-black m-1 p-1'>";
-        $my_interests .= "<a class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
         $my_interests .= "</div>";
       }
     }
@@ -85,7 +85,7 @@ class CommunityPersonaController extends ControllerBase {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_skill)->get('name')->value;
         $my_skills .= "<div class='border border-black m-1 p-1'>";
-        $my_skills .= "<a class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
+        $my_skills .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
         $my_skills .= "</div>";
       }
     }
@@ -173,7 +173,7 @@ class CommunityPersonaController extends ControllerBase {
         </div>
         <div class="border border-secondary my-3 {{ interest_class }}">
           <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-            <span class="h4 text-white m-0 text-transform">{{ mi_title }}</span>
+            <span class="h4 text-white m-0">{{ mi_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
           </div>
           <div class="d-flex p-3">
@@ -182,7 +182,7 @@ class CommunityPersonaController extends ControllerBase {
         </div>
         <div class="border border-secondary my-3">
           <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-            <span class="h4 text-white m-0 text-transform">{{ me_title }}</span>
+            <span class="h4 text-white m-0">{{ me_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_skill_link }}</span>
           </div>
           <div class="d-flex p-3">

@@ -72,7 +72,7 @@ class PersonaBlock extends BlockBase {
                         </div>
                         <div class="d-flex justify-content-between border-top border-bottom mb-3 py-3 border-secondary">
                           <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
-                          <div><i class="text-dark fa-solid fa-pen-to-square"></i> <a href="#" class="text-dark">Edit Roles</a></div>
+                          <div class="d-none"><i class="text-dark fa-solid fa-pen-to-square"></i> <a href="#" class="text-dark">Edit Roles</a></div>
                         </div>
                         <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
                       </div>',
