@@ -50,6 +50,11 @@ class JiraLink {
           'access_id' => $access_id,
           'accessid' => $username,
         ],
+        '#attached' => [
+          'library' => [
+            'access_misc/misc_library',
+          ],
+        ],
       ];
     } else {
       $link = [
