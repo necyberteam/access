@@ -20,7 +20,6 @@ class JiraLink {
    */
   private $link;
 
-
   /**
    * Query block and pull bid via uuid.
    */
@@ -56,7 +55,8 @@ class JiraLink {
           ],
         ],
       ];
-    } else {
+    }
+    else {
       $link = [
         '#type' => 'inline_template',
         '#template' => '<a class="btn btn-primary" href="/user/login">{{ text }}</a>',

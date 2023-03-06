@@ -29,18 +29,18 @@ class CreateTicket extends BlockBase {
    */
   public function getCacheTags() {
     if ($user = \Drupal::currentUser()) {
-      return Cache::mergeTags(parent::getCacheTags(), array('user:' . $user->id()));
-    } else {
+      return Cache::mergeTags(parent::getCacheTags(), ['user:' . $user->id()]);
+    }
+    else {
       return parent::getCacheTags();
     }
   }
-
 
   /**
    * {@inheritdoc}
    */
   public function getCacheContexts() {
-    return Cache::mergeContexts(parent::getCacheContexts(), array('user'));
+    return Cache::mergeContexts(parent::getCacheContexts(), ['user']);
   }
 
 }
