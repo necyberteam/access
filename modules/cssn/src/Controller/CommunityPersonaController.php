@@ -48,11 +48,6 @@ class CommunityPersonaController extends ControllerBase {
     $build_affinity_link = $affinity_renderable;
     $build_affinity_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Interests
-    $roles = $user_entity->getRoles();
-    $interest_class = "d-none";
-    if (in_array('student', $roles) || in_array('student_champ', $roles)) {
-      $interest_class = "";
-    }
     $term_interest = \Drupal::database()->select('flagging', 'fl');
     $term_interest->condition('fl.uid', $current_user->id());
     $term_interest->condition('fl.flag_id', 'interest');
@@ -171,7 +166,7 @@ class CommunityPersonaController extends ControllerBase {
               {{ affinity_link }}
             </div>
         </div>
-        <div class="border border-secondary my-3 {{ interest_class }}">
+        <div class="border border-secondary my-3">
           <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ mi_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
@@ -215,7 +210,6 @@ class CommunityPersonaController extends ControllerBase {
         'mi_title' => t('My Interests'),
         'my_interests' => $my_interests,
         'edit_interest_link' => $edit_interest_renderable,
-        'interest_class' => $interest_class,
         'me_title' => t('My Expertise'),
         'my_skills' => $my_skills,
         'edit_skill_link' => $edit_skill_renderable,
