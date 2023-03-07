@@ -171,7 +171,7 @@ class CommunityPersonaController extends ControllerBase {
             <span class="h4 text-white m-0">{{ mi_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
           </div>
-          <div class="d-flex p-3">
+          <div class="d-flex flex-wrap p-3">
             {{ my_interests|raw }}
           </div>
         </div>
@@ -180,7 +180,7 @@ class CommunityPersonaController extends ControllerBase {
             <span class="h4 text-white m-0">{{ me_title }}</span>
             <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_skill_link }}</span>
           </div>
-          <div class="d-flex p-3">
+          <div class="d-flex flex-wrap p-3">
             {{ my_skills|raw }}
           </div>
         </div>
