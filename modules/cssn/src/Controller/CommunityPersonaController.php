@@ -3,6 +3,7 @@
 namespace Drupal\cssn\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\cssn\Plugin\Util\MatchLookup;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
 
@@ -113,43 +114,20 @@ class CommunityPersonaController extends ControllerBase {
     $build_webform_link = $webform_renderable;
     $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Match Engagements
-    $query = \Drupal::entityQuery('node');
-    $group = $query
-      ->orConditionGroup()
-      ->condition('field_mentor', $current_user->id())
-      ->condition('field_students', $current_user->id())
-      ->condition('field_consultant', $current_user->id());
-    $results = $query->condition($group)
-      ->condition('type', 'match_engagement')
-      ->execute();
-    $match_engagement_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($results);
-    $interested_query = \Drupal::entityQuery('node')
-            ->condition('type', 'match_engagement')
-            ->condition('field_match_interested_users', $current_user->id())
-            ->execute();
-    $match_engagement_interested_nodes = \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($interested_query);
-    $match_link = $match_engagement_nodes == NULL ?
+    $fields = [
+      'field_mentor' => 'Mentor',
+      'field_students' => 'Student',
+      'field_consultant' => 'Consultant',
+      'field_researcher' => 'Researcher',
+      'field_match_interested_users' => 'Interested',
+    ];
+    $matches = new MatchLookup($fields, $current_user->id());
+    $match_list = $matches->getMatchList();
+    $match_link = $match_list == '' ?
       '<p>' . t('You are not currently involved with any MATCH Engagements.') . "</p>"
       :"<ul class='list-unstyled'>";
-    $n = 1;
     if ($match_link == "<ul class='list-unstyled'>") {
-      foreach ($match_engagement_nodes as $match_engagement_node) {
-        $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
-        $title = $match_engagement_node->getTitle();
-        $field_status = $match_engagement_node->get('field_status')->getValue();
-        $status = $field_status[0]['value'];
-        $nid = $match_engagement_node->id();
-        $match_link .= "<li class='d-flex justify-content-between p-3 $stripe_class'><div class='text-truncate' style='max-width: 700px;'><a href='/node/$nid'>$title</a></div class='font-weight-bold'><div>$status</div></li>";
-        $n++;
-      }
-      foreach ($match_engagement_interested_nodes as $match_engagement_interested_node) {
-        $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
-        $title = $match_engagement_interested_node->getTitle();
-        $nid = $match_engagement_interested_node->id();
-        $match_link .= "<li class='d-flex justify-content-between p-3 $stripe_class'><div class='text-truncate' style='max-width: 700px;'><a href='/node/$nid'>$title</a></div><div class='font-weight-bold'>Interested</div></li>";
-        $n++;
-      }
-      $match_link .= '</ul>';
+      $match_link .= $match_list . '</ul>';
     }
     $match_engage_url = Url::fromUri('internal:/engagements');
     $match_engage_link = Link::fromTextAndUrl('See all engagements', $match_engage_url);
