@@ -153,6 +153,9 @@ class MatchNodeBlock extends BlockBase implements
       $interested_users = $node->get('field_match_interested_users')->getValue();
       // Lookup user names from uid.
       $interested_users = $this->getInterestedUsers($interested_users);
+      $status = $node->get('field_status')->getValue()[0]['value'];
+      $interested_text = $this->t("I'm Interested");
+      $interested_button = $status == 'Recruiting' ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
       return [
         '#type' => 'inline_template',
         '#template' => '<div class="p-3">
@@ -173,7 +176,7 @@ class MatchNodeBlock extends BlockBase implements
           {% endif %}
           <div><span class="fw-bold">{{ works_label }}</span> {{ works | raw }}</div>
         </div>
-        <a class="btn btn-primary" href="/node/{{ nid }}/interested">{{ interested_text }}</a>
+       {{ interested_button | raw }}
         {% if interested_users %}
           <div class="p-3">
             <h3>Interested Users</h3>
@@ -197,8 +200,7 @@ class MatchNodeBlock extends BlockBase implements
           'works_label' => $works_label,
           'works' => $works,
           'type' => $type,
-          'interested_text' => $this->t("I'm Interested"),
-          'nid' => $nid,
+          'interested_button' => $interested_button,
           'interested_users' => $interested_users,
         ],
       ];
