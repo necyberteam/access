@@ -33,6 +33,7 @@ class MatchLookup {
     foreach ($match_fields as $match_field_key => $match_field) {
       $this->runQuery($match_field, $match_field_key, $match_user_id);
     }
+    $this->gatherMatches();
   }
 
   /**
@@ -54,7 +55,7 @@ class MatchLookup {
   /**
    * Function to lookup nodes and sort array.
    */
-  public function sortMatches() {
+  public function gatherMatches() {
     $matches = $this->matches;
     $match_array = [];
     foreach ($matches as $match) {
@@ -62,22 +63,55 @@ class MatchLookup {
         $title = $node->getTitle();
         $nid = $node->id();
         $match_name = $match['name'];
+        $field_status = $node->get('field_status')->getValue();
         $match_array[$nid] = [
+          'status' => $field_status[0]['value'],
           'name' => $match_name,
           'title' => $title,
           'nid' => $nid,
         ];
       }
     }
-    asort($match_array);
     $this->matches_sorted = $match_array;
+  }
+
+  /**
+   * Function to sort by status.
+   */
+  public function sortStatusMatches() {
+    $matches = $this->matches_sorted;
+    $recruiting = $this->arrayPickSort($matches, 'Recruiting');
+    $reviewing = $this->arrayPickSort($matches, 'Reviewing Applicants');
+    $in_progress = $this->arrayPickSort($matches, 'In Progress');
+    $finishing = $this->arrayPickSort($matches, 'Finishing Up');
+    $completed = $this->arrayPickSort($matches, 'Complete');
+    $on_hold = $this->arrayPickSort($matches, 'On Hold');
+    $halted = $this->arrayPickSort($matches, 'Halted');
+    // Combine all of the arrays.
+    $matches_sorted = $recruiting + $reviewing + $in_progress + $finishing + $completed + $on_hold + $halted;
+    $this->matches_sorted = $matches_sorted;
+  }
+
+  /**
+   * Function to pick out a status into an array and sort by title.
+   */
+  public function arrayPickSort($array, $sortby) {
+    $sorted = [];
+    foreach ($array as $key => $value) {
+      if ($value['status'] == $sortby) {
+        $sorted[$key] = $value;
+      }
+    }
+    uasort($sorted, function ($a, $b) {
+      return strnatcmp($a['title'], $b['title']);
+    });
+    return $sorted;
   }
 
   /**
    * Function to return styled list.
    */
   public function getMatchList() {
-    $this->sortMatches();
     $n = 1;
     $match_link = '';
     foreach ($this->matches_sorted as $match) {

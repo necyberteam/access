@@ -122,6 +122,8 @@ class CommunityPersonaController extends ControllerBase {
       'field_match_interested_users' => 'Interested',
     ];
     $matches = new MatchLookup($fields, $current_user->id());
+    // Sort by status.
+    $matches->sortStatusMatches();
     $match_list = $matches->getMatchList();
     $match_link = $match_list == '' ?
       '<p>' . t('You are not currently involved with any MATCH Engagements.') . "</p>"
