@@ -58,6 +58,9 @@ class MatchLookup {
   public function gatherMatches() {
     $matches = $this->matches;
     $match_array = [];
+    if ($matches == NULL) {
+      return;
+    }
     foreach ($matches as $match) {
       foreach ($match['nodes'] as $node) {
         $title = $node->getTitle();
@@ -97,6 +100,9 @@ class MatchLookup {
    */
   public function arrayPickSort($array, $sortby) {
     $sorted = [];
+    if ($array == NULL) {
+      return;
+    }
     foreach ($array as $key => $value) {
       if ($value['status'] == $sortby) {
         $sorted[$key] = $value;
@@ -114,6 +120,9 @@ class MatchLookup {
   public function getMatchList() {
     $n = 1;
     $match_link = '';
+    if ($this->matches_sorted == NULL) {
+      return;
+    }
     foreach ($this->matches_sorted as $match) {
       $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
       $title = $match['title'];
