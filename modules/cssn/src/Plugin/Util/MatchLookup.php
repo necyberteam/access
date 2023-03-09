@@ -127,8 +127,9 @@ class MatchLookup {
       $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
       $title = $match['title'];
       $nid = $match['nid'];
+      $match_status = $match['status'];
       $match_name = $match['name'];
-      $match_link .= "<li class='d-flex justify-content-between p-3 $stripe_class'><div class='text-truncate' style='max-width: 600px;'><a href='/node/$nid'>$title</a></div><div class='font-weight-bold'>$match_name</div></li>";
+      $match_link .= "<li class='d-flex p-3 $stripe_class'><div class='text-truncate' style='width: 400px;'><a href='/node/$nid'>$title</a></div><div class='px-3' style='width: 160px;'>$match_status</div><div class='font-weight-bold'>$match_name</div></li>";
       $n++;
     }
     return $match_link;
