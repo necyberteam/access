@@ -18,21 +18,59 @@ use Drupal\user\Entity\User;
 use Drupal\node\Entity\Node;
 use Drupal\Component\Utility\Xss;
 use Drupal\Component\Serialization\Json;
+use Drupal\Core\Batch\BatchBuilder;
 
 class AllocationsUsersImport
 {
-    const CHUNK_LEN = 20;
+    const BATCH_SIZE = 20;          // how many users to process in each batch
+    const DEV_PROCESS_LIMIT = 200;  // stop after this amount. total is > 100k, will be 12k when api updated
+    const DEV_SKIP_CC_ADD = true;   // if true, don't create new constant contact user
 
     // For devtest, put in front of emails and uname for dev; set to '' to use real names.
     private $cDevUname;
-
     //for $this->collectCronLog for dev status email.
     private $logCronErrors = [];
-
     public function __construct()
     {
         $cDevUname = '';
         $logCronErrors = [];
+    }
+
+    // can start from drush or from form
+    function startBatch()
+    {
+        $portalUserNames = $this->importUserAllocationsInit();
+
+        $this->collectCronLog('init done ' . count($portalUserNames), 'i'); // temp
+
+        $batchBuilder = (new Batchbuilder())
+            ->setTitle('Importing Allocations')
+            ->setInitMessage('Batch is starting...')
+            ->setProgressMessage('Completed @current of @total. Estimated remaining time: @estimate. Elapsed time : @elapsed.')
+            ->setErrorMessage('Batch error.')
+            ->setFinishCallback([$this, 'importFinished']);
+            // todo might need a route here
+
+        $batchBuilder->addOperation([$this, 'processChunk'], [$portalUserNames]);
+
+        batch_set($batchBuilder->toArray());
+        if(PHP_SAPI == 'cli') {
+            drush_backend_batch_process();
+        } else {
+            //batch_process();
+             //batch_process('node/1'); // TODO
+        }
+    }
+
+    function importFinished($success, $results, $operations)
+    {
+        if (!$success) {
+            $this->collectCronLog('Batch: Import Allocations problem ', 'err');
+            $return;
+        }
+        $processed = count($results['processed']);
+        $this->collectCronLog("Batch: processed $processed users ", 'i');
+                //kint($results);
     }
 
     function getApiKey()
@@ -46,7 +84,7 @@ class AllocationsUsersImport
         return ( $secretsData['ramps_api_key']);
     }
 
-    function importUserAllocations()
+    function importUserAllocationsInit()
     {
         $this->collectCronLog('Running importUserAllocations.', 'i');
         try {
@@ -67,42 +105,19 @@ class AllocationsUsersImport
             $responseJson = Json::decode((string) $response->getBody());
 
         } catch (Exception $e) {
-            $this->collectCronLog('spacct api call: ' . $e->getMessage(), 'err');
+            $this->collectCronLog('allocations api ex: ' . $e->getMessage(), 'err');
             return false;
         }
 
-        $this->collectCronLog('got api return', 'i');
-
-        // get rid of most of these after initial dev, here just for examining input
-        $userCount = 0;
-        $chunkCount = 0;
-        $totalChunks = 0;
-        $archivedCount = 0;
-        $archivedCountN = 0;
-        $suspendedCount = 0;
-        $suspendedCountN = 0;
+        $incomingCount = 0;
         $processedCount = 0;
-        $usersWithAllocsCount = 0;
-        $totalCiders = 0;
-        $newUsers = 0;
-        $newCCIds = 0;
+        $portalUserNames = [];
 
         $chunk = [];
         try {
             // chunk the list of user names
             foreach ($responseJson as $aUser) {
-                $userCount++;
-                if ($aUser['isSuspended']) {
-                    $suspendedCount++;
-                } else {
-                    $suspendedCountN++;
-                }
-                if ($aUser['isArchived']) {
-                    $archivedCount++;
-                } else {
-                    $archivedCountN++;
-                }
-
+                $incomingCount++;
                 if ($aUser['isSuspended'] || $aUser['isArchived']) {
                     continue;
                 }
@@ -110,40 +125,43 @@ class AllocationsUsersImport
                 $processedCount++;
 
                 // todo - temp limit for dev
-                if ($processedCount > 85) {
+                if ($processedCount > self::DEV_PROCESS_LIMIT) {
                     break; //exit for loop
                 }
 
-                $chunk[] = $aUser['username'];
-                $chunkCount++;
-
-                if ($chunkCount == self::CHUNK_LEN) {
-                    // queue it TODO
-                    $this->processChunk($chunk); // TEMP
-
-                    // /kint($chunk);
-                    $chunkCount = 0;
-                    $chunk = [];
-                    $totalChunks++;
-                }
+                $portalUserNames[] = $aUser['username'];
             }
-
-            if ($chunkCount > 0 ) {
-                $totalChunks++;
-                //TODO qeueue leftoever
-            }
-
         }catch (Exception $e) {
             $this->collectCronLog('importAllocations: ' . $e->getMessage(), 'err');
-            return false;
         }
-
-        return "u: $userCount p: $processedCount chunkC: $chunkCount $totalChunks ";
+        return $portalUserNames;
     }
 
-    // $chunk is array of user names
-    function processChunk($userNameArray)
+    // this gets called repeatedly by the batch processing
+    function processChunk($userNames, &$context)
     {
+        if (!isset($context['results']['processed'])) {
+            $context['results']['processed'] = [];
+            $context['results']['newUsers'] = 0;
+            $context['results']['newCCIds'] = 0;
+            $context['results']['totalProcessed'] = 0;
+        }
+
+        if(!$userNames) {
+            return;
+        }
+
+        $sandbox = &$context['sandbox'];
+        if (!$sandbox) {
+            $sandbox['progress']= 0;
+            $sandbox['max'] = count($userNames);
+            $sandbox['userNames'] = $userNames;
+            $sandbox['batchNum'] = 0;
+        }
+
+        $sandbox['batchNum']++;
+        $userNameArray = array_splice($sandbox['userNames'], 0, self::BATCH_SIZE);
+
         //$userNameArray = ['rpatlyon13'];
         $apiKey = $this->getApiKey();
         $userCount = 0;
@@ -165,10 +183,12 @@ class AllocationsUsersImport
             // call api to get resources, get user, (add user + add to cc if needed)
             // update user's resources if needed, check if they are members of associated ags.
             foreach ($userNameArray as $userName) {
+
+                $context['results']['processed'][] = $userName;
+                $context['results']['totalProcessed']++;
+                $sandbox['progress']++;
+
                 $userCount++;
-
-                //$this->collectCronLog("$userCount. checking $userName", 'i');
-
                 try {
                     $aUser = $this->allocApiGetResources($userName, $apiKey);
 
@@ -177,8 +197,7 @@ class AllocationsUsersImport
                         continue;
                     }
 
-                    $withCidersCount++;
-                    $this->collectCronLog("$withCidersCount. PROCESSING $userName", 'i');
+                    $this->collectCronLog("$userCount PROCESSING $userName", 'd');
                     // TODO = break if auser is empty or whatever
 
                     $accessUserName = $userName . '@access-ci.org';
@@ -201,6 +220,7 @@ class AllocationsUsersImport
                         $this->collectCronLog("...creating $userCount: $userName", 'i');  // TODO TAKE OUT
                         if ($userDetails) {
                             $newUsers++;
+                            $context['results']['newUsers']++;
                         }
                     }
 
@@ -208,8 +228,12 @@ class AllocationsUsersImport
                     if ($needCCId && $userDetails) {
                         // Either new user just created, or existing user missing constant contact id.
                         $this->collectCronLog("...need CC id: $userName", 'd');  // TODO TAKE OUT
-                        if ($this->cronAddToConstantContact($userDetails, $aUser['email'], $aUser['firstName'], $aUser['lastName'])) {
-                              $newCCIds++;
+
+                        if (!self::DEV_SKIP_CC_ADD) {
+                            if ($this->cronAddToConstantContact($userDetails, $aUser['email'], $aUser['firstName'], $aUser['lastName'])) {
+                                $newCCIds++;
+                                $context['results']['newCCIds']++;
+                            }
                         }
                     }
 
@@ -288,7 +312,10 @@ class AllocationsUsersImport
             $this->collectCronLog("Exception while processing api results at $userCount " . $e->getMessage(), 'err');
         }
 
-        $this->collectCronLog("Import segment: $userCount,  New users: $newUsers, CC Ids added: $newCCIds", 'i');
+        $this->collectCronLog("batch " . $sandbox['batchNum']. ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i');
+
+        // batch stops when finished is < 1
+        $context['finished'] = $sandbox['progress'] / $sandbox['max'];
         return true;
     }
 
@@ -305,7 +332,7 @@ class AllocationsUsersImport
         } else {
             $u->set('field_constant_contact_id', $ccId);
             $u->save();
-            $this->collectCronLog("Id from Constant Contact:  $uEmail", 'i');
+            $this->collectCronLog("Id from Constant Contact:  $uEmail", 'd');
             return true;
         }
     }
@@ -444,7 +471,7 @@ class AllocationsUsersImport
     {
         $userDetails->set('field_cider_resources', null);
         foreach ($ciderRefnums as $refnum) {
-             $this->collectCronLog("CIDER setting" . $refnum, 'i');
+             $this->collectCronLog("CIDER setting" . $refnum, 'd');
 
             $userDetails->get('field_cider_resources')->appendItem($refnum);
         }
@@ -470,8 +497,106 @@ class AllocationsUsersImport
             $responseJson = Json::decode((string) $response->getBody());
 
         } catch (Exception $e) {
-            $this->collectCronLog('alloc indentity resources api call: ' . $e->getMessage(), i);
+            $this->collectCronLog('alloc indentity resources api call: ' . $e->getMessage(), 'err');
         }
         return $responseJson;
     }
+    function XXimportUserAllocationsInit()
+    {
+        $this->collectCronLog('Running importUserAllocations.', 'i');
+        try {
+            $requestUrl = 'https://allocations-api.access-ci.org/identity/profiles/v1/people';
+            $apiKey = $this->getApiKey();
+            $requestOpts = [
+              'headers' => [
+              'XA-API-KEY' => $apiKey,
+              'XA-REQUESTER' => 'MATCH',
+              'Content-Type' => 'application/json',
+              ],
+              'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1],
+            ];
+
+            $client = new Client();
+
+            $response = $client->request('GET', $requestUrl, $requestOpts);
+            $responseJson = Json::decode((string) $response->getBody());
+
+        } catch (Exception $e) {
+            $this->collectCronLog('spacct api call: ' . $e->getMessage(), 'err');
+            return false;
+        }
+
+        // get rid of most of these after initial dev, here just for examining input
+        $userCount = 0;
+        $chunkCount = 0;
+        $totalChunks = 0;
+        $archivedCount = 0;
+        $archivedCountN = 0;
+        $suspendedCount = 0;
+        $suspendedCountN = 0;
+        $processedCount = 0;
+        $usersWithAllocsCount = 0;
+        $totalCiders = 0;
+        $newUsers = 0;
+        $newCCIds = 0;
+        $userNames = [];
+
+        $chunk = [];
+        try {
+            // chunk the list of user names
+            foreach ($responseJson as $aUser) {
+                $userCount++;
+                if ($aUser['isSuspended']) {
+                    $suspendedCount++;
+                } else {
+                    $suspendedCountN++;
+                }
+                if ($aUser['isArchived']) {
+                    $archivedCount++;
+                } else {
+                    $archivedCountN++;
+                }
+
+                if ($aUser['isSuspended'] || $aUser['isArchived']) {
+                    continue;
+                }
+
+
+                $processedCount++;
+
+                // todo - temp limit for dev
+                if ($processedCount > 85) {
+                    break; //exit for loop
+                }
+
+                $userNames[] = $aUser['username'];
+
+                $chunk[] = $aUser['username'];
+                $chunkCount++;
+
+                if ($chunkCount == self::CHUNK_LEN) {
+                    // queue it TODO
+                    //            $this->processChunk($chunk); // TEMP
+
+                    // /kint($chunk);
+                    $chunkCount = 0;
+                    $chunk = [];
+                    $totalChunks++;
+                }
+            }
+
+            if ($chunkCount > 0 ) {
+                $totalChunks++;
+                //TODO qeueue leftoever
+            }
+
+        }catch (Exception $e) {
+            $this->collectCronLog('importAllocations: ' . $e->getMessage(), 'err');
+            //  return false;
+        }
+
+        //return "u: $userCount p: $processedCount chunkC: $chunkCount $totalChunks ";
+        return $userNames;
+    }
+
 }

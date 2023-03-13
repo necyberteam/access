@@ -397,8 +397,9 @@ class AffinityGroupCommands extends DrushCommands
      */
     public function importAllocations()
     {
-           $aui = new AllocationsUsersImport();
-        $retval = $aui->importUserAllocations();
+        $aui = new AllocationsUsersImport();
+        //$retval = $aui->importUserAllocations();
+        $retval = $aui->startBatch();
 
         $this->output()->writeln($retval);
     }
