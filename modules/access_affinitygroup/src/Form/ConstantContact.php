@@ -13,14 +13,20 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 /**
  * Class ConstantContact.
  */
-class ConstantContact extends FormBase {
+class ConstantContact extends FormBase
+{
 
     /**
      * {@inheritdoc}
      */
-    public function buildForm(array $form, FormStateInterface $form_state) {
+    public function buildForm(array $form, FormStateInterface $form_state)
+    {
         $alloc_cron_disable = \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false);
         $alloc_cron_allow_ondemand = \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false);
+
+        $allocBatchBatchSize = \Drupal::state()->get('access_affinitygroup.allocBatchBatchSize', false);
+        $allocBatchImportLimit = \Drupal::state()->get('access_affinitygroup.allocBatchImportLimit', false);
+        $allocBatchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC', false);
 
         $request = \Drupal::request();
         $code = $request->get('code');
@@ -97,22 +103,55 @@ class ConstantContact extends FormBase {
         '#markup' => '<br><br><b>Import allocations batch processing</b><br>',
         ];
 
-        $form['runBatch'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Start Batch'),
-        '#submit' => [[$this, 'doBatch']],
-        ];
+         $form['batch_param_batchsize'] = [
+        '#type' => 'number',
+        '#title' => $this->t('Batch Size'),
+        '#min' => 5,
+        '#max' => 1000,
+        '#default_value' => $allocBatchBatchSize,
+        '#description' => $this->t("Size of each batch slice."),
+        '#required' => false,
+         ];
 
-        $form['x3'] = [
-        '#markup' => '<br><br><b>Weekly Digest</b><br>',
-        ];
+         $form['batch_param_importlimit'] = [
+         '#type' => 'number',
+         '#title' => $this->t('importlimit'),
+         '#default_value' => $allocBatchImportLimit,
+         '#description' => $this->t("Limit allocations users import, up to 105000."),
+         '#required' => false,
+         ];
 
-        $form['runNewsDigest'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Generate Digest'),
-        '#submit' => [[$this, 'doGenerateDigest']],
-        ];
-        return $form;
+         $form['batch_param_nocc'] = [
+         '#type' => 'checkbox',
+         '#title' => $this->t('Do not add users to Constant Contact.'),
+         '#description' => $this->t('Unchecked is the normal value.'),
+         '#default_value' => $allocBatchNoCC,
+         ];
+
+         $form['savebatchsettings'] = [
+         '#type' => 'submit',
+         '#value' => $this->t('Save Batch Settings'),
+         '#submit' => [[$this, 'doSaveBatchSettings']],
+         ];
+
+                  $form['runBatch'] = [
+                  '#type' => 'submit',
+                  '#value' => $this->t('Start Batch'),
+                  '#description' => $this->t("Start allocations import batch processing"),
+                  '#submit' => [[$this, 'doBatch']],
+                  ];
+
+
+                  $form['x4'] = [
+                  '#markup' => '<br><br><b>Weekly Digest</b><br>',
+                  ];
+
+                  $form['runNewsDigest'] = [
+                  '#type' => 'submit',
+                  '#value' => $this->t('Generate Digest'),
+                  '#submit' => [[$this, 'doGenerateDigest']],
+                  ];
+                  return $form;
     }
 
     /**
@@ -164,6 +203,14 @@ class ConstantContact extends FormBase {
         $response->send();
         parent::submitForm($form, $form_state);
     }
+
+    public function doSaveBatchSettings(array &$form, FormStateInterface $form_state)
+    {
+        \Drupal::state()->set('access_affinitygroup.allocBatchBatchSize', $form_state->getValue('batch_param_batchsize'));
+        \Drupal::state()->set('access_affinitygroup.allocBatchImportLimit', $form_state->getValue('batch_param_importlimit'));
+        \Drupal::state()->set('access_affinitygroup.allocBatchNoCC', $form_state->getValue('batch_param_nocc'));
+    }
+
     public function doSaveCronSettings(array &$form, FormStateInterface $form_state)
     {
         \Drupal::state()->set('access_affinitygroup.alloc_cron_disable', $form_state->getValue('alloc_cron_disable'));

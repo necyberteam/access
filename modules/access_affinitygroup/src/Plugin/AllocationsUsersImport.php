@@ -22,9 +22,14 @@ use Drupal\Core\Batch\BatchBuilder;
 
 class AllocationsUsersImport
 {
-    const BATCH_SIZE = 20;          // how many users to process in each batch
-    const DEV_PROCESS_LIMIT = 200;  // stop after this amount. total is > 100k, will be 12k when api updated
-    const DEV_SKIP_CC_ADD = true;   // if true, don't create new constant contact user
+    // these are defaults if not set on form.
+    const DEFAULT_SIZE = 5;        // default if not set: how many users to process in each batch
+    const DEFAULT_IMPORTLIMIT = 100;  // stop after this amount. total is > 100k, will be 12k when api updated
+    const DEFAULT_NOCC = true;   // if true, don't create new constant contact user. for dev
+
+    private $batchSize;
+    private $batchImportLimit;
+    private $batchNoCC;
 
     // For devtest, put in front of emails and uname for dev; set to '' to use real names.
     private $cDevUname;
@@ -36,17 +41,37 @@ class AllocationsUsersImport
         $logCronErrors = [];
     }
 
-    // can start from drush or from form
+    // can start from drush or from form, todo: cron
     function startBatch()
     {
-        $portalUserNames = $this->importUserAllocationsInit();
+        $this->batchSize = \Drupal::state()->get('access_affinitygroup.allocBatchBatchSize');
+        if (empty($this->batchSize)) {
+            $this->batchSize = self::DEFAULT_SIZE;
+        }
+        $this->batchImportLimit = \Drupal::state()->get('access_affinitygroup.allocBatchImportLimit');
+        if (empty($this->batchImportLimit)) {
+            $this->batchImportLimit = self::DEFAULT_IMPORTLIMIT;
+        }
+        $this->batchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC');
+        if (!isset($this->batchNoCC)) {
+            $this->batchNoCC = self::DEFAULT_NOCC;
+        }
 
-        $this->collectCronLog('init done ' . count($portalUserNames), 'i'); // temp
+        $msg1 = "Batch params size: $this->batchSize limit: $this->batchImportLimit noCC: $this->batchNoCC";
+        \Drupal::messenger()->addMessage($msg1);
+        $this->collectCronLog($msg1, 'i');
+
+        $portalUserNames = $this->importUserAllocationsInit();
+        $nameCount = count($portalUserNames);
+
+        $msg1 = "Initial import done; processing  " . count($portalUserNames);
+        \Drupal::messenger()->addMessage($msg1);
+        $this->collectCronLog($msg1, 'i');
 
         $batchBuilder = (new Batchbuilder())
             ->setTitle('Importing Allocations')
-            ->setInitMessage('Batch is starting...')
-            ->setProgressMessage('Completed @current of @total. Estimated remaining time: @estimate. Elapsed time : @elapsed.')
+            ->setInitMessage('Batch is starting for '. $nameCount)
+            ->setProgressMessage('Estimated remaining time: @estimate. Elapsed time : @elapsed.')
             ->setErrorMessage('Batch error.')
             ->setFinishCallback([$this, 'importFinished']);
             // todo might need a route here
@@ -57,26 +82,35 @@ class AllocationsUsersImport
         if(PHP_SAPI == 'cli') {
             drush_backend_batch_process();
         } else {
-            //batch_process();
-             //batch_process('node/1'); // TODO
+            // don't need this for form; still need to test what is needed when running from cron
+            //batch_process();  // some docs say need a return route arg here, some don't
         }
     }
 
     function importFinished($success, $results, $operations)
     {
         if (!$success) {
-            $this->collectCronLog('Batch: Import Allocations problem ', 'err');
+            $this->collectCronLog('Batch: Import Allocations problem', 'err');
+            \Drupal::messenger()->addMessage('Batch: Import Allocations problem');
             $return;
         }
         $processed = count($results['processed']);
-        $this->collectCronLog("Batch: processed $processed users ", 'i');
-                //kint($results);
+        $msg1 = "Processed $processed; total " . $results['totalProcessed'];
+        $msg2 = "New users: " . $results['newUsers'] . " New Constant Contact: " . $results['newCCIds'];
+
+        \Drupal::messenger()->addMessage($msg1);
+        $this->collectCronLog("Batch: ".$msg1, 'i');
+
+        \Drupal::messenger()->addMessage($msg2);
+        $this->collectCronLog("Batch: ".$msg2, 'i');
+
     }
 
     function getApiKey()
     {
         $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
         if (!file_exists($path)) {
+
             $this->collectCronLog("Unable to get allocations api key.", 'err');
             return null;
         }
@@ -125,7 +159,7 @@ class AllocationsUsersImport
                 $processedCount++;
 
                 // todo - temp limit for dev
-                if ($processedCount > self::DEV_PROCESS_LIMIT) {
+                if ($processedCount > $this->batchImportLimit) {
                     break; //exit for loop
                 }
 
@@ -160,7 +194,7 @@ class AllocationsUsersImport
         }
 
         $sandbox['batchNum']++;
-        $userNameArray = array_splice($sandbox['userNames'], 0, self::BATCH_SIZE);
+        $userNameArray = array_splice($sandbox['userNames'], 0, $this->batchSize);
 
         //$userNameArray = ['rpatlyon13'];
         $apiKey = $this->getApiKey();
@@ -217,7 +251,7 @@ class AllocationsUsersImport
 
                     if ($userDetails === false) {
                         $userDetails = $this->createAllocUser($accessUserName, $aUser['firstName'], $aUser['lastName'], $aUser['email']);
-                        $this->collectCronLog("...creating $userCount: $userName", 'i');  // TODO TAKE OUT
+                        $this->collectCronLog("...creating $userCount: $userName", 'd');  // TODO TAKE OUT
                         if ($userDetails) {
                             $newUsers++;
                             $context['results']['newUsers']++;
@@ -229,7 +263,7 @@ class AllocationsUsersImport
                         // Either new user just created, or existing user missing constant contact id.
                         $this->collectCronLog("...need CC id: $userName", 'd');  // TODO TAKE OUT
 
-                        if (!self::DEV_SKIP_CC_ADD) {
+                        if (!$this->batchNoCC) {
                             if ($this->cronAddToConstantContact($userDetails, $aUser['email'], $aUser['firstName'], $aUser['lastName'])) {
                                 $newCCIds++;
                                 $context['results']['newCCIds']++;
@@ -312,7 +346,7 @@ class AllocationsUsersImport
             $this->collectCronLog("Exception while processing api results at $userCount " . $e->getMessage(), 'err');
         }
 
-        $this->collectCronLog("batch " . $sandbox['batchNum']. ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i');
+        $this->collectCronLog("Batch " . $sandbox['batchNum']. ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i');
 
         // batch stops when finished is < 1
         $context['finished'] = $sandbox['progress'] / $sandbox['max'];
@@ -460,7 +494,7 @@ class AllocationsUsersImport
             subscribeToCCList($agTax->id(), $userDetails);
             $this->collectCronLog("...add member: " . $ag->get('title')->value . ': ' . $userDetails->get('field_user_last_name')->getString(), 'd');
         } else {
-            $this->collectCronLog("...user already a member: ".$ag->get('title')->value, 'd'); //todo remove
+            $this->collectCronLog("...already  member: ".$ag->get('title')->value, 'd'); //todo remove
         }
     }
 
@@ -471,8 +505,7 @@ class AllocationsUsersImport
     {
         $userDetails->set('field_cider_resources', null);
         foreach ($ciderRefnums as $refnum) {
-             $this->collectCronLog("CIDER setting" . $refnum, 'd');
-
+            //$this->collectCronLog("CIDER setting" . $refnum, 'd');
             $userDetails->get('field_cider_resources')->appendItem($refnum);
         }
         $userDetails->save();
@@ -497,7 +530,7 @@ class AllocationsUsersImport
             $responseJson = Json::decode((string) $response->getBody());
 
         } catch (Exception $e) {
-            $this->collectCronLog('alloc indentity resources api call: ' . $e->getMessage(), 'err');
+            $this->collectCronLog("Alloc resources api call $userName:" . $e->getMessage(), 'err');
         }
         return $responseJson;
     }
@@ -522,7 +555,7 @@ class AllocationsUsersImport
             $responseJson = Json::decode((string) $response->getBody());
 
         } catch (Exception $e) {
-            $this->collectCronLog('spacct api call: ' . $e->getMessage(), 'err');
+            $this->collectCronLog('Alloc people api call: ' . $e->getMessage(), 'err');
             return false;
         }
 

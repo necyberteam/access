@@ -541,8 +541,9 @@ function access_affinitygroup_cron() {
       \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
       \Drupal::logger('cron_affinitygroup')->notice('Running cron: user' . date("Y-m-d H:i:s", $currentTime));
 
-      $aui = new AllocationsUsersImport();
-      $aui->updateUserAllocations();
+      // TODO - this will probably be $aui->startBatch();
+      //$aui = new AllocationsUsersImport();
+      //$aui->updateUserAllocations();
       // emailDevCronLog(); // this function needs to be fixed
     }
   }
@@ -577,6 +578,7 @@ function shouldRun($function) {
   }
   elseif ($function == 'users') {
 
+    return false;  // TEMP TEMP JUST DON'T RUN IMPORT CRON FOR NOW
     // showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
     // showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
     // These 2 environment booleans are off by default but can be set in the
@@ -587,11 +589,6 @@ function shouldRun($function) {
     if (\Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', FALSE)) {
       return TRUE;
     }
-
-    //if (!cCronCheckInterval) {
-      // Same as allow_ondemand, can probably get rid of this.
-      //return TRUE;
-    //}
 
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
@@ -605,7 +602,6 @@ function shouldRun($function) {
       return TRUE;
     }
   }
-
   return FALSE;
 }
 
