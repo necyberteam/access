@@ -21,12 +21,13 @@ class ConstantContact extends FormBase
      */
     public function buildForm(array $form, FormStateInterface $form_state)
     {
-        $alloc_cron_disable = \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false);
-        $alloc_cron_allow_ondemand = \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false);
+        $alloc_cron_disable = \Drupal::state()->get('access_affinitygroup.alloc_cron_disable');
+        $alloc_cron_allow_ondemand = \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand');
 
-        $allocBatchBatchSize = \Drupal::state()->get('access_affinitygroup.allocBatchBatchSize', false);
-        $allocBatchImportLimit = \Drupal::state()->get('access_affinitygroup.allocBatchImportLimit', false);
-        $allocBatchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC', false);
+        $allocBatchBatchSize = \Drupal::state()->get('access_affinitygroup.allocBatchBatchSize');
+        $allocBatchImportLimit = \Drupal::state()->get('access_affinitygroup.allocBatchImportLimit');
+        $allocBatchStartAt = \Drupal::state()->get('access_affinitygroup.allocBatchStartAt');
+        $allocBatchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC');
 
         $request = \Drupal::request();
         $code = $request->get('code');
@@ -115,12 +116,18 @@ class ConstantContact extends FormBase
 
          $form['batch_param_importlimit'] = [
          '#type' => 'number',
-         '#title' => $this->t('importlimit'),
+         '#title' => $this->t('Process limit'),
          '#default_value' => $allocBatchImportLimit,
-         '#description' => $this->t("Limit allocations users import, up to 105000."),
+         '#description' => $this->t("Limit allocations users processed, up to 105000."),
          '#required' => false,
          ];
-
+         $form['batch_param_startat'] = [
+         '#type' => 'number',
+         '#title' => $this->t('Process start at'),
+         '#default_value' => $allocBatchStartAt,
+         '#description' => $this->t("Start procssing nth user (default: 0)"),
+         '#required' => false,
+         ];
          $form['batch_param_nocc'] = [
          '#type' => 'checkbox',
          '#title' => $this->t('Do not add users to Constant Contact.'),
@@ -134,12 +141,12 @@ class ConstantContact extends FormBase
          '#submit' => [[$this, 'doSaveBatchSettings']],
          ];
 
-                  $form['runBatch'] = [
+         $form['runBatch'] = [
                   '#type' => 'submit',
                   '#value' => $this->t('Start Batch'),
                   '#description' => $this->t("Start allocations import batch processing"),
                   '#submit' => [[$this, 'doBatch']],
-                  ];
+        ];
 
 
                   $form['x4'] = [
@@ -209,6 +216,7 @@ class ConstantContact extends FormBase
         \Drupal::state()->set('access_affinitygroup.allocBatchBatchSize', $form_state->getValue('batch_param_batchsize'));
         \Drupal::state()->set('access_affinitygroup.allocBatchImportLimit', $form_state->getValue('batch_param_importlimit'));
         \Drupal::state()->set('access_affinitygroup.allocBatchNoCC', $form_state->getValue('batch_param_nocc'));
+        \Drupal::state()->set('access_affinitygroup.allocBatchStartAt', $form_state->getValue('batch_param_startat'));
     }
 
     public function doSaveCronSettings(array &$form, FormStateInterface $form_state)
@@ -228,6 +236,4 @@ class ConstantContact extends FormBase
         $aui = new AllocationsUsersImport();
         $aui->startBatch();
     }
-
-
 }

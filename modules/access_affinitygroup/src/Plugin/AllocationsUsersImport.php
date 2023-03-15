@@ -23,13 +23,16 @@ use Drupal\Core\Batch\BatchBuilder;
 class AllocationsUsersImport
 {
     // these are defaults if not set on form.
-    const DEFAULT_SIZE = 5;        // default if not set: how many users to process in each batch
-    const DEFAULT_IMPORTLIMIT = 100;  // stop after this amount. total is > 100k, will be 12k when api updated
-    const DEFAULT_NOCC = true;   // if true, don't create new constant contact user. for dev
+    const DEFAULT_SIZE = 5;         // default if not set: how many users to process in each batch
+    const DEFAULT_IMPORTLIMIT = 100;// stop processing after this amount. total is > 100k, will be 12k when api updated
+    const DEFAULT_NOCC = true;      // if true, don't create new constant contact user. for dev
+    const DEFAULT_STARTAT = 0;        // where to start processing in case we must restart a large operation
 
     private $batchSize;
     private $batchImportLimit;
     private $batchNoCC;
+    private $batchStartAt;
+
     // For devtest, put in front of emails and uname for dev; set to '' to use real names.
     private $cDevUname = '';
     private $logCronErrors = [];   //for $this->collectCronLog for dev status email.
@@ -45,22 +48,27 @@ function startBatch()
     if (empty($this->batchImportLimit)) {
         $this->batchImportLimit = self::DEFAULT_IMPORTLIMIT;
     }
+    $this->batchStartAt = \Drupal::state()->get('access_affinitygroup.allocBatchStartAt');
+    if (empty($this->batchStartAt)) {
+        $this->batchStartAt = self::DEFAULT_STARTAT;
+    }
     $this->batchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC');
     if (!isset($this->batchNoCC)) {
         $this->batchNoCC = self::DEFAULT_NOCC;
     }
 
-    $msg1 = "Batch params size: $this->batchSize limit: $this->batchImportLimit noCC: $this->batchNoCC";
+    $msg1 = "Batch params size: $this->batchSize processing limit: $this->batchImportLimit noCC: $this->batchNoCC";
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i');
 
     $portalUserNames = $this->importUserAllocationsInit();
-    $nameCount = count($portalUserNames);
 
-    $msg1 = "Initial import done; processing  " . count($portalUserNames);
+    $msg1 = "Initial import done: number to process: " . count($portalUserNames) . "; start processing at: $this->batchStartAt";
+
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i');
 
+    $nameCount = count($portalUserNames);
     $batchBuilder = (new Batchbuilder())
         ->setTitle('Importing Allocations')
         ->setInitMessage('Batch is starting for '. $nameCount)
@@ -75,6 +83,7 @@ function startBatch()
     if(PHP_SAPI == 'cli') {
         drush_backend_batch_process();
     } else {
+
         // don't need this for form; still need to test what is needed when running from cron
         //batch_process();  // some docs say need a return route arg here, some don't
     }
@@ -82,8 +91,7 @@ function startBatch()
 
 function importFinished($success, $results, $operations)
 {
-
-    $msg1 = "Processed total " . $results['totalProcessed'];
+    $msg1 = 'Processed ' . $results['totalProcessed'] . ' out of '.  $results['totalExamined'] . ' examined.';
     $msg2 = "New users: " . $results['newUsers'] . " New Constant Contact: " . $results['newCCIds'];
 
     \Drupal::messenger()->addMessage($msg1);
@@ -140,18 +148,22 @@ function importUserAllocationsInit()
     $processedCount = 0;
     $portalUserNames = [];
 
-    $chunk = [];
+    $this->collectCronLog("Initial API import: total received: " . count($responseJson), 'i');
+
     try {
-        // chunk the list of user names
         foreach ($responseJson as $aUser) {
+
             $incomingCount++;
+            if ( $incomingCount < $this->batchStartAt) {
+                continue;
+            }
+
             if ($aUser['isSuspended'] || $aUser['isArchived']) {
                 continue;
             }
 
             $processedCount++;
 
-            // todo - temp limit for dev
             if ($processedCount > $this->batchImportLimit) {
                 break; //exit for loop
             }
@@ -179,6 +191,7 @@ function processChunk($userNames, &$context)
         $context['results']['newUsers'] = 0;
         $context['results']['newCCIds'] = 0;
         $context['results']['totalProcessed'] = 0;
+        $context['results']['totalExamined'] = 0;
     }
 
     if(!$userNames) {
@@ -194,27 +207,25 @@ function processChunk($userNames, &$context)
     }
 
     $sandbox['batchNum']++;
+    $context['message'] = "Processing in batch " . $sandbox['batchNum'];
+
     $userNameArray = array_splice($sandbox['userNames'], 0, $this->batchSize);
 
-    //$userNameArray = ['rpatlyon13'];
     $apiKey = $this->getApiKey();
     $userCount = 0;
-    $withCidersCount = 0;
-    $totalCiders = 0;
     $newUsers = 0;
     $newCCIds = 0;
-    $results = [];
-    $resourceArray = [];
+
     try {
         // process each user in the chunk
         // call api to get resources, get user, (add user + add to cc if needed)
         // update user's resources if needed, check if they are members of associated ags.
         foreach ($userNameArray as $userName) {
 
-            $context['results']['totalProcessed']++;
+            $context['results']['totalExamined']++;
             $sandbox['progress']++;
-
             $userCount++;
+
             try {
                 $aUser = $this->allocApiGetResources($userName, $apiKey);
 
@@ -222,8 +233,10 @@ function processChunk($userNames, &$context)
                     // once the api is updated, this should be rare
                     continue;
                 }
+                $context['message'] = "Processing in batch " . $sandbox['batchNum'] . " $userName";
+                $context['results']['totalProcessed']++;
 
-                $this->collectCronLog("$userCount PROCESSING $userName", 'd');
+                $this->collectCronLog($sandbox['batchNum'] . "batch at $userCount PROCESSING $userName", 'd');
                 $accessUserName = $userName . '@access-ci.org';
                 $userDetails = user_load_by_name($accessUserName);
 
