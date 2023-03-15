@@ -552,3 +552,4 @@ function access_news_theme($existing, $type, $theme, $path): array {
     ],
   ];
 }
+

@@ -31,11 +31,5 @@ class NewsAndEventsBlock extends BlockBase {
         ]
       ]
     ];
-    // return [
-    //   '#theme' => 'newsandevents_block',
-    //   'variables' => [
-    //     'latest_news_block' => $latest_news_block,
-    //     'latest_events_block' => $latest_events_block],
-    // ];
   }
 }
