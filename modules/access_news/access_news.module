@@ -543,7 +543,13 @@ function accessNewsCronShouldRun() {
 function access_news_theme($existing, $type, $theme, $path): array {
   return [
     'requestnews_block' => [
-      'variables' => [],
+      'variables' => [''],
+    ],
+    'newsandevents_block' => [
+      'variables' => [
+        'latest_news_block' => null,
+        'latest_events_block' => null, ],
     ],
   ];
 }
+
