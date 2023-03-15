@@ -1,0 +1,41 @@
+<?php
+
+namespace Drupal\access_news\Plugin\Block;
+
+use Drupal\Core\Block\BlockBase;
+
+/**
+ * Provides a 'Request News' Block.
+ *
+ * @Block(
+ *   id = "newsandevents_block",
+ *   admin_label = @Translation("News and Events block"),
+ *   category = @Translation("ACCESS"),
+ * )
+ */
+class NewsAndEventsBlock extends BlockBase {
+
+  /**
+   * {@inheritdoc}
+   */
+  public function build() {
+
+    $latest_news_block = views_embed_view('access_news', 'latest_news_block');
+    $latest_events_block = views_embed_view('recurring_events_event_instances', 'latest_events_block');
+
+    return [
+      ['description' => [
+        '#theme' => 'newsandevents_block',
+        '#latest_news_block' => $latest_news_block,
+        '#latest_events_block' => $latest_events_block,
+        ]
+      ]
+    ];
+    // return [
+    //   '#theme' => 'newsandevents_block',
+    //   'variables' => [
+    //     'latest_news_block' => $latest_news_block,
+    //     'latest_events_block' => $latest_events_block],
+    // ];
+  }
+}
