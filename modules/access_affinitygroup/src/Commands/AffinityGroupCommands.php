@@ -2,6 +2,7 @@
 namespace Drupal\access_affinitygroup\Commands;
 
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
+use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
 use Drush\Commands\DrushCommands;
 use Drupal\node\Entity\Node;
 use Drupal\user\Entity\User;
@@ -250,7 +251,7 @@ class AffinityGroupCommands extends DrushCommands
 
             $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
             $renderArray = $view_builder->view($node, 'newsBody');
-//            $renderArray = $view_builder->view($node);
+            //            $renderArray = $view_builder->view($node);
               $display = \Drupal::service('renderer')->renderPlain($renderArray);
             $this->output()->writeln($display);
 
@@ -385,6 +386,21 @@ class AffinityGroupCommands extends DrushCommands
     public function newsRollup()
     {
         $retval = weeklyNewsReport(true);
+        $this->output()->writeln($retval);
+    }
+
+    /**
+     * @command access_affinitygroup:importAllocations
+     *
+     * @aliases importAllocations
+     * @usage   access_affinitygroup:importAllocations
+     */
+    public function importAllocations()
+    {
+        $aui = new AllocationsUsersImport();
+        //$retval = $aui->importUserAllocations();
+        $retval = $aui->startBatch();
+
         $this->output()->writeln($retval);
     }
 }
