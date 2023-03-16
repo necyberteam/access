@@ -1,15 +1,14 @@
-<div class="container bg-white">
-  <div class="row">
-    <div class="col bg-light">
-      <h3>Latest News</h3>
-      {{ latest_news_block }}     
-      <a href="/news">All News</a>
-    </div>
-    <div class="col bg-light">
-      <h3>Latest Events</h3>
-      {{ latest_events_block }} 
-      <a href="/events">All Events</a>
-    </div>
-  </div>
+<div class="news-and-events container my-4">
+	<div class="row g-3">
+		<div class="news col bg-light p-4 me-4">
+			<h3>Latest News</h3>
+			{{ latest_news_block }}
+			<a class="d-block mt-3" href="/news">All News</a>
+		</div>
+		<div class="col bg-light p-4 ms-4">
+			<h3>Upcoming Events</h3>
+			{{ latest_events_block }}
+			<a class="d-block mt-3" href="/events">All Events</a>
+		</div>
+	</div>
 </div>
-
