@@ -6,6 +6,8 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Messenger\MessengerInterface;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Database\Connection;
 use Drupal\Core\Render\Renderer;
 use Drupal\Component\Utility\Xss;
 use Symfony\Component\HttpFoundation\BinaryFileResponse;
@@ -33,20 +35,18 @@ class FilterPeopleByTags extends ConfigFormBase {
   private $formState;
 
   /**
-   * {@inheritdoc}
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
-  public function getFormId() {
-    return 'filter_people_by_tags_form';
-  }
+  protected $entityTypeManager;
 
   /**
-   * {@inheritdoc}
+   * The database connection.
+   *
+   * @var \Drupal\Core\Database\Connection
    */
-  public function getEditableConfigNames() {
-    return [
-      'filter.people.by.tags.settings',
-    ];
-  }
+  protected $database;
 
   /**
    * Use messenger interface.
@@ -63,30 +63,55 @@ class FilterPeopleByTags extends ConfigFormBase {
   protected $render;
 
   /**
+   * {@inheritdoc}
+   */
+  public function getFormId() {
+    return 'filter_people_by_tags_form';
+  }
+
+  /**
+   * {@inheritdoc}
+   */
+  public function getEditableConfigNames() {
+    return [
+      'filter.people.by.tags.settings',
+    ];
+  }
+
+  /**
    * Constructs request stuff.
    *
    * @param \Drupal\Core\Messenger\MessengerInterface $messenger
    *   Implement messenger service.
    * @param \Drupal\Core\Render\Renderer $renderer
    *   Invokes renderer.
+   * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
+   *   Invokes entity type manager.
+   * @param \Drupal\Core\Database\Connection $database
+   *   The database connection.
    */
   public function __construct(
     MessengerInterface $messenger,
-    Renderer $renderer
+    Renderer $renderer,
+    EntityTypeManagerInterface $entity_type_manager,
+    Connection $database
   ) {
     $this->messengerInterface = $messenger;
     $this->render = $renderer;
+    $this->entityTypeManager = $entity_type_manager;
+    $this->database = $database;
   }
 
   /**
    * {@inheritdoc}
    */
   public static function create(ContainerInterface $container): self {
-    $messenger = new self(
+    return new self(
       $container->get('messenger'),
       $container->get('renderer'),
+      $container->get('entity_type.manager'),
+      $container->get('database')
     );
-    return $messenger;
   }
 
   /**
@@ -105,7 +130,7 @@ class FilterPeopleByTags extends ConfigFormBase {
       '#markup' => $this->render->render($description),
     ];
 
-    $term_lookup = \Drupal::database()->select('flagging', 'f');
+    $term_lookup = $this->database->select('flagging', 'f');
     $term_lookup->fields('f', ['entity_id']);
     $term_lookup->condition('f.flag_id', ['skill', 'interest'], 'IN');
     $term_lookup->distinct();
@@ -115,7 +140,7 @@ class FilterPeopleByTags extends ConfigFormBase {
     $options[1] = '-- Any --';
     foreach ($flagged_terms as $flagged_term) {
       $tid = $flagged_term->entity_id;
-      $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tid);
+      $term = $this->entityTypeManager->getStorage('taxonomy_term')->load($tid);
       $options[$tid] = $term->label();
     }
     asort($options);
@@ -144,9 +169,6 @@ class FilterPeopleByTags extends ConfigFormBase {
 
     $second_tags = $this->addTags($form, $form_state, $options, 'second_tags', 2);
 
-    // kint($form_state->get('first_tags'));
-    // kint($form_state->get('second_tags'));
-
     $form['submit'] = [
       '#type' => 'submit',
       '#arg' => 'filter',
@@ -161,12 +183,11 @@ class FilterPeopleByTags extends ConfigFormBase {
       '#weight' => 4,
     ];
 
-    if ( $submitted ) {
+    if ($submitted) {
       $this->createTable($form, $form_state, $first_tags, $second_tags);
     }
 
-     // $this->messengerInterface->addMessage($this->render->render($dev_message));
-
+    // $this->messengerInterface->addMessage($this->render->render($dev_message));
     return $form;
   }
 
@@ -174,14 +195,16 @@ class FilterPeopleByTags extends ConfigFormBase {
    * {@inheritdoc}
    */
   private function checkTags($filter_group, $entity_ids) {
-    $result = false;
+    $result = FALSE;
     foreach ($filter_group as $filter_item) {
       if ($filter_item === '1') {
-        $result = true;
-      } elseif (in_array($filter_item, array_column($entity_ids, 'entity_id'))) {
-        $result = true;
-      } else {
-        $result = false;
+        $result = TRUE;
+      }
+      elseif (in_array($filter_item, array_column($entity_ids, 'entity_id'))) {
+        $result = TRUE;
+      }
+      else {
+        $result = FALSE;
         break;
       }
       return $result;
@@ -228,14 +251,14 @@ class FilterPeopleByTags extends ConfigFormBase {
     $title_section = preg_replace('/_/', ' ', $section);
     $form[$section]['actions']['add_tag'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Add one more in ') . $title_section,
+      '#value' => $this->t('Add one more in') . ' ' . $title_section,
       '#arg' => $section,
       '#submit' => [
         '::addOne',
       ],
       '#ajax' => [
         'callback' => '::addmoreCallback',
-        'wrapper' => 'tags-fieldset-wrapper-'. $section,
+        'wrapper' => 'tags-fieldset-wrapper-' . $section,
       ],
     ];
 
@@ -243,14 +266,14 @@ class FilterPeopleByTags extends ConfigFormBase {
     if ($tags > 1) {
       $form[$section]['actions']['remove_tag'] = [
         '#type' => 'submit',
-        '#value' => $this->t('Remove one in ') . $title_section,
+        '#value' => $this->t('Remove one in') . ' ' . $title_section,
         '#arg' => $section,
         '#submit' => [
           '::removeCallback',
         ],
         '#ajax' => [
           'callback' => '::addmoreCallback',
-          'wrapper' => 'tags-fieldset-wrapper-'. $section,
+          'wrapper' => 'tags-fieldset-wrapper-' . $section,
         ],
       ];
     }
@@ -260,7 +283,7 @@ class FilterPeopleByTags extends ConfigFormBase {
   /**
    * Create a table of people.
    */
-   private function createTable(array &$form, FormStateInterface $form_state, $first_tags, $second_tags) {
+  private function createTable(array &$form, FormStateInterface $form_state, $first_tags, $second_tags) {
     $first_filter_group = [];
     for ($i = 0; $i < $first_tags; $i++) {
       $first_filter_group[] = Xss::filter($form_state->getValue('first_tags', 'tag', 0)['tag'][$i]);
@@ -280,21 +303,21 @@ class FilterPeopleByTags extends ConfigFormBase {
     $rows = [];
 
     // Query the flagging table for all unique uid's.
-    $query = \Drupal::database()->select('flagging', 'f');
+    $query = $this->database->select('flagging', 'f');
     $query->fields('f', ['uid']);
     $query->distinct();
     $query->orderBy('f.uid', 'ASC');
     $uids = $query->execute()->fetchAll();
     $csv_rows = '';
     foreach ($uids as $uid) {
-      $user = \Drupal\user\Entity\User::load($uid->uid);
+      $user = $this->entityTypeManager->getStorage('user')->load($uid->uid);
       $institution = $user->get('field_institution')->getValue();
       $first_name = $user->get('field_user_first_name')->getValue();
       $last_name = $user->get('field_user_last_name')->getValue();
       $email = $user->getEmail();
       $roles = $user->getRoles();
       // Query the flagging table for entity_id for this uid.
-      $query = \Drupal::database()->select('flagging', 'f');
+      $query = $this->database->select('flagging', 'f');
       $query->fields('f', ['entity_id']);
       $query->condition('f.uid', $uid->uid);
       $query->orderBy('f.entity_id', 'ASC');
@@ -304,14 +327,14 @@ class FilterPeopleByTags extends ConfigFormBase {
       $second = $this->checkTags($second_filter_group, $entity_ids);
       if ($first || $second) {
         foreach ($entity_ids as $entity_id) {
-          $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($entity_id->entity_id);
-          $tags .= $term !== null ? $term->label() . ", " : '';
+          $term = $this->entityTypeManager->getStorage('taxonomy_term')->load($entity_id->entity_id);
+          $tags .= $term !== NULL ? $term->label() . ", " : '';
         }
         $tags = rtrim($tags, ', ');
-        $fname = isset($first_name[0]) && $first_name[0] !== null ? $first_name[0]['value'] : '';
-        $lname = isset($last_name[0]) && $last_name[0] !== null ? $last_name[0]['value'] : '';
-        $inst = isset($institution[0]) && $institution[0] !== null ? $institution[0]['value'] : '';
-        $csv_rows .= "\"$fname $lname\"," . "\"$inst\"," .  "\"$email\",\"" . implode(', ', $roles) . "\",\"$tags\" \n";
+        $fname = isset($first_name[0]) && $first_name[0] !== NULL ? $first_name[0]['value'] : '';
+        $lname = isset($last_name[0]) && $last_name[0] !== NULL ? $last_name[0]['value'] : '';
+        $inst = isset($institution[0]) && $institution[0] !== NULL ? $institution[0]['value'] : '';
+        $csv_rows .= "\"$fname $lname\"," . "\"$inst\"," . "\"$email\",\"" . implode(', ', $roles) . "\",\"$tags\" \n";
         $rows[] = [
           'Name' => [
             'data' => [
@@ -354,8 +377,7 @@ class FilterPeopleByTags extends ConfigFormBase {
     ];
 
     $this->csv = $csv_header . "\n" . $csv_rows;
-   }
-
+  }
 
   /**
    * Callback for both ajax-enabled buttons.
@@ -375,6 +397,7 @@ class FilterPeopleByTags extends ConfigFormBase {
   public function addOne(array &$form, FormStateInterface $form_state) {
     $section = $form_state->getTriggeringElement()["#arg"];
     $this->formState = $form_state->get('current_state');
+    $this->formState['show_people'] = 0;
     $tags = $this->formState[$section];
     $add_button = $tags + 1;
     $this->formState[$section] = $add_button;
@@ -395,6 +418,7 @@ class FilterPeopleByTags extends ConfigFormBase {
   public function removeCallback(array &$form, FormStateInterface $form_state) {
     $section = $form_state->getTriggeringElement()["#arg"];
     $this->formState = $form_state->get('current_state');
+    $this->formState['show_people'] = 0;
     $tags = $this->formState[$section];
     if ($tags > 1) {
       $remove_button = $tags - 1;
@@ -435,7 +459,7 @@ class FilterPeopleByTags extends ConfigFormBase {
       $headers = [
         'Content-Type' => 'text/csv',
         'Content-Description' => 'File Download',
-        'Content-Disposition' => 'attachment; filename=export.csv'
+        'Content-Disposition' => 'attachment; filename=export.csv',
       ];
       // Create comma separated variable from $data.
       $first_tags = $form_state->get('first_tags');
@@ -445,7 +469,7 @@ class FilterPeopleByTags extends ConfigFormBase {
 
       \Drupal::service('file_system')->saveData($csv, "/tmp/export.csv", FileSystemInterface::EXISTS_REPLACE);
 
-      $form_state->setResponse(new BinaryFileResponse('/tmp/export.csv', 200, $headers, true));
+      $form_state->setResponse(new BinaryFileResponse('/tmp/export.csv', 200, $headers, TRUE));
 
     }
   }
