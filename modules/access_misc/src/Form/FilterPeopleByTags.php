@@ -376,8 +376,8 @@ class FilterPeopleByTags extends ConfigFormBase {
       '#weight' => 100,
     ];
 
-    $this->messengerInterface->addMessage('bing-bong');
     $this->csv = $csv_header . "\n" . $csv_rows;
+    $this->messengerInterface->addMessage('Users Filtered');
   }
 
   /**
