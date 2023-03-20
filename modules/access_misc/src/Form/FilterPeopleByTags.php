@@ -376,6 +376,7 @@ class FilterPeopleByTags extends ConfigFormBase {
       '#weight' => 100,
     ];
 
+    $this->messengerInterface->addMessage('bing-bong');
     $this->csv = $csv_header . "\n" . $csv_rows;
   }
 
@@ -456,14 +457,15 @@ class FilterPeopleByTags extends ConfigFormBase {
       $form_state->setRebuild();
     }
     if ($type === 'csv') {
+      $this->formState = $form_state->get('current_state');
       $headers = [
         'Content-Type' => 'text/csv',
         'Content-Description' => 'File Download',
         'Content-Disposition' => 'attachment; filename=export.csv',
       ];
       // Create comma separated variable from $data.
-      $first_tags = $form_state->get('first_tags');
-      $second_tags = $form_state->get('second_tags');
+      $first_tags = $this->formState['first_tags'];
+      $second_tags = $this->formState['second_tags'];
       $this->createTable($form, $form_state, $first_tags, $second_tags);
       $csv = $this->csv;
 
