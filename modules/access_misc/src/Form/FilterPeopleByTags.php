@@ -25,6 +25,12 @@ class FilterPeopleByTags extends ConfigFormBase {
    */
   private $csv;
 
+  /**
+   * Variable for the form state.
+   *
+   * @var array
+   */
+  private $formState;
 
   /**
    * {@inheritdoc}
@@ -114,30 +120,45 @@ class FilterPeopleByTags extends ConfigFormBase {
     }
     asort($options);
 
-    $submitted = $form_state
-      ->get('show_people');
+    $current_state = $form_state->get('current_state');
 
-    if ($submitted === NULL) {
-      $submitted = FALSE;
+    if ($current_state === NULL) {
+      $this->formState = [
+        'show_people' => 0,
+        'first_tags' => 1,
+        'second_tags' => 1,
+      ];
+      $form_state->set('current_state', $this->formState);
+      $current_state = $form_state->get('current_state');
     }
+    $submitted = $current_state['show_people'];
 
-    $first_tags = $this->addTags($form, $form_state, $options, 'first_tags');
+    $form['#tree'] = TRUE;
+
+    $first_tags = $this->addTags($form, $form_state, $options, 'first_tags', 0);
+
     $form['seperator_or'] = [
       '#markup' => $this->t('OR'),
+      '#weight' => 1,
     ];
 
-    $second_tags = $this->addTags($form, $form_state, $options, 'second_tags');
+    $second_tags = $this->addTags($form, $form_state, $options, 'second_tags', 2);
+
+    // kint($form_state->get('first_tags'));
+    // kint($form_state->get('second_tags'));
 
     $form['submit'] = [
       '#type' => 'submit',
       '#arg' => 'filter',
       '#value' => $this->t('Filter'),
+      '#weight' => 3,
     ];
 
     $form['csv'] = [
       '#type' => 'submit',
       '#arg' => 'csv',
       '#value' => $this->t('Export CSV'),
+      '#weight' => 4,
     ];
 
     if ( $submitted ) {
@@ -169,26 +190,27 @@ class FilterPeopleByTags extends ConfigFormBase {
   }
 
   /**
-   * Function to add another tags dropdown secton.
+   * Function to add another tags dropdown section.
    */
-  private function addTags(array &$form, FormStateInterface $form_state, $options, $section) {
+  private function addTags(array &$form, $form_state, $options, $section, $weight) {
+    $this->formState = $form_state->get('current_state');
+
     // Gather the number of names in the form already.
-    $tags = $form_state
-      ->get($section);
+    $tags = $this->formState[$section];
 
     // We have to ensure that there is at least one name field.
     if ($tags === NULL) {
-      $form_state
-        ->set($section, 1);
+      $this->formState[$section] = 1;
+      $form_state->set('current_state', $this->formState);
       $tags = 1;
     }
 
-    $form['#tree'] = TRUE;
     $form[$section] = [
       '#type' => 'fieldset',
       '#title' => $this
         ->t('Each of the following tags are an AND inside this group.'),
-      '#prefix' => '<div id="tags-fieldset-wrapper">',
+      '#weight' => $weight,
+      '#prefix' => "<div id='tags-fieldset-wrapper-$section'>",
       '#suffix' => '</div>',
     ];
 
@@ -203,17 +225,17 @@ class FilterPeopleByTags extends ConfigFormBase {
     $form[$section]['actions'] = [
       '#type' => 'actions',
     ];
+    $title_section = preg_replace('/_/', ' ', $section);
     $form[$section]['actions']['add_tag'] = [
       '#type' => 'submit',
-      '#value' => $this
-        ->t('Add one more'),
+      '#value' => $this->t('Add one more in ') . $title_section,
       '#arg' => $section,
       '#submit' => [
         '::addOne',
       ],
       '#ajax' => [
         'callback' => '::addmoreCallback',
-        'wrapper' => 'tags-fieldset-wrapper',
+        'wrapper' => 'tags-fieldset-wrapper-'. $section,
       ],
     ];
 
@@ -221,15 +243,14 @@ class FilterPeopleByTags extends ConfigFormBase {
     if ($tags > 1) {
       $form[$section]['actions']['remove_tag'] = [
         '#type' => 'submit',
-        '#value' => $this
-          ->t('Remove one in first group'),
+        '#value' => $this->t('Remove one in ') . $title_section,
         '#arg' => $section,
         '#submit' => [
           '::removeCallback',
         ],
         '#ajax' => [
           'callback' => '::addmoreCallback',
-          'wrapper' => 'tags-fieldset-wrapper',
+          'wrapper' => 'tags-fieldset-wrapper-'. $section,
         ],
       ];
     }
@@ -244,6 +265,7 @@ class FilterPeopleByTags extends ConfigFormBase {
     for ($i = 0; $i < $first_tags; $i++) {
       $first_filter_group[] = Xss::filter($form_state->getValue('first_tags', 'tag', 0)['tag'][$i]);
     }
+    $second_filter_group = [];
     for ($i = 0; $i < $second_tags; $i++) {
       $second_filter_group[] = Xss::filter($form_state->getValue('second_tags', 'tag', 0)['tag'][$i]);
     }
@@ -328,6 +350,7 @@ class FilterPeopleByTags extends ConfigFormBase {
 
     $form['people_results'] = [
       '#markup' => $this->render->render($html),
+      '#weight' => 100,
     ];
 
     $this->csv = $csv_header . "\n" . $csv_rows;
@@ -351,11 +374,11 @@ class FilterPeopleByTags extends ConfigFormBase {
    */
   public function addOne(array &$form, FormStateInterface $form_state) {
     $section = $form_state->getTriggeringElement()["#arg"];
-    $tags = $form_state
-      ->get($section);
+    $this->formState = $form_state->get('current_state');
+    $tags = $this->formState[$section];
     $add_button = $tags + 1;
-    $form_state
-      ->set($section, $add_button);
+    $this->formState[$section] = $add_button;
+    $form_state->set('current_state', $this->formState);
 
     // Since our buildForm() method relies on the value of 'num_tags' to
     // generate 'name' form elements, we have to tell the form to rebuild. If we
@@ -371,12 +394,12 @@ class FilterPeopleByTags extends ConfigFormBase {
    */
   public function removeCallback(array &$form, FormStateInterface $form_state) {
     $section = $form_state->getTriggeringElement()["#arg"];
-    $tags = $form_state
-      ->get($section);
+    $this->formState = $form_state->get('current_state');
+    $tags = $this->formState[$section];
     if ($tags > 1) {
       $remove_button = $tags - 1;
-      $form_state
-        ->set($section, $remove_button);
+      $this->formState[$section] = $remove_button;
+      $form_state->set('current_state', $this->formState);
     }
 
     // Since our buildForm() method relies on the value of 'num_tags' to
@@ -403,7 +426,9 @@ class FilterPeopleByTags extends ConfigFormBase {
   public function submitForm(array &$form, FormStateInterface $form_state) {
     $type = $form_state->getTriggeringElement()["#arg"];
     if ($type === 'filter') {
-      $form_state->set('show_people', TRUE);
+      $this->formState = $form_state->get('current_state');
+      $this->formState['show_people'] = TRUE;
+      $form_state->set('current_state', $this->formState);
       $form_state->setRebuild();
     }
     if ($type === 'csv') {
@@ -424,4 +449,5 @@ class FilterPeopleByTags extends ConfigFormBase {
 
     }
   }
+
 }
