@@ -1,0 +1,12 @@
+<?php
+
+/**
+ * Add 'ACCESS CSSN' to the region taxonomy.
+ */
+function cssn_update_9000() {
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->create([
+    'vid' => 'region',
+    'name' => 'ACCESS CSSN',
+  ]);
+  $term->save();
+}
