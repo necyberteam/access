@@ -6,3 +6,5 @@ package: Custom
 dependencies:
   - access
 
+libraries:
+  - access_misc/misc_library
