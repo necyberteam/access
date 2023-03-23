@@ -26,25 +26,29 @@ function cssn_form_submit(&$form, FormStateInterface $form_state) {
   $match_mentor = $elements['MATCHPlus Mentor']['#checked'];
   $student_facilitator = $elements['Student-Facilitator']['#checked'];
   $premier_consultant = $elements['Premier Consultant']['#checked'];
-  cssn_role_region('cssn', $general);
-  cssn_role_region('mentor', $match_mentor);
-  cssn_role_region('student', $student_facilitator);
+  // Lookup taxonomy term id by name 'ACCESS CSSN'.
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'ACCESS CSSN']);
+  $term = reset($term);
+  $term_id = $term->id();
+  cssn_role_region('cssn', $general, $term_id);
+  cssn_role_region('mentor', $match_mentor, $term_id);
+  cssn_role_region('student', $student_facilitator, $term_id);
 }
 
 
 /**
  * Set or remove role and region.
  */
-function cssn_role_region($role, $checked) {
+function cssn_role_region($role, $checked, $term_id) {
   if ($checked) {
     cssn_add_role($role);
     if ($role == 'cssn') {
-      cssn_add_field_region(772);
+      cssn_add_field_region($term_id);
     }
   } else {
     cssn_remove_role($role);
     if ($role == 'cssn') {
-      cssn_remove_field_region(772);
+      cssn_remove_field_region($term_id);
     }
   }
 }
