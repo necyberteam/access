@@ -100,10 +100,22 @@ class CommunityPersonaController extends ControllerBase {
       foreach ($ws_results as $ws_result) {
         $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
         $ws_data = $ws->getData();
-        foreach ($ws_data['link_to_resource'] as $resource_link) {
-          $resource_title = $resource_link['title'];
-          $resource_url = $resource_link['url'];
-          $ws_link .= "<li><a href='$resource_url'>$resource_title</a></li>";
+
+        $ws_link .= '<li> title: ' . $ws_data['title'] . '<br> description: ' . $ws_data['description'];
+
+        $msg = 'ws_data keys = ' . print_r(array_keys($ws_data), true)
+        . ' -- ' . basename(__FILE__) . ':' . __LINE__ ;  
+        \Drupal::messenger()->addStatus($msg);
+        error_log($msg);
+
+        if (isset($ws_data['link_to_resource'])) {
+          $ws_link .= '<br>resources: <ul>';
+          foreach ($ws_data['link_to_resource'] as $resource_link) {
+            $resource_title = $resource_link['title'];
+            $resource_url = $resource_link['url'];
+            $ws_link .= "<li><a href='$resource_url'>$resource_title</a></li>";
+          }          
+          $ws_link .= '</ul>';
         }
       }
       $ws_link .= '</ul>';
