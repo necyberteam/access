@@ -30,24 +30,33 @@ function cssn_form_submit(&$form, FormStateInterface $form_state) {
   $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'ACCESS CSSN']);
   $term = reset($term);
   $term_id = $term->id();
-  cssn_role_region('cssn', $general, $term_id);
-  cssn_role_region('mentor', $match_mentor, $term_id);
-  cssn_role_region('student', $student_facilitator, $term_id);
+  $enroll_program = FALSE;
+  if ($general || $match_mentor || $student_facilitator || $premier_consultant) {
+    $enroll_program = TRUE;
+  }
+  cssn_role_region('', $general, $term_id, $enroll_program);
+  cssn_role_region('mentor', $match_mentor, $term_id, $enroll_program);
+  cssn_role_region('student', $student_facilitator, $term_id, $enroll_program);
+  cssn_role_region('consultant', $student_facilitator, $term_id, $enroll_program);
 }
 
 
 /**
  * Set or remove role and region.
  */
-function cssn_role_region($role, $checked, $term_id) {
+function cssn_role_region($role, $checked, $term_id, $enroll_program) {
   if ($checked) {
-    cssn_add_role($role);
-    if ($role == 'cssn') {
+    if (!empty($role)) {
+      cssn_add_role($role);
+    }
+    if ($enroll_program) {
       cssn_add_field_region($term_id);
     }
   } else {
-    cssn_remove_role($role);
-    if ($role == 'cssn') {
+    if (!empty($role)) {
+      cssn_remove_role($role);
+    }
+    if ($enroll_program === FALSE) {
       cssn_remove_field_region($term_id);
     }
   }
@@ -61,9 +70,9 @@ function cssn_add_role($role) {
   $account = User::load($user->id());
   if (!$account->hasRole($role)) {
     \Drupal::messenger()->addMessage(t('The following role added: @role', ['@role' => $role]));
+    $account->addRole($role);
+    $account->save();
   }
-  $account->addRole($role);
-  $account->save();
 }
 
 /**
@@ -74,9 +83,9 @@ function cssn_remove_role($role) {
   $account = User::load($user->id());
   if ($account->hasRole($role)) {
     \Drupal::messenger()->addMessage(t('The following role removed: @role', ['@role' => $role]));
+    $account->removeRole($role);
+    $account->save();
   }
-  $account->removeRole($role);
-  $account->save();
 }
 
 /**
@@ -85,15 +94,9 @@ function cssn_remove_role($role) {
 function cssn_add_field_region($region) {
   $user = \Drupal::currentUser();
   $account = User::load($user->id());
-  $values = $account->field_region->getValue();
-  foreach ($values as $key => $value) {
-    if (!$value['target_id'] == $region) {
-      unset($values[$key]);
-      \Drupal::messenger()->addMessage(t('You have been added to the CSSN Program.'));
-    }
-  }
   $account->field_region->appendItem($region);
   $account->save();
+  \Drupal::messenger()->addMessage(t('You have been added to the CSSN Program.'));
 }
 
 /**
