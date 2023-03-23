@@ -27,19 +27,35 @@ function user_profiles_menu_local_tasks_alter(&$data, $route_name) {
  * be able to set or change their username.
  */
 function user_profiles_form_alter(&$form, &$form_state, $form_id) {
+  // Get current domain
+  $token = \Drupal::token();
+  $domainName = t("[domain:name]");
+  $current_domain_name = Html::getClass($token->replace($domainName));
+  $is_asp = $current_domain_name == 'access-support';
+
   switch ($form_id) {
     case 'change_pwd_form':
-      // Get current domain
-      $domain = \Drupal::config('domain.settings');
-      $token = \Drupal::token();
-      $domainName = t("[domain:name]");
-      $current_domain_name = Html::getClass($token->replace($domainName));
-      if ( $current_domain_name == 'access-support' ) {
+      if ($is_asp ) {
         $response = new RedirectResponse('/user');
         $response->send();
       }
       break;
+
     case 'user_form':
+      if ($is_asp) {
+
+        $user_roles = \Drupal::currentUser()->getRoles();
+        $is_admin = in_array('administrator', $user_roles);
+      
+        if (!$is_admin) {
+          $form['field_user_first_name']['#access'] = FALSE;
+          $form['field_user_last_name']['#access'] = FALSE;
+          $form['field_institution']['#access'] = FALSE;
+          $form['field_citizenships']['#access'] = FALSE;
+          $form['account']['mail']['#access'] = FALSE;
+        }
+      }
+
       $form['account']['name']['#access'] = FALSE;
       // no break - fallthrough!
 
