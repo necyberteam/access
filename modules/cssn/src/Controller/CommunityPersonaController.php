@@ -90,8 +90,8 @@ class CommunityPersonaController extends ControllerBase {
     $edit_skill_renderable = $edit_skill_link->toRenderable();
     // My Knowledge Base Contributions
     $ws_query = \Drupal::entityQuery('webform_submission')
-    ->condition('uid', $current_user->id())
-    ->condition('uri', '/form/resource');
+      ->condition('uid', $current_user->id())
+      ->condition('uri', '/form/resource');
     $ws_results = $ws_query->execute();
     $ws_link = $ws_results == NULL ?
       '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>"
@@ -102,6 +102,22 @@ class CommunityPersonaController extends ControllerBase {
         $ws_data = $ws->getData();
 
         $ws_link .= '<li> title: ' . $ws_data['title'] . '<br> description: ' . $ws_data['description'];
+
+        // $msg = 'ws getSourceUrl  = ' . print_r($ws->getSourceUrl(), true)
+        // . ' -- ' . basename(__FILE__) . ':' . __LINE__ ;  
+        // \Drupal::messenger()->addStatus($msg);
+        // error_log($msg);
+
+        // $msg = 'ws toUrl  = ' . print_r($ws->toUrl(), true)
+        // . ' -- ' . basename(__FILE__) . ':' . __LINE__ ;  
+        // \Drupal::messenger()->addStatus($msg);
+        // error_log($msg);
+
+
+        // $msg = 'ws getSourceUrl  = ' . print_r(get_class_methods($ws), true)
+        // . ' -- ' . basename(__FILE__) . ':' . __LINE__ ;  
+        // \Drupal::messenger()->addStatus($msg);
+        // error_log($msg);
 
         $msg = 'ws_data keys = ' . print_r(array_keys($ws_data), true)
         . ' -- ' . basename(__FILE__) . ':' . __LINE__ ;  
