@@ -1,7 +1,7 @@
 <?php
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\user\Entity\User;
+use Drupal\cssn\Plugin\Util\RoleProgramSorter;
 
 /**
 * @file
@@ -34,84 +34,32 @@ function cssn_form_submit(&$form, FormStateInterface $form_state) {
   if ($general || $match_mentor || $student_facilitator || $premier_consultant) {
     $enroll_program = TRUE;
   }
-  cssn_role_region('', $general, $term_id, $enroll_program);
-  cssn_role_region('mentor', $match_mentor, $term_id, $enroll_program);
-  cssn_role_region('student', $student_facilitator, $term_id, $enroll_program);
-  cssn_role_region('consultant', $student_facilitator, $term_id, $enroll_program);
+  $user = \Drupal::currentUser();
+  cssn_role_region('', $general, $term_id, $enroll_program, $user);
+  cssn_role_region('mentor', $match_mentor, $term_id, $enroll_program, $user);
+  cssn_role_region('student', $student_facilitator, $term_id, $enroll_program, $user);
+  cssn_role_region('consultant', $student_facilitator, $term_id, $enroll_program, $user);
 }
 
 
 /**
  * Set or remove role and region.
  */
-function cssn_role_region($role, $checked, $term_id, $enroll_program) {
+function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
+  $role_program_sorter = new RoleProgramSorter($user);
   if ($checked) {
     if (!empty($role)) {
-      cssn_add_role($role);
+      $role_program_sorter->addRole($role);
     }
     if ($enroll_program) {
-      cssn_add_field_region($term_id);
+      $role_program_sorter->addFieldRegion($term_id);
     }
   } else {
     if (!empty($role)) {
-      cssn_remove_role($role);
+      $role_program_sorter->removeRole($role);
     }
     if ($enroll_program === FALSE) {
-      cssn_remove_field_region($term_id);
+      $role_program_sorter->removeFieldRegion($term_id);
     }
   }
-}
-
-/**
- * Add role to user.
- */
-function cssn_add_role($role) {
-  $user = \Drupal::currentUser();
-  $account = User::load($user->id());
-  if (!$account->hasRole($role)) {
-    \Drupal::messenger()->addMessage(t('The following role added: @role', ['@role' => $role]));
-    $account->addRole($role);
-    $account->save();
-  }
-}
-
-/**
- * Remove role from user.
- */
-function cssn_remove_role($role) {
-  $user = \Drupal::currentUser();
-  $account = User::load($user->id());
-  if ($account->hasRole($role)) {
-    \Drupal::messenger()->addMessage(t('The following role removed: @role', ['@role' => $role]));
-    $account->removeRole($role);
-    $account->save();
-  }
-}
-
-/**
- * Add item to field_region.
- */
-function cssn_add_field_region($region) {
-  $user = \Drupal::currentUser();
-  $account = User::load($user->id());
-  $account->field_region->appendItem($region);
-  $account->save();
-  \Drupal::messenger()->addMessage(t('You have been added to the CSSN Program.'));
-}
-
-/**
- * Remove item to field_region.
- */
-function cssn_remove_field_region($region) {
-  $user = \Drupal::currentUser();
-  $account = User::load($user->id());
-  $values = $account->field_region->getValue();
-  foreach ($values as $key => $value) {
-    if ($value['target_id'] == $region) {
-      unset($values[$key]);
-      \Drupal::messenger()->addMessage(t('You have been removed from the CSSN Program.'));
-    }
-  }
-  $account->field_region->setValue($values);
-  $account->save();
 }

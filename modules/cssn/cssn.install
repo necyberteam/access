@@ -10,3 +10,10 @@ function cssn_update_9000() {
   ]);
   $term->save();
 }
+
+/**
+ * Sort current CSSN submissions.
+ */
+function cssn_update_9001() {
+  new Drupal\cssn\Plugin\Util\CssnSubmissionsSort();
+}
