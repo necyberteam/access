@@ -162,6 +162,36 @@ class CommunityPersonaController extends ControllerBase {
   }
 
   /**
+   * Return list of Interests.
+   *
+   * @return string
+   *   List of the person's interest.
+   */
+  public function buildInterests($user, $public = FALSE) {
+    $term_interest = \Drupal::database()->select('flagging', 'fl');
+    $term_interest->condition('fl.uid', $user->id());
+    $term_interest->condition('fl.flag_id', 'interest');
+    $term_interest->fields('fl', ['entity_id']);
+    $flagged_interests = $term_interest->execute()->fetchCol();
+    $my_interests = "";
+    if ($flagged_interests == NULL && $public === FALSE) {
+      $my_interests = '<p>' . t('You currently have not added any interests. Click Edit interests to add.') . "</p>";
+    }
+    if ($flagged_interests == NULL && $public === TRUE) {
+      $my_interests = '<p>' . t('No interests added.') . "</p>";
+    }
+    if ($my_interests == "") {
+      foreach ($flagged_interests as $flagged_interest) {
+        $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
+        $my_interests .= "<div class='border border-black m-1 p-1'>";
+        $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "</div>";
+      }
+    }
+    return $my_interests;
+  }
+
+  /**
    * Build content to display on page.
    */
   public function communityPersona() {
@@ -172,22 +202,8 @@ class CommunityPersonaController extends ControllerBase {
     // Affinity link
     $build_affinity_link = $this->buildAffinityLink();
     // My Interests
-    $term_interest = \Drupal::database()->select('flagging', 'fl');
-    $term_interest->condition('fl.uid', $current_user->id());
-    $term_interest->condition('fl.flag_id', 'interest');
-    $term_interest->fields('fl', ['entity_id']);
-    $flagged_interests = $term_interest->execute()->fetchCol();
-    $my_interests = $flagged_interests == NULL ?
-      '<p>' . t('You currently have not added any interests. Click Edit interests to add.') . "</p>"
-      :'';
-    if ($my_interests == "") {
-      foreach ($flagged_interests as $flagged_interest) {
-        $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
-        $my_interests .= "<div class='border border-black m-1 p-1'>";
-        $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
-        $my_interests .= "</div>";
-      }
-    }
+    $my_interests = $this->buildInterests($current_user);
+    // Edit interests link.
     $edit_interest_url = Url::fromUri('internal:/add-interest');
     $edit_interest_link = Link::fromTextAndUrl('Edit interests', $edit_interest_url);
     $edit_interest_renderable = $edit_interest_link->toRenderable();
@@ -307,6 +323,8 @@ class CommunityPersonaController extends ControllerBase {
       $user_last_name = $user->get('field_user_last_name')->value;
       // List of affinity groups
       $user_affinity_groups = $this->affinityGroupList($user, TRUE);
+      // My Interests
+      $my_interests = $this->buildInterests($user, TRUE);
       // My Expertise
       $my_skills = $this->mySkills($user, TRUE);
       // My Knowledge Base Contributions
@@ -322,6 +340,14 @@ class CommunityPersonaController extends ControllerBase {
               <div class="p-3">
                 {{ user_affinity_groups|raw }}
               </div>
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+              <span class="h4 text-white m-0">{{ mi_title }}</span>
+            </div>
+            <div class="d-flex flex-wrap p-3">
+              {{ my_interests|raw }}
+            </div>
           </div>
           <div class="border border-secondary my-3">
             <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
@@ -350,6 +376,8 @@ class CommunityPersonaController extends ControllerBase {
         '#context' => [
           'ag_title' => t('Affinity Groups'),
           'user_affinity_groups' => $user_affinity_groups,
+          'mi_title' => t('Interests'),
+          'my_interests' => $my_interests,
           'me_title' => t('Expertise'),
           'my_skills' => $my_skills,
           'ws_title' => t('Knowledge Base Contributions'),
