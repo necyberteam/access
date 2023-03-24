@@ -44,7 +44,7 @@ class PersonaBlock extends BlockBase {
       if ($user_image->entity !== NULL) {
         $user_image = $user_image->entity->getFileUri();
         $user_image = \Drupal::service('file_url_generator')->generateAbsoluteString($user_image);
-        $user_image = '<img src="' . $user_image . '" class="img-fluid pb-3 border border-black" />';
+        $user_image = '<img src="' . $user_image . '" class="img-fluid mb-3 border border-black" />';
       } else {
         $user_image = '<svg version="1.1" class="mb-3 border border-black" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
            viewBox="0 0 448 448" style="enable-background:new 0 0 448 448;" xml:space="preserve">
