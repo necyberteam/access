@@ -31,7 +31,7 @@ class CommunityPersonaController extends ControllerBase {
       $user_affinity_groups = '<p>' . t('You currently are not connected to any Affinity groups. Click below to explore.') . "</p>";
     }
     if ($affinity_groups == NULL && $public === TRUE) {
-      $user_affinity_groups = '<p>' . t('User currently is not connected to any Affinity groups.') . "</p>";
+      $user_affinity_groups = '<p>' . t('Not connected to any Affinity groups.') . "</p>";
     }
     if ($user_affinity_groups == "<ul>") {
       foreach ($affinity_groups as $affinity_group) {
@@ -84,7 +84,7 @@ class CommunityPersonaController extends ControllerBase {
       $my_skills = '<p>' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>";
     }
     if ($flagged_skills == NULL && $public === TRUE) {
-      $my_skills = '<p>' . t('User currently has not added any skills.') . "</p>";
+      $my_skills = '<p>' . t('No added any skills.') . "</p>";
     }
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
@@ -113,7 +113,7 @@ class CommunityPersonaController extends ControllerBase {
       $ws_link = '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>";
     }
     if ($ws_results == NULL && $public === TRUE) {
-      $ws_link = '<p>' . t('User currently has not contributed to the Knowledge Base.') . "</p>";
+      $ws_link = '<p>' . t('No contributions to the Knowledge Base.') . "</p>";
     }
     if ($ws_link == "<ul>") {
       foreach ($ws_results as $ws_result) {
@@ -153,7 +153,7 @@ class CommunityPersonaController extends ControllerBase {
       $match_link = '<p>' . t('You currently have not been matched with any Engagements. Click below to find an Engagement.') . "</p>";
     }
     if ($match_list == NULL && $public === TRUE) {
-      $match_link = '<p>' . t('User currently has not been matched with any Engagements.') . "</p>";
+      $match_link = '<p>' . t('No matched Engagements.') . "</p>";
     }
     if ($match_link == "<ul class='list-unstyled'>") {
       $match_link .= $match_list . '</ul>';
@@ -307,8 +307,6 @@ class CommunityPersonaController extends ControllerBase {
       $user_last_name = $user->get('field_user_last_name')->value;
       // List of affinity groups
       $user_affinity_groups = $this->affinityGroupList($user, TRUE);
-      // Affinity link
-      $build_affinity_link = $this->buildAffinityLink();
       // My Expertise
       $my_skills = $this->mySkills($user, TRUE);
       // My Knowledge Base Contributions
@@ -322,9 +320,7 @@ class CommunityPersonaController extends ControllerBase {
         '#template' => '<div class="border border-secondary my-3">
             <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
               <div class="p-3">
-                <p>{{ ag_intro }}</p>
                 {{ user_affinity_groups|raw }}
-                {{ affinity_link }}
               </div>
           </div>
           <div class="border border-secondary my-3">
@@ -353,14 +349,12 @@ class CommunityPersonaController extends ControllerBase {
           </div>',
         '#context' => [
           'ag_title' => t('Affinity Groups'),
-          'ag_intro' => t('Connected with researchers of common interests.'),
           'user_affinity_groups' => $user_affinity_groups,
-          'affinity_link' => $build_affinity_link,
-          'me_title' => t('My Expertise'),
+          'me_title' => t('Expertise'),
           'my_skills' => $my_skills,
           'ws_title' => t('Knowledge Base Contributions'),
           'ws_links' => $ws_link,
-          'match_title' => t('My MATCH Engagements'),
+          'match_title' => t('MATCH Engagements'),
           'match_links' => $match_link,
         ],
       ];

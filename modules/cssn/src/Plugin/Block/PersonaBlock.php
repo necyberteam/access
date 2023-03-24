@@ -82,7 +82,8 @@ class PersonaBlock extends BlockBase {
       if ($key !== false) {
         unset($roles[$key]);
       }
-      $roles = implode('<br />', $roles);
+      $role = new \Drupal\access_misc\Plugin\Util\RolesLabelLookup($roles);
+      $roles = $role->getRoleLabelsString();
       $regions = $user_entity->get('field_region')->getValue();
       $terms = [];
       foreach ($regions as $region) {
@@ -115,9 +116,9 @@ class PersonaBlock extends BlockBase {
       $cssn_more['#attributes']['class'] = ['text-dark'];
 
       // Get the user's email address.
-      $user_email = $user_entity->get('mail')->value;
+      $user_id = $user->id();
       // Show the email button on public profiles.
-      $send_email = $public ? "<a href='mailto:$user_email' class='w-100 btn btn-primary btn-sm py-1 px-2'><i class='fa-solid fa-envelope'></i> Send Email</a>" : "";
+      $send_email = $public ? "<a href='/user/$user_id/contact?destination=community-persona/$user_id' class='w-100 btn btn-primary btn-sm py-1 px-2'><i class='fa-solid fa-envelope'></i> Send Email</a>" : "";
 
       $persona_block['string'] = [
         '#type' => 'inline_template',
