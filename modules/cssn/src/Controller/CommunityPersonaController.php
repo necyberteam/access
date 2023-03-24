@@ -84,7 +84,7 @@ class CommunityPersonaController extends ControllerBase {
       $my_skills = '<p>' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>";
     }
     if ($flagged_skills == NULL && $public === TRUE) {
-      $my_skills = '<p>' . t('No added any skills.') . "</p>";
+      $my_skills = '<p>' . t('No skills added.') . "</p>";
     }
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
