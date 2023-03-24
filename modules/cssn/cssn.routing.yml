@@ -5,3 +5,9 @@ cssn.page:
     _title: 'Community Persona'
   requirements:
     _role: 'authenticated'
+cssn.public_page:
+  path: '/community-persona/{uid}'
+  defaults:
+    _controller: '\Drupal\cssn\Controller\CommunityPersonaController::communityPersonaPublic'
+  requirements:
+    _role: 'authenticated'
