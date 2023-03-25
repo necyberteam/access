@@ -10,4 +10,4 @@ cssn.public_page:
   defaults:
     _controller: '\Drupal\cssn\Controller\CommunityPersonaController::communityPersonaPublic'
   requirements:
-    _role: 'authenticated'
+    _permission: 'access content'
