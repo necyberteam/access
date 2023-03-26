@@ -33,7 +33,6 @@ class RoleProgramSorter {
   public function addRole($role) {
     $account = User::load($this->storedUser->id());
     if (!$account->hasRole($role)) {
-      \Drupal::messenger()->addMessage(t('The following role added: @role', ['@role' => $role]));
       $account->addRole($role);
       $account->save();
     }
@@ -45,7 +44,6 @@ class RoleProgramSorter {
   public function removeRole($role) {
     $account = User::load($this->storedUser->id());
     if ($account->hasRole($role)) {
-      \Drupal::messenger()->addMessage(t('The following role removed: @role', ['@role' => $role]));
       $account->removeRole($role);
       $account->save();
     }
@@ -58,7 +56,7 @@ class RoleProgramSorter {
     $account = User::load($this->storedUser->id());
     $account->field_region->appendItem($region);
     $account->save();
-    \Drupal::messenger()->addMessage(t('You have been added to the CSSN Program.'));
+    \Drupal::messenger()->addMessage(t('Thanks for updating your CSSN membership.'));
   }
 
   /**
@@ -70,7 +68,7 @@ class RoleProgramSorter {
     foreach ($values as $key => $value) {
       if ($value['target_id'] == $region) {
         unset($values[$key]);
-        \Drupal::messenger()->addMessage(t('You have been removed from the CSSN Program.'));
+        \Drupal::messenger()->addMessage(t('Thanks for updating your CSSN membership.'));
       }
     }
     $account->field_region->setValue($values);
