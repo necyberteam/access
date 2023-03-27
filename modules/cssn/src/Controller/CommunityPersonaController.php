@@ -108,22 +108,18 @@ class CommunityPersonaController extends ControllerBase {
       ->condition('uid', $user->id())
       ->condition('uri', '/form/resource');
     $ws_results = $ws_query->execute();
-    $ws_link = "<ul>";
-    if ($ws_results == NULL && $public === FALSE) {
-      $ws_link = '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>";
-    }
-    if ($ws_results == NULL && $public === TRUE) {
-      $ws_link = '<p>' . t('User currently has not contributed to the Knowledge Base.') . "</p>";
-    }
-    if ($ws_link == "<ul>") {
+    if ($ws_results == NULL) {
+      $ws_link = '<p>' . ($public 
+        ? t('User currently has not contributed to the Knowledge Base.')
+        : t('You currently have not contributed to the Knowledge Base. Click below to contribute.'))
+        . '</p';
+    } else { 
+      $ws_link = '<ul>';
       foreach ($ws_results as $ws_result) {
         $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
+        $url = $ws->toUrl()->toString();
         $ws_data = $ws->getData();
-        foreach ($ws_data['link_to_resource'] as $resource_link) {
-          $resource_title = $resource_link['title'];
-          $resource_url = $resource_link['url'];
-          $ws_link .= "<li><a href='$resource_url'>$resource_title</a></li>";
-        }
+        $ws_link .= '<li><a href=' . $url. '>'. $ws_data['title'] . '</a></li>';
       }
       $ws_link .= '</ul>';
     }
