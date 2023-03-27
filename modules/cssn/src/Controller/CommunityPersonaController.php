@@ -108,12 +108,14 @@ class CommunityPersonaController extends ControllerBase {
       ->condition('uid', $user->id())
       ->condition('uri', '/form/resource');
     $ws_results = $ws_query->execute();
-    if ($ws_results == NULL) {
-      $ws_link = '<p>' . ($public 
-        ? t('User currently has not contributed to the Knowledge Base.')
-        : t('You currently have not contributed to the Knowledge Base. Click below to contribute.'))
-        . '</p';
-    } else { 
+    $ws_link = "<ul>";
+    if ($ws_results == NULL && $public === FALSE) {
+      $ws_link = '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>";
+    }
+    if ($ws_results == NULL && $public === TRUE) {
+      $ws_link = '<p>' . t('User currently has not contributed to the Knowledge Base.') . "</p>";
+    }
+    if ($ws_link == "<ul>") {
       $ws_link = '<ul>';
       foreach ($ws_results as $ws_result) {
         $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
@@ -127,10 +129,10 @@ class CommunityPersonaController extends ControllerBase {
   }
 
   /**
-   * Return list of Knowledge Contributions.
+   * Return list of engagements.
    *
    * @return string
-   *   List of Knowledge Contributions.
+   *   List of engagements.
    */
   public function matchList($user, $public = FALSE) {
     $fields = [
