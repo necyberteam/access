@@ -515,23 +515,24 @@ function access_news_cron() {
 /**
   * accessNewsCronShouldRun
   * Returns true if it's time to run the news+events rollup.
-  * Want to run once on tuesdays after 3 am. We assume the calling cron job runs every hour.
+  * Want to run on 1st and 3rd Mondays of the month after 3 am.
+  * We assume the calling cron job runs every hour.
  */
 function accessNewsCronShouldRun() {
 
-  $currentTime = \Drupal::time()->getCurrentTime();  // in america/ny timezone
-  $dayOfWeek = date('w', $currentTime);
+  $currentTime = \Drupal::time()->getCurrentTime();  // UTC timestamp
   $hour = intval(date('H', $currentTime));
+  $dayOfMonth = date('j', $currentTime);
+  $firstMon = date('j', strtotime("first monday of this month"));
+  $thirdMon = date('j', strtotime("third monday of this month"));
 
-  // 2 is Tuesday
-  if ($dayOfWeek == '2' && $hour > 3) {
+  if (($dayOfMonth == $firstMon || $dayOfMonth == $thirdMon) && $hour > 7) {
 
     $lastRun = \Drupal::state()->get('access_news.crontime-rollupnews', 0);
-
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
 
-    // run if it hasn't been run this tuesday already
-    if ($hoursDiff >= 24) {
+    // run if it hasn't been run this day already
+    if ($hoursDiff > 24) {
       return TRUE;
     }
   }
