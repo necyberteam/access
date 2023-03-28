@@ -307,10 +307,14 @@ function access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type) {
       'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
     ],
   ];
-  // Get all user emails with the match_pm role.
-  $ids = \Drupal::entityQuery('user')
-    ->condition('status', 1)
+  // Get all user emails with the match_pm or match_sc role.
+  $query = \Drupal::entityQuery('user');
+  $group = $query
+    ->orConditionGroup()
     ->condition('roles', 'match_pm')
+    ->condition('roles', 'match_sc');
+  $ids = $query->condition($group)
+    ->condition('status', 1)
     ->execute();
   $users = User::loadMultiple($ids);
   $email = '';
