@@ -116,14 +116,12 @@ class CommunityPersonaController extends ControllerBase {
       $ws_link = '<p>' . t('No contributions to the Knowledge Base.') . "</p>";
     }
     if ($ws_link == "<ul>") {
+      $ws_link = '<ul>';
       foreach ($ws_results as $ws_result) {
         $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
+        $url = $ws->toUrl()->toString();
         $ws_data = $ws->getData();
-        foreach ($ws_data['link_to_resource'] as $resource_link) {
-          $resource_title = $resource_link['title'];
-          $resource_url = $resource_link['url'];
-          $ws_link .= "<li><a href='$resource_url'>$resource_title</a></li>";
-        }
+        $ws_link .= '<li><a href=' . $url. '>'. $ws_data['title'] . '</a></li>';
       }
       $ws_link .= '</ul>';
     }
@@ -131,10 +129,10 @@ class CommunityPersonaController extends ControllerBase {
   }
 
   /**
-   * Return list of Knowledge Contributions.
+   * Return list of engagements.
    *
    * @return string
-   *   List of Knowledge Contributions.
+   *   List of engagements.
    */
   public function matchList($user, $public = FALSE) {
     $fields = [
