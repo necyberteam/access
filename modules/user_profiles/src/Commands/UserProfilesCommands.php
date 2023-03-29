@@ -2,19 +2,9 @@
 
 namespace Drupal\user_profiles\Commands;
 
-use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
-use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
-use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
-use Drupal\Core\Datetime\DrupalDateTime;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
-use Drupal\recurring_events\Entity\EventSeries;
-use Drupal\recurring_events\Entity\EventInstance;
-use Drupal\recurring_events\EventInterface;
-use Drupal\recurring_events\Plugin\ComputedField\EventInstances;
 use Drush\Commands\DrushCommands;
 
 /**
@@ -39,13 +29,14 @@ class UserProfilesCommands extends DrushCommands
      */
     public function mergeUser(string $from_user_id, string $to_user_id)
     {
+        
+        // $flagService = \Drupal::service('flag');
+        // $this->output()->writeln(print_r($flagService->getAllFlags(), true));
+
         $this->output()->writeln("------------- Merge user $from_user_id into $to_user_id ---------------------------------");
 
         $user_from = User::load($from_user_id);
         $user_to = User::load($to_user_id);
-
-        // $this->output()->writeln('methods of output: ' . print_r(get_class_methods($this->output), true));
-
 
         if (!$user_from) {
             $this->output()->writeln("  *** No user found with id $from_user_id");
@@ -56,7 +47,6 @@ class UserProfilesCommands extends DrushCommands
             return;
         }
 
-
         $first_name1 = $user_from->get('field_user_first_name')->getString();
         $last_name1 = $user_from->get('field_user_last_name')->getString();
         $first_name2 = $user_to->get('field_user_first_name')->getString();
@@ -65,105 +55,143 @@ class UserProfilesCommands extends DrushCommands
         $this->output()->writeln("  Merging from '$first_name1 $last_name1' to '$first_name2 $last_name2'");
 
         $this->mergeAfffinityGroups($user_from, $user_to);
+        $this->mergeFlag('interest', $user_from, $user_to);
+        $this->mergeFlag('skill', $user_from, $user_to);
     }
 
-    private function mergeAfffinityGroups($user_from, $user_to) {
-
-        $this->output()->writeln("  Merging affinity groups from " . $user_from->id() 
-            . " to " . $user_to->id());
-
-        $userBlockedArray = $user_to->get('field_blocked_ag_tax')->getValue();
-        $userBlockedAgTids = [];
-        foreach ($userBlockedArray as $userBlock) {
-            $userBlockedAgTids[] = $userBlock['target_id'];
-        }   
+    private function mergeFlag($flag_name, $user_from, $user_to)
+    {
+        $this->output()->writeln("Merging " . $flag_name . "s");
         
-        $this->output()->writeln("  user-to blocked ag tids: " . implode(' ', $userBlockedAgTids));
+        $term = \Drupal::database()->select('flagging', 'fl');
+        $term->condition('fl.uid', $user_from->id());
+        $term->condition('fl.flag_id', $flag_name);
+        $term->fields('fl', ['entity_id']);
+        $flagged_items = $term->execute()->fetchCol();
+        if ($flagged_items == NULL) {
+            $this->output()->writeln("  From-user has no reported " . $flag_name . "s");
+            return;
+        }
+        
+        foreach ($flagged_items as $flagged_item) {
+            $term = \Drupal\taxonomy\Entity\Term::load($flagged_item);
+            $title = $term->get('name')->value;
 
-        // $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($from_user_id);
+            $this->output()->writeln("  from-user has $flag_name '$title'");
+
+            // Check if already flagged. If not, set the flag.
+            $flag_service = \Drupal::service('flag');
+            $flag = $flag_service->getFlagById($flag_name);
+            $flag_status = $flag_service->getFlagging($flag, $term, $user_to);
+            if (!$flag_status) {
+                $this->output()->writeln("    Add $flag_name '$title' to to-user");
+                $flag_service->flag($flag, $term, $user_to);
+            } else {
+                $this->output()->writeln("    To-user already has $flag_name '$title'");
+            }
+        }
+
+    }
+
+    private function mergeAfffinityGroups($user_from, $user_to)
+    {
+
+        $this->output()->writeln("Merging affinity groups");
+
+        // get user_to's blocked ag taxonomy ids
+        $user_blocked_tid_array = $user_to->get('field_blocked_ag_tax')->getValue();
+        $user_blocked_tids = [];
+        foreach ($user_blocked_tid_array as $user_blocked_tid) {
+            $user_blocked_tids[] = $user_blocked_tid['target_id'];
+        }
+        // $this->output()->writeln("  user-to blocked ag tids: " . implode(' ', $user_blocked_tids));
+
+        // get all the affinity groups of $user_from
         $query = \Drupal::database()->select('flagging', 'fl');
         $query->condition('fl.uid', $user_from->id());
         $query->condition('fl.flag_id', 'affinity_group');
         $query->fields('fl', ['entity_id']);
-        $ag_tids = $query->execute()->fetchCol();
-        if ($ag_tids == NULL) {
+        $ag_ids = $query->execute()->fetchCol();
+
+        if ($ag_ids == NULL) {
             $this->output()->writeln("  from-user is not a member of any affinity groups");
-        } else {
-            
-            $this->output()->writeln("  from-user ag tids: " . implode(' ', $ag_tids));
-            foreach ($ag_tids as $ag_tid) {
-
-
-                $query = \Drupal::database()->select('taxonomy_index', 'ti');
-                $query->condition('ti.tid', $ag_tid);
-                $query->fields('ti', ['nid']);
-                $affinity_group_nid = $query->execute()->fetchCol();
-                if (isset($affinity_group_nid[0])) {
-                    $affinity_group_loaded = \Drupal::entityTypeManager()->getStorage('node')->load($affinity_group_nid[0]);
-                    if (!$affinity_group_loaded) {
-                        $this->output()->writeln("  *** Warning, from-user flagged as member of affinity group #" 
-                            . $affinity_group_nid[0] 
-                            . " but no such affinity group found - skipping this affinity group");
-                    } else {
-                        $this->output()->writeln("  from-user member of AG '" 
-                            . $affinity_group_loaded->getTitle()  . "' (tid #" 
-                            . $ag_tid . ")");
-                        $this->addUserToAG($user_to, $affinity_group_loaded, $userBlockedAgTids);
-                    }
-                    //   $url = Url::fromRoute('entity.node.canonical', array('node' => $affinity_group_loaded->id()));
-                    // $this->output()->writeln("  From-user is a member of affinity group '" 
-                    //     . $affinity_group_loaded->getTitle() . "'");
-                    //   $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
-                    //   $link = $project_link->toString()->__toString();
-                    //   $user_affinity_groups .= "<li>$link</li>";
-                }
-            }
+            return;
+        }
+        // for each affinity group id, add user_to to that affinity group
+        // $this->output()->writeln("  from-user ag ids: " . implode(' ', $ag_ids));
+        foreach ($ag_ids as $ag_id) {
+            $this->addUserToAG($user_to, $ag_id, $user_blocked_tids);
         }
     }
 
     /**
-     * 
+     * Add a user to an affinity group (unless on the users's block list)
      */
-    private function addUserToAG(UserInterface $to_user, EntityInterface $affinity_group, $blockList) {
-        
-        // instead of loading by title, could we load by id?  not sure how
-        // $ag_id = $affinity_group->getEntityTypeId();
-        // $agTax = \Drupal::entityTypeManager()
-        //     ->getStorage('taxonomy_term')
-        //     ->loadByProperties(['id' => $ag_id]);
+    private function addUserToAG(UserInterface $to_user, $ag_id, $user_blocked_tids)
+    {
+        // get the node id of the affinity group
+        $query = \Drupal::database()->select('taxonomy_index', 'ti');
+        $query->condition('ti.tid', $ag_id);
+        $query->fields('ti', ['nid']);
+        $affinity_group_nid = $query->execute()->fetchCol();
 
-        $ag_title = $affinity_group->getTitle();
-        $agTax = \Drupal::entityTypeManager()
+        if (!isset($affinity_group_nid[0])) {
+            // not sure how or if this could happen, or what it would mean, but Miles' code in 
+            // CommunityPersonaController.php line 36 also ignores this condition
+            $this->output()->writeln("  *** Warning, from-user flagged as member of affinity group #$ag_id but no such affinity group found - skipping this affinity group");
+            return;
+        }
+
+        // load that affinity group
+        $ag_nid = $affinity_group_nid[0];
+        // $affinity_group_loaded = Node::load($ag_nid);
+        $affinity_group_loaded = \Drupal::entityTypeManager()
+            ->getStorage('node')
+            ->load($ag_nid);
+
+        if (!$affinity_group_loaded) {
+            $this->output()->writeln("  *** Warning, could not load affinity group with node_id #$ag_nid - skipping this affinity group");
+            return;
+        }
+
+        $ag_title = $affinity_group_loaded->getTitle();
+
+        $this->output()->writeln("  From-user member of AG '$ag_title' (id #$ag_id)");
+
+        // get AG taxonomy id
+        $ag_taxonomy = \Drupal::entityTypeManager()
             ->getStorage('taxonomy_term')
             ->loadByProperties(['name' => $ag_title]);
+        $ag_taxonomy = reset($ag_taxonomy);
 
-
-        // $this->output()->writeln("  agTax = " . print_r($agTax, true));     
-        $agTax = reset($agTax);
-
-        if (!$agTax) {
-            $this->output()->writeln("  *** Warning, no taxonomy id found for AG title '$ag_title'");     
+        if (!$ag_taxonomy) {
+            $this->output()->writeln("    *** Warning, no taxonomy id found for AG title '$ag_title'");
             return;
         }
+
+        $ag_tax_id =  $ag_taxonomy->id();
+
         // check if ag is on block list.
-        if (in_array($agTax->id(), $blockList)) {
-           
-            $this->output()->writeln("  Affinity group '$ag_title' on to-user's block list");
+        if (in_array($ag_tax_id, $user_blocked_tids)) {
+            $this->output()->writeln("    Not adding '$ag_title' (tid #$ag_tax_id) because on to-user's block list");
             return;
         }
-        
-        $flagService = \Drupal::service('flag');
-        $flag = $flagService->getFlagById('affinity_group');
 
-        // Check if already flagged. If not, set the join flag.
-        $flagStatus = $flagService->getFlagging($flag, $agTax, $to_user);
-        if (!$flagStatus) {
-            // $flagService->flag($flag, $agTax, $to_user);
-            $this->output()->writeln("  WILL Add to-user to affinity group '$ag_title'");
+        // Check if already flagged. If not, set the flag.
+        $flag_service = \Drupal::service('flag');
+        $ag_flag = $flag_service->getFlagById('affinity_group');
+        $ag_flag_status = $flag_service->getFlagging($ag_flag, $ag_taxonomy, $to_user);
+        if (!$ag_flag_status) {
+            $this->output()->writeln("    Add to-user to affinity group '$ag_title' (#$ag_tax_id)");
+            // TODO following sometimes giving "The flag does not apply to the bundle of the entity."
+            if ($ag_taxonomy->bundle() !== 'affinity_groups') {
+                $this->output()->writeln("    *** Error, affinity group '$ag_title' has unexpected bundle = '" . $ag_taxonomy->bundle() 
+                    . "' (expected it to have bundle 'affinity_groups')");
+            } else {
+                $flag_service->flag($ag_flag, $ag_taxonomy, $to_user);
+            }
         } else {
-            $this->output()->writeln("  to-user already a member of affinity group '$ag_title'");
+            $this->output()->writeln("    To-user already a member of affinity group '$ag_title' (#$ag_tax_id)");
         }
-
     }
-
 }
