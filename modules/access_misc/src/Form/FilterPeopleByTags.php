@@ -153,6 +153,7 @@ class FilterPeopleByTags extends ConfigFormBase {
     foreach ($roles as $role) {
       $role_options[$role->id()] = $role->label();
     }
+    asort($role_options);
 
     $form['roles'] = [
       '#type' => 'select',
@@ -323,6 +324,7 @@ class FilterPeopleByTags extends ConfigFormBase {
    * Create a table of people.
    */
   private function createTable(array &$form, FormStateInterface $form_state, $first_tags, $second_tags, $third_tags, $fourth_tags, $fifth_tags) {
+    $selected_role = Xss::filter($form_state->getValue('roles'));
     $first_filter_group = [];
     for ($i = 0; $i < $first_tags; $i++) {
       $first_filter_group[] = Xss::filter($form_state->getValue('first_tags', 'tag', 0)['tag'][$i]);
@@ -367,55 +369,57 @@ class FilterPeopleByTags extends ConfigFormBase {
       $last_name = $user->get('field_user_last_name')->getValue();
       $email = $user->getEmail();
       $roles = $user->getRoles();
-      // Query the flagging table for entity_id for this uid.
-      $query = $this->database->select('flagging', 'f');
-      $query->fields('f', ['entity_id']);
-      $query->condition('f.uid', $uid->uid);
-      $query->orderBy('f.entity_id', 'ASC');
-      $entity_ids = $query->execute()->fetchAll();
-      $tags = '';
-      $first = $this->checkTags($first_filter_group, $entity_ids);
-      $second = $this->checkTags($second_filter_group, $entity_ids);
-      $third = $this->checkTags($third_filter_group, $entity_ids);
-      $fourth = $this->checkTags($fourth_filter_group, $entity_ids);
-      $fifth = $this->checkTags($fifth_filter_group, $entity_ids);
-      if ($first || $second || $third || $fourth || $fifth) {
-        foreach ($entity_ids as $entity_id) {
-          $term = $this->entityTypeManager->getStorage('taxonomy_term')->load($entity_id->entity_id);
-          $tags .= $term !== NULL ? $term->label() . ", " : '';
+      if (in_array($selected_role, $roles) || $selected_role == 1) {
+        // Query the flagging table for entity_id for this uid.
+        $query = $this->database->select('flagging', 'f');
+        $query->fields('f', ['entity_id']);
+        $query->condition('f.uid', $uid->uid);
+        $query->orderBy('f.entity_id', 'ASC');
+        $entity_ids = $query->execute()->fetchAll();
+        $tags = '';
+        $first = $this->checkTags($first_filter_group, $entity_ids);
+        $second = $this->checkTags($second_filter_group, $entity_ids);
+        $third = $this->checkTags($third_filter_group, $entity_ids);
+        $fourth = $this->checkTags($fourth_filter_group, $entity_ids);
+        $fifth = $this->checkTags($fifth_filter_group, $entity_ids);
+        if ($first || $second || $third || $fourth || $fifth) {
+          foreach ($entity_ids as $entity_id) {
+            $term = $this->entityTypeManager->getStorage('taxonomy_term')->load($entity_id->entity_id);
+            $tags .= $term !== NULL ? $term->label() . ", " : '';
+          }
+          $tags = rtrim($tags, ', ');
+          $fname = isset($first_name[0]) && $first_name[0] !== NULL ? $first_name[0]['value'] : '';
+          $lname = isset($last_name[0]) && $last_name[0] !== NULL ? $last_name[0]['value'] : '';
+          $inst = isset($institution[0]) && $institution[0] !== NULL ? $institution[0]['value'] : '';
+          $csv_rows .= "\"$fname $lname\"," . "\"$inst\"," . "\"$email\",\"" . implode(', ', $roles) . "\",\"$tags\" \n";
+          $rows[] = [
+            'Name' => [
+              'data' => [
+                '#markup' => "<a href='/community-profile/" . $uid->uid . "'>" . $fname . " " . $lname . "</a>",
+              ],
+            ],
+            'Institution' => [
+              'data' => [
+                '#markup' => $inst,
+              ],
+            ],
+            'Email' => [
+              'data' => [
+                '#markup' => $email,
+              ],
+            ],
+            'Roles' => [
+              'data' => [
+                '#markup' => implode(', ', $roles),
+              ],
+            ],
+            'Tags' => [
+              'data' => [
+                '#markup' => $tags,
+              ],
+            ],
+          ];
         }
-        $tags = rtrim($tags, ', ');
-        $fname = isset($first_name[0]) && $first_name[0] !== NULL ? $first_name[0]['value'] : '';
-        $lname = isset($last_name[0]) && $last_name[0] !== NULL ? $last_name[0]['value'] : '';
-        $inst = isset($institution[0]) && $institution[0] !== NULL ? $institution[0]['value'] : '';
-        $csv_rows .= "\"$fname $lname\"," . "\"$inst\"," . "\"$email\",\"" . implode(', ', $roles) . "\",\"$tags\" \n";
-        $rows[] = [
-          'Name' => [
-            'data' => [
-              '#markup' => "<a href='/community-profile/" . $uid->uid . "'>" . $fname . " " . $lname . "</a>",
-            ],
-          ],
-          'Institution' => [
-            'data' => [
-              '#markup' => $inst,
-            ],
-          ],
-          'Email' => [
-            'data' => [
-              '#markup' => $email,
-            ],
-          ],
-          'Roles' => [
-            'data' => [
-              '#markup' => implode(', ', $roles),
-            ],
-          ],
-          'Tags' => [
-            'data' => [
-              '#markup' => $tags,
-            ],
-          ],
-        ];
       }
     }
     $html['results'] = [
