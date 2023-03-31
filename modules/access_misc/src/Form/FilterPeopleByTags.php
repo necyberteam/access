@@ -147,11 +147,29 @@ class FilterPeopleByTags extends ConfigFormBase {
 
     $current_state = $form_state->get('current_state');
 
+    // Get all available roles.
+    $roles = $this->entityTypeManager->getStorage('user_role')->loadMultiple();
+    $role_options[1] = '-- Any --';
+    foreach ($roles as $role) {
+      $role_options[$role->id()] = $role->label();
+    }
+
+    $form['roles'] = [
+      '#type' => 'select',
+      '#title' => $this->t('Select Roles'),
+      '#options' => $role_options,
+      '#description' => $this->t('Filter users by role'),
+      '#weight' => -1,
+    ];
+
     if ($current_state === NULL) {
       $this->formState = [
         'show_people' => 0,
         'first_tags' => 1,
         'second_tags' => 1,
+        'third_tags' => 1,
+        'fourth_tags' => 1,
+        'fifth_tags' => 1,
       ];
       $form_state->set('current_state', $this->formState);
       $current_state = $form_state->get('current_state');
@@ -169,22 +187,43 @@ class FilterPeopleByTags extends ConfigFormBase {
 
     $second_tags = $this->addTags($form, $form_state, $options, 'second_tags', 2);
 
+    $form['seperator_or_second'] = [
+      '#markup' => $this->t('OR'),
+      '#weight' => 3,
+    ];
+
+    $third_tags = $this->addTags($form, $form_state, $options, 'third_tags', 4);
+
+    $form['seperator_or_third'] = [
+      '#markup' => $this->t('OR'),
+      '#weight' => 5,
+    ];
+
+    $fourth_tags = $this->addTags($form, $form_state, $options, 'fourth_tags', 6);
+
+    $form['seperator_or_fourth'] = [
+      '#markup' => $this->t('OR'),
+      '#weight' => 7,
+    ];
+
+    $fifth_tags = $this->addTags($form, $form_state, $options, 'fifth_tags', 8);
+
     $form['submit'] = [
       '#type' => 'submit',
       '#arg' => 'filter',
       '#value' => $this->t('Filter'),
-      '#weight' => 3,
+      '#weight' => 9,
     ];
 
     $form['csv'] = [
       '#type' => 'submit',
       '#arg' => 'csv',
       '#value' => $this->t('Export CSV'),
-      '#weight' => 4,
+      '#weight' => 10,
     ];
 
     if ($submitted) {
-      $this->createTable($form, $form_state, $first_tags, $second_tags);
+      $this->createTable($form, $form_state, $first_tags, $second_tags, $third_tags, $fourth_tags, $fifth_tags);
     }
 
     // $this->messengerInterface->addMessage($this->render->render($dev_message));
@@ -283,7 +322,7 @@ class FilterPeopleByTags extends ConfigFormBase {
   /**
    * Create a table of people.
    */
-  private function createTable(array &$form, FormStateInterface $form_state, $first_tags, $second_tags) {
+  private function createTable(array &$form, FormStateInterface $form_state, $first_tags, $second_tags, $third_tags, $fourth_tags, $fifth_tags) {
     $first_filter_group = [];
     for ($i = 0; $i < $first_tags; $i++) {
       $first_filter_group[] = Xss::filter($form_state->getValue('first_tags', 'tag', 0)['tag'][$i]);
@@ -291,6 +330,18 @@ class FilterPeopleByTags extends ConfigFormBase {
     $second_filter_group = [];
     for ($i = 0; $i < $second_tags; $i++) {
       $second_filter_group[] = Xss::filter($form_state->getValue('second_tags', 'tag', 0)['tag'][$i]);
+    }
+    $third_filter_group = [];
+    for ($i = 0; $i < $third_tags; $i++) {
+      $third_filter_group[] = Xss::filter($form_state->getValue('third_tags', 'tag', 0)['tag'][$i]);
+    }
+    $fourth_filter_group = [];
+    for ($i = 0; $i < $fourth_tags; $i++) {
+      $fourth_filter_group[] = Xss::filter($form_state->getValue('fourth_tags', 'tag', 0)['tag'][$i]);
+    }
+    $fifth_filter_group = [];
+    for ($i = 0; $i < $fifth_tags; $i++) {
+      $fifth_filter_group[] = Xss::filter($form_state->getValue('fifth_tags', 'tag', 0)['tag'][$i]);
     }
     $header = [
       'Name',
@@ -325,7 +376,10 @@ class FilterPeopleByTags extends ConfigFormBase {
       $tags = '';
       $first = $this->checkTags($first_filter_group, $entity_ids);
       $second = $this->checkTags($second_filter_group, $entity_ids);
-      if ($first || $second) {
+      $third = $this->checkTags($third_filter_group, $entity_ids);
+      $fourth = $this->checkTags($fourth_filter_group, $entity_ids);
+      $fifth = $this->checkTags($fifth_filter_group, $entity_ids);
+      if ($first || $second || $third || $fourth || $fifth) {
         foreach ($entity_ids as $entity_id) {
           $term = $this->entityTypeManager->getStorage('taxonomy_term')->load($entity_id->entity_id);
           $tags .= $term !== NULL ? $term->label() . ", " : '';
@@ -338,7 +392,7 @@ class FilterPeopleByTags extends ConfigFormBase {
         $rows[] = [
           'Name' => [
             'data' => [
-              '#markup' => "<a href='/user/" . $uid->uid . "'>" . $fname . " " . $lname . "</a>",
+              '#markup' => "<a href='/community-profile/" . $uid->uid . "'>" . $fname . " " . $lname . "</a>",
             ],
           ],
           'Institution' => [
@@ -466,7 +520,7 @@ class FilterPeopleByTags extends ConfigFormBase {
       // Create comma separated variable from $data.
       $first_tags = $this->formState['first_tags'];
       $second_tags = $this->formState['second_tags'];
-      $this->createTable($form, $form_state, $first_tags, $second_tags);
+      $this->createTable($form, $form_state, $first_tags, $second_tags, $third_tags, $fourth_tags);
       $csv = $this->csv;
 
       \Drupal::service('file_system')->saveData($csv, "/tmp/export.csv", FileSystemInterface::EXISTS_REPLACE);
