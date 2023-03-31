@@ -230,6 +230,11 @@ class CommunityPersonaController extends ControllerBase {
     $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
+      '#attached' => [
+        'library' => [
+          'cssn/cssn_library',
+        ],
+      ],
       '#template' => '<div class="border border-secondary my-3">
           <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
             <div class="p-3">
