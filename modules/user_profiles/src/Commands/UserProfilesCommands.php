@@ -13,7 +13,6 @@ use Drush\Commands\DrushCommands;
  *
  * @package Drupal\user_profiles\Commands
  */
-
 class UserProfilesCommands extends DrushCommands {
 
   /**
@@ -55,12 +54,193 @@ class UserProfilesCommands extends DrushCommands {
 
     $this->output()->writeln("  Merging from '$first_name1 $last_name1' to '$first_name2 $last_name2'");
 
-    // $this->mergeResources($user_from, $user_to);
+    $this->mergeResources($user_from, $user_to);
     $this->mergeAfffinityGroups($user_from, $user_to);
-    // $this->mergeFlag('interest', $user_from, $user_to);
-    // $this->mergeFlag('skill', $user_from, $user_to);
+    $this->mergeFlag('interest', $user_from, $user_to);
+    $this->mergeFlag('skill', $user_from, $user_to);
     $this->mergeFlag('interested_in_project', $user_from, $user_to);
-    // @todo Merge flags Upvote, Interested in Project.
+    // @todo Merge flags Upvote --
+    $this->mergeRoles($user_from, $user_to);
+    $this->mergeUserFields($user_from, $user_to);
+  }
+
+  /**
+   * Merge various fields from $user_from to $user_to.
+   *
+   * @param \Drupal\user\Entity\User $user_from
+   *   From user.
+   * @param \Drupal\user\Entity\User $user_to
+   *   To user.
+   */
+  private function mergeUserFields(User $user_from, User $user_to) {
+    $this->output()->writeln("Merging user fields");
+
+    /*
+    $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('user', 'user');
+
+    [0] => uid
+    [1] => uuid
+    [2] => langcode
+    [3] => preferred_langcode
+    [4] => preferred_admin_langcode
+    [5] => name
+    [6] => pass
+    [7] => mail
+    [8] => timezone
+    [9] => status
+    [10] => created
+    [11] => changed
+    [12] => access
+    [13] => login
+    [14] => init
+    [15] => roles
+    [16] => default_langcode
+    [17] => mail_change
+    [18] => role_change
+    [19] => path
+    [20] => field_blocked_ag_tax
+    [21] => field_carnegie_code
+    [22] => field_cider_resources
+    [23] => field_citizenships
+    [24] => field_constant_contact_id
+    [25] => field_current_degree_program
+    [26] => field_current_occupation
+    [27] => field_cv_resume
+    [28] => field_degree
+    [29] => field_domain_access
+    [30] => field_domain_admin
+    [31] => field_domain_all_affiliates
+    [32] => field_hpc_experience
+    [33] => field_institution
+    [34] => field_is_cc
+    [35] => field_region
+    [36] => field_user_first_name
+    [38] => user_picture
+     */
+
+    $merge_fields = [
+      'field_citizenships',
+      'field_current_degree_program',
+      'field_current_occupation',
+      'field_cv_resume',
+      'field_degree',
+      'field_hpc_experience',
+      'field_institution',
+      'user_picture',
+    ];
+
+    // For each of the fields listed above, only replace the value for the
+    // to_user if to_user field is empty and if the from-user is not empty.
+    foreach ($merge_fields as $merge_field) {
+      $to_val = $user_to->get($merge_field)->getValue();
+      $from_val = $user_from->get($merge_field)->getValue();
+      if (!$to_val && $from_val) {
+        $value_text = '';
+        if (isset($from_val[0]['value'])) {
+          $value_text = "with value '" . $from_val[0]['value'] . "'";
+        }
+        $this->output()->writeln("  Merging field '$merge_field' $value_text");
+        $user_to->get($merge_field)->setValue($from_val);
+        $user_to->set($merge_field, $from_val);
+      }
+    }
+
+    // Migrate the boolean field_is_cc manually
+    if (
+      $user_from->get('field_is_cc')->getValue()[0]['value']
+      && !$user_to->get('field_is_cc')->getValue()[0]['value']
+    ) {
+      $this->output()->writeln("  Setting to-user as a campus champion");
+      $user_to->set('field_is_cc', TRUE);
+    }
+
+    // Per Andrew:  Carnegie code should only be copied if the old institution
+    // is the same as the new institution.
+    $from_carnegie_code = $user_from->get('field_carnegie_code')->getValue();
+    if ($from_carnegie_code) {
+      $from_carnegie_code = $from_carnegie_code[0]['value'];
+    }
+    if ($from_carnegie_code) {
+      $from_inst = $user_from->get('field_institution')->getValue();
+      if ($from_inst) {
+        $from_inst = $from_inst[0]['value'];
+      }
+      if ($from_inst) {
+        $to_inst = $user_to->get('field_carnegie_code')->getValue();
+        if ($to_inst) {
+          $to_inst = $to_inst[0]['value'];
+        }
+        if ($from_inst === $to_inst) {
+          $this->output()->writeln("  Merging field 'field_carnegie_code' with value '$from_carnegie_code'");
+          $user_to->set($merge_field, $from_val);
+        }
+      }
+    }
+
+    // Per Andrew:  field_region should only be added to, not replaced.
+    $this->output()->writeln("  Merging program fields");
+
+    $from_region = $user_from->get('field_region')->referencedEntities();
+
+    foreach ($from_region as $from_program) {
+      $to_region = $user_to->get('field_region')->referencedEntities();
+      if (count($to_region) == 0) {
+        $this->output()->writeln("    Adding program '"
+          . $from_program->getName() . "'");
+        $user_to->set('field_region', $from_program->id());
+      } else {
+        if (!array_filter(
+          $to_region,
+          function ($to_program) use ($from_program) {
+            return $to_program->id() == $from_program->id();
+          }
+        )) {
+          $this->output()->writeln(
+            "    Appending program '"
+              . $from_program->getName() . "'"
+          );
+          $user_to->get('field_region')->appendItem(
+            [
+              'target_id' => $from_program->id(),
+            ]
+          );
+        } else {
+          $this->output()->writeln(
+            "    Already a member of program '"
+              . $from_program->getName() . "'"
+          );
+        }
+      }
+    }
+
+    $user_to->save();
+  }
+
+  /**
+   * Merge the roles from $user_from to $user_to.
+   *
+   * @param \Drupal\user\Entity\User $user_from
+   *   From user.
+   * @param \Drupal\user\Entity\User $user_to
+   *   To user.
+   */
+  private function mergeRoles(User $user_from, User $user_to) {
+    $this->output()->writeln("Merging roles");
+
+    $roles = $user_from->getRoles();
+    $changes = FALSE;
+    foreach ($roles as $role) {
+      if (in_array($role, ['anonymous', 'authenticated', 'administrator'])) {
+        $this->output()->writeln("  Skipping role '$role' - can't be assigned programatically");
+      } else {
+        $this->output()->writeln("  Merging role '$role'");
+        $user_to->addRole($role);
+        $changes = TRUE;
+      }
+    }
+    if ($changes) {
+      $user_to->save();
+    }
   }
 
   /**
@@ -72,6 +252,7 @@ class UserProfilesCommands extends DrushCommands {
    *   To user.
    */
   private function mergeResources(User $user_from, User $user_to) {
+    $this->output()->writeln("Merging resources");
 
     $ws_query = \Drupal::entityQuery('webform_submission')
       ->condition('uid', $user_from->id())
@@ -87,7 +268,7 @@ class UserProfilesCommands extends DrushCommands {
       $resource_title = $ws_data['title'];
       $ws->setOwner($user_to);
       $ws->save();
-      $this->output()->writeln("    Updated ownership of resource '$resource_title'");
+      $this->output()->writeln("  Updated ownership of resource '$resource_title'");
     }
   }
 
@@ -102,7 +283,7 @@ class UserProfilesCommands extends DrushCommands {
    *   To user.
    */
   private function mergeFlag($flag_name, User $user_from, User $user_to) {
-    $this->output()->writeln("Merging " . $flag_name . "s");
+    $this->output()->writeln("Merging flags with name '$flag_name'");
 
     $term = \Drupal::database()->select('flagging', 'fl');
     $term->condition('fl.uid', $user_from->id());
@@ -125,10 +306,15 @@ class UserProfilesCommands extends DrushCommands {
       $flag = $flag_service->getFlagById($flag_name);
       $flag_status = $flag_service->getFlagging($flag, $term, $user_to);
       if (!$flag_status) {
-              if ($ag_taxonomy->bundle() !== 'affinity_groups') {
-
-        $this->output()->writeln("    Add '$title' to to-user");
-        $flag_service->flag($flag, $term, $user_to);
+        $bundles = $flag->getBundles();
+        if (!empty($bundles) && !in_array($term->bundle(), $bundles)) {
+          $this->output()->writeln("*** Error, flag '$flag_name' with title '$title' has bundle "
+            . $term->bundle() . " which is not in allowed list: {"
+            . implode(', ', $bundles) . '} -- skipping this one.');
+        } else {
+          $this->output()->writeln("    Add '$title' to to-user");
+          $flag_service->flag($flag, $term, $user_to);
+        }
       } else {
         $this->output()->writeln("    To-user already has '$title'");
       }
@@ -167,9 +353,7 @@ class UserProfilesCommands extends DrushCommands {
       $this->output()->writeln("  from-user is not a member of any affinity groups");
       return;
     }
-    // For each affinity group id, add user_to to that affinity group
-    // $this->output()->writeln("  from-user ag ids: "
-    // . implode(' ', $ag_ids));
+    // For each affinity group id, add user_to to that affinity group.
     foreach ($ag_ids as $ag_id) {
       $this->addUserToAg($user_to, $ag_id, $user_blocked_tids);
     }
@@ -254,4 +438,3 @@ class UserProfilesCommands extends DrushCommands {
     }
   }
 }
-
