@@ -27,7 +27,7 @@
 
 use Drupal\node\Entity\Node;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
-use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
+
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\taxonomy\Entity\Term;
@@ -52,15 +52,13 @@ const cAccessEmail = "supportapiaccess@access-ci.org";
  *    we call api to create the email list,
  *    update AG Leader roles for added or removed coordinators,
  *    Ensure every Affinity Group name has a corresponding taxonomy term.
- *
  */
 function access_affinitygroup_entity_presave(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
-      // case 1: User did Join the AG (using the Join button or link)
-
+      // Case 1: User did Join the AG (using the Join button or link)
       // Exit if CRON because this hook assumes there is a current user.
       if (\Drupal::state()->get('access_affinitygroup.cronrunning', FALSE)) {
         return;
@@ -78,7 +76,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
       removeBlockedAG($taxonomyId, $userDetails);
     }
     else {
-      // case 2: Affinity group edit was saved by admin user.
+      // Case 2: Affinity group edit was saved by admin user.
       update_ag_leader_roles($entity);
       add_ag_taxonomy_term($entity);
 
@@ -141,8 +139,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
  * 'nothing' -- this function updates that field with html listing any associated
  * CiDeR resources, both their title & description.
  */
-function access_affinitygroup_views_pre_render(ViewExecutable $view)
-{
+function access_affinitygroup_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'affinity_group' && $view->current_display == 'group') {
 
     foreach ($view->result as $value) {
@@ -161,13 +158,12 @@ function access_affinitygroup_views_pre_render(ViewExecutable $view)
 
       foreach ($view->field as $id => $field) {
         if ($id == 'nothing') {
-            $field->options['alter']['text'] = $cider_text;
+          $field->options['alter']['text'] = $cider_text;
         }
       }
     }
   }
 }
-
 
 /**
  * - update AG Leader roles for added or removed coordinators.
@@ -325,7 +321,7 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
 
     if (method_exists($entity, 'getFlaggableType')) {
 
-      // case 1: User did Leave AG. This flag is related to a taxonomy; the taxonomy
+      // Case 1: User did Leave AG. This flag is related to a taxonomy; the taxonomy
       // id is used to find the AG node related to the taxonomy and then the CC
       // list_id within the node for json to send to api.
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
@@ -344,7 +340,7 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
 
     }
     else {
-      // case 2: AG getting deleted.
+      // Case 2: AG getting deleted.
       $title = $entity->getTitle();
       $cca = new ConstantContactApi();
       $lists = $cca->apiCall('/contact_lists');
@@ -541,10 +537,10 @@ function access_affinitygroup_cron() {
       \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
       \Drupal::logger('cron_affinitygroup')->notice('Running cron: user' . date("Y-m-d H:i:s", $currentTime));
 
-      // TODO - this will probably be $aui->startBatch();
-      //$aui = new AllocationsUsersImport();
-      //$aui->updateUserAllocations();
-      // emailDevCronLog(); // this function needs to be fixed
+      // @todo this will probably be $aui->startBatch();
+      // $aui = new AllocationsUsersImport();
+      // $aui->updateUserAllocations();
+      // emailDevCronLog(); // this function needs to be fixed.
     }
   }
   catch (Exception $e) {
@@ -570,15 +566,16 @@ function shouldRun($function) {
                                                 . " now " . date("Y-m-d H:i:s", $currentTime)
                                                 . "; hours diff $hoursDiff ");
 
-    // Run if it's been more than 22 hours since the last run.
-    if ($hoursDiff >= 22) {
+    // Run if it's been at least 6 hours since the last run.
+    if ($hoursDiff >= 6) {
       return TRUE;
     }
 
   }
   elseif ($function == 'users') {
 
-    return false;  // TEMP TEMP JUST DON'T RUN IMPORT CRON FOR NOW
+    // TEMP TEMP JUST DON'T RUN IMPORT CRON FOR NOW.
+    return FALSE;
     // showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
     // showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
     // These 2 environment booleans are off by default but can be set in the
@@ -635,7 +632,7 @@ function needsCCId($u) {
  */
 
 /**
- *  emailText - body of email. This will be wrapped with email html template
+ * EmailText - body of email. This will be wrapped with email html template
  *  emailTitle
  *  pubDate - published date for display in email
  *  agNames - array of affinity group names for broadcast (for display in email)
@@ -646,12 +643,13 @@ function needsCCId($u) {
 function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $ccListIds, $communityTemplate, $logoUrl) {
 
   // For CC, must be unique name for campaign.
-  $campaignName = uniqid('Access News: '.$agNames[0].'- '.$pubDate.' ', FALSE);
+  $campaignName = uniqid('Access News: ' . $agNames[0] . '- ' . $pubDate . ' ', FALSE);
 
-  // Either use email template for access or community
+  // Either use email template for access or community.
   if ($communityTemplate) {
     $emailHtml = ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $logoUrl);
-  } else {
+  }
+  else {
     $emailHtml = ccAccessNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
   }
 
@@ -732,8 +730,7 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
   }
 }
 
-// this include for constant contant wrapper html will become obsolete
+// This include for constant contant wrapper html will become obsolete.
 include 'src/emailContent.php';
-// this is the new email wrapper
+// This is the new email wrapper.
 include 'src/ccNewsWrapper.php';
-
