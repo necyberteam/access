@@ -172,7 +172,7 @@ class UserProfilesCommands extends DrushCommands {
         }
         if ($from_inst === $to_inst) {
           $this->output()->writeln("  Merging field 'field_carnegie_code' with value '$from_carnegie_code'");
-          $user_to->set($merge_field, $from_val);
+          $user_to->set('field_carnegie_code', $from_val);
         }
       }
     }
