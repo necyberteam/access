@@ -4,8 +4,10 @@ namespace Drupal\cssn\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\cssn\Plugin\Util\MatchLookup;
+use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Drupal\user\Entity\User;
 
 /**
  * Controller for Community Persona.
@@ -13,20 +15,24 @@ use Drupal\Core\Link;
 class CommunityPersonaController extends ControllerBase {
 
   /**
-   * Build content to display on page.
+   * List of affinity groups given user has flagged.
+   *
+   * @return string
+   *   List of affinity groups.
    */
-  public function communityPersona() {
-    // My Affinity Groups
-    $current_user = \Drupal::currentUser();
-    $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($current_user->id());
+  public function affinityGroupList($user, $public = FALSE) {
     $query = \Drupal::database()->select('flagging', 'fl');
-    $query->condition('fl.uid', $current_user->id());
+    $query->condition('fl.uid', $user->id());
     $query->condition('fl.flag_id', 'affinity_group');
     $query->fields('fl', ['entity_id']);
     $affinity_groups = $query->execute()->fetchCol();
-    $user_affinity_groups = $affinity_groups == NULL ?
-      '<p>' . t('You currently are not connected to any Affinity groups. Click below to explore.') . "</p>"
-      :'<ul>';
+    $user_affinity_groups = "<ul>";
+    if ($affinity_groups == NULL && $public === FALSE) {
+      $user_affinity_groups = '<p>' . t('You currently are not connected to any Affinity groups. Click below to explore.') . "</p>";
+    }
+    if ($affinity_groups == NULL && $public === TRUE) {
+      $user_affinity_groups = '<p>' . t('Not connected to any Affinity groups.') . "</p>";
+    }
     if ($user_affinity_groups == "<ul>") {
       foreach ($affinity_groups as $affinity_group) {
         $query = \Drupal::database()->select('taxonomy_index', 'ti');
@@ -43,40 +49,43 @@ class CommunityPersonaController extends ControllerBase {
       }
       $user_affinity_groups .= '</ul>';
     }
+    return $user_affinity_groups;
+  }
+
+  /**
+   * Link to Affinity page.
+   *
+   * @return string
+   *   Link to affinity page.
+   */
+  public function buildAffinityLink() {
     $affinity_url = Url::fromUri('internal:/affinity_groups');
     $affinity_link = Link::fromTextAndUrl('See all Affinity Groups', $affinity_url);
     $affinity_renderable = $affinity_link->toRenderable();
     $build_affinity_link = $affinity_renderable;
     $build_affinity_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
-    // My Interests
-    $term_interest = \Drupal::database()->select('flagging', 'fl');
-    $term_interest->condition('fl.uid', $current_user->id());
-    $term_interest->condition('fl.flag_id', 'interest');
-    $term_interest->fields('fl', ['entity_id']);
-    $flagged_interests = $term_interest->execute()->fetchCol();
-    $my_interests = $flagged_interests == NULL ?
-      '<p>' . t('You currently have not added any interests. Click Edit interests to add.') . "</p>"
-      :'';
-    if ($my_interests == "") {
-      foreach ($flagged_interests as $flagged_interest) {
-        $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
-        $my_interests .= "<div class='border border-black m-1 p-1'>";
-        $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
-        $my_interests .= "</div>";
-      }
-    }
-    $edit_interest_url = Url::fromUri('internal:/add-interest');
-    $edit_interest_link = Link::fromTextAndUrl('Edit interests', $edit_interest_url);
-    $edit_interest_renderable = $edit_interest_link->toRenderable();
-    // My Expertise
+    return $build_affinity_link;
+  }
+
+  /**
+   * Return list of flagged Expertise.
+   *
+   * @return string
+   *   List of expertise.
+   */
+  public function mySkills($user, $public = FALSE) {
     $term = \Drupal::database()->select('flagging', 'fl');
-    $term->condition('fl.uid', $current_user->id());
+    $term->condition('fl.uid', $user->id());
     $term->condition('fl.flag_id', 'skill');
     $term->fields('fl', ['entity_id']);
     $flagged_skills = $term->execute()->fetchCol();
-    $my_skills = $flagged_skills == NULL ?
-      '<p>' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>"
-      :'';
+    $my_skills = "";
+    if ($flagged_skills == NULL && $public === FALSE) {
+      $my_skills = '<p>' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>";
+    }
+    if ($flagged_skills == NULL && $public === TRUE) {
+      $my_skills = '<p>' . t('No skills added.') . "</p>";
+    }
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_skill)->get('name')->value;
@@ -85,35 +94,47 @@ class CommunityPersonaController extends ControllerBase {
         $my_skills .= "</div>";
       }
     }
-    $edit_skill_url = Url::fromUri('internal:/add-skill');
-    $edit_skill_link = Link::fromTextAndUrl('Edit expertise', $edit_skill_url);
-    $edit_skill_renderable = $edit_skill_link->toRenderable();
-    // My Knowledge Base Contributions
+    return $my_skills;
+  }
+
+  /**
+   * Return list of Knowledge Contributions.
+   *
+   * @return string
+   *   List of Knowledge Contributions.
+   */
+  public function knowledgeBaseContrib($user, $public = FALSE) {
     $ws_query = \Drupal::entityQuery('webform_submission')
-    ->condition('uid', $current_user->id())
-    ->condition('uri', '/form/resource');
+      ->condition('uid', $user->id())
+      ->condition('uri', '/form/resource');
     $ws_results = $ws_query->execute();
-    $ws_link = $ws_results == NULL ?
-      '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>"
-      :'<ul>';
+    $ws_link = "<ul>";
+    if ($ws_results == NULL && $public === FALSE) {
+      $ws_link = '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>";
+    }
+    if ($ws_results == NULL && $public === TRUE) {
+      $ws_link = '<p>' . t('No contributions to the Knowledge Base.') . "</p>";
+    }
     if ($ws_link == "<ul>") {
+      $ws_link = '<ul>';
       foreach ($ws_results as $ws_result) {
         $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
+        $url = $ws->toUrl()->toString();
         $ws_data = $ws->getData();
-        foreach ($ws_data['link_to_resource'] as $resource_link) {
-          $resource_title = $resource_link['title'];
-          $resource_url = $resource_link['url'];
-          $ws_link .= "<li><a href='$resource_url'>$resource_title</a></li>";
-        }
+        $ws_link .= '<li><a href=' . $url. '>'. $ws_data['title'] . '</a></li>';
       }
       $ws_link .= '</ul>';
     }
-    $webform_url = Url::fromUri('internal:/form/resource');
-    $webform_link = Link::fromTextAndUrl('Contribute to Knowledge Base', $webform_url);
-    $webform_renderable = $webform_link->toRenderable();
-    $build_webform_link = $webform_renderable;
-    $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
-    // My Match Engagements
+    return $ws_link;
+  }
+
+  /**
+   * Return list of engagements.
+   *
+   * @return string
+   *   List of engagements.
+   */
+  public function matchList($user, $public = FALSE) {
     $fields = [
       'field_mentor' => 'Mentor',
       'field_students' => 'Student',
@@ -121,16 +142,87 @@ class CommunityPersonaController extends ControllerBase {
       'field_researcher' => 'Researcher',
       'field_match_interested_users' => 'Interested',
     ];
-    $matches = new MatchLookup($fields, $current_user->id());
+    $matches = new MatchLookup($fields, $user->id());
     // Sort by status.
     $matches->sortStatusMatches();
     $match_list = $matches->getMatchList();
-    $match_link = $match_list == '' ?
-      '<p>' . t('You are not currently involved with any MATCH Engagements.') . "</p>"
-      :"<ul class='list-unstyled'>";
+    $match_link = "<ul class='list-unstyled'>";
+    if ($match_list == NULL && $public === FALSE) {
+      $match_link = '<p>' . t('You currently have not been matched with any Engagements. Click below to find an Engagement.') . "</p>";
+    }
+    if ($match_list == NULL && $public === TRUE) {
+      $match_link = '<p>' . t('No matched Engagements.') . "</p>";
+    }
     if ($match_link == "<ul class='list-unstyled'>") {
       $match_link .= $match_list . '</ul>';
     }
+    return $match_link;
+  }
+
+  /**
+   * Return list of Interests.
+   *
+   * @return string
+   *   List of the person's interest.
+   */
+  public function buildInterests($user, $public = FALSE) {
+    $term_interest = \Drupal::database()->select('flagging', 'fl');
+    $term_interest->condition('fl.uid', $user->id());
+    $term_interest->condition('fl.flag_id', 'interest');
+    $term_interest->fields('fl', ['entity_id']);
+    $flagged_interests = $term_interest->execute()->fetchCol();
+    $my_interests = "";
+    if ($flagged_interests == NULL && $public === FALSE) {
+      $my_interests = '<p>' . t('You currently have not added any interests. Click Edit interests to add.') . "</p>";
+    }
+    if ($flagged_interests == NULL && $public === TRUE) {
+      $my_interests = '<p>' . t('No interests added.') . "</p>";
+    }
+    if ($my_interests == "") {
+      foreach ($flagged_interests as $flagged_interest) {
+        $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
+        $my_interests .= "<div class='border border-black m-1 p-1'>";
+        $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "</div>";
+      }
+    }
+    return $my_interests;
+  }
+
+  /**
+   * Build content to display on page.
+   */
+  public function communityPersona() {
+    // My Affinity Groups
+    $current_user = \Drupal::currentUser();
+    // List of affinity groups
+    $user_affinity_groups = $this->affinityGroupList($current_user);
+    // Affinity link
+    $build_affinity_link = $this->buildAffinityLink();
+    // My Interests
+    $my_interests = $this->buildInterests($current_user);
+    // Edit interests link.
+    $edit_interest_url = Url::fromUri('internal:/add-interest');
+    $edit_interest_link = Link::fromTextAndUrl('Edit interests', $edit_interest_url);
+    $edit_interest_renderable = $edit_interest_link->toRenderable();
+    // My Expertise
+    $my_skills = $this->mySkills($current_user);
+    // Link to add Skills/Expertise.
+    $edit_skill_url = Url::fromUri('internal:/add-skill');
+    $edit_skill_link = Link::fromTextAndUrl('Edit expertise', $edit_skill_url);
+    $edit_skill_renderable = $edit_skill_link->toRenderable();
+    // My Knowledge Base Contributions
+    $ws_link = $this->knowledgeBaseContrib($current_user);
+
+    // Link to add Knowledge Base Contribution webform.
+    $webform_url = Url::fromUri('internal:/form/resource');
+    $webform_link = Link::fromTextAndUrl('Contribute to Knowledge Base', $webform_url);
+    $webform_renderable = $webform_link->toRenderable();
+    $build_webform_link = $webform_renderable;
+    $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    // My Match Engagements
+    $match_link = $this->matchList($current_user);
+    // Link to see all Match Engagements.
     $match_engage_url = Url::fromUri('internal:/engagements');
     $match_engage_link = Link::fromTextAndUrl('See all engagements', $match_engage_url);
     $match_engage_renderable = $match_engage_link->toRenderable();
@@ -206,6 +298,101 @@ class CommunityPersonaController extends ControllerBase {
     \Drupal::service('page_cache_kill_switch')->trigger();
 
     return $persona_page;
+  }
+
+  /**
+   * Build public version of community persona page.
+   */
+  public function communityPersonaPublic() {
+    // Get last item in url.
+    $end_url = new EndUrl();
+    $user_id = $end_url->getUrlEnd();
+    $should_user_load = FALSE;
+    if (is_numeric($user_id)) {
+      $user = User::load($user_id);
+      if ($user !== NULL) {
+        $should_user_load = TRUE;
+      } else {
+        $should_user_load = FALSE;
+      }
+    }
+    if ($should_user_load) {
+      $user_first_name = $user->get('field_user_first_name')->value;
+      $user_last_name = $user->get('field_user_last_name')->value;
+      // List of affinity groups
+      $user_affinity_groups = $this->affinityGroupList($user, TRUE);
+      // My Interests
+      $my_interests = $this->buildInterests($user, TRUE);
+      // My Expertise
+      $my_skills = $this->mySkills($user, TRUE);
+      // My Knowledge Base Contributions
+      $ws_link = $this->knowledgeBaseContrib($user, TRUE);
+      // My Match Engagements
+      $match_link = $this->matchList($user, TRUE);
+
+      $persona_page['#title'] = "$user_first_name $user_last_name";
+      $persona_page['string'] = [
+        '#type' => 'inline_template',
+        '#template' => '<div class="border border-secondary my-3">
+            <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
+              <div class="p-3">
+                {{ user_affinity_groups|raw }}
+              </div>
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+              <span class="h4 text-white m-0">{{ mi_title }}</span>
+            </div>
+            <div class="d-flex flex-wrap p-3">
+              {{ my_interests|raw }}
+            </div>
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+              <span class="h4 text-white m-0">{{ me_title }}</span>
+            </div>
+            <div class="d-flex flex-wrap p-3">
+              {{ my_skills|raw }}
+            </div>
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+              <span class="h4 m-0 text-white">{{ ws_title }}</span>
+            </div>
+            <div class="p-3">
+              {{ ws_links|raw }}
+            </div>
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+              <span class="h4 m-0 text-white">{{ match_title }}</span>
+            </div>
+            <div class="p-3">
+              {{ match_links|raw }}
+            </div>
+          </div>',
+        '#context' => [
+          'ag_title' => t('Affinity Groups'),
+          'user_affinity_groups' => $user_affinity_groups,
+          'mi_title' => t('Interests'),
+          'my_interests' => $my_interests,
+          'me_title' => t('Expertise'),
+          'my_skills' => $my_skills,
+          'ws_title' => t('Knowledge Base Contributions'),
+          'ws_links' => $ws_link,
+          'match_title' => t('MATCH Engagements'),
+          'match_links' => $match_link,
+        ],
+      ];
+      return $persona_page;
+    }
+    else {
+      return [
+        '#type' => 'markup',
+        '#title' => 'User not found',
+        '#markup' => t('No user found at this URL.'),
+      ];
+    }
   }
 
 }
