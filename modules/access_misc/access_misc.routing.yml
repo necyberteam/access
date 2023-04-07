@@ -3,7 +3,7 @@ filter_people_by_tags_form.form:
   defaults:
     _form: '\Drupal\access_misc\Form\FilterPeopleByTags'
     _title: 'Filter users by flagged interest or skill'
-    requirements:
+  requirements:
     _role: 'administrator'
 access_misc.jira_vars_form:
   path: '/admin/services/create-ticket-form-vars'
