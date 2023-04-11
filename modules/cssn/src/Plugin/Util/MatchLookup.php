@@ -105,7 +105,7 @@ class MatchLookup {
       return;
     }
     foreach ($array as $key => $value) {
-      if ($value['status'] == $sortby) {
+      if ($value['status'][0]['value'] == $sortby) {
         $sorted[$key] = $value;
       }
     }
@@ -128,7 +128,7 @@ class MatchLookup {
       $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
       $title = $match['title'];
       $nid = $match['nid'];
-      $match_status = $match['status'];
+      $match_status = $match['status'][0]['value'];
       $match_name = $match['name'];
       $match_link .= "<li class='d-flex p-3 $stripe_class'><div class='text-truncate' style='width: 400px;'><a href='/node/$nid'>$title</a></div><div class='px-3' style='width: 160px;'>$match_status</div><div class='font-weight-bold'>$match_name</div></li>";
       $n++;
