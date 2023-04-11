@@ -37,15 +37,17 @@ class PersonaBlock extends BlockBase {
     $terms = [];
     foreach ($regions as $region) {
       $region_tid = $region['target_id'];
-      $terms[] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
+      $terms[$region_tid] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
     }
     $program = implode(', ', $terms);
-    $ws_query = \Drupal::entityQuery('webform_submission')
-    ->condition('uid', $current_user->id())
-    ->condition('uri', '/form/join-the-cssn-network');
-    $ws_results = $ws_query->execute();
+    // If $terms contains 'ACCESS CSSN', then the user is a CSSN member.
+    $cssn_member = in_array('ACCESS CSSN', $terms) ? TRUE : FALSE;
+    //$ws_query = \Drupal::entityQuery('webform_submission')
+    //  ->condition('uid', $current_user->id())
+    //  ->condition('uri', '/form/join-the-cssn-network');
+    //$ws_results = $ws_query->execute();
     $cssn_indicator = "";
-    if (!empty($ws_results)) {
+    if ($cssn_member) {
       $cssn_indicator = "<span class='text-primary'><i class='fa-solid fa-square'></i></span>";
       $cssn = "CSSN Member";
     } else {
@@ -55,11 +57,11 @@ class PersonaBlock extends BlockBase {
       $cssn = $cssn_renderable;
       $cssn['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     }
-      $cssn_more_url = Url::fromUri('internal:/cssn');
-      $cssn_more_link = Link::fromTextAndUrl('Find out More', $cssn_more_url);
-      $cssn_more_renderable = $cssn_more_link->toRenderable();
-      $cssn_more = $cssn_more_renderable;
-      $cssn_more['#attributes']['class'] = ['text-dark'];
+    $cssn_more_url = Url::fromUri('internal:/cssn');
+    $cssn_more_link = Link::fromTextAndUrl('Find out More', $cssn_more_url);
+    $cssn_more_renderable = $cssn_more_link->toRenderable();
+    $cssn_more = $cssn_more_renderable;
+    $cssn_more['#attributes']['class'] = ['text-dark'];
 
     $persona_block['string'] = [
       '#type' => 'inline_template',

@@ -18,15 +18,15 @@ class CommunityPersonaController extends ControllerBase {
   public function communityPersona() {
     // My Affinity Groups
     $current_user = \Drupal::currentUser();
-    $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($current_user->id());
     $query = \Drupal::database()->select('flagging', 'fl');
     $query->condition('fl.uid', $current_user->id());
     $query->condition('fl.flag_id', 'affinity_group');
     $query->fields('fl', ['entity_id']);
     $affinity_groups = $query->execute()->fetchCol();
+    $affinity_groups = array_unique($affinity_groups);
     $user_affinity_groups = $affinity_groups == NULL ?
       '<p>' . t('You currently are not connected to any Affinity groups. Click below to explore.') . "</p>"
-      :'<ul>';
+      : '<ul>';
     if ($user_affinity_groups == "<ul>") {
       foreach ($affinity_groups as $affinity_group) {
         $query = \Drupal::database()->select('taxonomy_index', 'ti');
@@ -56,7 +56,7 @@ class CommunityPersonaController extends ControllerBase {
     $flagged_interests = $term_interest->execute()->fetchCol();
     $my_interests = $flagged_interests == NULL ?
       '<p>' . t('You currently have not added any interests. Click Edit interests to add.') . "</p>"
-      :'';
+      : '';
     if ($my_interests == "") {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
@@ -76,7 +76,7 @@ class CommunityPersonaController extends ControllerBase {
     $flagged_skills = $term->execute()->fetchCol();
     $my_skills = $flagged_skills == NULL ?
       '<p>' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>"
-      :'';
+      : '';
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_skill)->get('name')->value;
@@ -90,12 +90,12 @@ class CommunityPersonaController extends ControllerBase {
     $edit_skill_renderable = $edit_skill_link->toRenderable();
     // My Knowledge Base Contributions
     $ws_query = \Drupal::entityQuery('webform_submission')
-    ->condition('uid', $current_user->id())
-    ->condition('uri', '/form/resource');
+      ->condition('uid', $current_user->id())
+      ->condition('uri', '/form/resource');
     $ws_results = $ws_query->execute();
     $ws_link = $ws_results == NULL ?
       '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>"
-      :'<ul>';
+      : '<ul>';
     if ($ws_link == "<ul>") {
       foreach ($ws_results as $ws_result) {
         $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
@@ -127,7 +127,7 @@ class CommunityPersonaController extends ControllerBase {
     $match_list = $matches->getMatchList();
     $match_link = $match_list == '' ?
       '<p>' . t('You are not currently involved with any MATCH Engagements.') . "</p>"
-      :"<ul class='list-unstyled'>";
+      : "<ul class='list-unstyled'>";
     if ($match_link == "<ul class='list-unstyled'>") {
       $match_link .= $match_list . '</ul>';
     }
@@ -207,5 +207,4 @@ class CommunityPersonaController extends ControllerBase {
 
     return $persona_page;
   }
-
 }
