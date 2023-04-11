@@ -5,6 +5,7 @@
  * Module for customizing match_engagement node.
  */
 
+use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\Entity\User;
 use Drupal\Core\Link;
@@ -14,7 +15,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\views\ViewExecutable;
 
- /**
+/**
  * Implements hook_views_pre_render().
  */
 function access_match_engagement_views_pre_render(ViewExecutable $view) {
@@ -26,8 +27,8 @@ function access_match_engagement_views_pre_render(ViewExecutable $view) {
 /**
  * Implements hook_block_build_BASE_BLOCK_ID_alter().
  */
-function access_match_engagement_block_build_views_block_alter(array &$build, \Drupal\Core\Block\BlockPluginInterface $block) {
-  // Using label because block numbers seem to change
+function access_match_engagement_block_build_views_block_alter(array &$build, BlockPluginInterface $block) {
+  // Using label because block numbers seem to change.
   if ($block->label() == 'match engagement view: Block - My Engagement') {
     $build['#create_placeholder'] = FALSE;
   }
@@ -38,7 +39,7 @@ function access_match_engagement_block_build_views_block_alter(array &$build, \D
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
-    // Attach javascript
+    // Attach javascript.
     $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
     $form['promote']['widget']['value']['#title'] = 'Form Accepted';
     $form['promote']['widget']['value']['#description'] = 'Once checked, all fields will be available to fill out.';
@@ -58,7 +59,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $roles = $current_user->getRoles();
     $accepted = $form['promote']['widget']['value']['#default_value'];
     $form['field_node_type']['#access'] = FALSE;
-    if ( $form_id == 'node_match_engagement_form' ) {
+    if ($form_id == 'node_match_engagement_form') {
       $form['field_node_type']['widget']['#default_value'][0] = $request_type;
     }
 
@@ -132,7 +133,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_overall_results']['#access'] = FALSE;
       $form['field_status']['#access'] = FALSE;
     }
-    if (!in_array('administrator', $roles)) {
+    if (!in_array('administrator', $roles) || !in_array('match_sc', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
       $form['field_match_interested_users']['#access'] = FALSE;
@@ -160,6 +161,13 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       }
     }
     $form['field_email_user']['#group'] = 'options';
+    if (in_array('match_sc', $roles)) {
+      unset($form['promote']['#group']);
+      unset($form['field_email_user']['#group']);
+      $form['promote']['#access'] = TRUE;
+      $form['field_email_user']['#access'] = TRUE;
+      $form['status']['#access'] = TRUE;
+    }
     $form['field_notes_to_author']['#group'] = 'options';
     $form['field_notes_to_author']['#attributes']['class'][] = 'hide';
   }
@@ -169,6 +177,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
   }
 }
 
+/**
+ *
+ */
 function access_match_engagement_submit_function(&$form, FormStateInterface $form_state) {
   $message = t('Thank you for submitting your project. We will be in touch soon.');
   \Drupal::messenger()->addMessage($message);
@@ -179,13 +190,13 @@ function access_match_engagement_submit_function(&$form, FormStateInterface $for
  */
 function access_match_engagement_mail($key, &$message, $params) {
   switch ($key) {
-  case 'ame-admin-update':
-  case 'ame-accepted-update':
-  case 'interested-update':
-    $message['from'] = \Drupal::config('system.site')->get('mail');
-    $message['subject'] = $params['title'];
-    $message['body'][] = $params['body'];
-    break;
+    case 'ame-admin-update':
+    case 'ame-accepted-update':
+    case 'interested-update':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = $params['title'];
+      $message['body'][] = $params['body'];
+      break;
   }
 }
 
@@ -221,7 +232,7 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
       $ame_nid = $entity->id();
       $ame_title = Xss::filter($entity->gettitle());
       $ame_notes = $get_fields['field_notes_to_author']->getValue();
-      $ame_notes = isset($ame_notes[0]['value']) ? $ame_notes[0]['value'] : '';
+      $ame_notes = $ame_notes[0]['value'] ?? '';
       access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes, $owner_user->id(), $ame_type);
       $entity->set('field_email_user', 0);
     }
@@ -237,7 +248,7 @@ function access_match_engagement_interested_email($to_uids) {
     '#template' => '<p>{{ intro }} {{ link | raw }}.<p>',
     '#context' => [
       'intro' => t('New interested user alert! Please check website for '),
-      'link' => "<a href='https://support.access-ci.org/match-interested-users'>details</a>"
+      'link' => "<a href='https://support.access-ci.org/match-interested-users'>details</a>",
     ],
   ];
   // Lookup each user by to_uids and add their email to the $to_email string comma separated.
@@ -307,16 +318,20 @@ function access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type) {
       'link' => Link::fromTextAndUrl($ame_title, $here)->toString(),
     ],
   ];
-  // Get all user emails with the match_pm role.
-  $ids = \Drupal::entityQuery('user')
-    ->condition('status', 1)
+  // Get all user emails with the match_pm or match_sc role.
+  $query = \Drupal::entityQuery('user');
+  $group = $query
+    ->orConditionGroup()
     ->condition('roles', 'match_pm')
+    ->condition('roles', 'match_sc');
+  $ids = $query->condition($group)
+    ->condition('status', 1)
     ->execute();
   $users = User::loadMultiple($ids);
   $email = '';
   $user_count = count($users);
   $iterate = 0;
-  foreach($users as $user){
+  foreach ($users as $user) {
     $iterate++;
     $email .= $user->get('mail')->getString();
     if ($user_count != $iterate) {
@@ -353,14 +368,14 @@ function ame_send($key, $params) {
 }
 
 /**
- * hook_cron.
+ * Hook_cron.
  */
 function access_match_engagement_cron() {
-  // todo: once working, limit to run on production only.
+  // @todo once working, limit to run on production only.
   $config = \Drupal::configFactory()->getEditable('access_match_engagement.settings');
   $interested_status = $config->get('interested');
   // Send interested email at 1:00am.
-  if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5) && $interested_status == 1 ) {
+  if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5) && $interested_status == 1) {
     // Lookup users by role.
     $uids = \Drupal::entityQuery('user')
       ->condition('status', 1)

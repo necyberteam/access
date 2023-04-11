@@ -67,8 +67,9 @@ class MatchLookup {
         $nid = $node->id();
         $match_name = $match['name'];
         $field_status = $node->get('field_status')->getValue();
+        $field_status = !empty($field_status) ? $field_status : '';
         $match_array[$nid] = [
-          'status' => $field_status[0]['value'],
+          'status' => $field_status,
           'name' => $match_name,
           'title' => $title,
           'nid' => $nid,

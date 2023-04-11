@@ -1,0 +1,4 @@
+misc_library:
+  version: 1.x
+  js:
+    js/create_ticket_links.js: {}
