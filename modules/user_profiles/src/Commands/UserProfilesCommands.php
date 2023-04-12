@@ -58,10 +58,44 @@ class UserProfilesCommands extends DrushCommands {
     $this->mergeAfffinityGroups($user_from, $user_to);
     $this->mergeFlag('interest', $user_from, $user_to);
     $this->mergeFlag('skill', $user_from, $user_to);
+    $this->mergeFlag('upvote', $user_from, $user_to);
     $this->mergeFlag('interested_in_project', $user_from, $user_to);
-    // @todo Merge flags Upvote --
     $this->mergeRoles($user_from, $user_to);
     $this->mergeUserFields($user_from, $user_to);
+    $this->mergeEngagementNodes($user_from, $user_to);
+  }
+
+  /**
+   * Merge engagement nodes from $user_from to $user_to.
+   *
+   * @param \Drupal\user\Entity\User $user_from
+   *   From user.
+   * @param \Drupal\user\Entity\User $user_to
+   *   To user.
+   */
+  private function mergeEngagementNodes(User $user_from, User $user_to) {
+
+    \Drupal::moduleHandler()->loadInclude('node', 'inc', 'node.admin');
+
+    $nodes = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
+      ->condition('uid', $user_from->id())
+      ->condition('type', 'match_engagement')
+      ->execute();
+
+    if (count($nodes) == 0) {
+      $this->output()->writeln("No match engagements to migrate");
+      return;
+    }
+
+    $this->output()->writeln("Migrating match engagements");
+    $this->output()->writeln("  Updating these engagements: ");
+    foreach ($nodes as $nid) {
+      $node = \Drupal\node\Entity\Node::load($nid);
+      $this->output()->writeln("    " . $node->getTitle());
+    }
+
+    node_mass_update($nodes, ['uid' => $user_to->id()], NULL, TRUE);
   }
 
   /**
@@ -75,7 +109,8 @@ class UserProfilesCommands extends DrushCommands {
   private function mergeUserFields(User $user_from, User $user_to) {
     $this->output()->writeln("Merging user fields");
 
-    /*
+    /* Here's a list of all fields -- only a subset of these are migrated.
+
     $fields = \Drupal::service('entity_field.manager')->getFieldDefinitions('user', 'user');
 
     [0] => uid
@@ -165,27 +200,28 @@ class UserProfilesCommands extends DrushCommands {
       if ($from_inst) {
         $from_inst = $from_inst[0]['value'];
       }
-      if ($from_inst) {
-        $to_inst = $user_to->get('field_carnegie_code')->getValue();
-        if ($to_inst) {
-          $to_inst = $to_inst[0]['value'];
-        }
-        if ($from_inst === $to_inst) {
-          $this->output()->writeln("  Merging field 'field_carnegie_code' with value '$from_carnegie_code'");
-          $user_to->set('field_carnegie_code', $from_val);
-        }
+      $to_inst = $user_to->get('field_institution')->getValue();
+      if ($to_inst) {
+        $to_inst = $to_inst[0]['value'];
       }
+      if ($from_inst === $to_inst) {
+        $this->output()->writeln("  Merging 'field_carnegie_code' with value '$from_carnegie_code'");
+        $user_to->set('field_carnegie_code', $from_carnegie_code);
+      } else {
+        $this->output()->writeln("  Not merging 'field_carnegie_code' with "
+          . "value '$from_carnegie_code' because differing institutions ('$from_inst' and '$to_inst')");
+      }
+    } else {
+      $this->output()->writeln("  From user has no carnegie code to merge.");
     }
 
     // Per Andrew:  field_region should only be added to, not replaced.
-    $this->output()->writeln("  Merging program fields");
-
+    $this->output()->writeln("  Merging region / program fields");
     $from_region = $user_from->get('field_region')->referencedEntities();
-
     foreach ($from_region as $from_program) {
       $to_region = $user_to->get('field_region')->referencedEntities();
       if (count($to_region) == 0) {
-        $this->output()->writeln("    Adding program '"
+        $this->output()->writeln("    Adding region / program '"
           . $from_program->getName() . "'");
         $user_to->set('field_region', $from_program->id());
       } else {
@@ -299,8 +335,6 @@ class UserProfilesCommands extends DrushCommands {
       $term = Term::load($flagged_item);
       $title = $term->get('name')->value;
 
-      $this->output()->writeln("  from-user has flag '$flag_name' with title '$title'");
-
       // Check if already flagged. If not, set the flag.
       $flag_service = \Drupal::service('flag');
       $flag = $flag_service->getFlagById($flag_name);
@@ -312,11 +346,11 @@ class UserProfilesCommands extends DrushCommands {
             . $term->bundle() . " which is not in allowed list: {"
             . implode(', ', $bundles) . '} -- skipping this one.');
         } else {
-          $this->output()->writeln("    Add '$title' to to-user");
+          $this->output()->writeln("  Adding flag $flag_name with title '$title' to to-user");
           $flag_service->flag($flag, $term, $user_to);
         }
       } else {
-        $this->output()->writeln("    To-user already has '$title'");
+        $this->output()->writeln("  To-user already has flag $flag_name with title '$title'");
       }
     }
   }
@@ -398,8 +432,6 @@ class UserProfilesCommands extends DrushCommands {
 
     $ag_title = $affinity_group_loaded->getTitle();
 
-    $this->output()->writeln("  From-user member of AG '$ag_title' (id #$ag_id)");
-
     // Get AG taxonomy id.
     $ag_taxonomy = \Drupal::entityTypeManager()
       ->getStorage('taxonomy_term')
@@ -415,7 +447,7 @@ class UserProfilesCommands extends DrushCommands {
 
     // Check if ag is on block list.
     if (in_array($ag_tax_id, $user_blocked_tids)) {
-      $this->output()->writeln("    Not adding '$ag_title' (tid #$ag_tax_id) because on to-user's block list");
+      $this->output()->writeln("  Not adding '$ag_title' (tid #$ag_tax_id) because on to-user's block list");
       return;
     }
 
@@ -424,7 +456,7 @@ class UserProfilesCommands extends DrushCommands {
     $ag_flag = $flag_service->getFlagById('affinity_group');
     $ag_flag_status = $flag_service->getFlagging($ag_flag, $ag_taxonomy, $to_user);
     if (!$ag_flag_status) {
-      $this->output()->writeln("    Add to-user to affinity group '$ag_title' (#$ag_tax_id)");
+      $this->output()->writeln("  Adding to-user to affinity group '$ag_title' (#$ag_tax_id)");
       // Following sometimes giving "The flag does not apply to
       // the bundle of the entity".
       if ($ag_taxonomy->bundle() !== 'affinity_groups') {
@@ -434,7 +466,7 @@ class UserProfilesCommands extends DrushCommands {
         $flag_service->flag($ag_flag, $ag_taxonomy, $to_user);
       }
     } else {
-      $this->output()->writeln("    To-user already a member of affinity group '$ag_title' (#$ag_tax_id)");
+      $this->output()->writeln("  To-user already a member of affinity group '$ag_title' (#$ag_tax_id)");
     }
   }
 }
