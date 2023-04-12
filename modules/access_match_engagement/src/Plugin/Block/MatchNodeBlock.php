@@ -22,7 +22,7 @@ use Drupal\Core\Cache\Cache;
  * )
  */
 class MatchNodeBlock extends BlockBase implements
-    ContainerFactoryPluginInterface {
+  ContainerFactoryPluginInterface {
 
   /**
    * Invoke renderer.
@@ -101,8 +101,7 @@ class MatchNodeBlock extends BlockBase implements
         if ($field_value) {
           $field_value = $this->entityInterface->getStorage('user')->load($field_value[0]['target_id']);
           $msc_loaded[$field] = $field_value->get('field_user_first_name')->value . ' ' . $field_value->get('field_user_last_name')->value;
-        }
-        else {
+        } else {
           $msc_loaded[$field] = '';
         }
       }
@@ -153,7 +152,7 @@ class MatchNodeBlock extends BlockBase implements
       $interested_users = $node->get('field_match_interested_users')->getValue();
       // Lookup user names from uid.
       $interested_users = $this->getInterestedUsers($interested_users);
-      $status = $node->get('field_status')->getValue()[0]['value'];
+      $status = $node->get('field_status')->getValue() ?? $node->get('field_status')->getValue()[0]['value'];
       $interested_text = $this->t("I'm Interested");
       $interested_button = $status == 'Recruiting' ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
       return [
@@ -228,8 +227,7 @@ class MatchNodeBlock extends BlockBase implements
     if ($node = $this->routMatchInterface->getParameter('node')) {
       // If there is node add its cachetag.
       return Cache::mergeTags(parent::getCacheTags(), ['node:' . $node->id()]);
-    }
-    else {
+    } else {
       // Return default tags instead.
       return parent::getCacheTags();
     }
@@ -244,5 +242,4 @@ class MatchNodeBlock extends BlockBase implements
     // Every new route this block will rebuild.
     return Cache::mergeContexts(parent::getCacheContexts(), ['route']);
   }
-
 }
