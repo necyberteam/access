@@ -54,8 +54,12 @@ class RoleProgramSorter {
    */
   public function addFieldRegion($region) {
     $account = User::load($this->storedUser->id());
-    $account->field_region->appendItem($region);
-    $account->save();
+    // Check if region already exists and if not add it.
+    $values = $account->field_region->getValue();
+    if (empty($values)) {
+      $account->field_region->appendItem($region);
+      $account->save();
+    }
     \Drupal::messenger()->addMessage(t('Thanks for updating your CSSN membership.'));
   }
 
@@ -74,5 +78,4 @@ class RoleProgramSorter {
     $account->field_region->setValue($values);
     $account->save();
   }
-
 }
