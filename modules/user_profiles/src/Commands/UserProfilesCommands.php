@@ -9,18 +9,21 @@ use Drupal\webform\Entity\WebformSubmission;
 use Drush\Commands\DrushCommands;
 
 /**
- * A Drush commandfile for Affinity Groups.
+ * A Drush commandfile to migrate settings from profile data from
+ * one user to another.
  *
  * @package Drupal\user_profiles\Commands
  */
 class UserProfilesCommands extends DrushCommands {
 
   /**
-   * Add existing Affinity Group members to Constant Contact lists.
-   *
-   * Save all Affinity Groups to trigger the creation of the
-   * associated Constant Contact list. Then add all existing members of
-   * the group to that Constant Contact list.
+   * Migrate / merge user profile settings from one user to another.  The following
+   * will get updated:
+   *  - ownership of resources
+   *  - affinity groups
+   *  - flags:  interest, skill, upvote, interested-in-project
+   *  - roles
+   *  - engagements
    *
    * @command user_profiles:mergeUser
    * @param string $from_user_id
