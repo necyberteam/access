@@ -12,7 +12,7 @@ use Drupal\cssn\Plugin\Util\RoleProgramSorter;
  * Implements hook_form_alter().
  */
 function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'webform_submission_join_the_cssn_network_add_form') {
+  if ($form_id == 'webform_submission_join_the_cssn_network_add_form' || $form_id == 'webform_submission_join_the_cssn_network_edit_form') {
     $form['actions']['submit']['#submit'][] = 'cssn_form_submit';
   }
 }
