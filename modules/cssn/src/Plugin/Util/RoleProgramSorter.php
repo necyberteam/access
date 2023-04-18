@@ -56,7 +56,17 @@ class RoleProgramSorter {
     $account = User::load($this->storedUser->id());
     // Check if region already exists and if not add it.
     $values = $account->field_region->getValue();
-    if (empty($values)) {
+    // While loop through values to check if target_id equals 780.
+    $i = 0;
+    $add_program = TRUE;
+    while ($i < count($values)) {
+      if ($values[$i]['target_id'] == $region) {
+        $i = count($values);
+        $add_program = FALSE;
+      }
+      $i++;
+    }
+    if ($add_program) {
       $account->field_region->appendItem($region);
       $account->save();
     }
