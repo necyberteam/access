@@ -16,4 +16,10 @@ function cssn_update_9000() {
  */
 function cssn_update_9001() {
   new Drupal\cssn\Plugin\Util\CssnSubmissionsSort();
+
+/**
+ * Rebuild role permissions.
+ */
+function cssn_update_9002() {
+  node_access_rebuild();
 }
