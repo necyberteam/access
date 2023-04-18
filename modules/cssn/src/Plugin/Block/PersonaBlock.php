@@ -90,10 +90,17 @@ class PersonaBlock extends BlockBase {
         $region_tid = $region['target_id'];
         $terms[] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
       }
+      $cssn_role_url = Url::fromUri('internal:/form/edit-your-cssn-roles?destination=community-persona');
+      $cssn_role_link = Link::fromTextAndUrl('Edit Roles', $cssn_role_url);
+      $cssn_role_renderable = $cssn_role_link->toRenderable();
+      $cssn_role = $cssn_role_renderable;
+      $cssn_role['#attributes']['class'] = ['text-dark'];
+
+      // Programs.
       $program = implode(', ', $terms);
       $ws_query = \Drupal::entityQuery('webform_submission')
-      ->condition('uid', $user->id())
-      ->condition('uri', '/form/join-the-cssn-network');
+        ->condition('uid', $user->id())
+        ->condition('uri', '/form/join-the-cssn-network');
       $ws_results = $ws_query->execute();
       $cssn_indicator = "";
       if (!empty($ws_results)) {
@@ -132,7 +139,7 @@ class PersonaBlock extends BlockBase {
                           </div>
                           <div class="d-flex justify-content-between border-top border-bottom mb-3 py-3 border-secondary">
                             <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
-                            <div class="d-none"><i class="text-dark fa-solid fa-pen-to-square"></i> <a href="#" class="text-dark">Edit Roles</a></div>
+                            <div><i class="text-dark fa-solid fa-pen-to-square"></i> {{ cssn_role }}</div>
                           </div>
                           <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
                           <div class="w-100">
@@ -151,6 +158,7 @@ class PersonaBlock extends BlockBase {
           'cssn_more' => $cssn_more,
           'roles' => $roles,
           'role_text' => t('Roles'),
+          'cssn_role' => $cssn_role,
           'program' => $program,
           'program_text' => t('Programs'),
           'send_email' => $send_email,
