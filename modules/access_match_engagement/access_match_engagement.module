@@ -129,14 +129,16 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_is_there_an_impact_on_soci']['#access'] = FALSE;
       $form['field_is_there_an_impact_on_tech']['#access'] = FALSE;
       $form['field_is_there_an_impact_physica']['#access'] = FALSE;
+      $form['field_match_steering_committee_m']['#access'] = FALSE;
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
       $form['field_status']['#access'] = FALSE;
     }
-    if (!in_array('administrator', $roles) || !in_array('match_sc', $roles)) {
+    if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
       $form['field_match_interested_users']['#access'] = FALSE;
+      $form['field_match_steering_committee_m']['#disabled'] = TRUE;
     }
     if ($form_id == 'node_match_engagement_edit_form') {
       $node_param = \Drupal::routeMatch()->getParameter('node');
@@ -291,8 +293,7 @@ function access_match_engagement_accepted_email($ame_nid, $ame_title, $ame_notes
   $env = getenv('PANTHEON_ENVIRONMENT');
   if ($env == 'live') {
     $to_email = $node_author->getEmail();
-  }
-  else {
+  } else {
     $to_email = $current_user->getEmail();
   }
   $render_service = \Drupal::service('renderer');
@@ -342,8 +343,7 @@ function access_match_engagement_admin_email($ame_nid, $ame_title, $ame_type) {
   $env = getenv('PANTHEON_ENVIRONMENT');
   if ($env == 'live') {
     $to_email = $email;
-  }
-  else {
+  } else {
     $to_email = $current_user->getEmail();
   }
   $render_service = \Drupal::service('renderer');
