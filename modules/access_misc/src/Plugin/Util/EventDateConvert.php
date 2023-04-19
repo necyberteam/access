@@ -37,7 +37,8 @@ class EventDateConvert {
     $end_day = date('d', $end_iso);
     if ($start_day != $end_day) {
       $end = date('m/d/Y - h:i A T', $end_iso);
-    } else {
+    }
+    else {
       $end = date('h:i A T', $end_iso);
     }
     $this->start = $start;
