@@ -1,6 +1,13 @@
 <?php
 
 /**
+ * @file
+ * Post update functions for CSSN.
+ */
+
+use Drupal\cssn\Plugin\Util\CssnSubmissionsSort;
+
+/**
  * Add 'ACCESS CSSN' to the region taxonomy.
  */
 function cssn_update_9000() {
@@ -15,12 +22,26 @@ function cssn_update_9000() {
  * Sort current CSSN submissions.
  */
 function cssn_update_9001() {
-  new Drupal\cssn\Plugin\Util\CssnSubmissionsSort();
+  new CssnSubmissionsSort(0, 80);
+}
+
+/**
+ * Sort current CSSN submissions.
+ */
+function cssn_update_9002() {
+  new CssnSubmissionsSort(80, 160);
+}
+
+/**
+ * Sort current CSSN submissions.
+ */
+function cssn_update_9003() {
+  new CssnSubmissionsSort(160, 240);
 }
 
 /**
  * Rebuild role permissions.
  */
-function cssn_update_9002() {
+function cssn_update_9004() {
   node_access_rebuild();
 }

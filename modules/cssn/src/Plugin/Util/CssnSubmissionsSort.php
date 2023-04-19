@@ -18,12 +18,12 @@ class CssnSubmissionsSort {
   /**
    * Function to return CSSN results and sort users to program/roles.
    */
-  public function __construct() {
+  public function __construct($start, $end) {
     $ws_query = \Drupal::entityQuery('webform_submission')
       ->condition('uri', '/form/join-the-cssn-network')
+      ->range($start, $end);
       ->accessCheck(FALSE);
     $ws_results = $ws_query->execute();
-    print_r($ws_results);
     $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'ACCESS CSSN']);
     $term = reset($term);
     $term_id = $term->id();
