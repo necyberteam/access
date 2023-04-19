@@ -43,5 +43,18 @@ function cssn_update_9003() {
  * Rebuild role permissions.
  */
 function cssn_update_9004() {
+  $nids = [267, 224];
+  foreach ($nids as $nid) {
+    \Drupal::database()->insert('nodeaccess')
+      ->fields([
+        'nid' => $nid,
+        'gid' => 6,
+        'realm' => 'nodeaccess_rid',
+        'grant_view' => 1,
+        'grant_update' => 0,
+        'grant_delete' => 0,
+      ])
+      ->execute();
+  }
   node_access_rebuild();
 }
