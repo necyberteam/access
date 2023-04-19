@@ -21,7 +21,7 @@ class CssnSubmissionsSort {
   public function __construct($start, $end) {
     $ws_query = \Drupal::entityQuery('webform_submission')
       ->condition('uri', '/form/join-the-cssn-network')
-      ->range($start, $end);
+      ->range($start, $end)
       ->accessCheck(FALSE);
     $ws_results = $ws_query->execute();
     $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'ACCESS CSSN']);
