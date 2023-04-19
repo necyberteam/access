@@ -26,6 +26,7 @@ class CommunityPersonaController extends ControllerBase {
     $query->condition('fl.flag_id', 'affinity_group');
     $query->fields('fl', ['entity_id']);
     $affinity_groups = $query->execute()->fetchCol();
+    $affinity_groups = array_unique($affinity_groups);
     $user_affinity_groups = "<ul>";
     if ($affinity_groups == NULL && $public === FALSE) {
       $user_affinity_groups = '<p>' . t('You currently are not connected to any Affinity groups. Click below to explore.') . "</p>";
@@ -121,7 +122,7 @@ class CommunityPersonaController extends ControllerBase {
         $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
         $url = $ws->toUrl()->toString();
         $ws_data = $ws->getData();
-        $ws_link .= '<li><a href=' . $url. '>'. $ws_data['title'] . '</a></li>';
+        $ws_link .= '<li><a href=' . $url . '>' . $ws_data['title'] . '</a></li>';
       }
       $ws_link .= '</ul>';
     }
@@ -385,8 +386,7 @@ class CommunityPersonaController extends ControllerBase {
         ],
       ];
       return $persona_page;
-    }
-    else {
+    } else {
       return [
         '#type' => 'markup',
         '#title' => 'User not found',
@@ -394,5 +394,4 @@ class CommunityPersonaController extends ControllerBase {
       ];
     }
   }
-
 }

@@ -88,7 +88,7 @@ class PersonaBlock extends BlockBase {
       $terms = [];
       foreach ($regions as $region) {
         $region_tid = $region['target_id'];
-        $terms[] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
+        $terms[$region_tid] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
       }
       $cssn_role_url = Url::fromUri('internal:/form/edit-your-cssn-roles?destination=community-persona');
       $cssn_role_link = Link::fromTextAndUrl('Edit Roles', $cssn_role_url);
@@ -98,12 +98,14 @@ class PersonaBlock extends BlockBase {
 
       // Programs.
       $program = implode(', ', $terms);
-      $ws_query = \Drupal::entityQuery('webform_submission')
-        ->condition('uid', $user->id())
-        ->condition('uri', '/form/join-the-cssn-network');
-      $ws_results = $ws_query->execute();
+      // If $terms contains 'ACCESS CSSN', then the user is a CSSN member.
+      $cssn_member = in_array('ACCESS CSSN', $terms) ? TRUE : FALSE;
+      //$ws_query = \Drupal::entityQuery('webform_submission')
+      //  ->condition('uid', $user->id())
+      //  ->condition('uri', '/form/join-the-cssn-network');
+      //$ws_results = $ws_query->execute();
       $cssn_indicator = "";
-      if (!empty($ws_results)) {
+      if ($cssn_member) {
         $cssn_indicator = "<span class='text-primary'><i class='fa-solid fa-square'></i></span>";
         $cssn = "CSSN Member";
       } elseif ($public) {
