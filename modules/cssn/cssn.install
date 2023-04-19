@@ -5,8 +5,6 @@
  * Post update functions for CSSN.
  */
 
-use Drupal\cssn\Plugin\Util\CssnSubmissionsSort;
-
 /**
  * Add 'ACCESS CSSN' to the region taxonomy.
  */
@@ -19,30 +17,9 @@ function cssn_update_9000() {
 }
 
 /**
- * Sort current CSSN submissions.
- */
-function cssn_update_9001() {
-  new CssnSubmissionsSort(0, 80);
-}
-
-/**
- * Sort current CSSN submissions.
- */
-function cssn_update_9002() {
-  new CssnSubmissionsSort(80, 160);
-}
-
-/**
- * Sort current CSSN submissions.
- */
-function cssn_update_9003() {
-  new CssnSubmissionsSort(160, 240);
-}
-
-/**
  * Rebuild role permissions.
  */
-function cssn_update_9004() {
+function cssn_update_9001() {
   $nids = [267, 224];
   foreach ($nids as $nid) {
     \Drupal::database()->insert('nodeaccess')
