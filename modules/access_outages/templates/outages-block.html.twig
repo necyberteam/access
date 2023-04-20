@@ -112,9 +112,6 @@
         timeZoneName: 'short'
       }
 
-      // bug:  on refresh, DataTable function is missing, don't know why
-      console.log('=== outageName = ' + outageName + ' outagesTable = ' + outagesTable)
-
       jQuery(outagesTable).DataTable({
         data: outages.results,
         columns: [
