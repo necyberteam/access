@@ -21,14 +21,6 @@ function access_outages_theme() {
  */
 function access_outages_preprocess_views_view(&$vars) {
   $view = &$vars['view'];
-
-  $msg =  __FUNCTION__ . '() - $view->id() = '  . print_r($view->id(), true)
-    . ' -- ' . basename(__FILE__) . ':' . __LINE__;
-  \Drupal::messenger()->addStatus($msg);
-  // error_log('======= $text = [' . $text . '] -- ' . basename(__FILE__) . ':' . __LINE__);
-
-
-
   if ($view->id() == 'affinity_group' &&  $view->current_display == 'group') {
 
     $node_storage = \Drupal::entityTypeManager()->getStorage('node');
@@ -45,9 +37,6 @@ function access_outages_preprocess_views_view(&$vars) {
         }
       }
     }
-    $msg =  __FUNCTION__ . '() - $cider_ids = '  . print_r($cider_ids, true)
-      . ' -- ' . basename(__FILE__) . ':' . __LINE__;
-    \Drupal::messenger()->addStatus($msg);
 
     if (count($cider_resource_ids) > 0) {
       $vars['#attached']['library'][] = 'access_outages/outages_library';
