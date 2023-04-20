@@ -270,6 +270,7 @@ function add_ag_taxonomy_term($entity) {
  */
 function ag_taxonomy_lookup($ag_title) {
   // Ok to pass null -- returns null if $ag_title is null.
+  // TODO deprecated
   $lookup = taxonomy_term_load_multiple_by_name($ag_title, 'affinity_groups');
   return $lookup;
 }
