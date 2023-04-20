@@ -79,9 +79,9 @@
   <div class="row">
     <div class="col text-start text-md-center">
       <h2>All Outages</h2>
-      <p id="no-past-outages">Loading past outages...</p>
+      <p id="no-all-outages">Loading all outages...</p>
       <div class="table-responsive">
-        <table id="outages-past" class="display text-start table">
+        <table id="outages-all" class="display text-start table">
             <thead>
                 <tr>
                     <th>Event</th>
@@ -103,35 +103,53 @@
 <script>
   const showOutages = async function showOutages(outageName, endpointUrl) {
     const response = await fetch(endpointUrl)
-    const outages = await response.json()
-    {# console.log(outages) #}
-
-    if (outages.length > 0) {
+    var outages = await response.json()
+    if (outages.results.length > 0) {
       const noOutages = document.getElementById(`no-${outageName}-outages`)
-      noOutages.style.display = 'none' 
+      noOutages.style.display = 'none'
       const outagesTable = document.getElementById('outages-' + outageName)
       const options = {
         timeZoneName: 'short'
       }
+
+      // bug:  on refresh, DataTable function is missing, don't know why
+      console.log('=== outageName = ' + outageName + ' outagesTable = ' + outagesTable)
+
       jQuery(outagesTable).DataTable({
-        data: outages,
+        data: outages.results,
         columns: [
           { data: 'Subject',
             render: function ( data, type, row, meta ) {
-              return type === 'display' ? `<a href="/outages?outageID=${row['ID']}">${data}</a>` : data;
-            }  
+              return type === 'display' ? `<a href="/outages?outageID=${row['URN']}">${data}</a>` : data;
+            }
           },
-          { data: 'ResourceID' },
+          { data: 'AffectedResources',
+            render: function ( data, type, row, meta ) {
+              if (type === 'display') {
+                const copyItems = [];
+                data.forEach(function(item){
+                  copyItems.push(item.ResourceID);
+                })
+                return copyItems.length == 1 ? copyItems[0]
+                  : '&#8231;&nbsp;' + copyItems.join('<br>&#8231;&nbsp;')
+              }
+              return data;
+            }
+          },
           { data: 'Content' },
           { data: 'OutageType' },
           { data: 'OutageStart',
             render: function ( data, type, row, meta ) {
-              return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
-            } 
+              return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
+            }
           },
           { data: 'OutageEnd',
             render: function ( data, type, row, meta ) {
-              return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+              return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
             }
           }
         ],
@@ -152,30 +170,46 @@
       }
     )
 
-    const response = await fetch(`https://info.xsede.org/wh1/outages/v1/outages/ID/${outageID}`)
+    const url = `https://operations-api.access-ci.org/wh2/news/v1/id/${outageID}`
+    const response = await fetch(url)
     const outage = await response.json()
-    {# console.log(outage) #}
     const loadingOutage = document.getElementById('loading-outage')
-    loadingOutage.style.display = 'none' 
+    loadingOutage.style.display = 'none'
     const outageTable = document.getElementById('outage')
     const options = {
       timeZoneName: 'short'
     }
     jQuery(outageTable).DataTable({
-      data: [outage],
+      data: [outage.results],
       columns: [
         { data: 'Subject' },
-        { data: 'ResourceID' },
-        { data: 'Content' },
-        { data: 'OutageType' },
-        { data: 'OutageStart',
+        { data: 'Associations',
           render: function ( data, type, row, meta ) {
-            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
-          } 
+            if (type === 'display') {
+              const copyItems = [];
+              data.forEach(function(item){
+                copyItems.push(item.AssociatedID);
+              })
+              return copyItems.length == 1 ? copyItems[0]
+                : '&#8231;&nbsp;' + copyItems.join('<br>&#8231;&nbsp;')
+            }
+            return data;
+          }
         },
-        { data: 'OutageEnd',
+        { data: 'Content' },
+        { data: 'NewsType' },
+        { data: 'NewsStart',
           render: function ( data, type, row, meta ) {
-            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+            return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
+          }
+        },
+        { data: 'NewsEnd',
+          render: function ( data, type, row, meta ) {
+            return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
           }
         }
       ],
@@ -191,9 +225,9 @@
   const outageID = url.searchParams.get("outageID")
 
   if (!outageID) {
-    showOutages('current', 'https://info.xsede.org/wh1/outages/v1/outages/Current')
-    showOutages('planned', 'https://info.xsede.org/wh1/outages/v1/outages/Future')
-    showOutages('past',    'https://info.xsede.org/wh1/outages/v1/outages/')
+    showOutages('current', 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/current_outages/')
+    showOutages('planned', 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/future_outages/')
+    showOutages('all',     'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/all_outages/')
   } else {
     showOutage(outageID)
   }
