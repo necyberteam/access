@@ -73,13 +73,8 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
       </div>
     `
 
-    // add the div to the top of the page
-    // (hopefully the following div id doesn't change)
-    //                                          block-views-block-affinity-group-group
-    // let container = document.getElementById('block-views-block-affinity-group-group')
-    // let container = document.getElementById('block-outagesblock')
+    // add the div to the page
     let container = document.getElementById('block-accesstheme-content')
-
     container.insertBefore(outagesCurrentDiv, container.firstChild);
     const outagesCurrent = document.getElementById('outages-current-p')
 
