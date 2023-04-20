@@ -141,10 +141,11 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
     // create the html table
     addOutageTableHtmlToDom()
 
-    if (!outagesTable) return; // may not be there when debugging enabled
     const options = {
       timeZoneName: 'short'
     }
+
+    const outagesTable = document.getElementById('ag-outages-planned')
 
     jQuery(outagesTable).DataTable({
       data: filtered,
@@ -178,7 +179,6 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
       searching: false
     })
 
-    const outagesTable = document.getElementById('ag-outages-planned')
     outagesTable.style.display = 'block'
   }
 }
@@ -193,7 +193,7 @@ function addOutageTableHtmlToDom() {
     <div class="outage-list section container">
       <div class="row">
         <div class="mb-3">
-          <h3 class="pb-2">Planned Downtimes for Associated Resources</h3>
+          <h3 class="pb-2">Planned Downtimes for Associated Infrastructure</h3>
           <div class="table-responsive">
             <table id="ag-outages-planned" class="display text-start table" style="display:none;">
               <thead>
