@@ -81,7 +81,7 @@
       <h2>All Outages</h2>
       <p id="no-all-outages">Loading all outages...</p>
       <div class="table-responsive">
-        <table id="outages-all" class="display text-start table">
+        <table id="outages-all" class="display text-start table" style="display:none;">
             <thead>
                 <tr>
                     <th>Event</th>
@@ -136,7 +136,12 @@
               return data;
             }
           },
-          { data: 'Content' },
+          { data: 'Content',
+            render: function ( data, type, row, meta ) {
+              return type === 'display'
+                ? `<div style="word-wrap:anywhere">${data}</div>` : data;
+            }
+          },
           { data: 'OutageType' },
           { data: 'OutageStart',
             render: function ( data, type, row, meta ) {
@@ -196,7 +201,12 @@
             return data;
           }
         },
-        { data: 'Content' },
+        { data: 'Content',
+          render: function ( data, type, row, meta ) {
+            return type === 'display'
+              ? `<div style="word-wrap:anywhere">${data}</div>` : data;
+          }
+        },
         { data: 'NewsType' },
         { data: 'NewsStart',
           render: function ( data, type, row, meta ) {
