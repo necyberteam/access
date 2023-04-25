@@ -12,8 +12,37 @@ use Drupal\cssn\Plugin\Util\RoleProgramSorter;
  * Implements hook_form_alter().
  */
 function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'webform_submission_edit_your_cssn_roles_add_form' || $form_id == 'webform_submission_edit_your_cssn_roles_edit_form') {
+    $user = \Drupal::currentUser();
+    $roles = $user->getRoles();
+    $form['elements']['roles_']['#default_value'] = $roles;
+    $form['actions']['submit']['#submit'][] = 'cssn_role_form_submit';
+  }
   if ($form_id == 'webform_submission_join_the_cssn_network_add_form' || $form_id == 'webform_submission_join_the_cssn_network_edit_form') {
     $form['actions']['submit']['#submit'][] = 'cssn_form_submit';
+  }
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function cssn_role_form_submit(&$form, FormStateInterface $form_state) {
+  $form_roles = [
+    "mentor",
+    "student",
+    "research_computing_facilitator",
+    "research_software_engineer",
+    "ci_systems_engineer",
+    "researcher",
+  ];
+  $user = \Drupal::currentUser();
+  $role_program_sorter = new RoleProgramSorter($user);
+  foreach ($form_roles as $role) {
+    if (in_array($role, $form['elements']['roles_']['#value'])) {
+      $role_program_sorter->addRole($role);
+    } else {
+      $role_program_sorter->removeRole($role);
+    }
   }
 }
 
