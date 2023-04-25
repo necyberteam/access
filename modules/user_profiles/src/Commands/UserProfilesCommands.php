@@ -57,42 +57,44 @@ class UserProfilesCommands extends DrushCommands {
 
     $this->output()->writeln("  Merging from '$first_name1 $last_name1' to '$first_name2 $last_name2'");
 
-    $this->mergeResources($user_from, $user_to);
-    $this->mergeAfffinityGroups($user_from, $user_to);
-    $this->mergeFlag('interest', $user_from, $user_to);
-    $this->mergeFlag('skill', $user_from, $user_to);
-    $this->mergeFlag('upvote', $user_from, $user_to);
-    $this->mergeFlag('interested_in_project', $user_from, $user_to);
-    $this->mergeRoles($user_from, $user_to);
-    $this->mergeUserFields($user_from, $user_to);
-    $this->mergeEngagementNodes($user_from, $user_to);
+    // $this->mergeResources($user_from, $user_to);
+    // $this->mergeAfffinityGroups($user_from, $user_to);
+    // $this->mergeFlag('interest', $user_from, $user_to);
+    // $this->mergeFlag('skill', $user_from, $user_to);
+    // $this->mergeFlag('upvote', $user_from, $user_to);
+    // $this->mergeFlag('interested_in_project', $user_from, $user_to);
+    // $this->mergeRoles($user_from, $user_to);
+    // $this->mergeUserFields($user_from, $user_to);
+    $this->mergeNodes($user_from, $user_to);
   }
 
   /**
-   * Merge engagement nodes from $user_from to $user_to.
+   * Merge nodes from $user_from to $user_to.
    *
    * @param \Drupal\user\Entity\User $user_from
    *   From user.
    * @param \Drupal\user\Entity\User $user_to
    *   To user.
+   *
+   *
+   * do node mass update on all nodes,
    */
-  private function mergeEngagementNodes(User $user_from, User $user_to) {
+  private function mergeNodes(User $user_from, User $user_to) {
 
     \Drupal::moduleHandler()->loadInclude('node', 'inc', 'node.admin');
 
     $nodes = \Drupal::entityQuery('node')
       ->accessCheck(FALSE)
       ->condition('uid', $user_from->id())
-      ->condition('type', 'match_engagement')
       ->execute();
 
     if (count($nodes) == 0) {
-      $this->output()->writeln("No match engagements to migrate");
+      $this->output()->writeln("No nodes to migrate");
       return;
     }
 
-    $this->output()->writeln("Migrating match engagements");
-    $this->output()->writeln("  Updating these engagements: ");
+    $this->output()->writeln("Migrating nodes");
+    $this->output()->writeln("  Updating these nodes: ");
     foreach ($nodes as $nid) {
       $node = \Drupal\node\Entity\Node::load($nid);
       $this->output()->writeln("    " . $node->getTitle());
@@ -289,6 +291,10 @@ class UserProfilesCommands extends DrushCommands {
    *   From user.
    * @param \Drupal\user\Entity\User $user_to
    *   To user.
+   *
+   *
+   * update all webform submissions?
+   * can node_mass_update do this?
    */
   private function mergeResources(User $user_from, User $user_to) {
     $this->output()->writeln("Merging resources");
