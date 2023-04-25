@@ -6,6 +6,6 @@ outages_library:
       css/access_outages.css: {}
   js:
     //cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js: {}
-    js/access_outages.js: {}
+    js/affinity_group_outages.js: {}
   dependencies:
     - core/jquery

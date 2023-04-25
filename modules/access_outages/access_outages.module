@@ -5,8 +5,7 @@ use Drupal\views\ViewExecutable;
 /**
  * Implements hook_theme().
  */
-function access_outages_theme()
-{
+function access_outages_theme() {
   return [
     'outages_block' => [
       'variables' => [
@@ -20,8 +19,7 @@ function access_outages_theme()
  * Help display affinity group outages by passing cider resource ids to
  * to the access_outages library
  */
-function access_outages_preprocess_views_view(&$vars)
-{
+function access_outages_preprocess_views_view(&$vars) {
   $view = &$vars['view'];
   if ($view->id() == 'affinity_group' &&  $view->current_display == 'group') {
 
@@ -44,6 +42,5 @@ function access_outages_preprocess_views_view(&$vars)
       $vars['#attached']['library'][] = 'access_outages/outages_library';
       $vars['#attached']['drupalSettings'] = ['ciderIds' => $cider_resource_ids];
     }
-
   }
 }

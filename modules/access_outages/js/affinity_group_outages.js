@@ -19,7 +19,9 @@ document.onreadystatechange = function () {
   if (document.readyState == "complete") {
     const ciderIds = drupalSettings.ciderIds
     // only show outages if there are any ciderIds
-    if (ciderIds.length > 0) showAgOutages(ciderIds, bDebugWithAllOutages)
+    if (bDebugWithAllOutages || (ciderIds && ciderIds.length > 0)) {
+      showAgOutages(ciderIds, bDebugWithAllOutages)
+    }
   }
 }
 
@@ -38,38 +40,6 @@ const showAgOutages = async function showAgOutages(ciderIds, bDebugWithAllOutage
 }
 
 /**
- * Add the planned outages table to the DOM
- */
-function addOutageTableHtmlToDom() {
-
-  let outagesTableDiv = document.createElement('div')
-  outagesTableDiv.innerHTML = `<br>
-    <div class="outage-list section container">
-      <div class="row">
-        <div class="mb-3">
-          <h3 class="pb-2">Planned Downtimes</h3>
-          <div class="table-responsive">
-            <table id="outages-planned" class="display text-start table" style="display:none;">
-              <thead>
-                <tr>
-                  <th>Event</th>
-                  <th>Start</th>
-                  <th>End</th>
-                </tr>
-              </thead>
-              <tbody>
-              </tbody>
-            </table>
-          </div>
-        </div>
-      </div>
-    </div>
-  `
-  container = document.getElementById('access_news')
-  container.appendChild(outagesTableDiv, container.firstChild);
-}
-
-/**
  * Current outages are shown in boxes in a div at top of page.
  * Only add the div if there are any associated outages.
  * Make the api call, filter results, and display any outages
@@ -83,12 +53,14 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
 
   // for testing, get all outages
   const endpointUrl = bDebugWithAllOutages
-    ? 'https://info.xsede.org/wh1/outages/v1/outages'
-    : 'https://info.xsede.org/wh1/outages/v1/outages/Current'
+    ? 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/all_outages'
+    : 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/current_outages'
 
   const response = await fetch(endpointUrl)
   let outages = await response.json()
-  let filtered = filterOutages(outages, ciderIds)
+  let filtered = bDebugWithAllOutages ? outages.results : filterOutages(outages.results, ciderIds)
+
+  if (bDebugWithAllOutages & filtered.length > 4) filtered.length = 4 // keep debugging simple
 
   if (filtered.length > 0) {
 
@@ -101,9 +73,8 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
       </div>
     `
 
-    // add the div to the top of the page
-    // (hopefully the following div id is the same on all domains)
-    let container = document.getElementById('block-views-block-affinity-group-group-2')
+    // add the div to the page
+    let container = document.getElementById('block-accesstheme-content')
     container.insertBefore(outagesCurrentDiv, container.firstChild);
     const outagesCurrent = document.getElementById('outages-current-p')
 
@@ -125,7 +96,7 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
  */
 function getOutageHtml(outage) {
   return `
-    <a href="https://support.access-ci.org/outages?outageID=` + outage['ID'] + `">
+    <a style="text-decoration: none" href="/outages?outageID=` + outage['URN'] + `">
       <span class="outage-span">
         <span style="color: #f07537; font-size: 170%"> &bull; </span>
         Current Outage
@@ -145,24 +116,31 @@ function getOutageHtml(outage) {
  */
 const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWithAllOutages) {
 
+  // only show this on the affinity group view
+  container = document.getElementById('access_news')
+  if (!container) return;
+
   // for testing, get all outages
   const endpointUrl = bDebugWithAllOutages
-    ? 'https://info.xsede.org/wh1/outages/v1/outages'
-    : 'https://info.xsede.org/wh1/outages/v1/outages/Future'
+    ? 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/all_outages'
+    : 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/future_outages'
 
   const response = await fetch(endpointUrl)
   let outages = await response.json()
-  let filtered = filterOutages(outages, ciderIds)
+  let filtered = bDebugWithAllOutages ? outages.results : filterOutages(outages.results, ciderIds)
+
+  if (bDebugWithAllOutages & filtered.length > 4) filtered.length = 4
 
   if (filtered.length > 0) {
 
     // create the html table
     addOutageTableHtmlToDom()
 
-    const outagesTable = document.getElementById('outages-planned')
     const options = {
       timeZoneName: 'short'
     }
+
+    const outagesTable = document.getElementById('ag-outages-planned')
 
     jQuery(outagesTable).DataTable({
       data: filtered,
@@ -170,19 +148,23 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
         {
           data: 'Subject',
           render: function (data, type, row, meta) {
-            return type === 'display' ? `<a href="https://support.access-ci.org/outages?outageID=${row['ID']}">${data}</a>` : data;
+            return type === 'display' ? `<a href="/outages?outageID=${row['URN']}">${data}</a>` : data;
           }
         },
         {
           data: 'OutageStart',
           render: function (data, type, row, meta) {
-            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+            return type === 'display'
+              ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+              : data;
           }
         },
         {
           data: 'OutageEnd',
           render: function (data, type, row, meta) {
-            return type === 'display' ? new Date(data).toLocaleString(navigator.language, options) : data;
+            return type === 'display'
+              ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+              : data;
           }
         }
       ],
@@ -191,8 +173,42 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
       bAutoWidth: false,
       searching: false
     })
+
     outagesTable.style.display = 'block'
   }
+}
+
+/**
+ * Add the planned outages table to the DOM
+ */
+function addOutageTableHtmlToDom() {
+
+  let outagesTableDiv = document.createElement('div')
+  outagesTableDiv.innerHTML = `<br>
+    <div class="outage-list section container">
+      <div class="row">
+        <div class="mb-3">
+          <h3 class="pb-2">Planned Downtimes for Associated Infrastructure</h3>
+          <div class="table-responsive">
+            <table id="ag-outages-planned" class="display text-start table" style="display:none;">
+              <thead>
+                <tr>
+                  <th>Event</th>
+                  <th>Start</th>
+                  <th>End</th>
+                </tr>
+              </thead>
+              <tbody>
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
+    </div>
+  `
+  // only show this on the page that has the access_news container.
+  container = document.getElementById('access_news')
+  container.appendChild(outagesTableDiv, container.firstChild);
 }
 
 /**
@@ -206,10 +222,13 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
 function filterOutages(outages, ciderIds) {
   let filtered = []
   Object.keys(outages).forEach(function (key) {
-    if (ciderIds.indexOf(outages[key]['ResourceID']) > -1) {
-      filtered.push(outages[key]);
+    for (const resource of outages[key]['AffectedResources']) {
+      if (ciderIds.indexOf(resource.ResourceID) > -1) {
+        if (filtered.indexOf(outages[key]) === -1) {
+          filtered.push(outages[key]);
+        }
+      }
     }
   });
   return filtered;
 }
-
