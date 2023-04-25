@@ -57,14 +57,14 @@ class UserProfilesCommands extends DrushCommands {
 
     $this->output()->writeln("  Merging from '$first_name1 $last_name1' to '$first_name2 $last_name2'");
 
-    // $this->mergeResources($user_from, $user_to);
-    // $this->mergeAfffinityGroups($user_from, $user_to);
-    // $this->mergeFlag('interest', $user_from, $user_to);
-    // $this->mergeFlag('skill', $user_from, $user_to);
-    // $this->mergeFlag('upvote', $user_from, $user_to);
-    // $this->mergeFlag('interested_in_project', $user_from, $user_to);
-    // $this->mergeRoles($user_from, $user_to);
-    // $this->mergeUserFields($user_from, $user_to);
+    $this->mergeResources($user_from, $user_to);
+    $this->mergeAfffinityGroups($user_from, $user_to);
+    $this->mergeFlag('interest', $user_from, $user_to);
+    $this->mergeFlag('skill', $user_from, $user_to);
+    $this->mergeFlag('upvote', $user_from, $user_to);
+    $this->mergeFlag('interested_in_project', $user_from, $user_to);
+    $this->mergeRoles($user_from, $user_to);
+    $this->mergeUserFields($user_from, $user_to);
     $this->mergeNodes($user_from, $user_to);
   }
 
@@ -75,9 +75,6 @@ class UserProfilesCommands extends DrushCommands {
    *   From user.
    * @param \Drupal\user\Entity\User $user_to
    *   To user.
-   *
-   *
-   * do node mass update on all nodes,
    */
   private function mergeNodes(User $user_from, User $user_to) {
 
@@ -292,7 +289,7 @@ class UserProfilesCommands extends DrushCommands {
    * @param \Drupal\user\Entity\User $user_to
    *   To user.
    *
-   *
+   * TODO:
    * update all webform submissions?
    * can node_mass_update do this?
    */
