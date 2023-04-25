@@ -90,9 +90,7 @@ class PersonaBlock extends BlockBase {
         $region_tid = $region['target_id'];
         $terms[$region_tid] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
       }
-      $current_path = \Drupal::service('path.current')->getPath();
-      $path_args = explode('/', $current_path);
-      if ($path_args[2] == NULL) {
+      if (!$public) {
         $cssn_role_url = Url::fromUri('internal:/form/edit-your-cssn-roles?destination=community-persona');
         $cssn_role_link = Link::fromTextAndUrl('Edit Roles', $cssn_role_url);
         $cssn_role_renderable = $cssn_role_link->toRenderable();
