@@ -90,11 +90,17 @@ class PersonaBlock extends BlockBase {
         $region_tid = $region['target_id'];
         $terms[$region_tid] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
       }
-      $cssn_role_url = Url::fromUri('internal:/form/edit-your-cssn-roles?destination=community-persona');
-      $cssn_role_link = Link::fromTextAndUrl('Edit Roles', $cssn_role_url);
-      $cssn_role_renderable = $cssn_role_link->toRenderable();
-      $cssn_role = $cssn_role_renderable;
-      $cssn_role['#attributes']['class'] = ['text-dark'];
+      $current_path = \Drupal::service('path.current')->getPath();
+      $path_args = explode('/', $current_path);
+      if ($path_args[2] == NULL) {
+        $cssn_role_url = Url::fromUri('internal:/form/edit-your-cssn-roles?destination=community-persona');
+        $cssn_role_link = Link::fromTextAndUrl('Edit Roles', $cssn_role_url);
+        $cssn_role_renderable = $cssn_role_link->toRenderable();
+        $cssn_role = $cssn_role_renderable;
+        $cssn_role['#attributes']['class'] = ['text-dark'];
+      } else {
+        $cssn_role = "";
+      }
 
       // Programs.
       $program = implode(', ', $terms);
@@ -141,7 +147,9 @@ class PersonaBlock extends BlockBase {
                           </div>
                           <div class="d-flex justify-content-between border-top border-bottom mb-3 py-3 border-secondary">
                             <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
-                            <div><i class="text-dark fa-solid fa-pen-to-square"></i> {{ cssn_role }}</div>
+                            {% if cssn_role %}
+                              <div><i class="text-dark fa-solid fa-pen-to-square"></i> {{ cssn_role }}</div>
+                            {% endif %}
                           </div>
                           <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
                           <div class="w-100">
