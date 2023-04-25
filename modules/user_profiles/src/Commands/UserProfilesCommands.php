@@ -2,14 +2,14 @@
 
 namespace Drupal\user_profiles\Commands;
 
-use Drupal\user\Entity\User;
-use Drupal\user\UserInterface;
+use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\user\Entity\User;
 use Drupal\webform\Entity\WebformSubmission;
 use Drush\Commands\DrushCommands;
 
 /**
- * A Drush commandfile to migrate settings from profile data from
+ * A Drush commandfile to migrate profile data from
  * one user to another.
  *
  * @package Drupal\user_profiles\Commands
@@ -17,13 +17,13 @@ use Drush\Commands\DrushCommands;
 class UserProfilesCommands extends DrushCommands {
 
   /**
-   * Migrate / merge user profile settings from one user to another.  The following
+   * Migrate user data from one user to another.  The following
    * will get updated:
-   *  - ownership of resources
-   *  - affinity groups
-   *  - flags:  interest, skill, upvote, interested-in-project
+   *  - flags:  affinity groups, interest, skill, upvote, interested-in-project
+   *  - webform submissions
    *  - roles
-   *  - engagements
+   *  - user fields
+   *  - nodes
    *
    * @command user_profiles:mergeUser
    * @param string $from_user_id
@@ -55,17 +55,17 @@ class UserProfilesCommands extends DrushCommands {
     $first_name2 = $user_to->get('field_user_first_name')->getString();
     $last_name2 = $user_to->get('field_user_last_name')->getString();
 
-    $this->output()->writeln("  Merging from '$first_name1 $last_name1' to '$first_name2 $last_name2'");
+    $this->output()->writeln("  Migrating data for user '$first_name1 $last_name1' to '$first_name2 $last_name2'");
 
-    $this->mergeResources($user_from, $user_to);
-    $this->mergeAfffinityGroups($user_from, $user_to);
-    $this->mergeFlag('interest', $user_from, $user_to);
-    $this->mergeFlag('skill', $user_from, $user_to);
-    $this->mergeFlag('upvote', $user_from, $user_to);
-    $this->mergeFlag('interested_in_project', $user_from, $user_to);
-    $this->mergeRoles($user_from, $user_to);
-    $this->mergeUserFields($user_from, $user_to);
     $this->mergeNodes($user_from, $user_to);
+    $this->mergeUserFields($user_from, $user_to);
+    $this->mergeRoles($user_from, $user_to);
+    $this->mergeWebformSubmissions($user_from, $user_to);
+
+    $flags = ['affinity_group', 'interest', 'skill', 'upvote', 'interested_in_project'];
+    foreach ($flags as $flag) {
+      $this->mergeFlag($flag, $user_from, $user_to);
+    }
   }
 
   /**
@@ -91,9 +91,9 @@ class UserProfilesCommands extends DrushCommands {
     }
 
     $this->output()->writeln("Migrating nodes");
-    $this->output()->writeln("  Updating these nodes: ");
+    $this->output()->writeln("  Changing ownership of these node titles: ");
     foreach ($nodes as $nid) {
-      $node = \Drupal\node\Entity\Node::load($nid);
+      $node = Node::load($nid);
       $this->output()->writeln("    " . $node->getTitle());
     }
 
@@ -109,7 +109,7 @@ class UserProfilesCommands extends DrushCommands {
    *   To user.
    */
   private function mergeUserFields(User $user_from, User $user_to) {
-    $this->output()->writeln("Merging user fields");
+    $this->output()->writeln("Migrating user fields");
 
     /* Here's a list of all fields -- only a subset of these are migrated.
 
@@ -207,18 +207,18 @@ class UserProfilesCommands extends DrushCommands {
         $to_inst = $to_inst[0]['value'];
       }
       if ($from_inst === $to_inst) {
-        $this->output()->writeln("  Merging 'field_carnegie_code' with value '$from_carnegie_code'");
+        $this->output()->writeln("  Migrating 'field_carnegie_code' with value '$from_carnegie_code'");
         $user_to->set('field_carnegie_code', $from_carnegie_code);
       } else {
-        $this->output()->writeln("  Not merging 'field_carnegie_code' with "
+        $this->output()->writeln("  Not Migrating 'field_carnegie_code' with "
           . "value '$from_carnegie_code' because differing institutions ('$from_inst' and '$to_inst')");
       }
     } else {
-      $this->output()->writeln("  From user has no carnegie code to merge.");
+      $this->output()->writeln("  From user has no carnegie code to migrate.");
     }
 
     // Per Andrew:  field_region should only be added to, not replaced.
-    $this->output()->writeln("  Merging region / program fields");
+    $this->output()->writeln("  Migrating region / program fields");
     $from_region = $user_from->get('field_region')->referencedEntities();
     foreach ($from_region as $from_program) {
       $to_region = $user_to->get('field_region')->referencedEntities();
@@ -244,7 +244,7 @@ class UserProfilesCommands extends DrushCommands {
           );
         } else {
           $this->output()->writeln(
-            "    Already a member of program '"
+            "    To-user already a member of program '"
               . $from_program->getName() . "'"
           );
         }
@@ -263,15 +263,18 @@ class UserProfilesCommands extends DrushCommands {
    *   To user.
    */
   private function mergeRoles(User $user_from, User $user_to) {
-    $this->output()->writeln("Merging roles");
+    $this->output()->writeln("Migrating roles");
 
     $roles = $user_from->getRoles();
+    $to_roles = $user_to->getRoles();
     $changes = FALSE;
     foreach ($roles as $role) {
       if (in_array($role, ['anonymous', 'authenticated', 'administrator'])) {
         $this->output()->writeln("  Skipping role '$role' - can't be assigned programatically");
+      } elseif (in_array($role, $to_roles)) {
+        $this->output()->writeln("  To-user already has role '$role'");
       } else {
-        $this->output()->writeln("  Merging role '$role'");
+        $this->output()->writeln("  Migrating role '$role'");
         $user_to->addRole($role);
         $changes = TRUE;
       }
@@ -282,35 +285,31 @@ class UserProfilesCommands extends DrushCommands {
   }
 
   /**
-   * Change the ownership of any resources from $user_from to $user_to.
+   * Change the ownership of any webform submissions.
    *
    * @param \Drupal\user\Entity\User $user_from
    *   From user.
    * @param \Drupal\user\Entity\User $user_to
    *   To user.
    *
-   * TODO:
-   * update all webform submissions?
-   * can node_mass_update do this?
+   *   Can node_mass_update do this?
    */
-  private function mergeResources(User $user_from, User $user_to) {
-    $this->output()->writeln("Merging resources");
+  private function mergeWebformSubmissions(User $user_from, User $user_to) {
+    $this->output()->writeln("Migrating webform submissions");
 
     $ws_query = \Drupal::entityQuery('webform_submission')
-      ->condition('uid', $user_from->id())
-      ->condition('uri', '/form/resource');
+      ->condition('uid', $user_from->id());
     $ws_results = $ws_query->execute();
     if ($ws_results == NULL) {
-      $this->output()->writeln("  From-user has no resources");
+      $this->output()->writeln("  From-user has no webform submissions");
       return;
     }
     foreach ($ws_results as $ws_result) {
       $ws = WebformSubmission::load($ws_result);
-      $ws_data = $ws->getData();
-      $resource_title = $ws_data['title'];
+      $ws_id = $ws->getWebform()->id();
       $ws->setOwner($user_to);
       $ws->save();
-      $this->output()->writeln("  Updated ownership of resource '$resource_title'");
+      $this->output()->writeln("  Updated ownership of webform submission of type $ws_id");
     }
   }
 
@@ -325,7 +324,7 @@ class UserProfilesCommands extends DrushCommands {
    *   To user.
    */
   private function mergeFlag($flag_name, User $user_from, User $user_to) {
-    $this->output()->writeln("Merging flags with name '$flag_name'");
+    $this->output()->writeln("Migrating flags with name '$flag_name'");
 
     $term = \Drupal::database()->select('flagging', 'fl');
     $term->condition('fl.uid', $user_from->id());
@@ -358,121 +357,6 @@ class UserProfilesCommands extends DrushCommands {
       } else {
         $this->output()->writeln("  To-user already has flag $flag_name with title '$title'");
       }
-    }
-  }
-
-  /**
-   * Merge affinity groups.
-   *
-   * @param \Drupal\user\Entity\User $user_from
-   *   From user.
-   * @param \Drupal\user\Entity\User $user_to
-   *   To user.
-   */
-  private function mergeAfffinityGroups(User $user_from, User $user_to) {
-
-    $this->output()->writeln("Merging affinity groups");
-
-    // Get user_to's blocked ag taxonomy ids.
-    $user_blocked_tid_array = $user_to->get('field_blocked_ag_tax')->getValue();
-    $user_blocked_tids = [];
-    foreach ($user_blocked_tid_array as $user_blocked_tid) {
-      $user_blocked_tids[] = $user_blocked_tid['target_id'];
-    }
-    // $this->output()->writeln("  user-to blocked ag tids: "
-    // . implode(' ', $user_blocked_tids));
-
-    // Get all the affinity groups of $user_from.
-    $query = \Drupal::database()->select('flagging', 'fl');
-    $query->condition('fl.uid', $user_from->id());
-    $query->condition('fl.flag_id', 'affinity_group');
-    $query->fields('fl', ['entity_id']);
-    $ag_ids = $query->execute()->fetchCol();
-
-    if ($ag_ids == NULL) {
-      $this->output()->writeln("  from-user is not a member of any affinity groups");
-      return;
-    }
-    // For each affinity group id, add user_to to that affinity group.
-    foreach ($ag_ids as $ag_id) {
-      $this->addUserToAg($user_to, $ag_id, $user_blocked_tids);
-    }
-  }
-
-  /**
-   * Add a user to an affinity group (unless on the users's block list).
-   *
-   * @param \Drupal\user\Entity\UserInterface $to_user
-   *   To user.
-   * @param string $ag_id
-   *   Affinity group id.
-   * @param array $user_blocked_tids
-   *   Array of blocked affinity group taxonomy ids.
-   */
-  private function addUserToAg(UserInterface $to_user, string $ag_id, array $user_blocked_tids) {
-    // Get the node id of the affinity group.
-    $query = \Drupal::database()->select('taxonomy_index', 'ti');
-    $query->condition('ti.tid', $ag_id);
-    $query->fields('ti', ['nid']);
-    $affinity_group_nid = $query->execute()->fetchCol();
-
-    if (!isset($affinity_group_nid[0])) {
-      // Not sure how or if this could happen, or what it would mean, but
-      // Miles' code in CommunityPersonaController.php line 36 also
-      // ignores this condition.
-      $this->output()->writeln("*** Warning, from-user flagged as member of affinity group #$ag_id but no such affinity group found - skipping this affinity group");
-      return;
-    }
-
-    // Load that affinity group.
-    $ag_nid = $affinity_group_nid[0];
-    /** @var Drupal\node\Entity\Node $affinity_group_loaded */
-    $affinity_group_loaded = \Drupal::entityTypeManager()
-      ->getStorage('node')
-      ->load($ag_nid);
-
-    if (!$affinity_group_loaded) {
-      $this->output()->writeln("*** Warning, could not load affinity group with node_id #$ag_nid - skipping this affinity group");
-      return;
-    }
-
-    $ag_title = $affinity_group_loaded->getTitle();
-
-    // Get AG taxonomy id.
-    $ag_taxonomy = \Drupal::entityTypeManager()
-      ->getStorage('taxonomy_term')
-      ->loadByProperties(['name' => $ag_title]);
-    $ag_taxonomy = reset($ag_taxonomy);
-
-    if (!$ag_taxonomy) {
-      $this->output()->writeln("*** Warning, no taxonomy id found for AG title '$ag_title'");
-      return;
-    }
-
-    $ag_tax_id = $ag_taxonomy->id();
-
-    // Check if ag is on block list.
-    if (in_array($ag_tax_id, $user_blocked_tids)) {
-      $this->output()->writeln("  Not adding '$ag_title' (tid #$ag_tax_id) because on to-user's block list");
-      return;
-    }
-
-    // Check if already flagged. If not, set the flag.
-    $flag_service = \Drupal::service('flag');
-    $ag_flag = $flag_service->getFlagById('affinity_group');
-    $ag_flag_status = $flag_service->getFlagging($ag_flag, $ag_taxonomy, $to_user);
-    if (!$ag_flag_status) {
-      $this->output()->writeln("  Adding to-user to affinity group '$ag_title' (#$ag_tax_id)");
-      // Following sometimes giving "The flag does not apply to
-      // the bundle of the entity".
-      if ($ag_taxonomy->bundle() !== 'affinity_groups') {
-        $this->output()->writeln("*** Error, affinity group '$ag_title' has unexpected bundle = '" . $ag_taxonomy->bundle()
-          . "' (expected it to have bundle 'affinity_groups')");
-      } else {
-        $flag_service->flag($ag_flag, $ag_taxonomy, $to_user);
-      }
-    } else {
-      $this->output()->writeln("  To-user already a member of affinity group '$ag_title' (#$ag_tax_id)");
     }
   }
 }
