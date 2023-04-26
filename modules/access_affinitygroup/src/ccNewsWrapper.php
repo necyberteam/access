@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Returns the HTML to send to Constant Contact.
@@ -11,10 +12,9 @@
  *  b) an individual news item or event "broadcast" as  email to an affinity group (perhaps multiple; not decided)
  */
 
- // used in weekly news rollup
-function sectionHeadHTML($titleText)
-{
-    $sectionHead = <<<SECTIONHEADHTML
+// used in weekly news rollup
+function sectionHeadHTML($titleText) {
+  $sectionHead = <<<SECTIONHEADHTML
     <table class="layout layout-feature layout-1-column" style="table-layout:fixed; background-color=#ffffff;" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
       <tr>
         <td class="column column--1 scale stack" style="width:100%;" align="center" valign="top">
@@ -31,13 +31,12 @@ function sectionHeadHTML($titleText)
       </tr>
     </table>
 SECTIONHEADHTML;
-    return $sectionHead;
+  return $sectionHead;
 }
 
- // use in weekly news rollup
-function newsItemHTML($title, $pubDate, $body, $articleUrl)
-{
-    $main = "<div  class=\"digest-news-body\">
+// use in weekly news rollup
+function newsItemHTML($title, $pubDate, $body, $articleUrl) {
+  $main = "<div  class=\"digest-news-body\">
       <span>$pubDate</span>
       <br>
       <p>
@@ -45,25 +44,22 @@ function newsItemHTML($title, $pubDate, $body, $articleUrl)
       </p>
       <br>
       </div>";
-    return itemHTML($title, $main, $articleUrl, "News Link");
+  return itemHTML($title, $main, $articleUrl, "Read more");
 }
 
- // use in weekly news rollup
-function eventItemHTML($title, $eventDate, $description, $location, $articleUrl)
-{
-    $main = "<div>
+// use in weekly news rollup
+function eventItemHTML($title, $eventDate, $description, $articleUrl) {
+  $main = "<div>
         <span>$eventDate</span>
         <span>$description</span>
-        <p>Location: $location</p>
       </div>";
-    return itemHTML($title, $main, $articleUrl, "Event Link");
+  return itemHTML($title, $main, $articleUrl, "Read more");
 }
- // used in weekly news rollup - each news or event item
- // with a link at the bottom to the event
-function itemHTML($titleText, $main, $itemUrl, $itemLinkText)
-{
-    $title = titleHTML($titleText);
-    $article = <<<ARTICLEHTML
+// used in weekly news rollup - each news or event item
+// with a link at the bottom to the event
+function itemHTML($titleText, $main, $itemUrl, $itemLinkText) {
+  $title = titleHTML($titleText);
+  $article = <<<ARTICLEHTML
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
@@ -97,13 +93,12 @@ function itemHTML($titleText, $main, $itemUrl, $itemLinkText)
     </tr>
   </table>
 ARTICLEHTML;   // this text must positioned to the left of end html
-    return $article;
+  return $article;
 }
 
 // a line between articles
-function dividerHTML()
-{
-    $divider = <<<DIVIDERHTML
+function dividerHTML() {
+  $divider = <<<DIVIDERHTML
   <table class="layout=layout--1-column" style="table-layout:fixed;"width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td class="column column--1 scale stack" style="width:100%;"align="center" valign="top">
@@ -125,61 +120,44 @@ function dividerHTML()
     </tr>
   </table>
 DIVIDERHTML;  // statement must be left of end of html
-    return $divider;
-}
-
-// static bottom section of digest
-// might want to mkae this into drupal content item like a kind of news
-function ccRollupBottomHTML()
-{
-    $x =
-        dividerHTML() .
-        sectionHeadHTML("Join Affinity Groups") .
-        ccRollupBottomStatic1() .
-        dividerHTML() .
-        sectionHeadHTML("Share with the ACCESS Community") .
-        ccRollupBottomStatic2();
-
-        return ($x);
+  return $divider;
 }
 
 // inner wrapper for the weekly news and events rollup.
-function ccNewsRollupHTML($news, $events)
-{
-    $newsBody = '<div class="access-news-rollup-email">'
-              . '<div class="access-news-rollup-news">' . $news . '</div>'
-              . dividerHTML()
-              . '<div class="access-news-rollup-events">' . $events . '</div>'
-              . dividerHTML()
-              . sectionHeadHTML("Join Affinity Groups")
-              . ccRollupBottomStatic1()
-              . dividerHTML()
-              . sectionHeadHTML("Share with the ACCESS Community")
-              . ccRollupBottomStatic2()
-              . '</div>';
+function ccNewsRollupHTML($news, $events) {
+  $newsBody = '<div class="access-news-rollup-email">'
+    . '<div class="access-news-rollup-news">' . $news . '</div>'
+    . dividerHTML()
+    . '<div class="access-news-rollup-events">' . $events . '</div>'
+    . dividerHTML()
+    . sectionHeadHTML("Join Affinity Groups")
+    . ccRollupBottomStatic1()
+    . dividerHTML()
+    . sectionHeadHTML("Share with the ACCESS Community")
+    . ccRollupBottomStatic2()
+    . '</div>';
 
-    return ccNewsCommonHTML($newsBody, '');
+  return ccNewsCommonHTML($newsBody, '');
 }
 
 // for a single news or event item, broadcast to one or more affinity groups
 // this is the Access template used for affinity groups that are NOT of the
 // "Community" category.
 
-function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
-{
-    // Build list of one or more affinity group names separated by 'or'.
-    $agText = '';
-    $or = '';
-    foreach ($agNames as $agName) {
-        $agText = $agText . $or . $agName;
-        $or = ' or ';
-    }
-    $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl) {
+  // Build list of one or more affinity group names separated by 'or'.
+  $agText = '';
+  $or = '';
+  foreach ($agNames as $agName) {
+    $agText = $agText . $or . $agName;
+    $or = ' or ';
+  }
+  $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
-    $titleDisplay = titleHTML($title);
+  $titleDisplay = titleHTML($title);
 
-    // line at the top that lists AG groups
-    $topExtra = <<<TOPEXTRA
+  // line at the top that lists AG groups
+  $topExtra = <<<TOPEXTRA
   <table style="background-color:#1a5b6e;table-layout:fixed;" width="100%" border="0" cellpadding="0" cellspacing="0"  bgcolor="#1a5b6e">
     <tbody>
       <tr>
@@ -202,9 +180,9 @@ function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
   </table>
 TOPEXTRA;
 
-    $pubDateDisplay = '';
-    if ($pubDate) {
-        $pubDateDisplay = <<<PUBDATE
+  $pubDateDisplay = '';
+  if ($pubDate) {
+    $pubDateDisplay = <<<PUBDATE
       <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
         <tbody>
           <tr>
@@ -218,9 +196,9 @@ TOPEXTRA;
         </tbody>
       </table>
     PUBDATE;
-    }
+  }
 
-    $newsItem = <<<SINGLENEWS
+  $newsItem = <<<SINGLENEWS
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
@@ -256,39 +234,36 @@ TOPEXTRA;
     </tr>
   </table>
 SINGLENEWS;   // this text must positioned to the left of end html
-    return ccNewsCommonHTML($newsItem, $topExtra);
+  return ccNewsCommonHTML($newsItem, $topExtra);
 }
 
 // news or event title formatting
-function titleHTML($titleText)
-{
-    $t = <<<TITLE
+function titleHTML($titleText) {
+  $t = <<<TITLE
     <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 0px 0px 8px 0px">
       $titleText
     </h3>
   TITLE;
-    return ($t);
+  return ($t);
 }
 // returns complete url with host and full path
 // we assume all of our images are in the sites/default/files/inline_images dir
-function imageUrl($imageFileName)
-{
-    $uri = 'public://inline-images/'.$imageFileName;
-    return(\Drupal::service('file_url_generator')->generateAbsoluteString($uri));
+function imageUrl($imageFileName) {
+  $uri = 'public://inline-images/' . $imageFileName;
+  return (\Drupal::service('file_url_generator')->generateAbsoluteString($uri));
 }
 
 // Access Constant Contact Template wrapping common to broadcast news and events,
 // and also the weekly news+events rollup.
-function ccNewsCommonHTML($newsBody, $topExtra)
-{
-    $imgLogo = imageUrl('access_support_masthead.jpg');
-    $fbIcon = imageUrl('circleIconFacebook.png');
-    $twIcon = imageUrl('circleIconTwitter.png');
-    $ytIcon = imageUrl('circleIconYoutube.png');
-    $nsfLogo = \Drupal::request()->getSchemeAndHttpHost()
-              . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
+function ccNewsCommonHTML($newsBody, $topExtra) {
+  $imgLogo = imageUrl('access_support_masthead.jpg');
+  $fbIcon = imageUrl('circleIconFacebook.png');
+  $twIcon = imageUrl('circleIconTwitter.png');
+  $ytIcon = imageUrl('circleIconYoutube.png');
+  $nsfLogo = \Drupal::request()->getSchemeAndHttpHost()
+    . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
 
-    $emailText = <<<EMAILTEXT
+  $emailText = <<<EMAILTEXT
   <html lang="en-US">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -540,7 +515,7 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                                   <td class="image_container" align="center" valign="top">
                                     <img data-image-content class="image_content" width="680"
                                         src="$imgLogo"
-                                        alt="Access Support logo" style="display: block; height: auto; max-width=100%;">
+                                        alt="Access Support logo" style="display: block; height: auto; max-width:100%;">
                                   </td>
                                 </tr>
                               </table>
@@ -665,22 +640,22 @@ function ccNewsCommonHTML($newsBody, $topExtra)
     </body>
     </html>
   EMAILTEXT;
-    // note: EMAILTEXT must be to the left column-wise of the last tag (php)
-    return $emailText;
+  // note: EMAILTEXT must be to the left column-wise of the last tag (php)
+  return $emailText;
 }
 
 // "Join Affinity Groups" section
 // possible do this through a news item, but for now, we have an extra image here we need to show
-function ccRollupBottomStatic1()
-{
-    $teamImageUrl = imageUrl('team-looking-at-screen_0.jpg');
-    $title = titleHTML('Ensure you keep receiving updates!');
-    $bodyText = "Join Affinity Groups to get updates about things you care about. If you have allocations, you will automatically become a member of Affinity Groups
-                associated with your allocations. Join the ACCESS Support Affinity Group to continue to receive these weekly digests.";
-    $buttonText = "See Affinity Groups";
-    $buttonUrl = \Drupal::request()->getSchemeAndHttpHost() . '/affinity_groups';
+function ccRollupBottomStatic1() {
+  $teamImageUrl = imageUrl('team-looking-at-screen_0.jpg');
+  $title = titleHTML('Ensure you keep receiving updates!');
+  $bodyText = "Join Affinity Groups to get updates about things you care about. If you have allocations, you will automatically become a member of Affinity Groups
+                associated with your allocations. When you join the ACCESS Support Affinity Group you'll receive these weekly digests.";
 
-    $html = <<<ROLLUPSTATIC1
+  $buttonText = "See Affinity Groups";
+  $buttonUrl = \Drupal::request()->getSchemeAndHttpHost() . '/affinity_groups';
+
+  $html = <<<ROLLUPSTATIC1
     <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tbody>
         <tr>
@@ -739,18 +714,17 @@ function ccRollupBottomStatic1()
     </tbody>
     </table>
   ROLLUPSTATIC1;
-    // note: ROLLUPSTATIC1 must be to the left column-wise of the last tag (php)
-    return $html;
+  // note: ROLLUPSTATIC1 must be to the left column-wise of the last tag (php)
+  return $html;
 }
 
 // "Share with the ACCESS Community" section.
-function ccRollupBottomStatic2()
-{
-    $title = titleHTML('Do you have news or trainings to share?');
-    $newsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/news';
-    $eventsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/events';
+function ccRollupBottomStatic2() {
+  $title = titleHTML('Do you have news or trainings to share?');
+  $newsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/news';
+  $eventsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/events';
 
-    $bodyHtml = <<<BODY
+  $bodyHtml = <<<BODY
       <span>Add your </span>
       <a href="$newsUrl">news</a>
       <span> or </span>
@@ -758,7 +732,7 @@ function ccRollupBottomStatic2()
       <span> on the ACCESS Support website and we will include it in our digest.</span>
     BODY;
 
-    $html = <<<ROLLUPSTATIC2
+  $html = <<<ROLLUPSTATIC2
     <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tbody>
         <tr>
@@ -784,7 +758,7 @@ function ccRollupBottomStatic2()
       </tbody>
     </table>
 ROLLUPSTATIC2;
-    return $html;
+  return $html;
 }
 
 //                     style="font-family:Roboto,sans-serif;text-decoration:underline;color:rgb(72,192,185);font-weight:bold" target="_blank">
