@@ -310,9 +310,10 @@ function weeklyNewsReport($noSend) {
   try {
     // gather all news published from 7 days ago until yesterday.
     // need to make dates for searching on published_date (not date+time)
-    $utmCampaign = 'Digest-' . date('mdy');
     $dtLastWeek = new \DateTime('-7 days');
     $dtYesterday = new \DateTime('yesterday');
+    $dtTomorrow = new \DateTime('tomorrow');
+    $utmCampaign = 'Digest-' . $dtTomorrow->format('mdy');
 
     $d1 = DrupalDateTime::createFromDateTime($dtLastWeek)
       ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
@@ -320,11 +321,13 @@ function weeklyNewsReport($noSend) {
       ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
 
     $newsHTML = newsRangeView($d1, $d2, $utmCampaign);
+    $sectionHeader = sectionHeadHTML("The ACCESS Support Digest // " . $dtTomorrow->format('F j, Y'));
+    $newsHTML = $sectionHeader . $newsHTML;
     Drupal::logger('cron_accessnews')->notice('Digest: news from: ' . $d1 . ' to: ' . $d2);
 
-    // gather all upcoming events for the next month (this date to +1 month)
+    // gather all upcoming events for the next month (tomorrow, when digest is sent, to +1 month)
     $timezone = new \DateTimeZone(DateTimeItemInterface::STORAGE_TIMEZONE);
-    $dtCurrent = new \DateTime('today', $timezone);
+    $dtCurrent = new \DateTime('tomorrow', $timezone);
     $dtNextMonth = new \DateTime('today+1 month + 2 day', $timezone);
 
     $d1 = DrupalDateTime::createFromDateTime($dtCurrent)
@@ -339,13 +342,13 @@ function weeklyNewsReport($noSend) {
     $emailHTML = ccNewsRollupHTML($newsHTML, $eventHTML);
 
     // create constant contact campaign. this does not send it
-    $campaignName = uniqid('Access Weekly Digest: '  . date('n/j/y') . ' ', FALSE);
+    $campaignName = uniqid('Access Weekly Digest: '  . $dtTomorrow->format('n/j/y') . ' ', FALSE);
 
-    $ccResponse = setupEmailCampaign('The ACCESS Support Digest // ' . date('F j, Y'), $emailHTML, $campaignName);
+    $ccResponse = setupEmailCampaign('The ACCESS Support Digest // ' . $dtTomorrow->format('F j, Y'), $emailHTML, $campaignName);
   } catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
   }
-  // todo: if !nosend, send email to xx saying the draft is ready. Or perhaps send a CC test mail to the person.
+  // possible todo: if !nosend, send email to xx saying the draft is ready. Or perhaps send a CC test mail to the person.
   return;
 }
 
@@ -403,9 +406,6 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
 
       $listDisplay = $listDisplay . $itemDisplay;
     } // end for
-
-    $sectionHeader = sectionHeadHTML("The ACCESS Support Digest // " . date('F j, Y'));
-    $listDisplay = $sectionHeader . $listDisplay;
   } catch (Exception $e) {
     $listDisplay = 'Error retrieving news: ' . $e->getMessage();
   }
@@ -469,14 +469,14 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
         $body = empty($enode->description[0]) ? '' : $enode->description[0]->view('rollup_list');
         $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
 
-        $location = empty($enode->location[0]) ? '' : $enode->location[0]->view('rollup_list');
-        $locationDisp = \Drupal::service('renderer')->renderPlain($location);
+        //$location = empty($enode->location[0]) ? '' : $enode->location[0]->view('rollup_list');
+        //$locationDisp = \Drupal::service('renderer')->renderPlain($location);
 
         if ($eCount > 1) {
           $listDisplay = $listDisplay . $divider;
         }
 
-        $itemDisplay = eventItemHTML($title, $dateTimeDisp, $bodyDisp, $locationDisp, $eventUrl);
+        $itemDisplay = eventItemHTML($title, $dateTimeDisp, $bodyDisp, $eventUrl);
       } catch (Exception $e) {
         //kint("EXCEPTION  at $eCount: ". $e->getMessage());
         $itemDisplay = 'Error retrieving event item ' . $e->getMessage();
