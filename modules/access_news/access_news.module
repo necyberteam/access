@@ -379,8 +379,11 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
         $nCount += 1;
 
         $title = $node->getTitle();
+        // gets format Apr 03, 2023.  Want 4/3/2023
         $pubDate = $node->field_published_date[0]->view('alt_teaser');
         $pubDateDisp = \Drupal::service('renderer')->renderPlain($pubDate);
+        $pubDate = date_create_from_format('M d, Y', $pubDateDisp);
+        $pubDateDisp = $pubDate->format('n/j/Y');
 
         // For body section, meant to be a snippet, this will return either a nicely
         // truncated version of the body (the length is configured on site via
