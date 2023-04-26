@@ -42,7 +42,6 @@ function newsItemHTML($title, $pubDate, $body, $articleUrl) {
       <p>
       $body
       </p>
-      <br>
       </div>";
   return itemHTML($title, $main, $articleUrl, "Read more");
 }
@@ -65,7 +64,7 @@ function itemHTML($titleText, $main, $itemUrl, $itemLinkText) {
       <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
         <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
           <tr>
-            <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 20px 10px 40px;" align="left" valign="top">
+            <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px;" align="left" valign="top">
             $title
 
               <div><span style="font-size: 14px;">$main</span></div>
@@ -664,7 +663,7 @@ function ccRollupBottomStatic1() {
               <tbody>
                 <tr>
                   <td class="text_content-cell content-padding-horizontal"
-                    style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 20px 10px 40px"
+                    style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px"
                     align="left" valign="top">
 
                     $title
@@ -678,7 +677,7 @@ function ccRollupBottomStatic1() {
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed">
               <tbody>
                 <tr>
-                  <td class="content-padding-horizontal" align="left" style="padding:10px 20px 10px 40px">
+                  <td class="content-padding-horizontal" align="left" style="padding:10px 40px">
                   <table style="width:inherit;border-radius:2px;border-spacing:0;background-color:#48c0b9;border:none"
                           border="0" cellpadding="0" cellspacing="0" bgcolor="#48c0b9">
                     <tbody>
