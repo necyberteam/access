@@ -2,6 +2,7 @@
 
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\cssn\Plugin\Util\RoleProgramSorter;
+use Drupal\user\Entity\User;
 
 /**
  * @file
@@ -12,14 +13,28 @@ use Drupal\cssn\Plugin\Util\RoleProgramSorter;
  * Implements hook_form_alter().
  */
 function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'webform_submission_edit_your_cssn_roles_add_form' || $form_id == 'webform_submission_edit_your_cssn_roles_edit_form') {
+
+  if (
+    $form_id == 'webform_submission_edit_your_cssn_roles_add_form' ||
+    $form_id == 'webform_submission_edit_your_cssn_roles_edit_form'
+  ) {
     $user = \Drupal::currentUser();
     $roles = $user->getRoles();
     $form['elements']['roles_']['#default_value'] = $roles;
     $form['actions']['submit']['#submit'][] = 'cssn_role_form_submit';
   }
-  if ($form_id == 'webform_submission_join_the_cssn_network_add_form' || $form_id == 'webform_submission_join_the_cssn_network_edit_form') {
+
+  if (
+    $form_id == 'webform_submission_join_the_cssn_network_add_form' ||
+    $form_id == 'webform_submission_join_the_cssn_network_edit_form'
+  ) {
     $form['actions']['submit']['#submit'][] = 'cssn_form_submit';
+
+    $user = \Drupal::currentUser();
+    $account = User::load($user->id());
+    $academic_status = $account->field_academic_status->getValue();
+    $form['elements']['flexbox']['academic_status']['#default_value'] =
+      count($academic_status) ?  $academic_status[0]['value'] : null;
   }
 }
 
@@ -70,6 +85,13 @@ function cssn_form_submit(&$form, FormStateInterface $form_state) {
   cssn_role_region('student', $student_facilitator, $term_id, $enroll_program, $user);
   cssn_role_region('consultant', $premier_consultant, $term_id, $enroll_program, $user);
   cssn_role_region('cip', $cip, $term_id, $enroll_program, $user);
+
+  if ($student_facilitator) {
+    $academic_status = $form['elements']['flexbox']['academic_status']['#value'];
+    $account = User::load($user->id());
+    $account->field_academic_status->setValue($academic_status);
+    $account->save();
+  }
 }
 
 
