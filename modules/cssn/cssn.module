@@ -10,39 +10,10 @@ use Drupal\user\Entity\User;
  */
 
 /**
- * Implements hook_form_alter().
+ * Return a list of selectable roles for CSSN form.
  */
-function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-
-  if (
-    $form_id == 'webform_submission_edit_your_cssn_roles_add_form' ||
-    $form_id == 'webform_submission_edit_your_cssn_roles_edit_form'
-  ) {
-    $user = \Drupal::currentUser();
-    $roles = $user->getRoles();
-    $form['elements']['roles_']['#default_value'] = $roles;
-    $form['actions']['submit']['#submit'][] = 'cssn_role_form_submit';
-  }
-
-  if (
-    $form_id == 'webform_submission_join_the_cssn_network_add_form' ||
-    $form_id == 'webform_submission_join_the_cssn_network_edit_form'
-  ) {
-    $form['actions']['submit']['#submit'][] = 'cssn_form_submit';
-
-    $user = \Drupal::currentUser();
-    $account = User::load($user->id());
-    $academic_status = $account->field_academic_status->getValue();
-    $form['elements']['flexbox']['academic_status']['#default_value'] =
-      count($academic_status) ?  $academic_status[0]['value'] : null;
-  }
-}
-
-/**
- * Implements hook_form_submit().
- */
-function cssn_role_form_submit(&$form, FormStateInterface $form_state) {
-  $form_roles = [
+function cssn_get_roles_array() {
+  return [
     "mentor",
     "student",
     "research_computing_facilitator",
@@ -50,14 +21,80 @@ function cssn_role_form_submit(&$form, FormStateInterface $form_state) {
     "ci_systems_engineer",
     "researcher",
   ];
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Handle role forms.
+  if (
+    $form_id == 'webform_submission_edit_your_cssn_roles_add_form' ||
+    $form_id == 'webform_submission_edit_your_cssn_roles_edit_form'
+  ) {
+    // Set submit action.
+    $form['actions']['submit']['#submit'][] = 'cssn_role_form_submit';
+
+    // Update form's check marks for roles in user's profile.
+    $user = \Drupal::currentUser();
+    $user_roles = $user->getRoles();
+    $form_roles = cssn_get_roles_array();
+    $form['elements']['roles_']['#default_value'] = [];
+    foreach ($form_roles as $role) {
+      $role_should_be_checked = in_array($role, $user_roles);
+      if ($role_should_be_checked) {
+        array_push($form['elements']['roles_']['#default_value'], $role);
+      }
+    }
+
+    // Update form's academic status.
+    cssn_form_update_academic_status($form);
+  }
+
+  // Handle join cssn forms.
+  if (
+    $form_id == 'webform_submission_join_the_cssn_network_add_form' ||
+    $form_id == 'webform_submission_join_the_cssn_network_edit_form'
+  ) {
+    // Set submit action.
+    $form['actions']['submit']['#submit'][] = 'cssn_form_submit';
+
+    // Update form's academic status.
+    cssn_form_update_academic_status($form);
+  }
+}
+
+/**
+ * Initialize form element academic status.
+ */
+function cssn_form_update_academic_status(&$form) {
+  $user = \Drupal::currentUser();
+  $account = User::load($user->id());
+  $academic_status = $account->field_academic_status->getValue();
+  $academic_status = count($academic_status) ?  $academic_status[0]['value'] : null;
+  $form['elements']['academic_status']['#default_value'] = $academic_status;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function cssn_role_form_submit(&$form, FormStateInterface $form_state) {
+
+  $form_roles = cssn_get_roles_array();
   $user = \Drupal::currentUser();
   $role_program_sorter = new RoleProgramSorter($user);
   foreach ($form_roles as $role) {
-    if (in_array($role, $form['elements']['roles_']['#value'])) {
+    $set_role = in_array($role, $form['elements']['roles_']['#value']);
+    if ($set_role) {
       $role_program_sorter->addRole($role);
     } else {
       $role_program_sorter->removeRole($role);
     }
+  }
+
+  // If 'student' is selected, update academic status.
+  if (in_array("student", $form['elements']['roles_']['#value'])) {
+    cssn_update_academic_status($user, $form);
   }
 }
 
@@ -87,13 +124,19 @@ function cssn_form_submit(&$form, FormStateInterface $form_state) {
   cssn_role_region('cip', $cip, $term_id, $enroll_program, $user);
 
   if ($student_facilitator) {
-    $academic_status = $form['elements']['flexbox']['academic_status']['#value'];
-    $account = User::load($user->id());
-    $account->field_academic_status->setValue($academic_status);
-    $account->save();
+    cssn_update_academic_status($user, $form);
   }
 }
 
+/**
+ * Update user's academic status.
+ */
+function cssn_update_academic_status($user, $form) {
+  $academic_status = $form['elements']['academic_status']['#value'];
+  $account = User::load($user->id());
+  $account->field_academic_status->setValue($academic_status);
+  $account->save();
+}
 
 /**
  * Set or remove role and region.
