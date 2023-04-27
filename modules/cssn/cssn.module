@@ -19,6 +19,31 @@ function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
     $form['actions']['submit']['#submit'][] = 'cssn_role_form_submit';
   }
   if ($form_id == 'webform_submission_join_the_cssn_network_add_form' || $form_id == 'webform_submission_join_the_cssn_network_edit_form') {
+    $fields_to_roles = [
+      'cssn' => 'General Member',
+      'mentor' => 'MATCHPlus Mentor',
+      'student' => 'Student-Facilitator',
+      'consultant' => 'Premier Consultant',
+      'cip' => 'NSF-funded CIP',
+    ];
+    $user = \Drupal::currentUser();
+    $roles = $user->getRoles();
+    $roles_set = [];
+    foreach ($fields_to_roles as $field => $role) {
+      if (in_array($field, $roles)) {
+        $roles_set[] = $role;
+      }
+    }
+    // Lookup taxonomy term id by name 'ACCESS CSSN'.
+    $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'ACCESS CSSN']);
+    $term = reset($term);
+    $term_id = $term->id();
+    $role_program_sorter = new RoleProgramSorter($user);
+    $region_set = $role_program_sorter->lookupRegion($term_id);
+    if ($form_id == 'webform_submission_join_the_cssn_network_add_form' && !empty($roles_set && $region_set)) {
+      \Drupal::messenger()->addMessage(t('The boxes checked below reflect your current roles, please select \'General Member\' and submit this form to participate in the CSSN.'), 'warning');
+    }
+    $form['elements']['i_am_joining_as_a_']['#default_value'] = $roles_set;
     $form['actions']['submit']['#submit'][] = 'cssn_form_submit';
   }
 }
