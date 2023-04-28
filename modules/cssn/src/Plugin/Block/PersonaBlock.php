@@ -82,7 +82,10 @@ class PersonaBlock extends BlockBase {
       $is_student = array_search('student', $roles) !== FALSE;
       $academic_status = $is_student
         ? $user_entity->get('field_academic_status')->value : '';
-      $academic_status = $this->getAcademicStatuslongform($academic_status);
+
+      $academic_terms_map = $user_entity->get('field_academic_status')->getSettings()['allowed_values'];
+      $academic_status = $academic_terms_map[$academic_status];
+
       $key = array_search('authenticated', $roles);
       if ($key !== false) {
         unset($roles[$key]);
@@ -184,38 +187,6 @@ class PersonaBlock extends BlockBase {
       return $persona_block;
     } else {
       return [];
-    }
-  }
-
-  /**
-   * Map the short name to the long name for academic status.
-   *
-   * @param string $short short name for academic status
-   * @return string long name for academic status
-   *
-   */
-  private function getAcademicStatuslongform($short) {
-    switch ($short) {
-      case 'first':
-        return '1st year undergraduate';
-      case 'second':
-        return '2nd year undergraduate';
-      case 'third':
-        return '3rd year undergraduate';
-      case 'fourth':
-        return '4th year undergraduate';
-      case 'masters':
-        return 'Masters student';
-      case 'phd':
-        return 'PhD student';
-      case 'postdoc':
-        return 'Postdoctoral student';
-      case 'fellow':
-        return 'Fellow';
-      case 'other':
-        return 'I am not in an academic program but interested in shifting focus to research computing facilitation';
-      default:
-        return '';
     }
   }
 
