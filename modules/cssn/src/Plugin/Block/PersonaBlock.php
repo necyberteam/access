@@ -192,27 +192,28 @@ class PersonaBlock extends BlockBase {
    *
    * @param string $short short name for academic status
    * @return string long name for academic status
+   *
    */
   private function getAcademicStatuslongform($short) {
     switch ($short) {
       case 'first':
-        return 'Undergraduate student - first year';
+        return '1st year undergraduate';
       case 'second':
-        return 'Undergraduate student - second year';
+        return '2nd year undergraduate';
       case 'third':
-        return 'Undergraduate student - third year';
+        return '3rd year undergraduate';
       case 'fourth':
-        return 'Undergraduate student - fourth year';
+        return '4th year undergraduate';
       case 'masters':
-        return 'Graduate student - masters program';
+        return 'Masters student';
       case 'phd':
-        return 'Graduate student - PhD program';
+        return 'PhD student';
       case 'postdoc':
         return 'Postdoctoral student';
       case 'fellow':
         return 'Fellow';
       case 'other':
-        return 'Not in an academic program but interested in research computing facilitation';
+        return 'I am not in an academic program but interested in shifting focus to research computing facilitation';
       default:
         return '';
     }
