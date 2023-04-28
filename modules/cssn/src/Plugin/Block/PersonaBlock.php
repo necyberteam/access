@@ -2,6 +2,7 @@
 
 namespace Drupal\cssn\Plugin\Block;
 
+use Drupal\access_misc\Plugin\Util\RolesLabelLookup;
 use Drupal\Core\Block\BlockBase;
 use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\Core\Url;
@@ -78,11 +79,15 @@ class PersonaBlock extends BlockBase {
       $last_name = $user_entity->get('field_user_last_name')->value;
       $institution = $user_entity->get('field_institution')->value;
       $roles = $user_entity->getRoles();
+      $is_student = array_search('student', $roles) !== FALSE;
+      $academic_status = $is_student
+        ? $user_entity->get('field_academic_status')->value : '';
+      $academic_status = $this->getAcademicStatuslongform($academic_status);
       $key = array_search('authenticated', $roles);
       if ($key !== false) {
         unset($roles[$key]);
       }
-      $role = new \Drupal\access_misc\Plugin\Util\RolesLabelLookup($roles);
+      $role = new RolesLabelLookup($roles);
       $roles = $role->getRoleLabelsString();
       $regions = $user_entity->get('field_region')->getValue();
       $terms = [];
@@ -139,6 +144,9 @@ class PersonaBlock extends BlockBase {
                           {{ user_image | raw }}
                           <h2>{{ first_name }} {{ last_name }}</h2>
                           <h4>{{ institution }}</h4>
+                          {% if academic_status %}
+                            <h4>{{ academic_status }}</h4>
+                          {% endif %}
                           <div class="d-flex justify-content-between">
                             <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
                             <div><i class="text-dark fa-regular fa-circle-info"></i> {{ cssn_more }}</div>
@@ -161,6 +169,7 @@ class PersonaBlock extends BlockBase {
           'first_name' => $first_name,
           'last_name' => $last_name,
           'institution' => $institution,
+          'academic_status' => $academic_status,
           'cssn' => $cssn,
           'cssn_indicator' => $cssn_indicator,
           'cssn_more' => $cssn_more,
@@ -175,6 +184,31 @@ class PersonaBlock extends BlockBase {
       return $persona_block;
     } else {
       return [];
+    }
+  }
+
+  private function getAcademicStatuslongform($short) {
+    switch ($short) {
+      case 'first':
+        return 'Undergraduate student - first year';
+      case 'second':
+        return 'Undergraduate student - second year';
+      case 'third':
+        return 'Undergraduate student - third year';
+      case 'fourth':
+        return 'Undergraduate student - fourth year';
+      case 'masters':
+        return 'Graduate student - masters program';
+      case 'phd':
+        return 'Graduate student - PhD program';
+      case 'postdoc':
+        return 'Postdoctoral student';
+      case 'fellow':
+        return 'Fellow';
+      case 'other':
+        return 'Not in an academic program but interested in research computing facilitation';
+      default:
+        return '';
     }
   }
 
