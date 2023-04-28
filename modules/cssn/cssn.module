@@ -72,7 +72,7 @@ function cssn_form_update_academic_status(&$form) {
   $account = User::load($user->id());
   $academic_status = $account->field_academic_status->getValue();
   $academic_status = count($academic_status) ?  $academic_status[0]['value'] : null;
-  $form['elements']['academic_status']['#default_value'] = $academic_status;
+  $form['elements']['academic_status_select2']['#default_value'] = $academic_status;
 }
 
 /**
@@ -132,7 +132,7 @@ function cssn_form_submit(&$form, FormStateInterface $form_state) {
  * Update user's academic status.
  */
 function cssn_update_academic_status($user, $form) {
-  $academic_status = $form['elements']['academic_status']['#value'];
+  $academic_status = $form['elements']['academic_status_select2']['#value'];
   $account = User::load($user->id());
   $account->field_academic_status->setValue($academic_status);
   $account->save();
