@@ -145,7 +145,7 @@ class PersonaBlock extends BlockBase {
                           <h2>{{ first_name }} {{ last_name }}</h2>
                           <h4>{{ institution }}</h4>
                           {% if academic_status %}
-                            <h4>{{ academic_status }}</h4>
+                            <div id="academic_status_style-persona">{{ academic_status }}</div>
                           {% endif %}
                           <div class="d-flex justify-content-between">
                             <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
@@ -187,6 +187,12 @@ class PersonaBlock extends BlockBase {
     }
   }
 
+  /**
+   * Map the short name to the long name for academic status.
+   *
+   * @param string $short short name for academic status
+   * @return string long name for academic status
+   */
   private function getAcademicStatuslongform($short) {
     switch ($short) {
       case 'first':
