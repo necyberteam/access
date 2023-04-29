@@ -2,6 +2,7 @@
 
 namespace Drupal\cssn\Plugin\Block;
 
+use Drupal\access_misc\Plugin\Util\RolesLabelLookup;
 use Drupal\Core\Block\BlockBase;
 use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\Core\Url;
@@ -45,7 +46,8 @@ class PersonaBlock extends BlockBase {
         $user_image = $user_image->entity->getFileUri();
         $user_image = \Drupal::service('file_url_generator')->generateAbsoluteString($user_image);
         $user_image = '<img src="' . $user_image . '" class="img-fluid mb-3 border border-black" />';
-      } else {
+      }
+      else {
         $user_image = '<svg version="1.1" class="mb-3 border border-black" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
            viewBox="0 0 448 448" style="enable-background:new 0 0 448 448;" xml:space="preserve">
             <style type="text/css">
@@ -78,11 +80,18 @@ class PersonaBlock extends BlockBase {
       $last_name = $user_entity->get('field_user_last_name')->value;
       $institution = $user_entity->get('field_institution')->value;
       $roles = $user_entity->getRoles();
+      $is_student = array_search('student', $roles) !== FALSE;
+      $academic_status = $is_student
+            ? $user_entity->get('field_academic_status')->value : '';
+
+      $academic_terms_map = $user_entity->get('field_academic_status')->getSettings()['allowed_values'];
+      $academic_status = $academic_terms_map[$academic_status];
+
       $key = array_search('authenticated', $roles);
-      if ($key !== false) {
+      if ($key !== FALSE) {
         unset($roles[$key]);
       }
-      $role = new \Drupal\access_misc\Plugin\Util\RolesLabelLookup($roles);
+      $role = new RolesLabelLookup($roles);
       $roles = $role->getRoleLabelsString();
       $regions = $user_entity->get('field_region')->getValue();
       $terms = [];
@@ -96,7 +105,8 @@ class PersonaBlock extends BlockBase {
         $cssn_role_renderable = $cssn_role_link->toRenderable();
         $cssn_role = $cssn_role_renderable;
         $cssn_role['#attributes']['class'] = ['text-dark'];
-      } else {
+      }
+      else {
         $cssn_role = "";
       }
 
@@ -104,18 +114,20 @@ class PersonaBlock extends BlockBase {
       $program = implode(', ', $terms);
       // If $terms contains 'ACCESS CSSN', then the user is a CSSN member.
       $cssn_member = in_array('ACCESS CSSN', $terms) ? TRUE : FALSE;
-      //$ws_query = \Drupal::entityQuery('webform_submission')
+      // $ws_query = \Drupal::entityQuery('webform_submission')
       //  ->condition('uid', $user->id())
       //  ->condition('uri', '/form/join-the-cssn-network');
-      //$ws_results = $ws_query->execute();
+      // $ws_results = $ws_query->execute();
       $cssn_indicator = "";
       if ($cssn_member) {
         $cssn_indicator = "<span class='text-primary'><i class='fa-solid fa-square'></i></span>";
         $cssn = "CSSN Member";
-      } elseif ($public) {
+      }
+      elseif ($public) {
         $cssn_indicator = "<span class='text-secondary'><i class='fa-solid fa-square'></i></span>";
         $cssn = "Not a CSSN Member";
-      } else {
+      }
+      else {
         $cssn_url = Url::fromUri('internal:/form/join-the-cssn-network');
         $cssn_link = Link::fromTextAndUrl('Join the CSSN', $cssn_url);
         $cssn_renderable = $cssn_link->toRenderable();
@@ -135,10 +147,13 @@ class PersonaBlock extends BlockBase {
 
       $persona_block['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="p-3">
+        '#template' => '<div class="persona p-3">
                           {{ user_image | raw }}
                           <h2>{{ first_name }} {{ last_name }}</h2>
-                          <h4>{{ institution }}</h4>
+                          <h4 class="institution">{{ institution }}</h4>
+                          {% if academic_status %}
+                            <div class="academic-status">{{ academic_status }}</div>
+                          {% endif %}
                           <div class="d-flex justify-content-between">
                             <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
                             <div><i class="text-dark fa-regular fa-circle-info"></i> {{ cssn_more }}</div>
@@ -161,6 +176,7 @@ class PersonaBlock extends BlockBase {
           'first_name' => $first_name,
           'last_name' => $last_name,
           'institution' => $institution,
+          'academic_status' => $academic_status,
           'cssn' => $cssn,
           'cssn_indicator' => $cssn_indicator,
           'cssn_more' => $cssn_more,
@@ -173,7 +189,8 @@ class PersonaBlock extends BlockBase {
         ],
       ];
       return $persona_block;
-    } else {
+    }
+    else {
       return [];
     }
   }
@@ -184,4 +201,5 @@ class PersonaBlock extends BlockBase {
   public function getCacheMaxAge() {
     return 0;
   }
+
 }

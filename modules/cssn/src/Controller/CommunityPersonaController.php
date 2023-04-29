@@ -3,11 +3,13 @@
 namespace Drupal\cssn\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\MatchLookup;
 use Drupal\cssn\Plugin\Util\EndUrl;
-use Drupal\Core\Url;
-use Drupal\Core\Link;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
+use Drupal\webform\Entity\WebformSubmission;
 
 /**
  * Controller for Community Persona.
@@ -89,7 +91,7 @@ class CommunityPersonaController extends ControllerBase {
     }
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
-        $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_skill)->get('name')->value;
+        $term_title = Term::load($flagged_skill)->get('name')->value;
         $my_skills .= "<div class='border border-black m-1 p-1'>";
         $my_skills .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
         $my_skills .= "</div>";
@@ -119,7 +121,7 @@ class CommunityPersonaController extends ControllerBase {
     if ($ws_link == "<ul>") {
       $ws_link = '<ul>';
       foreach ($ws_results as $ws_result) {
-        $ws = \Drupal\webform\Entity\WebformSubmission::load($ws_result);
+        $ws = WebformSubmission::load($ws_result);
         $url = $ws->toUrl()->toString();
         $ws_data = $ws->getData();
         $ws_link .= '<li><a href=' . $url . '>' . $ws_data['title'] . '</a></li>';
@@ -181,7 +183,7 @@ class CommunityPersonaController extends ControllerBase {
     }
     if ($my_interests == "") {
       foreach ($flagged_interests as $flagged_interest) {
-        $term_title = \Drupal\taxonomy\Entity\Term::load($flagged_interest)->get('name')->value;
+        $term_title = Term::load($flagged_interest)->get('name')->value;
         $my_interests .= "<div class='border border-black m-1 p-1'>";
         $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
         $my_interests .= "</div>";
