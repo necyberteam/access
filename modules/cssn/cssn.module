@@ -1,5 +1,9 @@
 <?php
 
+/**
+ * @file
+ */
+
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\cssn\Plugin\Util\RoleProgramSorter;
 use Drupal\user\Entity\User;
@@ -37,15 +41,8 @@ function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
     // Update form's check marks for roles in user's profile.
     $user = \Drupal::currentUser();
-    $user_roles = $user->getRoles();
-    $form_roles = cssn_get_roles_array();
-    $form['elements']['roles_']['#default_value'] = [];
-    foreach ($form_roles as $role) {
-      $role_should_be_checked = in_array($role, $user_roles);
-      if ($role_should_be_checked) {
-        array_push($form['elements']['roles_']['#default_value'], $role);
-      }
-    }
+    $user_roles = array_intersect($user->getRoles(), cssn_get_roles_array());
+    $form['elements']['roles_']['#default_value'] = $user_roles;
 
     // Update form's academic status.
     cssn_form_update_academic_status($form);
@@ -71,7 +68,7 @@ function cssn_form_update_academic_status(&$form) {
   $user = \Drupal::currentUser();
   $account = User::load($user->id());
   $academic_status = $account->field_academic_status->getValue();
-  $academic_status = count($academic_status) ?  $academic_status[0]['value'] : null;
+  $academic_status = count($academic_status) ? $academic_status[0]['value'] : NULL;
   $form['elements']['academic_status_select2']['#default_value'] = $academic_status;
 }
 
@@ -87,7 +84,8 @@ function cssn_role_form_submit(&$form, FormStateInterface $form_state) {
     $set_role = in_array($role, $form['elements']['roles_']['#value']);
     if ($set_role) {
       $role_program_sorter->addRole($role);
-    } else {
+    }
+    else {
       $role_program_sorter->removeRole($role);
     }
   }
@@ -150,7 +148,8 @@ function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
     if ($enroll_program) {
       $role_program_sorter->addFieldRegion($term_id);
     }
-  } else {
+  }
+  else {
     if (!empty($role)) {
       $role_program_sorter->removeRole($role);
     }
