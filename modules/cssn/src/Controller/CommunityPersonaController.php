@@ -2,6 +2,8 @@
 
 namespace Drupal\cssn\Controller;
 
+use Drupal\webform\Entity\WebformSubmission;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
@@ -44,7 +46,7 @@ class CommunityPersonaController extends ControllerBase {
         $affinity_group_nid = $query->execute()->fetchCol();
         if (isset($affinity_group_nid[0])) {
           $affinity_group_loaded = \Drupal::entityTypeManager()->getStorage('node')->load($affinity_group_nid[0]);
-          $url = Url::fromRoute('entity.node.canonical', array('node' => $affinity_group_loaded->id()));
+          $url = Url::fromRoute('entity.node.canonical', ['node' => $affinity_group_loaded->id()]);
           $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
           $link = $project_link->toString()->__toString();
           $user_affinity_groups .= "<li>$link</li>";
@@ -139,11 +141,11 @@ class CommunityPersonaController extends ControllerBase {
    */
   public function matchList($user, $public = FALSE) {
     $fields = [
+      'field_match_interested_users' => 'Interested',
       'field_mentor' => 'Mentor',
       'field_students' => 'Student',
       'field_consultant' => 'Consultant',
       'field_researcher' => 'Researcher',
-      'field_match_interested_users' => 'Interested',
     ];
     $matches = new MatchLookup($fields, $user->id());
     // Sort by status.
@@ -196,25 +198,25 @@ class CommunityPersonaController extends ControllerBase {
    * Build content to display on page.
    */
   public function communityPersona() {
-    // My Affinity Groups
+    // My Affinity Groups.
     $current_user = \Drupal::currentUser();
-    // List of affinity groups
+    // List of affinity groups.
     $user_affinity_groups = $this->affinityGroupList($current_user);
-    // Affinity link
+    // Affinity link.
     $build_affinity_link = $this->buildAffinityLink();
-    // My Interests
+    // My Interests.
     $my_interests = $this->buildInterests($current_user);
     // Edit interests link.
     $edit_interest_url = Url::fromUri('internal:/add-interest');
     $edit_interest_link = Link::fromTextAndUrl('Edit interests', $edit_interest_url);
     $edit_interest_renderable = $edit_interest_link->toRenderable();
-    // My Expertise
+    // My Expertise.
     $my_skills = $this->mySkills($current_user);
     // Link to add Skills/Expertise.
     $edit_skill_url = Url::fromUri('internal:/add-skill');
     $edit_skill_link = Link::fromTextAndUrl('Edit expertise', $edit_skill_url);
     $edit_skill_renderable = $edit_skill_link->toRenderable();
-    // My Knowledge Base Contributions
+    // My Knowledge Base Contributions.
     $ws_link = $this->knowledgeBaseContrib($current_user);
 
     // Link to add Knowledge Base Contribution webform.
@@ -223,7 +225,7 @@ class CommunityPersonaController extends ControllerBase {
     $webform_renderable = $webform_link->toRenderable();
     $build_webform_link = $webform_renderable;
     $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
-    // My Match Engagements
+    // My Match Engagements.
     $match_link = $this->matchList($current_user);
     // Link to see all Match Engagements.
     $match_engage_url = Url::fromUri('internal:/engagements');
@@ -233,6 +235,11 @@ class CommunityPersonaController extends ControllerBase {
     $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
+      '#attached' => [
+        'library' => [
+          'cssn/cssn_library',
+        ],
+      ],
       '#template' => '<div class="border border-secondary my-3">
           <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
             <div class="p-3">
@@ -315,22 +322,23 @@ class CommunityPersonaController extends ControllerBase {
       $user = User::load($user_id);
       if ($user !== NULL) {
         $should_user_load = TRUE;
-      } else {
+      }
+      else {
         $should_user_load = FALSE;
       }
     }
     if ($should_user_load) {
       $user_first_name = $user->get('field_user_first_name')->value;
       $user_last_name = $user->get('field_user_last_name')->value;
-      // List of affinity groups
+      // List of affinity groups.
       $user_affinity_groups = $this->affinityGroupList($user, TRUE);
-      // My Interests
+      // My Interests.
       $my_interests = $this->buildInterests($user, TRUE);
-      // My Expertise
+      // My Expertise.
       $my_skills = $this->mySkills($user, TRUE);
-      // My Knowledge Base Contributions
+      // My Knowledge Base Contributions.
       $ws_link = $this->knowledgeBaseContrib($user, TRUE);
-      // My Match Engagements
+      // My Match Engagements.
       $match_link = $this->matchList($user, TRUE);
 
       $persona_page['#title'] = "$user_first_name $user_last_name";
