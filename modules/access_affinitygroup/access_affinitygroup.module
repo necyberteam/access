@@ -139,7 +139,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
  */
 function access_affinitygroup_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'affinity_group_members') {
-    // Change title to 'Yolo' for testing.
+    // Afinity group user list change title to match AG title.
     $url = new \Drupal\cssn\Plugin\Util\EndUrl();
     if ($view->current_display == 'page_1') {
       $url_end = $url->getUrlEnd();
