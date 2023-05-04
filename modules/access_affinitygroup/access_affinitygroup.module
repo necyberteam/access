@@ -49,12 +49,19 @@ function access_affinitygroup_block_access(\Drupal\block\Entity\Block $block, $o
       $type = $node->getType();
       if ($type == 'affinity_group') {
         $coordinators = $node->get('field_coordinator')->getValue();
-        $current_user = \Drupal::currentUser()->id();
+        $current_user = \Drupal::currentUser();
+        $uid = $current_user->id();
+        $roles = $current_user->getRoles();
         $hide_block = TRUE;
+        // Show block to coordinators.
         foreach ($coordinators as $coordinator) {
-          if ($coordinator['target_id'] == $current_user) {
+          if ($coordinator['target_id'] == $uid) {
             $hide_block = FALSE;
           }
+        }
+        // Show block to administrators.
+        if (in_array('administrator', $roles)) {
+          $hide_block = FALSE;
         }
         if ($hide_block) {
           return \Drupal\Core\Access\AccessResult::forbidden();
