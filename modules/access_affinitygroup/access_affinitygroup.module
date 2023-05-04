@@ -38,6 +38,33 @@ use Drupal\views\ViewExecutable;
 const cAccessEmail = "supportapiaccess@access-ci.org";
 
 /**
+ * Implements hook_block_access().
+ * Hide views_block__affinity_group_block_7 block programmatically.
+ */
+function access_affinitygroup_block_access(\Drupal\block\Entity\Block $block, $operation, \Drupal\Core\Session\AccountInterface $account) {
+  if ($block->getPluginId() == 'views_block:affinity_group-block_7') {
+    // Load entity node from current node.
+    $node = \Drupal::routeMatch()->getParameter('node');
+    if ($node instanceof \Drupal\node\NodeInterface) {
+      $type = $node->getType();
+      if ($type == 'affinity_group') {
+        $coordinators = $node->get('field_coordinator')->getValue();
+        $current_user = \Drupal::currentUser()->id();
+        $hide_block = TRUE;
+        foreach ($coordinators as $coordinator) {
+          if ($coordinator['target_id'] == $current_user) {
+            $hide_block = FALSE;
+          }
+        }
+        if ($hide_block) {
+          return \Drupal\Core\Access\AccessResult::forbidden();
+        }
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_entity_presave().
  * Handles either
  *  case 1) User clicked Join flag on Affinity Group:
