@@ -54,6 +54,10 @@ class ConstantContactApi {
     $this->supressErrDisplay = FALSE;
   }
 
+  public function setSupressErrDisplay($v) {
+    $this->supressErrDisplay = $v;
+  }
+
   /**
    * @param  $redirectURI
    *   - URL Encoded Redirect URI
@@ -233,7 +237,6 @@ class ConstantContactApi {
     $errMsg = getHttpErrMsg($this->httpResponseCode);
     if (!empty($errMsg)) {
       $this->apiError($errMsg, "");
-
     }
     else {
       if (empty($returned_result)) {

@@ -29,18 +29,17 @@ class AllocationsUsersImport {
   const DEFAULT_SIZE = 5;
   // Stop processing after this amount. total is > 100k, will be 12k when api updated.
   const DEFAULT_IMPORTLIMIT = 100;
-  // If true, don't create new constant contact user. for dev.
+  // If true, don't create new constant contact user or attempt to add to cc list. For dev.
   const DEFAULT_NOCC = TRUE;
   const DEFAULT_STARTAT = 0;
   /**
    * Where to start processing in case we must restart a large operation.
+   * These are set in the constant contact form.
    */
-
   private $batchSize;
   private $batchImportLimit;
   private $batchNoCC;
   private $batchStartAt;
-
   /**
    * For devtest, put in front of emails and uname for dev; set to '' to use real names.
    */
@@ -83,24 +82,32 @@ class AllocationsUsersImport {
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i');
 
-    $nameCount = count($portalUserNames);
-    $batchBuilder = (new Batchbuilder())
-      ->setTitle('Importing Allocations')
-      ->setInitMessage('Batch is starting for ' . $nameCount)
-      ->setProgressMessage('Estimated remaining time: @estimate. Elapsed time : @elapsed.')
-      ->setErrorMessage('Batch error.')
-      ->setFinishCallback([$this, 'importFinished']);
-    // @todo might need a route here
-    $batchBuilder->addOperation([$this, 'processChunk'], [$portalUserNames]);
+    \Drupal::state()->set('access_affinitygroup.allocationsRun', TRUE);
 
-    batch_set($batchBuilder->toArray());
-    if (PHP_SAPI == 'cli') {
-      drush_backend_batch_process();
+    try {
+      $nameCount = count($portalUserNames);
+      $batchBuilder = (new Batchbuilder())
+        ->setTitle('Importing Allocations')
+        ->setInitMessage('Batch is starting for ' . $nameCount)
+        ->setProgressMessage('Estimated remaining time: @estimate. Elapsed time : @elapsed.')
+        ->setErrorMessage('Batch error.')
+        ->setFinishCallback([$this, 'importFinished']);
+      // @todo might need a route here
+      $batchBuilder->addOperation([$this, 'processChunk'], [$portalUserNames]);
+
+      batch_set($batchBuilder->toArray());
+      if (PHP_SAPI == 'cli') {
+        drush_backend_batch_process();
+      }
+      else {
+
+        // don't need this for form; still need to test what is needed when running from cron
+        // batch_process();  // some docs say need a return route arg here, some don't.
+      }
     }
-    else {
-
-      // don't need this for form; still need to test what is needed when running from cron
-      // batch_process();  // some docs say need a return route arg here, some don't.
+    catch (Exception $e) {
+      $this->collectCronLog("Exception in allocations batch setup: " . $e->getMessage(), 'err');
+      \Drupal::state()->set('access_affinitygroup.allocationsRun', FALSE);
     }
   }
 
@@ -108,6 +115,9 @@ class AllocationsUsersImport {
    *
    */
   public function importFinished($success, $results, $operations) {
+
+    \Drupal::state()->set('access_affinitygroup.allocationsRun', FALSE);
+
     if (empty($results)) {
       $msg1 = "Import finished irregularly; results empty.";
       \Drupal::messenger()->addMessage($msg1);
@@ -133,7 +143,7 @@ class AllocationsUsersImport {
   /**
    *
    */
-  public function getApiKey() {
+ private function getApiKey() {
     $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
     if (!file_exists($path)) {
 
@@ -147,7 +157,8 @@ class AllocationsUsersImport {
   /**
    *
    */
-  public function importUserAllocationsInit() {
+  private function importUserAllocationsInit() {
+
     $this->collectCronLog('Running importUserAllocations.', 'i');
     try {
       $requestUrl = 'https://allocations-api.access-ci.org/identity/profiles/v1/people?with_allocations=1';
@@ -314,11 +325,11 @@ class AllocationsUsersImport {
             $query = \Drupal::entityQuery('node');
             $refnum = $query
               ->condition('type', 'access_active_resources_from_cid')
-              ->condition('field_access_global_resource_id', $cider['resource_name'])
+              ->condition('field_access_global_resource_id', $cider['cider_resource_id'])
               ->execute();
 
             if (empty($refnum)) {
-              $this->collectCronLog("Not found in CiDeR active res:  " . $cider['resource_name'], 'd');
+              $this->collectCronLog("Not found in CiDeR active res:  " . $cider['cider_resource_id'], 'd');
             }
             else {
               $newCiderRefnums[] = reset($refnum);
@@ -395,8 +406,8 @@ class AllocationsUsersImport {
    * Send in userdetail to check for absent cc id. If not there, attempt to add.
    * return boolean success.
    */
-  public function cronAddToConstantContact($u, $uEmail, $firstName, $lastName) {
-    $ccId = addUserToConstantContact($uEmail, $firstName, $lastName);
+  private function cronAddToConstantContact($u, $uEmail, $firstName, $lastName) {
+    $ccId = addUserToConstantContact($uEmail, $firstName, $lastName, TRUE);
     if (empty($ccId)) {
       $this->collectCronLog("Could not add user to Constant Contact:  $uEmail");
       return FALSE;
@@ -435,7 +446,7 @@ class AllocationsUsersImport {
    *
    * @todo This function does not work correctly at this time.
    */
-  public function emailDevCronLog() {
+  private function emailDevCronLog() {
     global $logCronErrors;
     if (empty($logCronErrors) || count($logCronErrors) == 0) {
       return;
@@ -483,7 +494,7 @@ class AllocationsUsersImport {
   /**
    *
    */
-  public function createAllocUser($accessUserName, $firstName, $lastName, $userEmail) {
+  private function createAllocUser($accessUserName, $firstName, $lastName, $userEmail) {
     try {
       $u = User::create();
       $u->set('status', 1);
@@ -509,7 +520,7 @@ class AllocationsUsersImport {
    * $agNid - AG node id
    * $blocklist - array of taxonomy ids for blocked ags.
    */
-  public function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
+  private function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
     $ag = Node::load($agNid);
     $agTax = \Drupal::entityTypeManager()
       ->getStorage('taxonomy_term')
@@ -532,7 +543,10 @@ class AllocationsUsersImport {
     if (!$flagStatus) {
 
       $flagService->flag($flag, $agTax, $userDetails);
-      subscribeToCCList($agTax->id(), $userDetails);
+
+      if (!$this->batchNoCC) {
+        $this->allocSubscribeToCCList($agTax->id(), $userDetails);
+      }
       $this->collectCronLog("...add member: " . $ag->get('title')->value . ': ' . $userDetails->get('field_user_last_name')->getString(), 'd');
     }
     else {
@@ -540,10 +554,22 @@ class AllocationsUsersImport {
     }
   }
 
+  private function allocSubscribeToCCList($taxonomyId, $userDetails) {
+    $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
+    if (empty($postJSON)) {
+      $this->collectCronLog("...error in subscribe; possible missing CC ID", 'err');
+    }
+    else {
+      $cca = new ConstantContactApi();
+      $cca->setSupressErrDisplay(TRUE);
+      $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
+    }
+  }
+
   /**
    * Reset user's cider list.
    */
-  public function updateUserCiderList($userDetails, $ciderRefnums) {
+  private function updateUserCiderList($userDetails, $ciderRefnums) {
     $userDetails->set('field_cider_resources', NULL);
     foreach ($ciderRefnums as $refnum) {
       // $this->collectCronLog("CIDER setting" . $refnum, 'd');
@@ -555,7 +581,7 @@ class AllocationsUsersImport {
   /**
    *
    */
-  public function allocApiGetResources($userName, $apiKey) {
+  private function allocApiGetResources($userName, $apiKey) {
     $responseJson = [];
     try {
       $reqUrl = "https://allocations-api.access-ci.org/identity/profiles/v1/people/$userName?resources=1";
