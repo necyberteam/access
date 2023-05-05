@@ -9,9 +9,7 @@ use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\MatchLookup;
 use Drupal\cssn\Plugin\Util\EndUrl;
-use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
-use Drupal\webform\Entity\WebformSubmission;
 
 /**
  * Controller for Community Persona.
@@ -65,10 +63,10 @@ class CommunityPersonaController extends ControllerBase {
    */
   public function buildAffinityLink() {
     $affinity_url = Url::fromUri('internal:/affinity_groups');
-    $affinity_link = Link::fromTextAndUrl('See all Affinity Groups', $affinity_url);
+    $affinity_link = Link::fromTextAndUrl('All Affinity Groups', $affinity_url);
     $affinity_renderable = $affinity_link->toRenderable();
     $build_affinity_link = $affinity_renderable;
-    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-white', 'border-secondary', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     return $build_affinity_link;
   }
 
@@ -208,31 +206,33 @@ class CommunityPersonaController extends ControllerBase {
     $my_interests = $this->buildInterests($current_user);
     // Edit interests link.
     $edit_interest_url = Url::fromUri('internal:/add-interest');
-    $edit_interest_link = Link::fromTextAndUrl('Edit interests', $edit_interest_url);
+    $edit_interest_link = Link::fromTextAndUrl('Update interests', $edit_interest_url);
     $edit_interest_renderable = $edit_interest_link->toRenderable();
+    $edit_interest_renderable['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Expertise.
     $my_skills = $this->mySkills($current_user);
     // Link to add Skills/Expertise.
     $edit_skill_url = Url::fromUri('internal:/add-skill');
-    $edit_skill_link = Link::fromTextAndUrl('Edit expertise', $edit_skill_url);
+    $edit_skill_link = Link::fromTextAndUrl('Update expertise', $edit_skill_url);
     $edit_skill_renderable = $edit_skill_link->toRenderable();
+    $edit_skill_renderable['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Knowledge Base Contributions.
     $ws_link = $this->knowledgeBaseContrib($current_user);
 
     // Link to add Knowledge Base Contribution webform.
     $webform_url = Url::fromUri('internal:/form/resource');
-    $webform_link = Link::fromTextAndUrl('Contribute to Knowledge Base', $webform_url);
+    $webform_link = Link::fromTextAndUrl('Add CI Link', $webform_url);
     $webform_renderable = $webform_link->toRenderable();
     $build_webform_link = $webform_renderable;
-    $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    $build_webform_link['#attributes']['class'] = ['btn', 'btn-white', 'border-secondary', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     // My Match Engagements.
     $match_link = $this->matchList($current_user);
     // Link to see all Match Engagements.
     $match_engage_url = Url::fromUri('internal:/engagements');
-    $match_engage_link = Link::fromTextAndUrl('See all engagements', $match_engage_url);
+    $match_engage_link = Link::fromTextAndUrl('See engagements', $match_engage_url);
     $match_engage_renderable = $match_engage_link->toRenderable();
     $build_match_engage_link = $match_engage_renderable;
-    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-white', 'border-secondary', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
       '#attached' => [
@@ -241,30 +241,30 @@ class CommunityPersonaController extends ControllerBase {
         ],
       ],
       '#template' => '<div class="border border-secondary my-3">
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0">{{ mi_title }}</span>
+          </div>
+          <div class="d-flex flex-wrap p-3">
+            {{ my_interests|raw }}
+          </div>
+          <div class="p-3">{{ edit_interest_link }}</div>
+        </div>
+        <div class="border border-secondary my-3">
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0">{{ me_title }}</span>
+          </div>
+          <div class="d-flex flex-wrap p-3">
+            {{ my_skills|raw }}
+          </div>
+          <div class="p-3">{{ edit_skill_link }}</div>
+        </div>
+        <div class="border border-secondary my-3">
           <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
             <div class="p-3">
               <p>{{ ag_intro }}</p>
               {{ user_affinity_groups|raw }}
               {{ affinity_link }}
             </div>
-        </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-            <span class="h4 text-white m-0">{{ mi_title }}</span>
-            <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
-          </div>
-          <div class="d-flex flex-wrap p-3">
-            {{ my_interests|raw }}
-          </div>
-        </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-            <span class="h4 text-white m-0">{{ me_title }}</span>
-            <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_skill_link }}</span>
-          </div>
-          <div class="d-flex flex-wrap p-3">
-            {{ my_skills|raw }}
-          </div>
         </div>
         <div class="border border-secondary my-3">
           <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
@@ -322,8 +322,7 @@ class CommunityPersonaController extends ControllerBase {
       $user = User::load($user_id);
       if ($user !== NULL) {
         $should_user_load = TRUE;
-      }
-      else {
+      } else {
         $should_user_load = FALSE;
       }
     }
@@ -345,12 +344,6 @@ class CommunityPersonaController extends ControllerBase {
       $persona_page['string'] = [
         '#type' => 'inline_template',
         '#template' => '<div class="border border-secondary my-3">
-            <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
-              <div class="p-3">
-                {{ user_affinity_groups|raw }}
-              </div>
-          </div>
-          <div class="border border-secondary my-3">
             <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ mi_title }}</span>
             </div>
@@ -365,6 +358,12 @@ class CommunityPersonaController extends ControllerBase {
             <div class="d-flex flex-wrap p-3">
               {{ my_skills|raw }}
             </div>
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
+              <div class="p-3">
+                {{ user_affinity_groups|raw }}
+              </div>
           </div>
           <div class="border border-secondary my-3">
             <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
