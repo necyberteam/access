@@ -5,11 +5,50 @@
  * Module updates.
  */
 
+use Drupal\node\Entity\Node;
+
 /**
- * hook_update.
+ * Hook_update.
  */
 function access_match_engagement_update_8001() {
   $config = \Drupal::configFactory()->getEditable('access_match_engagement.settings');
   $config->set('interested', 0);
   $config->save();
+}
+
+/**
+ *
+ */
+function access_match_engagement_update_9001() {
+  // Change status field values to match moderation_state values.
+  $new_status_values = [
+    'Draft' => 'draft',
+    'In Review' => 'in_review',
+    'Accepted' => 'accepted',
+    'Recruiting' => 'recruiting',
+    'Reviewing Applicants' => 'reviewing_applicants',
+    'In Progress' => 'in_progress',
+    'Finishing Up' => 'finishing_up',
+    'Complete' => 'complete',
+    'On Hold' => 'on_hold',
+    'Halted' => 'halted',
+  ];
+
+  $query = \Drupal::database()->select('node_field_data', 'nfd');
+  $query->fields('nfd', ['nid']);
+  $query->condition('nfd.type', 'match_engagement');
+  $result = $query->execute()->fetchAll();
+  $nids = array_column($result, 'nid');
+
+  $nodes = Node::loadMultiple($nids);
+  foreach ($nodes as $node) {
+    $status = $node->get('field_status')->getValue();
+    if ($status) {
+      $status = $status[0]['value'];
+      if (array_key_exists($status, $new_status_values)) {
+        $node->set('field_status', $new_status_values[$status]);
+        $node->save();
+      }
+    }
+  }
 }
