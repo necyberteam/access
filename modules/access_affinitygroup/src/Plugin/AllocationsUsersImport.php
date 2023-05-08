@@ -31,6 +31,9 @@ class AllocationsUsersImport {
   const DEFAULT_IMPORTLIMIT = 100;
   // If true, don't create new constant contact user or attempt to add to cc list. For dev.
   const DEFAULT_NOCC = TRUE;
+  // If true, don't save user detail changes. Needed for dev testing because user details
+  // such as name and email are encoded in test db.
+  const DEFAULT_NOUSERDETSAVE = TRUE;
   const DEFAULT_STARTAT = 0;
   /**
    * Where to start processing in case we must restart a large operation.
@@ -39,6 +42,7 @@ class AllocationsUsersImport {
   private $batchSize;
   private $batchImportLimit;
   private $batchNoCC;
+  private $batchNoUserDetSav;
   private $batchStartAt;
   /**
    * For devtest, put in front of emails and uname for dev; set to '' to use real names.
@@ -69,6 +73,10 @@ class AllocationsUsersImport {
     $this->batchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC');
     if (!isset($this->batchNoCC)) {
       $this->batchNoCC = self::DEFAULT_NOCC;
+    }
+    $this->batchNoUserDetSave = \Drupal::state()->get('access_affinitygroup.allocBatchNoUserDetSave');
+    if (!isset($this->batchNoUserDetSave)) {
+      $this->batchNoUserDetSave = self::DEFAULT_NOUSERDETSAVE;
     }
 
     $msg1 = "Batch params size: $this->batchSize processing limit: $this->batchImportLimit noCC: $this->batchNoCC";
@@ -143,7 +151,7 @@ class AllocationsUsersImport {
   /**
    *
    */
- private function getApiKey() {
+  private function getApiKey() {
     $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
     if (!file_exists($path)) {
 
@@ -283,18 +291,17 @@ class AllocationsUsersImport {
           $userDetails = user_load_by_name($accessUserName);
 
           // If we already have user, make sure they are all set with the cc id.
-          // @todo potentially, will  need to put in a check if they have
-          // changed their email or their firstname or lastname, and change it for
-          // the drual database.
+          // Check for diffs and update user profile with email, names, citizenship, email, institution.
           $needCCId = TRUE;
           if ($userDetails) {
+            $this->userDetailUpdates($userDetails, $aUser);
             $needCCId = needsCCId($userDetails);
           }
 
           // Did not have the user, so create it.
           // ALERT TODO what if the have a new email in here and it's different than existing one....
           if ($userDetails === FALSE) {
-            $userDetails = $this->createAllocUser($accessUserName, $aUser['firstName'], $aUser['lastName'], $aUser['email']);
+            $userDetails = $this->createAllocUser($accessUserName, $aUser);
             // @todo TAKE OUT
             $this->collectCronLog("...creating $userCount: $userName", 'd');
             if ($userDetails) {
@@ -303,7 +310,6 @@ class AllocationsUsersImport {
             }
           }
 
-          // @todo if email (and firstname/lastname) is different from user's drupal account, we should change it in drupal
           if ($needCCId && $userDetails) {
             // Either new user just created, or existing user missing constant contact id.
             // @todo TAKE OUT
@@ -484,9 +490,9 @@ class AllocationsUsersImport {
     $mailManager = \Drupal::service('plugin.manager.mail');
     $result = $mailManager->mail($module, $key, $toAddrs, $langcode, $params, NULL, TRUE);
     if (
-          $result === FALSE
-          || (array_key_exists('result', $result) && !$result['result'])
-      ) {
+        $result === FALSE
+        || (array_key_exists('result', $result) && !$result['result'])
+    ) {
       \Drupal::logger('cron_affinitygroup')->error("Error sending mail to " . $toAddrs);
     }
   }
@@ -494,25 +500,107 @@ class AllocationsUsersImport {
   /**
    *
    */
-  private function createAllocUser($accessUserName, $firstName, $lastName, $userEmail) {
+  private function createAllocUser($accessUserName, $aUser) {
     try {
       $u = User::create();
       $u->set('status', 1);
       $u->setUsername($accessUserName);
-      $u->setEmail($userEmail);
+      $u->setEmail($aUser['email']);
 
-      $u->set('field_user_first_name', $firstName);
-      $u->set('field_user_last_name', $lastName);
+      $u->set('field_user_first_name', $aUser['firstName']);
+      $u->set('field_user_last_name', $aUser['lastName']);
+      $u->set('field_institution', $aUser['organizationName']);
+      $citzenships = $this->formatCitizenships($aUser['citizenships']);
+      $u->set('field_citizenships', $citzenships);
 
       $u->save();
       $y = $u->id();
-      $this->collectCronLog("User created: $accessUserName - $userEmail ($y)", 'i');
+      $this->collectCronLog("User created: $accessUserName - " . $aUser['email'] . " ($y)", 'i');
     }
     catch (Exception $e) {
-      $this->collectCronLog("Exception createUser $accessUser: " . $e->getMessage());
+      $this->collectCronLog("Exception createUser $accessUserName: " . $e->getMessage());
       $u = FALSE;
     }
     return $u;
+  }
+
+  /**
+   * Compare incoming details to see if anything changed. If so, write to user profile.
+   * If email or name changed, update in constant contact, if user already has a CC Id.
+   */
+  private function userDetailUpdates($u, $a) {
+    // If  ($aUser['firstName'] , $aUser['lastName'], $aUser['email'].
+    try {
+      $needUpdate = FALSE;
+      $log = '';
+
+      if ($a['email'] !== $u->getEmail()) {
+        $log .= 'email: ' . $u->getEmail() . ' to ' . $a['email'];
+        $u->setEmail($a['email']);
+        $needUpdate = TRUE;
+      }
+
+      if ($a['firstName'] !== $u->get('field_user_first_name')->getString()) {
+        $log .= ' first: ' . $u->get('field_user_first_name')->getString() . ' to ' . $a['firstName'];
+        $u->set('field_user_first_name', $a['firstName']);
+        $needUpdate = TRUE;
+      }
+
+      if ($a['lastName'] !== $u->get('field_user_last_name')->getString()) {
+        $log .= ' last: ' . $u->get('field_user_last_name')->getString() . ' to ' . $a['lastName'];
+        $u->set('field_user_last_name', $a['lastName']);
+        $needUpdate = TRUE;
+      }
+
+      if ($a['organizationName'] !== $u->get('field_institution')->getString()) {
+        $log .= ' org: ' . $u->get('field_institution')->getString() . ' to ' . $a['organizationName'];
+        $u->set('field_institution', $a['organizationName']);
+        $needUpdate = TRUE;
+      }
+
+      $citizenships = $this->formatCitizenships($a['citizenships']);
+
+      if ($citizenships !== $u->get('field_citizenships')->getString()) {
+        $log .= ' cit: ' . $u->get('field_citizenships')->getString() . ' to ' . $citizenships;
+        $u->set('field_citizenships', $citizenships);
+        $needUpdate = TRUE;
+      }
+
+      if ($needUpdate) {
+        if (!$this->batchNoUserDetSave) {
+          $u->save();
+        }
+        $this->collectCronLog('Updating user ' . $a['username'] . ': ' . $log, 'd');
+      }
+    }
+    catch (Exception $e) {
+      $this->collectCronLog('Exception in UserDetailUpdates for ' . $a['username'] . ': ' . $e->getMessage(), 'err');
+    }
+    // If we have CC id, and email or name changed, update there, too.
+    // @todo .
+    return;
+  }
+
+  /**
+   * Citizenships are stored on user as single display string.
+   * $citJson: citzenships json section from api.
+   */
+  private function formatCitizenships($citJson) {
+
+    $citizenships = '';
+    $initial = TRUE;
+    try {
+      foreach ($citJson as $x) {
+        if (!$initial) {
+          $citizenships .= ', ';
+        }
+        $citizenships .= $x['countryName'];
+        $initial = FALSE;
+      }
+    }
+    catch (Exception $e) {
+    }
+    return $citizenships;
   }
 
   /**
@@ -554,6 +642,9 @@ class AllocationsUsersImport {
     }
   }
 
+  /**
+   *
+   */
   private function allocSubscribeToCCList($taxonomyId, $userDetails) {
     $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
     if (empty($postJSON)) {
