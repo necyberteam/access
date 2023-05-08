@@ -531,31 +531,35 @@ class AllocationsUsersImport {
   private function userDetailUpdates($u, $a) {
     // If  ($aUser['firstName'] , $aUser['lastName'], $aUser['email'].
     try {
-      $needUpdate = FALSE;
+      $needProfileUpdate = FALSE;
+      $needCCUpdate = FALSE;
       $log = '';
 
       if ($a['email'] !== $u->getEmail()) {
         $log .= 'email: ' . $u->getEmail() . ' to ' . $a['email'];
         $u->setEmail($a['email']);
-        $needUpdate = TRUE;
+        $needProfileUpdate = TRUE;
+        $needCCUpdate = TRUE;
       }
 
       if ($a['firstName'] !== $u->get('field_user_first_name')->getString()) {
         $log .= ' first: ' . $u->get('field_user_first_name')->getString() . ' to ' . $a['firstName'];
         $u->set('field_user_first_name', $a['firstName']);
-        $needUpdate = TRUE;
+        $needProfileUpdate = TRUE;
+        $needCCUpdate = TRUE;
       }
 
       if ($a['lastName'] !== $u->get('field_user_last_name')->getString()) {
         $log .= ' last: ' . $u->get('field_user_last_name')->getString() . ' to ' . $a['lastName'];
         $u->set('field_user_last_name', $a['lastName']);
-        $needUpdate = TRUE;
+        $needProfileUpdate = TRUE;
+        $needCCUpdate = TRUE;
       }
 
       if ($a['organizationName'] !== $u->get('field_institution')->getString()) {
         $log .= ' org: ' . $u->get('field_institution')->getString() . ' to ' . $a['organizationName'];
         $u->set('field_institution', $a['organizationName']);
-        $needUpdate = TRUE;
+        $needProfileUpdate = TRUE;
       }
 
       $citizenships = $this->formatCitizenships($a['citizenships']);
@@ -563,14 +567,28 @@ class AllocationsUsersImport {
       if ($citizenships !== $u->get('field_citizenships')->getString()) {
         $log .= ' cit: ' . $u->get('field_citizenships')->getString() . ' to ' . $citizenships;
         $u->set('field_citizenships', $citizenships);
-        $needUpdate = TRUE;
+        $needProfileUpdate = TRUE;
       }
 
-      if ($needUpdate) {
+      if ($needProfileUpdate) {
         if (!$this->batchNoUserDetSave) {
           $u->save();
         }
         $this->collectCronLog('Updating user ' . $a['username'] . ': ' . $log, 'd');
+      }
+      // If needed, and user already has constant contact account, update there.
+      if ($needCCUpdate) {
+        $ccIdField = $u->get('field_constant_contact_id')->getValue();
+        if (!empty($ccIdField)) {
+          $ccId = $ccIdField[0]['value'];
+          if (!empty($ccId)) {
+            $this->collectCronLog("CC UPDATE $ccId ");
+            $cca = new ConstantContactApi();
+            $cca->setSupressErrDisplay(TRUE);
+            $cca->updateContact($ccId, $a['firstName'], $a['lastName'], $a['email']);
+            $this->collectCronLog('CC UPDATE FOR ' . $a['username']);
+          }
+        }
       }
     }
     catch (Exception $e) {
