@@ -65,7 +65,7 @@ class PersonaBlock extends BlockBase {
       }
       // Create Drupal 9 link to edit user profile with ?destination=community-persona.
       $edit_url = Url::fromUri('internal:/user/' . $user->id() . '/edit?destination=community-persona');
-      $edit_link = Link::fromTextAndUrl('Edit Profile', $edit_url);
+      $edit_link = Link::fromTextAndUrl('Edit Persona', $edit_url);
       $edit_link = $edit_link->toRenderable();
       $edit_link['#attributes'] = [
         'class' => [
