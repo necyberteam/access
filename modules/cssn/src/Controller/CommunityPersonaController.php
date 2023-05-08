@@ -66,7 +66,7 @@ class CommunityPersonaController extends ControllerBase {
     $affinity_link = Link::fromTextAndUrl('All Affinity Groups', $affinity_url);
     $affinity_renderable = $affinity_link->toRenderable();
     $build_affinity_link = $affinity_renderable;
-    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-white', 'border-secondary', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     return $build_affinity_link;
   }
 
@@ -92,8 +92,8 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = Term::load($flagged_skill)->get('name')->value;
-        $my_skills .= "<div class='border border-black m-1 p-1'>";
-        $my_skills .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
+        $my_skills .= "<div class='border border-black m-1'>";
+        $my_skills .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-1' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
         $my_skills .= "</div>";
       }
     }
@@ -184,8 +184,8 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_interests == "") {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = Term::load($flagged_interest)->get('name')->value;
-        $my_interests .= "<div class='border border-black m-1 p-1'>";
-        $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "<div class='border border-black m-1'>";
+        $my_interests .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-1' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
         $my_interests .= "</div>";
       }
     }
@@ -224,7 +224,7 @@ class CommunityPersonaController extends ControllerBase {
     $webform_link = Link::fromTextAndUrl('Add CI Link', $webform_url);
     $webform_renderable = $webform_link->toRenderable();
     $build_webform_link = $webform_renderable;
-    $build_webform_link['#attributes']['class'] = ['btn', 'btn-white', 'border-secondary', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    $build_webform_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     // My Match Engagements.
     $match_link = $this->matchList($current_user);
     // Link to see all Match Engagements.
@@ -232,7 +232,7 @@ class CommunityPersonaController extends ControllerBase {
     $match_engage_link = Link::fromTextAndUrl('See engagements', $match_engage_url);
     $match_engage_renderable = $match_engage_link->toRenderable();
     $build_match_engage_link = $match_engage_renderable;
-    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-white', 'border-secondary', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
       '#attached' => [
@@ -322,7 +322,8 @@ class CommunityPersonaController extends ControllerBase {
       $user = User::load($user_id);
       if ($user !== NULL) {
         $should_user_load = TRUE;
-      } else {
+      }
+      else {
         $should_user_load = FALSE;
       }
     }
@@ -395,7 +396,8 @@ class CommunityPersonaController extends ControllerBase {
         ],
       ];
       return $persona_page;
-    } else {
+    }
+    else {
       return [
         '#type' => 'markup',
         '#title' => 'User not found',
@@ -403,4 +405,5 @@ class CommunityPersonaController extends ControllerBase {
       ];
     }
   }
+
 }
