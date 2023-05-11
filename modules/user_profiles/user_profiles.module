@@ -3,7 +3,6 @@
 use Drupal\user\UserInterface;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\domain\DomainInterface;
 use Drupal\Component\Utility\Html;
 
 $debug = FALSE;
@@ -17,7 +16,7 @@ function user_profiles_menu_local_tasks_alter(&$data, $route_name) {
   $token = \Drupal::token();
   $domainName = t("[domain:name]");
   $current_domain_name = Html::getClass($token->replace($domainName));
-  if ( $route_name == 'entity.user.canonical' && isset($data['tabs'][0]) && $current_domain_name == 'access-support' ) {
+  if ($route_name == 'entity.user.canonical' && isset($data['tabs'][0]) && $current_domain_name == 'access-support') {
     $data['tabs'][0]['change_pwd_page.change_password_form']['#access'] = FALSE;
   }
 }
@@ -35,7 +34,7 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
 
   switch ($form_id) {
     case 'change_pwd_form':
-      if ($is_asp ) {
+      if ($is_asp) {
         $response = new RedirectResponse('/user');
         $response->send();
       }
@@ -73,6 +72,7 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
       break;
   }
 }
+
 /**
  * Entity presave hook
  *
@@ -81,8 +81,18 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
  * node, user, webform submission, event).  If the user is marked as suspended,
  * abort the save with an exception.
  *
+ * Bypass this check if check_suspended_users is FALSE in user_profiles.constants.yml.
+ * This value gets set to FALSE in the local config split
+ * (web/sites/default/config/default/user_profile.settings.yml).
  */
 function user_profiles_entity_presave(Object $entity) {
+
+  $config = \Drupal::configFactory()->getEditable('user_profiles.settings');
+  $check_suspended_users = $config->get('check_suspended_users');
+  if (!$check_suspended_users) {
+    return;
+  }
+
   $current_user = \Drupal::currentUser();
   $account_name = $current_user->getAccountName();
   $userinfo = get_account_data_from_api($account_name);
@@ -105,11 +115,11 @@ function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
   global $debug;
   if ($debug) {
     $msg = basename(__FILE__) . ':' . __LINE__ . ' -- '
-    . 'will try user_load_by_name with $context = ' . print_r($context, true);
+      . 'will try user_load_by_name with $context = ' . print_r($context, true);
 
     \Drupal::messenger()->addStatus($msg);
     error_log($msg);
-}
+  }
 
   $sub = array_key_exists('sub', $context['user_data']) ? $context['user_data']['sub'] : null;
 
@@ -160,9 +170,9 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
     // while testing, examine values before we set them
     $msg = ('before set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+    $msg = ('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('before set, email = [' . $account->getEmail() . ']');
+    $msg = ('before set, email = [' . $account->getEmail() . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
     $msg = ('before set, field_institution = [' . $account->get('field_institution')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
@@ -229,9 +239,9 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
     // while testing, examine values after setting them
     $msg = ('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+    $msg = ('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('after set, email = [' . $account->getEmail() . ']');
+    $msg = ('after set, email = [' . $account->getEmail() . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
     $msg = ('after set, field_institution = [' . $account->get('field_institution')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
@@ -269,11 +279,14 @@ function get_account_data_from_api($username) {
   $secrets_data = json_decode($secrets_json_text, TRUE);
   $api_key = $secrets_data['ramps_api_key'];
 
-  $request_options = array('headers' => array(
+  $request_options = array(
+    'headers' => array(
       'XA-API-KEY' => $api_key,
       'XA-REQUESTER' => 'MATCH',
-      'Content-Type' => 'application/json'),
-      'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]);
+      'Content-Type' => 'application/json'
+    ),
+    'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]
+  );
 
   /** @var \GuzzleHttp\Client $client */
   $client = new GuzzleHttp\Client();
