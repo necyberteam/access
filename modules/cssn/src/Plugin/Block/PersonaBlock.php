@@ -92,7 +92,6 @@ class PersonaBlock extends BlockBase {
       else {
         $academic_status = '';
       }
-      // $academic_status = $academic_terms_map[$academic_status];
       $key = array_search('authenticated', $roles);
       if ($key !== FALSE) {
         unset($roles[$key]);
