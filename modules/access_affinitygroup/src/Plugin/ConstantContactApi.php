@@ -43,15 +43,23 @@ class ConstantContactApi {
    * Function to sort the curl headers.
    */
   public function __construct() {
+    try {
     $config_factory = \Drupal::configFactory();
     $this->configSettings = $config_factory->getEditable('access_affinitygroup.settings');
     $this->accessToken = $this->configSettings->get('access_token');
     $this->refreshToken = $this->configSettings->get('refresh_token');
+    \Drupal::logger('access_affinitygroup')->notice('cca constructor get R:' . $this->refreshToken);
+    \Drupal::logger('access_affinitygroup')->notice('cca constructor get A:' . $this->accessToken);
+
     $cc_key = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_id')->getKeyValue());
     $this->clientId = urlencode($cc_key);
     $key_secret = trim(\Drupal::service('key.repository')->getKey('constant_contact_client_secret')->getKeyValue());
     $this->clientSecret = urlencode($key_secret);
     $this->supressErrDisplay = FALSE;
+    }
+    catch (Exception $e) {
+      \Drupal::logger('access_affinitygroup')->notice('Exception in constantContactApi constructor: ' . $e->getMessage());
+    }
   }
 
   /**
@@ -88,6 +96,7 @@ class ConstantContactApi {
    * Initialize Constant Contact Token.
    */
   public function initializeToken($code) {
+    try {
     $clientId = $this->clientId;
     $clientSecret = $this->clientSecret;
     $host = \Drupal::request()->getSchemeAndHttpHost();
@@ -96,22 +105,37 @@ class ConstantContactApi {
     $returned_token = $this->getAccessToken($redirectURI, $clientId, $clientSecret, $code);
     $returned_token = json_decode($returned_token);
 
+    if (isset($returned_token->error)) {
+      \Drupal::logger('access_affinitygroup')->notice("cc init token err set, error, desc: " . $returned_token->error_description);
+    }
+    if ($returned_token) {
+      \Drupal::logger('access_affinitygroup')->notice("cc init token RF: " . $returned_token->refresh_token);
+    } else {
+      \Drupal::logger('access_affinitygroup')->notice("cc init token RT NOT");
+    }
+
     if ($returned_token && !isset($returned_token->error)) {
       $this->setAccessToken($returned_token->access_token);
       $this->setRefreshToken($returned_token->refresh_token);
+      \Drupal::logger('access_affinitygroup')->notice("cc init r/a: " . $returned_token->refresh_token . " / " . $returned_token->access_token);
       \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
       \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
-    }
-    else {
+    } else {
       $this->apiError($returned_token->error, $returned_token->error_description);
     }
+  } catch (Exception $e) {
+      \Drupal::logger('access_affinitygroup')->notice("cc init token exception: " . $e->getMessage());
+  }
   }
 
   /**
    * Refresh Constant Contact Token and set new ones.
    */
   public function newToken() {
+    try {
     $refreshToken = $this->refreshToken;
+
+    \Drupal::logger('access_affinitygroup')->notice('New token prev R: ' . $refreshToken);
     $clientId = $this->clientId;
     $clientSecret = $this->clientSecret;
     // Use cURL to get a new access token and refresh token.
@@ -142,19 +166,25 @@ class ConstantContactApi {
     $result = curl_exec($ch);
     $result = json_decode($result);
 
-    // $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-    // @todo might want to check code here too in case result is not formed
+    $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
+    \Drupal::logger('access_affinitygroup')->notice('New token httpCode: ' . $httpCode);
     curl_close($ch);
 
     if (!isset($result->error)) {
       $this->setAccessToken($result->access_token);
       $this->setRefreshToken($result->refresh_token);
+      \Drupal::logger('access_affinitygroup')->notice('New token N: ' . $result->refresh_token);
       \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
       \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
     }
     else {
+      \Drupal::logger('access_affinitygroup')->error('New token: error');
 
       $this->apiError($result->error, $result->error_description);
+    }
+    }
+    catch (Exception $e) {
+      \Drupal::logger('access_affinitygroup')->notice('Exception in new token: ' . $e->getMessage());
     }
   }
 

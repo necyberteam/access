@@ -2,14 +2,14 @@
 
 namespace Drupal\cssn\Controller;
 
+use Drupal\webform\Entity\WebformSubmission;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\MatchLookup;
 use Drupal\cssn\Plugin\Util\EndUrl;
-use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
-use Drupal\webform\Entity\WebformSubmission;
 
 /**
  * Controller for Community Persona.
@@ -44,7 +44,7 @@ class CommunityPersonaController extends ControllerBase {
         $affinity_group_nid = $query->execute()->fetchCol();
         if (isset($affinity_group_nid[0])) {
           $affinity_group_loaded = \Drupal::entityTypeManager()->getStorage('node')->load($affinity_group_nid[0]);
-          $url = Url::fromRoute('entity.node.canonical', array('node' => $affinity_group_loaded->id()));
+          $url = Url::fromRoute('entity.node.canonical', ['node' => $affinity_group_loaded->id()]);
           $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
           $link = $project_link->toString()->__toString();
           $user_affinity_groups .= "<li>$link</li>";
@@ -63,10 +63,10 @@ class CommunityPersonaController extends ControllerBase {
    */
   public function buildAffinityLink() {
     $affinity_url = Url::fromUri('internal:/affinity_groups');
-    $affinity_link = Link::fromTextAndUrl('See all Affinity Groups', $affinity_url);
+    $affinity_link = Link::fromTextAndUrl('All Affinity Groups', $affinity_url);
     $affinity_renderable = $affinity_link->toRenderable();
     $build_affinity_link = $affinity_renderable;
-    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     return $build_affinity_link;
   }
 
@@ -92,8 +92,8 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = Term::load($flagged_skill)->get('name')->value;
-        $my_skills .= "<div class='border border-black m-1 p-1'>";
-        $my_skills .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
+        $my_skills .= "<div class='border border-black m-1'>";
+        $my_skills .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-1' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
         $my_skills .= "</div>";
       }
     }
@@ -139,11 +139,11 @@ class CommunityPersonaController extends ControllerBase {
    */
   public function matchList($user, $public = FALSE) {
     $fields = [
+      'field_match_interested_users' => 'Interested',
       'field_mentor' => 'Mentor',
       'field_students' => 'Student',
       'field_consultant' => 'Consultant',
       'field_researcher' => 'Researcher',
-      'field_match_interested_users' => 'Interested',
     ];
     $matches = new MatchLookup($fields, $user->id());
     // Sort by status.
@@ -184,8 +184,8 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_interests == "") {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = Term::load($flagged_interest)->get('name')->value;
-        $my_interests .= "<div class='border border-black m-1 p-1'>";
-        $my_interests .= "<a style='text-transform: inherit;' class='btn btn-white btn-sm' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "<div class='border border-black m-1'>";
+        $my_interests .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-1' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
         $my_interests .= "</div>";
       }
     }
@@ -196,68 +196,75 @@ class CommunityPersonaController extends ControllerBase {
    * Build content to display on page.
    */
   public function communityPersona() {
-    // My Affinity Groups
+    // My Affinity Groups.
     $current_user = \Drupal::currentUser();
-    // List of affinity groups
+    // List of affinity groups.
     $user_affinity_groups = $this->affinityGroupList($current_user);
-    // Affinity link
+    // Affinity link.
     $build_affinity_link = $this->buildAffinityLink();
-    // My Interests
+    // My Interests.
     $my_interests = $this->buildInterests($current_user);
     // Edit interests link.
     $edit_interest_url = Url::fromUri('internal:/add-interest');
-    $edit_interest_link = Link::fromTextAndUrl('Edit interests', $edit_interest_url);
+    $edit_interest_link = Link::fromTextAndUrl('Update interests', $edit_interest_url);
     $edit_interest_renderable = $edit_interest_link->toRenderable();
-    // My Expertise
+    $edit_interest_renderable['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    // My Expertise.
     $my_skills = $this->mySkills($current_user);
     // Link to add Skills/Expertise.
     $edit_skill_url = Url::fromUri('internal:/add-skill');
-    $edit_skill_link = Link::fromTextAndUrl('Edit expertise', $edit_skill_url);
+    $edit_skill_link = Link::fromTextAndUrl('Update expertise', $edit_skill_url);
     $edit_skill_renderable = $edit_skill_link->toRenderable();
-    // My Knowledge Base Contributions
+    $edit_skill_renderable['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    // My Knowledge Base Contributions.
     $ws_link = $this->knowledgeBaseContrib($current_user);
 
     // Link to add Knowledge Base Contribution webform.
     $webform_url = Url::fromUri('internal:/form/resource');
-    $webform_link = Link::fromTextAndUrl('Contribute to Knowledge Base', $webform_url);
+    $webform_link = Link::fromTextAndUrl('Add CI Link', $webform_url);
     $webform_renderable = $webform_link->toRenderable();
     $build_webform_link = $webform_renderable;
-    $build_webform_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
-    // My Match Engagements
+    $build_webform_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    // My Match Engagements.
     $match_link = $this->matchList($current_user);
     // Link to see all Match Engagements.
     $match_engage_url = Url::fromUri('internal:/engagements');
-    $match_engage_link = Link::fromTextAndUrl('See all engagements', $match_engage_url);
+    $match_engage_link = Link::fromTextAndUrl('See engagements', $match_engage_url);
     $match_engage_renderable = $match_engage_link->toRenderable();
     $build_match_engage_link = $match_engage_renderable;
-    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
+    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
+      '#attached' => [
+        'library' => [
+          'cssn/cssn_library',
+        ],
+      ],
       '#template' => '<div class="border border-secondary my-3">
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0">{{ mi_title }}</span>
+          </div>
+          <div class="d-flex flex-wrap p-3">
+            {{ my_interests|raw }}
+          </div>
+          <div class="p-3">{{ edit_interest_link }}</div>
+        </div>
+        <div class="border border-secondary my-3">
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0">{{ me_title }}</span>
+          </div>
+          <div class="d-flex flex-wrap p-3">
+            {{ my_skills|raw }}
+          </div>
+          <div class="p-3">{{ edit_skill_link }}</div>
+        </div>
+        <div class="border border-secondary my-3">
           <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
             <div class="p-3">
               <p>{{ ag_intro }}</p>
               {{ user_affinity_groups|raw }}
               {{ affinity_link }}
             </div>
-        </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-            <span class="h4 text-white m-0">{{ mi_title }}</span>
-            <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_interest_link }}</span>
-          </div>
-          <div class="d-flex flex-wrap p-3">
-            {{ my_interests|raw }}
-          </div>
-        </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-            <span class="h4 text-white m-0">{{ me_title }}</span>
-            <span><i class="fa-solid fa-pen-to-square"></i> {{ edit_skill_link }}</span>
-          </div>
-          <div class="d-flex flex-wrap p-3">
-            {{ my_skills|raw }}
-          </div>
         </div>
         <div class="border border-secondary my-3">
           <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
@@ -315,34 +322,29 @@ class CommunityPersonaController extends ControllerBase {
       $user = User::load($user_id);
       if ($user !== NULL) {
         $should_user_load = TRUE;
-      } else {
+      }
+      else {
         $should_user_load = FALSE;
       }
     }
     if ($should_user_load) {
       $user_first_name = $user->get('field_user_first_name')->value;
       $user_last_name = $user->get('field_user_last_name')->value;
-      // List of affinity groups
+      // List of affinity groups.
       $user_affinity_groups = $this->affinityGroupList($user, TRUE);
-      // My Interests
+      // My Interests.
       $my_interests = $this->buildInterests($user, TRUE);
-      // My Expertise
+      // My Expertise.
       $my_skills = $this->mySkills($user, TRUE);
-      // My Knowledge Base Contributions
+      // My Knowledge Base Contributions.
       $ws_link = $this->knowledgeBaseContrib($user, TRUE);
-      // My Match Engagements
+      // My Match Engagements.
       $match_link = $this->matchList($user, TRUE);
 
       $persona_page['#title'] = "$user_first_name $user_last_name";
       $persona_page['string'] = [
         '#type' => 'inline_template',
         '#template' => '<div class="border border-secondary my-3">
-            <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
-              <div class="p-3">
-                {{ user_affinity_groups|raw }}
-              </div>
-          </div>
-          <div class="border border-secondary my-3">
             <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ mi_title }}</span>
             </div>
@@ -357,6 +359,12 @@ class CommunityPersonaController extends ControllerBase {
             <div class="d-flex flex-wrap p-3">
               {{ my_skills|raw }}
             </div>
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
+              <div class="p-3">
+                {{ user_affinity_groups|raw }}
+              </div>
           </div>
           <div class="border border-secondary my-3">
             <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
@@ -388,7 +396,8 @@ class CommunityPersonaController extends ControllerBase {
         ],
       ];
       return $persona_page;
-    } else {
+    }
+    else {
       return [
         '#type' => 'markup',
         '#title' => 'User not found',
@@ -396,4 +405,5 @@ class CommunityPersonaController extends ControllerBase {
       ];
     }
   }
+
 }

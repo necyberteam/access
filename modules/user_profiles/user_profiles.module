@@ -113,7 +113,6 @@ function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
   if ($debug) {
     $msg = basename(__FILE__) . ':' . __LINE__ . ' -- '
     . 'will try user_load_by_name with $context = ' . print_r($context, TRUE);
-
     \Drupal::messenger()->addStatus($msg);
     error_log($msg);
   }

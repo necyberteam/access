@@ -528,7 +528,7 @@ function access_affinitygroup_cron() {
     if (shouldRun('token')) {
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
-      \Drupal::logger('cron_affinitygroup')->notice('Running cron: token' . date("Y-m-d H:i:s", $currentTime));
+      \Drupal::logger('access_affinitygroup')->notice('Running cron: token refresh' . date("Y-m-d H:i:s", $currentTime));
 
       $cca = new ConstantContactApi();
       $cca->newToken();
@@ -566,10 +566,6 @@ function shouldRun($function) {
   if ($function == 'token') {
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-t', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
-    \Drupal::logger('cron_affinitygroup')->notice("checking $function last "
-      . date("Y-m-d H:i:s", $lastRun)
-      . " now " . date("Y-m-d H:i:s", $currentTime)
-      . "; hours diff $hoursDiff ");
 
     // Run if it's been at least 6 hours since the last run.
     if ($hoursDiff >= 6) {
@@ -593,10 +589,6 @@ function shouldRun($function) {
 
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
-    \Drupal::logger('cron_affinitygroup')->notice("checking $function last "
-      . date("Y-m-d H:i:s", $lastRun)
-      . " now " . date("Y-m-d H:i:s", $currentTime)
-      . "; hours diff $hoursDiff ", 'd');
 
     // Run if it's been more than 24 hours since the last run.
     if ($hoursDiff > 24) {

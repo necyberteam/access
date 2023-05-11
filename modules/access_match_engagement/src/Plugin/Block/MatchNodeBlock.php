@@ -178,7 +178,7 @@ class MatchNodeBlock extends BlockBase implements
        {{ interested_button | raw }}
         {% if interested_users %}
           <div class="p-3">
-            <h3>Interested Users</h3>
+            <h3>Interested People</h3>
               <ul>
               {% for interested_user in interested_users %}
                 <li>{{ interested_user }}</li>
