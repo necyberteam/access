@@ -13,14 +13,12 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 /**
  * Class ConstantContact.
  */
-class ConstantContact extends FormBase
-{
+class ConstantContact extends FormBase {
 
     /**
      * {@inheritdoc}
      */
-    public function buildForm(array $form, FormStateInterface $form_state)
-    {
+    public function buildForm(array $form, FormStateInterface $form_state) {
         $alloc_cron_disable = \Drupal::state()->get('access_affinitygroup.alloc_cron_disable');
         $alloc_cron_allow_ondemand = \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand');
 
@@ -34,11 +32,15 @@ class ConstantContact extends FormBase
         $refresh_token = $request->get('refresh_token');
 
         if ($refresh_token) {
+            \Drupal::logger('access_affinitygroup')->notice("Build form Refresh Token".$refresh_token);
+
             $cca = new ConstantContactApi();
             $cca->newToken();
         }
 
         if ($code) {
+            \Drupal::logger('access_affinitygroup')->notice("Build form Code ");
+
             $cca = new ConstantContactApi();
             $cca->initializeToken($code);
         }
@@ -47,118 +49,118 @@ class ConstantContact extends FormBase
         $link = Link::fromTextAndUrl(t('Refresh Token'), $url)->toString()->getGeneratedLink();
 
         $form['scope'] = [
-        '#type' => 'checkboxes',
-        '#options' => [
-        'account_read' => $this->t('Account Read'),
-        'account_update' => $this->t('Account Update'),
-        'contact_data' => $this->t('Contact Data'),
-        'offline_access' => $this->t('Offline Access'),
-        'campaign_data' => $this->t('campaign_data'),
-        ],
-        '#default_value' => [
-        'account_read',
-        'account_update',
-        'contact_data',
-        'offline_access',
-        'campaign_data',
-        ],
-        '#title' => $this->t('Scope'),
-        '#description' => $this->t('Select Constant Contact permissions.'),
+            '#type' => 'checkboxes',
+            '#options' => [
+                'account_read' => $this->t('Account Read'),
+                'account_update' => $this->t('Account Update'),
+                'contact_data' => $this->t('Contact Data'),
+                'offline_access' => $this->t('Offline Access'),
+                'campaign_data' => $this->t('campaign_data'),
+            ],
+            '#default_value' => [
+                'account_read',
+                'account_update',
+                'contact_data',
+                'offline_access',
+                'campaign_data',
+            ],
+            '#title' => $this->t('Scope'),
+            '#description' => $this->t('Select Constant Contact permissions.'),
         ];
 
         $form['submit'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Authorize App'),
-        '#submit' => [[$this, 'submitForm']],
+            '#type' => 'submit',
+            '#value' => $this->t('Authorize App'),
+            '#submit' => [[$this, 'submitForm']],
         ];
 
         $form['refresh_token'] = [
-        '#markup' => $link,
+            '#markup' => $link,
         ];
 
         $form['x1'] = [
-        '#markup' => '<br><br><b>Administration Allocations Import Cron Settings</b>',
+            '#markup' => '<br><br><b>Administration Allocations Import Cron Settings</b>',
         ];
 
         $form['alloc_cron_disable'] = [
-        '#type' => 'checkbox',
-        '#title' => $this->t('Disable Allocations Import Cron'),
-        '#description' => $this->t('Unchecked is the normal value.'),
-        '#default_value' => $alloc_cron_disable,
+            '#type' => 'checkbox',
+            '#title' => $this->t('Disable Allocations Import Cron'),
+            '#description' => $this->t('Unchecked is the normal value.'),
+            '#default_value' => $alloc_cron_disable,
         ];
 
         $form['alloc_cron_allow_ondemand'] = [
-        '#type' => 'checkbox',
-        '#title' => $this->t('Allow Allocation Import Cron On-Demand'),
-        '#description' => $this->t('Unchecked is the normal value.'),
-        '#default_value' => $alloc_cron_allow_ondemand,
+            '#type' => 'checkbox',
+            '#title' => $this->t('Allow Allocation Import Cron On-Demand'),
+            '#description' => $this->t('Unchecked is the normal value.'),
+            '#default_value' => $alloc_cron_allow_ondemand,
         ];
 
         $form['savecronsettings'] = [
-        '#type' => 'submit',
-        '#value' => $this->t('Save Cron Settings'),
-        '#submit' => [[$this, 'doSaveCronSettings']],
+            '#type' => 'submit',
+            '#value' => $this->t('Save Cron Settings'),
+            '#submit' => [[$this, 'doSaveCronSettings']],
         ];
 
         $form['x2'] = [
-        '#markup' => '<br><br><b>Import allocations batch processing</b><br>',
+            '#markup' => '<br><br><b>Import allocations batch processing</b><br>',
         ];
 
-         $form['batch_param_batchsize'] = [
-        '#type' => 'number',
-        '#title' => $this->t('Batch Size'),
-        '#min' => 5,
-        '#max' => 1000,
-        '#default_value' => $allocBatchBatchSize,
-        '#description' => $this->t("Size of each batch slice."),
-        '#required' => false,
-         ];
+        $form['batch_param_batchsize'] = [
+            '#type' => 'number',
+            '#title' => $this->t('Batch Size'),
+            '#min' => 5,
+            '#max' => 1000,
+            '#default_value' => $allocBatchBatchSize,
+            '#description' => $this->t("Size of each batch slice."),
+            '#required' => false,
+        ];
 
-         $form['batch_param_importlimit'] = [
-         '#type' => 'number',
-         '#title' => $this->t('Process limit'),
-         '#default_value' => $allocBatchImportLimit,
-         '#description' => $this->t("Limit allocations users processed, up to 105000."),
-         '#required' => false,
-         ];
-         $form['batch_param_startat'] = [
-         '#type' => 'number',
-         '#title' => $this->t('Process start at'),
-         '#default_value' => $allocBatchStartAt,
-         '#description' => $this->t("Start procssing nth user (default: 0)"),
-         '#required' => false,
-         ];
-         $form['batch_param_nocc'] = [
-         '#type' => 'checkbox',
-         '#title' => $this->t('Do not add users to Constant Contact.'),
-         '#description' => $this->t('Unchecked is the normal value.'),
-         '#default_value' => $allocBatchNoCC,
-         ];
+        $form['batch_param_importlimit'] = [
+            '#type' => 'number',
+            '#title' => $this->t('Process limit'),
+            '#default_value' => $allocBatchImportLimit,
+            '#description' => $this->t("Limit allocations users processed, up to 105000."),
+            '#required' => false,
+        ];
+        $form['batch_param_startat'] = [
+            '#type' => 'number',
+            '#title' => $this->t('Process start at'),
+            '#default_value' => $allocBatchStartAt,
+            '#description' => $this->t("Start procssing nth user (default: 0)"),
+            '#required' => false,
+        ];
+        $form['batch_param_nocc'] = [
+            '#type' => 'checkbox',
+            '#title' => $this->t('Do not add users to Constant Contact.'),
+            '#description' => $this->t('Unchecked is the normal value.'),
+            '#default_value' => $allocBatchNoCC,
+        ];
 
-         $form['savebatchsettings'] = [
-         '#type' => 'submit',
-         '#value' => $this->t('Save Batch Settings'),
-         '#submit' => [[$this, 'doSaveBatchSettings']],
-         ];
+        $form['savebatchsettings'] = [
+            '#type' => 'submit',
+            '#value' => $this->t('Save Batch Settings'),
+            '#submit' => [[$this, 'doSaveBatchSettings']],
+        ];
 
-         $form['runBatch'] = [
-                  '#type' => 'submit',
-                  '#value' => $this->t('Start Batch'),
-                  '#description' => $this->t("Start allocations import batch processing"),
-                  '#submit' => [[$this, 'doBatch']],
+        $form['runBatch'] = [
+            '#type' => 'submit',
+            '#value' => $this->t('Start Batch'),
+            '#description' => $this->t("Start allocations import batch processing"),
+            '#submit' => [[$this, 'doBatch']],
         ];
 
 
-                  $form['x4'] = [
-                  '#markup' => '<br><br><b>Weekly Digest</b><br>',
-                  ];
+        $form['x4'] = [
+            '#markup' => '<br><br><b>Weekly Digest</b><br>',
+        ];
 
-                  $form['runNewsDigest'] = [
-                  '#type' => 'submit',
-                  '#value' => $this->t('Generate Digest'),
-                  '#submit' => [[$this, 'doGenerateDigest']],
-                  ];
-                  return $form;
+        $form['runNewsDigest'] = [
+            '#type' => 'submit',
+            '#value' => $this->t('Generate Digest'),
+            '#submit' => [[$this, 'doGenerateDigest']],
+        ];
+        return $form;
     }
 
     /**
@@ -167,8 +169,7 @@ class ConstantContact extends FormBase
      * @return string
      *   The unique ID of the form defined by this class.
      */
-    public function getFormId()
-    {
+    public function getFormId() {
         return 'constantcontact_form';
     }
 
@@ -180,8 +181,7 @@ class ConstantContact extends FormBase
      * @param \Drupal\Core\Form\FormStateInterface $form_state
      *   Object describing the current state of the form.
      */
-    public function validateForm(array &$form, FormStateInterface $form_state)
-    {
+    public function validateForm(array &$form, FormStateInterface $form_state) {
         $value_check = array_filter($form_state->getValue('scope'));
         if (empty($value_check)) {
             $form_state->setErrorByName('access_affinitygroup', 'Select at least one checkbox under scope.');
@@ -191,8 +191,7 @@ class ConstantContact extends FormBase
     /**
      * {@inheritdoc}
      */
-    public function submitForm(array &$form, FormStateInterface $form_state)
-    {
+    public function submitForm(array &$form, FormStateInterface $form_state) {
         $selected_scope = '';
         foreach ($form_state->getValue('scope') as $scope_value) {
             if ($scope_value !== 0) {
@@ -211,28 +210,24 @@ class ConstantContact extends FormBase
         parent::submitForm($form, $form_state);
     }
 
-    public function doSaveBatchSettings(array &$form, FormStateInterface $form_state)
-    {
+    public function doSaveBatchSettings(array &$form, FormStateInterface $form_state) {
         \Drupal::state()->set('access_affinitygroup.allocBatchBatchSize', $form_state->getValue('batch_param_batchsize'));
         \Drupal::state()->set('access_affinitygroup.allocBatchImportLimit', $form_state->getValue('batch_param_importlimit'));
         \Drupal::state()->set('access_affinitygroup.allocBatchNoCC', $form_state->getValue('batch_param_nocc'));
         \Drupal::state()->set('access_affinitygroup.allocBatchStartAt', $form_state->getValue('batch_param_startat'));
     }
 
-    public function doSaveCronSettings(array &$form, FormStateInterface $form_state)
-    {
+    public function doSaveCronSettings(array &$form, FormStateInterface $form_state) {
         \Drupal::state()->set('access_affinitygroup.alloc_cron_disable', $form_state->getValue('alloc_cron_disable'));
         \Drupal::state()->set('access_affinitygroup.alloc_cron_allow_ondemand', $form_state->getValue('alloc_cron_allow_ondemand'));
     }
 
     // generate the access_news weekly digest (normally run weekly via cron)
-    public function doGenerateDigest()
-    {
+    public function doGenerateDigest() {
         weeklyNewsReport(true);
     }
 
-    public function doBatch()
-    {
+    public function doBatch() {
         $aui = new AllocationsUsersImport();
         $aui->startBatch();
     }
