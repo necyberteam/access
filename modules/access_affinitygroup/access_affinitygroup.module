@@ -152,7 +152,7 @@ function access_affinitygroup_views_pre_render(ViewExecutable $view) {
         if (array_key_exists('target_id', $cider_id)) {
           $node = $node_storage->load($cider_id['target_id']);
           $cider_text .= '<h3>' . $node->get('title')->value . '</h3><p>'
-              . $node->get('body')->value . '</p>';
+            . $node->get('body')->value . '</p>';
         }
       }
 
@@ -228,7 +228,6 @@ function update_removed_ag_leader_roles($entity, $coordinator_ids) {
       $coordinators = $affinity_group->get('field_coordinator')->getValue();
       foreach ($coordinators as $coordinator) {
         $all_other_coordinator_ids[] = $coordinator['target_id'];
-        ;
       }
     }
 
@@ -275,6 +274,7 @@ function add_ag_taxonomy_term($entity) {
  */
 function ag_taxonomy_lookup($ag_title) {
   // Ok to pass null -- returns null if $ag_title is null.
+  // @todo deprecated.
   $lookup = taxonomy_term_load_multiple_by_name($ag_title, 'affinity_groups');
   return $lookup;
 }
@@ -325,7 +325,10 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       // id is used to find the AG node related to the taxonomy and then the CC
       // list_id within the node for json to send to api.
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
-      // $refEntArray = $entity->referencedEntities();
+      if (empty($taxonomyId)) {
+        return;
+      }
+
       $currentUser = \Drupal::currentUser();
       $userId = $currentUser->id();
       $userDetails = User::load($userId);
@@ -337,7 +340,6 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       }
       // Put this AG on this user's block list if not already there.
       addBlockedAG($taxonomyId, $userDetails);
-
     }
     else {
       // Case 2: AG getting deleted.
@@ -439,7 +441,6 @@ function makeListMembershipJSON($flagEntityId, $userDetails) {
   $fieldVal = $ag->get('field_list_id')->getValue();
   if (!empty($fieldVal)) {
     $list_cc_id = $fieldVal[0]['value'];
-    ;
   }
 
   if (empty($list_cc_id)) {
@@ -545,7 +546,7 @@ function access_affinitygroup_cron() {
   }
   catch (Exception $e) {
     \Drupal::logger('cron_affinitygroup')->notice('exception in cron test: ' . $e->getMessage());
-  }  finally {
+  } finally {
     \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
   }
 }
@@ -566,7 +567,6 @@ function shouldRun($function) {
     if ($hoursDiff >= 6) {
       return TRUE;
     }
-
   }
   elseif ($function == 'users') {
 

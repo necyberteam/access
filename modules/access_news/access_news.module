@@ -9,10 +9,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\node\Entity\Node;
 use Drupal\user\Entity\User;
-use Drupal\recurring_events\Entity\EventSeries;
 use Drupal\recurring_events\Entity\EventInstance;
-use Drupal\recurring_events\EventInterface;
-use Drupal\recurring_events\Plugin\ComputedField\EventInstances;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 
 /**
@@ -50,8 +47,7 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
         // Administrator can assign ACCESS News to any Affinity Group.
         if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
           $authorized = TRUE;
-        }
-        else {
+        } else {
           // Load coordinator(s) for the Affinity Group.
           $coordinator_field = $n->get('field_coordinator');
           if ($coordinator_field) {
@@ -138,8 +134,7 @@ function access_news_node_insert(Node $node) {
         $message = t('Thank you for submitting your news. Please change the state to "Ready for Review" when you would like to publish it.');
         \Drupal::messenger()->addMessage($message);
       }
-    }
-    else {
+    } else {
       // For published news: Check if broadcast to listed AGs desired, do it if so.
       affinityGroupBroadcast($node, TRUE);
     }
@@ -161,8 +156,7 @@ function access_news_entity_insert(EntityInterface $entity) {
         $message = t('Thank you for submitting your event. Please change the state to "Ready for Review" when you would like to publish it.');
         \Drupal::messenger()->addMessage($message);
       }
-    }
-    else {
+    } else {
       // For published event: Check if broadcast to listed AGs desired, do it if so.
       affinityGroupBroadcast($entity, FALSE);
     }
@@ -204,11 +198,10 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
   $getFields = $node->getFields();
   $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
   $broadcastToAGs = $broadcastArray[0]['value'];
-  $useCommunityTemplate = null;
+  $useCommunityTemplate = NULL;
 
   // Find the node ids for the AGs.  If AGs have been specified, get the
   // corresponding Constant Contact email list ids from the nodes.
-
   if ($broadcastToAGs) {
     $agNodes = $node->get('field_affinity_group_node');
     if (count($agNodes)) {
@@ -234,7 +227,7 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
           $agCat = $ag->get('field_affinity_group_category')->value;
           $useCommunityTemplate = ($agCat == 'Community');
 
-          // get logo image url for use in community template.
+          // Get logo image url for use in community template.
           if ($useCommunityTemplate) {
             if (!empty($ag->get('field_image')->entity)) {
               $uri = $ag->get('field_image')->entity->getFileUri();
@@ -246,13 +239,12 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 
       if (!count($ccListIdArray)) {
         showStatus("Missing Constant Contact Email List Id for Affinity Group");
-      }
-      else {
+      } else {
         // Gather items to insert into the email template.
         $titleArray = $getFields['title']->getValue();
         $title = $titleArray[0]['value'];
 
-        // make link to item, including utm for analytics
+        // Make link to item, including utm for analytics.
         $newsUrl = $node->toUrl()->setAbsolute()->toString();
         $utmCampaign = filter_var($agNames[0], FILTER_SANITIZE_URL) . '-' . date('mdy');
         $newsUrl = appendUtmCC($newsUrl, $utmCampaign);
@@ -267,11 +259,10 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 
           // check_markup applies all the filters that are set for the
           // basic_html for security and also to add host to img src, for example
-          // We don't use the renderer because we need to separate the title
+          // We don't use the renderer because we need to separate the title.
           $bodyArray = $getFields['body']->getValue();
           $body = check_markup($bodyArray[0]['value'], 'basic_html');
-        }
-        else {
+        } else {
           // Newstype is eventseries.
           $pubDate = NULL;
 
@@ -286,14 +277,23 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
         $node->set('field_broadcast_affinity_groups', [0]);
         $node->save();
 
-        emailToAffinityGroups($body, $title, $pubDate, $agNames,
-                              $newsUrl, $ccListIdArray, $useCommunityTemplate, $logoUrl);
+        emailToAffinityGroups(
+          $body,
+          $title,
+          $pubDate,
+          $agNames,
+          $newsUrl,
+          $ccListIdArray,
+          $useCommunityTemplate,
+          $logoUrl
+        );
       }
     }
   }
 }
+
 /**
- * weeklyNewsReport()
+ * WeeklyNewsReport()
  *
  *  Roll up all the news from the past week and events for the coming month.
  *  Make html display of these items for Constant Contact email.
@@ -302,53 +302,55 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
  *  noSend: if true, only creates the campaign; otherwise sends a preliminary
  *  email @todo to ??
  */
- function weeklyNewsReport($noSend) {
+function weeklyNewsReport($noSend) {
 
   try {
-    // gather all news published from 7 days ago until yesterday.
+    // Gather all news published from 7 days ago until today.
     // need to make dates for searching on published_date (not date+time)
-    $utmCampaign = 'Digest-'.date('mdy');
     $dtLastWeek = new \DateTime('-7 days');
-    $dtYesterday = new \DateTime('yesterday');
+    $dtToday = new \DateTime('today');
+    $dtTomorrow = new \DateTime('tomorrow');
+    $utmCampaign = 'Digest-' . $dtTomorrow->format('mdy');
 
     $d1 = DrupalDateTime::createFromDateTime($dtLastWeek)
-            ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
-    $d2 = DrupalDateTime::createFromDateTime($dtYesterday)
-            ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
+      ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
+    $d2 = DrupalDateTime::createFromDateTime($dtToday)
+      ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
 
     $newsHTML = newsRangeView($d1, $d2, $utmCampaign);
-    Drupal::logger('cron_accessnews')->notice('Digest: news from: '. $d1. ' to: '. $d2);
+    $sectionHeader = sectionHeadHTML("The ACCESS Support Digest // " . $dtTomorrow->format('F j, Y'));
+    $newsHTML = $sectionHeader . $newsHTML;
+    Drupal::logger('cron_accessnews')->notice('Digest: news from: ' . $d1 . ' to: ' . $d2);
 
-    // gather all upcoming events for the next month (this date to +1 month)
+    // Gather all upcoming events for the next month (tomorrow, when digest is sent, to +1 month)
     $timezone = new \DateTimeZone(DateTimeItemInterface::STORAGE_TIMEZONE);
-    $dtCurrent = new \DateTime('today', $timezone);
+    $dtCurrent = new \DateTime('tomorrow', $timezone);
     $dtNextMonth = new \DateTime('today+1 month + 2 day', $timezone);
 
     $d1 = DrupalDateTime::createFromDateTime($dtCurrent)
-            ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+      ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
     $d2 = DrupalDateTime::createFromDateTime($dtNextMonth)
-            ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
+      ->format(DateTimeItemInterface::DATETIME_STORAGE_FORMAT);
 
-    Drupal::logger('cron_accessnews')->notice('Digest: events from: '. $d1. ' to: '. $d2);
+    Drupal::logger('cron_accessnews')->notice('Digest: events from: ' . $d1 . ' to: ' . $d2);
     $eventHTML = eventsRangeView($d1, $d2, $utmCampaign);
 
-    // put wrapper html
+    // Put wrapper html.
     $emailHTML = ccNewsRollupHTML($newsHTML, $eventHTML);
 
-    // create constant contact campaign. this does not send it
-    $campaignName = uniqid('Access Weekly Digest: '  .date('n/j/y').' ', FALSE);
+    // Create constant contact campaign. this does not send it.
+    $campaignName = uniqid('Access Weekly Digest: ' . $dtTomorrow->format('n/j/y') . ' ', FALSE);
 
-    $ccResponse = setupEmailCampaign('The ACCESS Support Digest // ' . date('F j, Y'), $emailHTML, $campaignName);
-
+    $ccResponse = setupEmailCampaign('The ACCESS Support Digest // ' . $dtTomorrow->format('F j, Y'), $emailHTML, $campaignName);
   } catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
   }
-  // todo: if !nosend, send email to xx saying the draft is ready. Or perhaps send a CC test mail to the person.
-    return;
+  // Possible todo: if !nosend, send email to xx saying the draft is ready. Or perhaps send a CC test mail to the person.
+  return;
 }
 
 /**
- * newsRangeView
+ * NewsRangeView
  * Return html list of news in this date range.
  * Each item shows Title, date, time, excerpt, location, link to news item
  * utmCampaign: text for utm_campaign=
@@ -360,10 +362,11 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
 
   try {
     $nids = \Drupal::entityQuery('node')
-            ->condition('field_published_date.value', $fromDate, '>=')
-            ->condition('field_published_date.value', $toDate, '<=')
-            ->condition('type', 'access_news')
-            ->execute();
+      ->condition('status', 1)
+      ->condition('field_published_date.value', $fromDate, '>=')
+      ->condition('field_published_date.value', $toDate, '<=')
+      ->condition('type', 'access_news')
+      ->execute();
 
     $nodes = Node::loadMultiple($nids);
     $nCount = 0;
@@ -373,17 +376,20 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
         $nCount += 1;
 
         $title = $node->getTitle();
+
+        // Gets format Apr 03, 2023; want 4/3/2023.
         $pubDate = $node->field_published_date[0]->view('alt_teaser');
         $pubDateDisp = \Drupal::service('renderer')->renderPlain($pubDate);
+        $pubDate = date_create_from_format('M d, Y', $pubDateDisp);
+        $pubDateDisp = $pubDate->format('n/j/Y');
 
         // For body section, meant to be a snippet, this will return either a nicely
         // truncated version of the body (the length is configured on site via
         // /admin/structure/types/manage/access_news/display/alt_teaser )
         // or, if the user has set the "custom summary", will return that instead.
-        // TODO:  The body is returned with <p>body</p> markup, but the summary is not.
+        // @todo The body is returned with <p>body</p> markup, but the summary is not.
         // (need to distiguish because the news items with and without custom summary
         //  will have different spacing in the digest.  Or do something with css)
-
         $body = $node->body[0]->view('alt_teaser');
         $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
 
@@ -394,23 +400,20 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
           $listDisplay = $listDisplay . $divider;
         }
         $itemDisplay = newsItemHTML($title, $pubDateDisp, $bodyDisp, $newsUrl);
-      }
-      catch (Exception $e) {
+      } catch (Exception $e) {
         $itemDisplay = 'Error retrieving news item: ' . $e->getMessage();
       }
 
       $listDisplay = $listDisplay . $itemDisplay;
     } // end for
-
-    $sectionHeader = sectionHeadHTML("The ACCESS Support Digest // " . date('F j, Y'));
-    $listDisplay = $sectionHeader . $listDisplay;
   } catch (Exception $e) {
     $listDisplay = 'Error retrieving news: ' . $e->getMessage();
   }
   return $listDisplay;
 }
+
 /**
- * eventsRangeView
+ * EventsRangeView
  * Note: the date/times should have 0 for time for the end date; if not
  * the date should be +1 from needed date.
  * Return html list of news in this date range.
@@ -423,11 +426,11 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
   $divider = dividerHTML();
   try {
     $eids = \Drupal::entityQuery('eventinstance')
-            ->condition('status', 1)
-            ->condition('date.value', $fromDate, '>=')
-            ->condition('date.value', $toDate, '<')
-            ->sort('date.value', 'ASC')
-            ->execute();
+      ->condition('status', 1)
+      ->condition('date.value', $fromDate, '>=')
+      ->condition('date.value', $toDate, '<')
+      ->sort('date.value', 'ASC')
+      ->execute();
 
     $eventNodes = EventInstance::loadMultiple($eids);
     foreach ($eventNodes as $enode) {
@@ -440,12 +443,12 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
         $eventUrl = $enode->toUrl()->setAbsolute()->toString();
         $eventUrl = appendUtmCC($eventUrl, $utmCampaign);
 
-        // event date-time is stored as array of 'value' and
-        // 'end_value' in UTC format
+        // Event date-time is stored as array of 'value' and
+        // 'end_value' in UTC format.
         $startDateTime = $enode->date[0]->getValue()['value'];
         $endDateTime = $enode->date[0]->getValue()['end_value'];
 
-        // TODO  - what is required to show for timezone-- zone of the event?
+        // @todo what is required to show for timezone-- zone of the event?
         // Times are stored in UTC.
         $startEvent = new DrupalDateTime($startDateTime, 'UTC');
         $startEvent->setTimezone(new \DateTimeZone('America/New_York'));
@@ -459,25 +462,23 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
           $endDisplay = $endEvent->format('n/j/Y g:i a');
         }
 
-         // Include end date only if different
-         // display ex: 2/21/2023 4:00 PM - 6:30 PM EST
-        $dateTimeDisp =  $startEvent->format('n/j/Y g:i a')
-                        . ' - ' . $endDisplay . ' EST';
+        // Include end date only if different
+        // display ex: 2/21/2023 4:00 PM - 6:30 PM EST.
+        $dateTimeDisp = $startEvent->format('n/j/Y g:i a')
+          . ' - ' . $endDisplay . ' EST';
 
         $body = empty($enode->description[0]) ? '' : $enode->description[0]->view('rollup_list');
         $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
 
-        $location = empty($enode->location[0]) ? '' : $enode->location[0]->view('rollup_list');
-        $locationDisp = \Drupal::service('renderer')->renderPlain($location);
-
+        // $location = empty($enode->location[0]) ? '' : $enode->location[0]->view('rollup_list');
+        // $locationDisp = \Drupal::service('renderer')->renderPlain($location);
         if ($eCount > 1) {
           $listDisplay = $listDisplay . $divider;
         }
 
-        $itemDisplay = eventItemHTML($title, $dateTimeDisp, $bodyDisp, $locationDisp, $eventUrl);
-      }
-      catch (Exception $e) {
-        //kint("EXCEPTION  at $eCount: ". $e->getMessage());
+        $itemDisplay = eventItemHTML($title, $dateTimeDisp, $bodyDisp, $eventUrl);
+      } catch (Exception $e) {
+        // kint("EXCEPTION  at $eCount: ". $e->getMessage());
         $itemDisplay = 'Error retrieving event item ' . $e->getMessage();
       }
 
@@ -485,16 +486,20 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
     } // end for
 
     $sectionHeader = sectionHeadHTML("Events and Trainings");
-    $listDisplay =  $sectionHeader . $listDisplay;
-
+    $listDisplay = $sectionHeader . $listDisplay;
   } catch (Exception $e) {
     $listDisplay = 'Error retrieving events: ' . $e->getMessage();
   }
   return $listDisplay;
 }
+
+/**
+ *
+ */
 function appendUtmCC($url, $utmCampaign) {
   return ($url . '?utm_source=constantcontact&utm_medium=email&utm_campaign=' . $utmCampaign);
 }
+
 /**
  * Implements hook_cron().
  * Do the weekly news and events rollup if it's time.
@@ -503,24 +508,26 @@ function access_news_cron() {
   try {
     if (accessNewsCronShouldRun()) {
 
-      $currentTime = \Drupal::time()->getCurrentTime();  // ny timezone
+      // Ny timezone.
+      $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_news.crontime-rollupnews', $currentTime);
-      weeklyNewsReport(false);
+      weeklyNewsReport(FALSE);
     }
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('exception: ' . $e->getMessage());
   }
 }
+
 /**
-  * accessNewsCronShouldRun
-  * Returns true if it's time to run the news+events rollup.
-  * Want to run on 1st and 3rd Mondays of the month after 3 am.
-  * We assume the calling cron job runs every hour.
+ * AccessNewsCronShouldRun
+ * Returns true if it's time to run the news+events rollup.
+ * Want to run on 1st and 3rd Mondays of the month after 3 am.
+ * We assume the calling cron job runs every hour.
  */
 function accessNewsCronShouldRun() {
 
-  $currentTime = \Drupal::time()->getCurrentTime();  // UTC timestamp
+  // UTC timestamp.
+  $currentTime = \Drupal::time()->getCurrentTime();
   $hour = intval(date('H', $currentTime));
   $dayOfMonth = date('j', $currentTime);
   $firstMon = date('j', strtotime("first monday of this month"));
@@ -531,13 +538,14 @@ function accessNewsCronShouldRun() {
     $lastRun = \Drupal::state()->get('access_news.crontime-rollupnews', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
 
-    // run if it hasn't been run this day already
+    // Run if it hasn't been run this day already.
     if ($hoursDiff > 24) {
       return TRUE;
     }
   }
   return FALSE;
 }
+
 /**
  * Implements hook_theme().
  */
@@ -548,9 +556,9 @@ function access_news_theme($existing, $type, $theme, $path): array {
     ],
     'newsandevents_block' => [
       'variables' => [
-        'latest_news_block' => null,
-        'latest_events_block' => null, ],
+        'latest_news_block' => NULL,
+        'latest_events_block' => NULL,
+      ],
     ],
   ];
 }
-

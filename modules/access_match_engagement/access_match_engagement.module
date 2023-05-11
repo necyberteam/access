@@ -139,6 +139,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_notes_to_author']['#access'] = FALSE;
       $form['field_match_interested_users']['#access'] = FALSE;
       $form['field_match_steering_committee_m']['#disabled'] = TRUE;
+      $form['field_status']['#disabled'] = TRUE;
     }
     if ($form_id == 'node_match_engagement_edit_form') {
       $node_param = \Drupal::routeMatch()->getParameter('node');

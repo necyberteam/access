@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Returns the HTML to send to Constant Contact.
@@ -11,16 +12,20 @@
  *  b) an individual news item or event "broadcast" as  email to an affinity group (perhaps multiple; not decided)
  */
 
- // used in weekly news rollup
-function sectionHeadHTML($titleText)
-{
-    $sectionHead = <<<SECTIONHEADHTML
-    <table class="layout layout-feature layout-1-column" style="table-layout:fixed; background-color=#ffffff;" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
+/**
+ * Used in weekly news rollup.
+ */
+function sectionHeadHTML($titleText) {
+  $sectionHead = <<<SECTIONHEADHTML
+    <table class="layout layout-feature layout-1-column" style="table-layout:fixed;
+           background-color=#ffffff;" width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
       <tr>
         <td class="column column--1 scale stack" style="width:100%;" align="center" valign="top">
           <table class="text text--feature text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout: fixed;">
             <tr>
-              <td class="text_content-cell content-padding-horizontal" style="text-align: center; font-family: Roboto,sans-serif; color:#4d4d4d; font-size:14px; line-height:1.2; display:block; word-wrap: break-word; padding: 10px 40px;" align="center" valign="top">
+              <td class="text_content-cell content-padding-horizontal"
+                        style="text-align: center; font-family: Roboto,sans-serif; color:#4d4d4d; font-size:14px; line-height:1.2;
+                        display:block; word-wrap: break-word; padding: 10px 40px;" align="center" valign="top">
                 <h1 style="text-align:left; font-family:Roboto,sans-serif; color: #3E3E3E; font-size: 24px; font-weight:bold; margin:0;" align="left">
                   <span style="font-family:Roboto,sans-serif; color:rgb(0, 92, 111); font-weight:bold;">$titleText</span>
                 </h1>
@@ -31,45 +36,47 @@ function sectionHeadHTML($titleText)
       </tr>
     </table>
 SECTIONHEADHTML;
-    return $sectionHead;
+  return $sectionHead;
 }
 
- // use in weekly news rollup
-function newsItemHTML($title, $pubDate, $body, $articleUrl)
-{
-    $main = "<div  class=\"digest-news-body\">
-      <span>$pubDate</span>
-      <br>
-      <p>
+/**
+ * Use in weekly news rollup.
+ */
+function newsItemHTML($title, $pubDate, $body, $articleUrl) {
+  $main = "<div  class=\"digest-news-item\">
+      <div class=\"digest-news-text\">$pubDate</div>
+      <div class=\"digest-news-text\">
       $body
-      </p>
-      <br>
+      </div>
       </div>";
-    return itemHTML($title, $main, $articleUrl, "News Link");
+  return itemHTML($title, $main, $articleUrl, "Read more");
 }
 
- // use in weekly news rollup
-function eventItemHTML($title, $eventDate, $description, $location, $articleUrl)
-{
-    $main = "<div>
-        <span>$eventDate</span>
-        <span>$description</span>
-        <p>Location: $location</p>
+/**
+ * Use in weekly news rollup.
+ */
+function eventItemHTML($title, $eventDate, $description, $articleUrl) {
+  $main = "<div>
+        <div class=\"digest-news-text\">$eventDate</div>
+        <div class=\"digest-news-text\">$description</div>
       </div>";
-    return itemHTML($title, $main, $articleUrl, "Event Link");
+  return itemHTML($title, $main, $articleUrl, "Read more");
 }
- // used in weekly news rollup - each news or event item
- // with a link at the bottom to the event
-function itemHTML($titleText, $main, $itemUrl, $itemLinkText)
-{
-    $title = titleHTML($titleText);
-    $article = <<<ARTICLEHTML
+
+/**
+ * Used in weekly news rollup - each news or event item
+ * with a link at the bottom to the event.
+ */
+function itemHTML($titleText, $main, $itemUrl, $itemLinkText) {
+  $title = titleHTML($titleText);
+  $article = <<<ARTICLEHTML
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
         <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
           <tr>
-            <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 20px 10px 40px;" align="left" valign="top">
+            <td class="text_content-cell content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif;
+            color: #4d4d4d; font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px;" align="left" valign="top">
             $title
 
               <div><span style="font-size: 14px;">$main</span></div>
@@ -96,15 +103,17 @@ function itemHTML($titleText, $main, $itemUrl, $itemLinkText)
     </td>
     </tr>
   </table>
-ARTICLEHTML;   // this text must positioned to the left of end html
-    return $article;
+ARTICLEHTML;
+  // Previous line text marker must positioned to the left of end html.
+  return $article;
 }
 
-// a line between articles
-function dividerHTML()
-{
-    $divider = <<<DIVIDERHTML
-  <table class="layout=layout--1-column" style="table-layout:fixed;"width="100%" border="0" cellpadding="0" cellspacing="0">
+/**
+ * A line between articles.
+ */
+function dividerHTML() {
+  $divider = <<<DIVIDERHTML
+  <table class="layout layout--1-column" style="table-layout:fixed;"width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td class="column column--1 scale stack" style="width:100%;"align="center" valign="top">
         <table class="divider" width="100%" cellpadding="0" cellspacing="0" border="0">
@@ -124,62 +133,49 @@ function dividerHTML()
       </td>
     </tr>
   </table>
-DIVIDERHTML;  // statement must be left of end of html
-    return $divider;
+DIVIDERHTML;
+  // Previous line text marker must be positioned to left of end of html.
+  return $divider;
 }
 
-// static bottom section of digest
-// might want to mkae this into drupal content item like a kind of news
-function ccRollupBottomHTML()
-{
-    $x =
-        dividerHTML() .
-        sectionHeadHTML("Join Affinity Groups") .
-        ccRollupBottomStatic1() .
-        dividerHTML() .
-        sectionHeadHTML("Share with the ACCESS Community") .
-        ccRollupBottomStatic2();
+/**
+ * Inner wrapper for the weekly news and events rollup.
+ */
+function ccNewsRollupHTML($news, $events) {
+  $newsBody = '<div class="access-news-rollup-email">'
+    . '<div class="access-news-rollup-news">' . $news . '</div>'
+    . dividerHTML()
+    . '<div class="access-news-rollup-events">' . $events . '</div>'
+    . dividerHTML()
+    . sectionHeadHTML("Join Affinity Groups")
+    . ccRollupBottomStatic1()
+    . dividerHTML()
+    . sectionHeadHTML("Share with the ACCESS Community")
+    . ccRollupBottomStatic2()
+    . '</div>';
 
-        return ($x);
+  return ccNewsCommonHTML($newsBody, '');
 }
 
-// inner wrapper for the weekly news and events rollup.
-function ccNewsRollupHTML($news, $events)
-{
-    $newsBody = '<div class="access-news-rollup-email">'
-              . '<div class="access-news-rollup-news">' . $news . '</div>'
-              . dividerHTML()
-              . '<div class="access-news-rollup-events">' . $events . '</div>'
-              . dividerHTML()
-              . sectionHeadHTML("Join Affinity Groups")
-              . ccRollupBottomStatic1()
-              . dividerHTML()
-              . sectionHeadHTML("Share with the ACCESS Community")
-              . ccRollupBottomStatic2()
-              . '</div>';
+/**
+ * For a single news or event item, broadcast to one or more affinity groups
+ * this is the Access template used for affinity groups that are NOT of the
+ * "Community" category.
+ */
+function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl) {
+  // Build list of one or more affinity group names separated by 'or'.
+  $agText = '';
+  $or = '';
+  foreach ($agNames as $agName) {
+    $agText = $agText . $or . $agName;
+    $or = ' or ';
+  }
+  $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
-    return ccNewsCommonHTML($newsBody, '');
-}
+  $titleDisplay = titleHTML($title);
 
-// for a single news or event item, broadcast to one or more affinity groups
-// this is the Access template used for affinity groups that are NOT of the
-// "Community" category.
-
-function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
-{
-    // Build list of one or more affinity group names separated by 'or'.
-    $agText = '';
-    $or = '';
-    foreach ($agNames as $agName) {
-        $agText = $agText . $or . $agName;
-        $or = ' or ';
-    }
-    $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
-
-    $titleDisplay = titleHTML($title);
-
-    // line at the top that lists AG groups
-    $topExtra = <<<TOPEXTRA
+  // Line at the top that lists AG groups.
+  $topExtra = <<<TOPEXTRA
   <table style="background-color:#1a5b6e;table-layout:fixed;" width="100%" border="0" cellpadding="0" cellspacing="0"  bgcolor="#1a5b6e">
     <tbody>
       <tr>
@@ -187,7 +183,8 @@ function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
           <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed; ">
             <tbody>
               <tr>
-                <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;"
+                <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;
+                          line-height:1.2;display:block;word-wrap:break-word;"
                   align="left" valign="top">
                   <p style="margin:0;padding:5px;">
                     <span style="color:rgb(255, 255, 255);">$agText</span>
@@ -202,14 +199,15 @@ function ccAccessNewsHTML($main, $title, $pubDate, $agNames, $newsUrl)
   </table>
 TOPEXTRA;
 
-    $pubDateDisplay = '';
-    if ($pubDate) {
-        $pubDateDisplay = <<<PUBDATE
+  $pubDateDisplay = '';
+  if ($pubDate) {
+    $pubDateDisplay = <<<PUBDATE
       <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
         <tbody>
           <tr>
-            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;"
-                        align="left" valign="top">
+            <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;
+                       font-size:14px;line-height:1.2;display:block;word-wrap:break-word;"
+                       align="left" valign="top">
               <p style="margin:0;">
                 $pubDate
               </p>
@@ -218,15 +216,15 @@ TOPEXTRA;
         </tbody>
       </table>
     PUBDATE;
-    }
+  }
 
-    $newsItem = <<<SINGLENEWS
+  $newsItem = <<<SINGLENEWS
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
       <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
         <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
           <tr>
-            <td class="text_content-cell=content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
+            <td class="text_content-cell content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
                       font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px 10px 40px;" align="left" valign="top">
               $titleDisplay
               <br>
@@ -242,7 +240,8 @@ TOPEXTRA;
                   <tr>
                     <td style="padding:10px 15px;" align="center">
                       <a href="$newsUrl" rel="nofollow noopener noreferrer"
-                        style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;word-wrap:break-word;font-weight:bold;text-decoration:none;">
+                        style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;
+                               word-wrap:break-word;font-weight:bold;text-decoration:none;">
                           VIEW ON WEBSITE
                       </a>
                     </td>
@@ -255,40 +254,45 @@ TOPEXTRA;
       </td>
     </tr>
   </table>
-SINGLENEWS;   // this text must positioned to the left of end html
-    return ccNewsCommonHTML($newsItem, $topExtra);
+SINGLENEWS;
+  // Previous line text marker must positioned to the left of end html.
+  return ccNewsCommonHTML($newsItem, $topExtra);
 }
 
-// news or event title formatting
-function titleHTML($titleText)
-{
-    $t = <<<TITLE
+/**
+ * News or event title formatting.
+ */
+function titleHTML($titleText) {
+  $t = <<<TITLE
     <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 0px 0px 8px 0px">
       $titleText
     </h3>
   TITLE;
-    return ($t);
-}
-// returns complete url with host and full path
-// we assume all of our images are in the sites/default/files/inline_images dir
-function imageUrl($imageFileName)
-{
-    $uri = 'public://inline-images/'.$imageFileName;
-    return(\Drupal::service('file_url_generator')->generateAbsoluteString($uri));
+  return ($t);
 }
 
-// Access Constant Contact Template wrapping common to broadcast news and events,
-// and also the weekly news+events rollup.
-function ccNewsCommonHTML($newsBody, $topExtra)
-{
-    $imgLogo = imageUrl('access_support_masthead.jpg');
-    $fbIcon = imageUrl('circleIconFacebook.png');
-    $twIcon = imageUrl('circleIconTwitter.png');
-    $ytIcon = imageUrl('circleIconYoutube.png');
-    $nsfLogo = \Drupal::request()->getSchemeAndHttpHost()
-              . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
+/**
+ * Returns complete url with host and full path
+ * we assume all of our images are in the sites/default/files/inline_images dir.
+ */
+function imageUrl($imageFileName) {
+  $uri = 'public://inline-images/' . $imageFileName;
+  return (\Drupal::service('file_url_generator')->generateAbsoluteString($uri));
+}
 
-    $emailText = <<<EMAILTEXT
+/**
+ * Access Constant Contact Template wrapping common to broadcast news and events,
+ * and also the weekly news+events rollup.
+ */
+function ccNewsCommonHTML($newsBody, $topExtra) {
+  $imgLogo = imageUrl('access_support_masthead.jpg');
+  $fbIcon = imageUrl('circleIconFacebook.png');
+  $twIcon = imageUrl('circleIconTwitter.png');
+  $ytIcon = imageUrl('circleIconYoutube.png');
+  $nsfLogo = \Drupal::request()->getSchemeAndHttpHost()
+    . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
+
+  $emailText = <<<EMAILTEXT
   <html lang="en-US">
   <head>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
@@ -367,7 +371,6 @@ function ccNewsCommonHTML($newsBody, $topExtra)
       .text .text_content-cell li {
         padding: 0;
         margin: 0;
-        /* line-height: 1.2; Remove after testing */
       }
 
       /* Text Link Style Reset */
@@ -375,13 +378,17 @@ function ccNewsCommonHTML($newsBody, $topExtra)
         text-decoration: underline;
         color:rgb(72,192,185);
         font-weight:bold;
-
       }
-      /* needed because body is sometimes wrapped in a p */
+      /* needed because news body comes through wrapped in a p inconsistently */
       .digest-news-body p {
         padding: 0px;
       }
-
+      .digest-news-text {
+        padding-bottom: 8px;
+      }
+      .socialFollow a {
+        text-decoration: none!important;
+      }
       /* iOS: Autolink styles inherited*/
       a[x-apple-data-detectors] {
         text-decoration: underline !important;
@@ -410,14 +417,14 @@ function ccNewsCommonHTML($newsBody, $topExtra)
         .button_content-cell {
           padding-top: 10px !important;
           padding-right: 20px !important;
-          padding-botto=m: 10px !important;
+          padding-bottom: 10px !important;
           padding-left: 20px !important;
         }
 
         .button_border-row .button_content-cell {
           padding-top: 10px !important;
           padding-right: 20px !important;
-          padding-botto=m: 10px !important;
+          padding-bottom: 10px !important;
           padding-left: 20px !important;
         }
 
@@ -451,6 +458,10 @@ function ccNewsCommonHTML($newsBody, $topExtra)
         .image--mobile-center .image_container img {
           margin-left: auto !important;
           margin-right: auto !important;
+        }
+
+        #nsf-image {
+          width: 40%!important;
         }
 
         .layout-margin .layout-margin_cell {
@@ -487,7 +498,7 @@ function ccNewsCommonHTML($newsBody, $topExtra)
         }
 
         .text .text_content-cell h1 {
-          font-size: 24px !important;
+          font-size: 22px !important;
         }
 
         .text .text_content-cell h2 {
@@ -495,7 +506,7 @@ function ccNewsCommonHTML($newsBody, $topExtra)
         }
 
         .text .text_content-cell h3 {
-          font-size: 20px !important;
+          font-size: 16px !important;
         }
 
         .text--sectionHeading .text_content-cell {
@@ -511,14 +522,16 @@ function ccNewsCommonHTML($newsBody, $topExtra)
         }
 
         .text--dataTable .text_content-cell .dataTable th.dataTable_content-cell {
-          font-size: px !important;
+          font-size: 18px !important;
         }
       }
     </style>
   </head>
-  <body class="body template template--en-US" data-template-version="1.20.1" data-canonical-name="CPE-PT17831"  align="center" style="-ms-text-size-adjust:100%; -webkit-text-size-adjust: 100%; min-width: 00%; width: 100%; margin: 0px; padding: 0px;">
+  <body class="body template template--en-US" data-template-version="1.20.1" data-canonical-name="CPE-PT17831"  align="center"
+        style="-ms-text-size-adjust:100%; -webkit-text-size-adjust: 100%; min-width: 00%; width: 100%; margin: 0px; padding: 0px;">
   [[trackingImage]]
-    <div id="tracking-image" style="color: transparent; display: none; font-size: 1px; line-height: 1px; max-height: 0px; max=-width: 0px; opacity: 0; overflow: hidden;"></div>
+    <div id="tracking-image" style="color: transparent; display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px;
+             opacity: 0; overflow: hidden;"></div>
     <div class="shell" lang="en-US" style="background-color:// 1a5b6e;">
       <table class="shell_panel-row" width="100%" border="0" cellpadding="0" cellspacing="0" style="background-color:#1a5b6e;" bgcolor="#1a5b6e">
         <tr class="" >
@@ -528,7 +541,8 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                 <td class="shell_width-cell" style="padding: 15px 10px;" align="center" valign="top">
                   <table class="shell_content-row" width="100%" align="center" border="0" cellpadding="0" cellspacing="0">
                     <tr>
-                      <td class="shell_content-cell" style="background-color: #FFFFFF; padding: 0; border: 0px solid #3e3e3e;" align="center" valign="top" bgcolor="#FFFFFF">
+                      <td class="shell_content-cell" style="background-color: #FFFFFF; padding: 0; border: 0px solid #3e3e3e;"
+                                align="center" valign="top" bgcolor="#FFFFFF">
 
                         $topExtra
 
@@ -540,7 +554,7 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                                   <td class="image_container" align="center" valign="top">
                                     <img data-image-content class="image_content" width="680"
                                         src="$imgLogo"
-                                        alt="Access Support logo" style="display: block; height: auto; max-width=100%;">
+                                        alt="Access Support logo" style="display: block; height: auto; max-width:100%;">
                                   </td>
                                 </tr>
                               </table>
@@ -558,43 +572,28 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                           </tr>
                         </table>
 
-                        <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;min-width:100%">
-                          <tbody>
-                            <tr>
-                              <td align="center" valign="top" style="width:680px">
-                                <table width="100%" cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed">
-                                  <tbody>
-                                    <tr>
-                                      <td width="100%" align="center" valign="top" style="padding-bottom:6px;padding-top:10px">
-                                        <table cellpadding="0" cellspacing="0" border="0" style="table-layout:fixed;height:1px;width:680px">
-                                          <tbody>
-                                            <tr>
-                                              <td height="1" align="center" bgcolor="#ffc42d"
-                                                  style="padding-bottom:4px;background-color:rgb(255,196,45);height:1px;line-height:1px;border-bottom-width:0px">
-                                              </td>
-                                            </tr>
-                                          </tbody>
-                                        </table>
-                                      </td>
-                                    </tr>
-                                  </tbody>
-                                </table>
-                              </td>
-                            </tr>
-                          </tbody>
-                        </table>
+                      <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;min-width:100%">
+                        <tbody>
+                          <tr>
+                            <td style="padding-bottom:4px;background-color:rgb(255,196,45);height:1px;line-height:1px;border-bottom-width:0px">
+                            </td>
+                          </tr>
+                        </tbody>
+                      </table>
 
                         <table class="layout-margin"  width="100%" border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td class="layout-margin_cell" style="padding: 0px 40px;" align="center" valign="top">
-                              <table class="layout layout--feature layout--3-column" style="table-layout: fixed; background-=color: #ffffff;"  width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
+                              <table class="layout layout--feature layout--3-column" style="table-layout: fixed; background-color: #ffffff;"
+                                            width="100%" border="0" cellpadding="0" cellspacing="0" bgcolor="#ffffff">
                                 <tr>
 
                                   <td class="column column--1 scale stack" style="width: 24%;"  align="center" valign="top">
-                                    <table class="image image--padding-vertical image--mobile-scale image--mobile-center" width="100%" border="0" cellpadding="0" cellspacing="0">
+                                    <table class="image image--padding-vertical image--mobile-scale image--mobile-center" width="100%"
+                                                  border="0" cellpadding="0" cellspacing="0">
                                       <tr>
                                         <td class="image_container" align="left" valign="top" style="padding-top: 10px; padding-bottom: 10px;">
-                                          <img width="57" src="$nsfLogo"
+                                          <img id="nsf-image" width="57" src="$nsfLogo"
                                             alt="National Science Foundation logo" style="display:block;height:auto;max-width:100%">
                                         </td>
                                       </tr>
@@ -602,9 +601,12 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                                   </td>
 
                                   <td class="column column--2 scale stack" style="width: 49%;"  align="center" valign="top">
-                                    <table class="text text--feature text--padding-vertical"  width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
+                                    <table class="text text--feature text--padding-vertical"  width="100%" border="0" cellpadding="0" cellspacing="0"
+                                           style="table-layout:fixed;">
                                       <tr>
-                                        <td class="text_content-cell=content-padding-horizontal" style="line-height:1; text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px; display:block; word-wrap:break-word; padding: 10px;" align="left" valign="top">
+                                        <td class="text_content-cell content-padding-horizontal"
+                                            style="line-height:1; text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d; font-size: 14px;
+                                            display:block; word-wrap:break-word; padding: 10px;" align="left" valign="top">
                                           <p style="text-align: center; margin: 0;" align="center">
                                             <br>
                                           </p>
@@ -639,13 +641,12 @@ function ccNewsCommonHTML($newsBody, $topExtra)
                                       </tr>
                                     </table>
                                   </td>
-
                                 </tr>
                               </table>
                             </td>
                           </tr>
                         </table>
-                        <table class="layout layout--1-column" style="table-lay=out: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
+                        <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
                           <tr>
                             <td class="column column--1 scale stack" style="width: 100%;" align="center" valign="top">
                               <div class="spacer" style="line-height: 10px; height: 10px;"></div>
@@ -665,22 +666,25 @@ function ccNewsCommonHTML($newsBody, $topExtra)
     </body>
     </html>
   EMAILTEXT;
-    // note: EMAILTEXT must be to the left column-wise of the last tag (php)
-    return $emailText;
+  // note: EMAILTEXT must be to the left column-wise of the last tag (php)
+  return $emailText;
 }
 
-// "Join Affinity Groups" section
-// possible do this through a news item, but for now, we have an extra image here we need to show
-function ccRollupBottomStatic1()
-{
-    $teamImageUrl = imageUrl('team-looking-at-screen_0.jpg');
-    $title = titleHTML('Ensure you keep receiving updates!');
-    $bodyText = "Join Affinity Groups to get updates about things you care about. If you have allocations, you will automatically become a member of Affinity Groups
-                associated with your allocations. Join the ACCESS Support Affinity Group to continue to receive these weekly digests.";
-    $buttonText = "See Affinity Groups";
-    $buttonUrl = \Drupal::request()->getSchemeAndHttpHost() . '/affinity_groups';
+/**
+ * "Join Affinity Groups" section
+ * possible do this through a news item, but for now, we have an extra image here we need to show
+ */
+function ccRollupBottomStatic1() {
+  $teamImageUrl = imageUrl('team-looking-at-screen_0.jpg');
+  $title = titleHTML('Ensure you keep receiving updates!');
+  $bodyText = "Join Affinity Groups to get updates about things you care about. If you have allocations,
+                you will automatically become a member of Affinity Groups associated with your allocations.
+                When you join the ACCESS Support Affinity Group you'll receive these weekly digests.";
 
-    $html = <<<ROLLUPSTATIC1
+  $buttonText = "See Affinity Groups";
+  $buttonUrl = \Drupal::request()->getSchemeAndHttpHost() . '/affinity_groups';
+
+  $html = <<<ROLLUPSTATIC1
     <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tbody>
         <tr>
@@ -689,7 +693,8 @@ function ccRollupBottomStatic1()
               <tbody>
                 <tr>
                   <td class="text_content-cell content-padding-horizontal"
-                    style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 20px 10px 40px"
+                    style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;
+                           display:block;word-wrap:break-word;padding:10px 40px"
                     align="left" valign="top">
 
                     $title
@@ -703,7 +708,7 @@ function ccRollupBottomStatic1()
             <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed">
               <tbody>
                 <tr>
-                  <td class="content-padding-horizontal" align="left" style="padding:10px 20px 10px 40px">
+                  <td class="content-padding-horizontal" align="left" style="padding:10px 40px">
                   <table style="width:inherit;border-radius:2px;border-spacing:0;background-color:#48c0b9;border:none"
                           border="0" cellpadding="0" cellspacing="0" bgcolor="#48c0b9">
                     <tbody>
@@ -739,18 +744,19 @@ function ccRollupBottomStatic1()
     </tbody>
     </table>
   ROLLUPSTATIC1;
-    // note: ROLLUPSTATIC1 must be to the left column-wise of the last tag (php)
-    return $html;
+  // note: ROLLUPSTATIC1 must be to the left column-wise of the last tag (php)
+  return $html;
 }
 
-// "Share with the ACCESS Community" section.
-function ccRollupBottomStatic2()
-{
-    $title = titleHTML('Do you have news or trainings to share?');
-    $newsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/news';
-    $eventsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/events';
+/**
+ * "Share with the ACCESS Community" section.
+ */
+function ccRollupBottomStatic2() {
+  $title = titleHTML('Do you have news or trainings to share?');
+  $newsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/news';
+  $eventsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/events';
 
-    $bodyHtml = <<<BODY
+  $bodyHtml = <<<BODY
       <span>Add your </span>
       <a href="$newsUrl">news</a>
       <span> or </span>
@@ -758,7 +764,7 @@ function ccRollupBottomStatic2()
       <span> on the ACCESS Support website and we will include it in our digest.</span>
     BODY;
 
-    $html = <<<ROLLUPSTATIC2
+  $html = <<<ROLLUPSTATIC2
     <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">
       <tbody>
         <tr>
@@ -767,7 +773,8 @@ function ccRollupBottomStatic2()
               <tbody>
                 <tr>
                   <td class="text_content-cell content-padding-horizontal"
-                      style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 40px"
+                      style="text-align:left;font-family:Roboto,sans-serif;color:#4d4d4d;font-size:14px;line-height:1.2;display:block;
+                             word-wrap:break-word;padding:10px 40px"
                       align="left"
                       valign="top">
 
@@ -784,7 +791,5 @@ function ccRollupBottomStatic2()
       </tbody>
     </table>
 ROLLUPSTATIC2;
-    return $html;
+  return $html;
 }
-
-//                     style="font-family:Roboto,sans-serif;text-decoration:underline;color:rgb(72,192,185);font-weight:bold" target="_blank">
