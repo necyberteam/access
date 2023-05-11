@@ -60,7 +60,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
     if (method_exists($entity, 'getFlaggableType')) {
       // Case 1: User did Join the AG (using the Join button or link)
       // Exit if CRON because this hook assumes there is a current user.
-      if (\Drupal::state()->get('access_affinitygroup.cronrunning', FALSE)) {
+      if (\Drupal::state()->get('access_affinitygroup.allocationsRun')) {
         return;
       }
 
@@ -444,7 +444,7 @@ function makeListMembershipJSON($flagEntityId, $userDetails) {
   }
 
   if (empty($list_cc_id)) {
-    showStatus('Missing Constant Contact List Id for this Affinity Group.');
+     \Drupal::logger('cron_affinitygroup')->notice('Missing Constant Contact List Id for Affinity Group.');
     return NULL;
   }
 
@@ -497,8 +497,11 @@ function access_affinitygroup_user_login(UserInterface $account) {
 /**
  * Return the new ID if any.
  */
-function addUserToConstantContact($userEmail, $firstName, $lastName) {
+function addUserToConstantContact($userEmail, $firstName, $lastName, $noDisplay=FALSE) {
   $cca = new ConstantContactApi();
+  if ($noDisplay) {
+    $cca->setSupressErrDisplay(TRUE);
+  }
   $ccaUserId = $cca->addContact($firstName, $lastName, $userEmail);
   return $ccaUserId;
 }
@@ -519,6 +522,7 @@ function showStatus($logmsg) {
  */
 function access_affinitygroup_cron() {
   try {
+    // Cronrunning true means allocations cron Todo, rename.
     \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
     // 1. Refresh the Constant Contact Token
     if (shouldRun('token')) {
