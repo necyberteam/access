@@ -1,9 +1,13 @@
 <?php
 
+/**
+ * @file
+ */
+
+use GuzzleHttp\Client;
 use Drupal\user\UserInterface;
 use Drupal\Component\Serialization\Json;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\domain\DomainInterface;
 use Drupal\Component\Utility\Html;
 
 $debug = FALSE;
@@ -12,12 +16,12 @@ $debug = FALSE;
  * Implements hook_menu_local_tasks_alter().
  */
 function user_profiles_menu_local_tasks_alter(&$data, $route_name) {
-  // Get current domain
+  // Get current domain.
   $domain = \Drupal::config('domain.settings');
   $token = \Drupal::token();
   $domainName = t("[domain:name]");
   $current_domain_name = Html::getClass($token->replace($domainName));
-  if ( $route_name == 'entity.user.canonical' && isset($data['tabs'][0]) && $current_domain_name == 'access-support' ) {
+  if ($route_name == 'entity.user.canonical' && isset($data['tabs'][0]) && $current_domain_name == 'access-support') {
     $data['tabs'][0]['change_pwd_page.change_password_form']['#access'] = FALSE;
   }
 }
@@ -27,7 +31,7 @@ function user_profiles_menu_local_tasks_alter(&$data, $route_name) {
  * be able to set or change their username.
  */
 function user_profiles_form_alter(&$form, &$form_state, $form_id) {
-  // Get current domain
+  // Get current domain.
   $token = \Drupal::token();
   $domainName = t("[domain:name]");
   $current_domain_name = Html::getClass($token->replace($domainName));
@@ -35,7 +39,7 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
 
   switch ($form_id) {
     case 'change_pwd_form':
-      if ($is_asp ) {
+      if ($is_asp) {
         $response = new RedirectResponse('/user');
         $response->send();
       }
@@ -55,11 +59,10 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
       }
 
       $form['account']['name']['#access'] = FALSE;
-      // no break - fallthrough!
-
+      // No break - fallthrough!
     case 'user_register_form':
-      // this is for both 'user_form' and 'user_register_form'
-      // set these 2 fields to readonly for everyone including admin
+      // This is for both 'user_form' and 'user_register_form'
+      // set these 2 fields to readonly for everyone including admin.
       $field = 'field_cider_resources';
       $maxDelta = $form[$field]['widget']['#max_delta'];
       for ($x = 0; $x <= $maxDelta; $x++) {
@@ -73,16 +76,21 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
       break;
   }
 }
+
 /**
- * Entity presave hook
+ * Entity presave hook.
  *
  * Make use of the allocations-api.access-ci.org/identity/profiles/v1/people api
  * to verify that the user is not suspended before saving any entity (which includes
  * node, user, webform submission, event).  If the user is marked as suspended,
  * abort the save with an exception.
- *
  */
 function user_profiles_entity_presave(Object $entity) {
+
+  if (\Drupal::state()->get('access_affinitygroup.allocationsRun')) {
+    return;
+  }
+
   $current_user = \Drupal::currentUser();
   $account_name = $current_user->getAccountName();
   $userinfo = get_account_data_from_api($account_name);
@@ -91,7 +99,6 @@ function user_profiles_entity_presave(Object $entity) {
     throw new Exception("Cannot save because the user '$account_name' has been suspended");
   }
 }
-
 
 /**
  * CILogon Auth pre authorize hook.
@@ -105,31 +112,32 @@ function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
   global $debug;
   if ($debug) {
     $msg = basename(__FILE__) . ':' . __LINE__ . ' -- '
-    . 'will try user_load_by_name with $context = ' . print_r($context, true);
-
+    . 'will try user_load_by_name with $context = ' . print_r($context, TRUE);
     \Drupal::messenger()->addStatus($msg);
     error_log($msg);
-}
+  }
 
-  $sub = array_key_exists('sub', $context['user_data']) ? $context['user_data']['sub'] : null;
+  $sub = array_key_exists('sub', $context['user_data']) ? $context['user_data']['sub'] : NULL;
 
-
-  // if no sub found, or if user_load_by_name($sub) returns FALSE, we return TRUE so
-  // that CILogonAuth will create a new account for this user
-  if (empty($sub)) return TRUE;
+  // If no sub found, or if user_load_by_name($sub) returns FALSE, we return TRUE so
+  // that CILogonAuth will create a new account for this user.
+  if (empty($sub)) {
+    return TRUE;
+  }
 
   $user = user_load_by_name($sub);
-  if ($user === FALSE) return TRUE;
+  if ($user === FALSE) {
+    return TRUE;
+  }
 
   if ($debug) {
-    // during development, here's some logging:
-    $msg = "user_load_by_name($sub) returns user with email "  . $user->getEmail();
+    // During development, here's some logging:
+    $msg = "user_load_by_name($sub) returns user with email " . $user->getEmail();
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
   }
 
   return $user;
 }
-
 
 /**
  * Save userinfo hook.
@@ -155,14 +163,15 @@ function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
  * @ingroup cilogon_auth_api
  */
 function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array $context) {
+
   global $debug;
   if ($debug) {
-    // while testing, examine values before we set them
+    // While testing, examine values before we set them.
     $msg = ('before set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+    $msg = ('before set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('before set, email = [' . $account->getEmail() . ']');
+    $msg = ('before set, email = [' . $account->getEmail() . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
     $msg = ('before set, field_institution = [' . $account->get('field_institution')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
@@ -174,38 +183,43 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
 
   if (array_key_exists('given_name', $userinfo)) {
     $account->set('field_user_first_name', $userinfo['given_name']);
-  } else {
+  }
+  else {
     $msg = ('given_name not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
   }
 
   if (array_key_exists('family_name', $userinfo)) {
     $account->set('field_user_last_name', $userinfo['family_name']);
-  } else {
+  }
+  else {
     $msg = ('family_name not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
   }
 
   if (array_key_exists('email', $userinfo)) {
     $account->setEmail($userinfo['email']);
-  } else {
+  }
+  else {
     $msg = ('email not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
   }
 
-  // if there's sub in the userinfo, use it to call the api for institution & citizenship
-  $user_handle = null;
+  // If there's sub in the userinfo, use it to call the api for institution & citizenship.
+  $user_handle = NULL;
   if (!array_key_exists('sub', $userinfo)) {
     $msg = ('sub not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  } else {
+  }
+  else {
     $sub = $userinfo['sub'];
 
-    // but only use the handle (text before the @, if there is an @ in the sub)
+    // But only use the handle (text before the @, if there is an @ in the sub)
     $at_position = strpos($sub, '@');
     if ($at_position > 0) {
       $user_handle = explode("@", $sub)[0];
-    } else {
+    }
+    else {
       $user_handle = $sub;
     }
 
@@ -213,25 +227,28 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
     $api_account_array = FALSE;
 
     if ($api_account_array !== FALSE) {
-      if (array_key_exists('organizationName', $api_account_array))
+      if (array_key_exists('organizationName', $api_account_array)) {
         $account->set('field_institution', $api_account_array['organizationName']);
-      if (array_key_exists('citizenships', $api_account_array))
-        $account->set('field_citizenships', implode(',', $api_account_array['citizenships']));  // convert to comma separated string
+      }
+      if (array_key_exists('citizenships', $api_account_array)) {
+        // Convert to comma separated string.
+        $account->set('field_citizenships', implode(',', $api_account_array['citizenships']));
+      }
     }
   }
 
-  // use sub for the username (and not just the $user_handle, to avoid collisions with other accounts)
+  // Use sub for the username (and not just the $user_handle, to avoid collisions with other accounts)
   if (!empty($sub)) {
     $account->setUsername($sub);
   }
 
   if ($debug) {
-    // while testing, examine values after setting them
+    // While testing, examine values after setting them.
     $msg = ('after set, field_user_first_name = [' . $account->get('field_user_first_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
+    $msg = ('after set, field_user_last_name = [' . $account->get('field_user_last_name')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    $msg =('after set, email = [' . $account->getEmail() . ']');
+    $msg = ('after set, email = [' . $account->getEmail() . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
     $msg = ('after set, field_institution = [' . $account->get('field_institution')->value . ']');
     \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
@@ -240,7 +257,8 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
     if (!empty($sub)) {
       $msg = ('and set username to  = [' . $sub . ']');
       \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    } else {
+    }
+    else {
       $msg = ('did not set username because found no sub');
       \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
     }
@@ -254,39 +272,44 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
  */
 function get_account_data_from_api($username) {
 
-  // ACCESS production URL for the profile API
+  // ACCESS production URL for the profile API.
   $base_url = 'https://allocations-api.access-ci.org/identity/profiles/v1/people';
   $request_url = $base_url . '/' . $username;
 
-  // look for the ramps key in file system
+  // Look for the ramps key in file system.
   $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
   if (!file_exists($path)) {
     $msg = "[User Profiles] Unable to find key file";
     \Drupal::messenger()->addError($msg);
-    return false;
+    return FALSE;
   }
   $secrets_json_text = file_get_contents($path);
   $secrets_data = json_decode($secrets_json_text, TRUE);
   $api_key = $secrets_data['ramps_api_key'];
 
-  $request_options = array('headers' => array(
+  $request_options = [
+    'headers' => [
       'XA-API-KEY' => $api_key,
       'XA-REQUESTER' => 'MATCH',
-      'Content-Type' => 'application/json'),
-      'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1]);
+      'Content-Type' => 'application/json',
+    ],
+    'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1],
+  ];
 
   /** @var \GuzzleHttp\Client $client */
-  $client = new GuzzleHttp\Client();
+  $client = new Client();
   try {
     $response = $client->request('GET', $request_url, $request_options);
     $userinfo = Json::decode((string) $response->getBody());
     return $userinfo;
-  } catch (Exception $e) {
-    // display an addtional error message if response code is anything besides 404 (not found)
+  }
+  catch (Exception $e) {
+    // Display an addtional error message if response code is anything besides 404 (not found)
     if ($e->getCode() != 404) {
-      $msg = "Could not retrieve user profile information: " .  $e->getMessage();
+      $msg = "Could not retrieve user profile information: " . $e->getMessage();
       \Drupal::messenger()->addError($msg);
     }
   }
-  return false;
+
+  return FALSE;
 }

@@ -1,0 +1,14 @@
+<?php
+
+/**
+ * At install time, set the default value for the check_suspended_users setting.
+ */
+
+/**
+ * hook_update.
+ */
+function user_profiles_update_9001() {
+  $config = \Drupal::configFactory()->getEditable('user_profiles.settings');
+  $config->set('check_suspended_users', TRUE);
+  $config->save();
+}

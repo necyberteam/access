@@ -148,8 +148,25 @@ class MatchLookup {
         $match_status = $match_status[0]['value'];
       }
       $match_name = $match['name'];
-      $match_link .= "<li class='d-flex p-3 $stripe_class'><div class='text-truncate' style='width: 400px;'><a href='/node/$nid'>$title</a></div><div class='px-3' style='width: 160px;'>$match_status</div><div class='font-weight-bold'>$match_name</div></li>";
-      $n++;
+      if (($match_status == 'Recruiting' && $match_name == 'Interested') || $match_name != 'Interested') {
+        $lowercase = lcfirst($match_name);
+        $first_letter = substr($lowercase, 0, 1);
+        $match_name = "<div data-bs-toggle='tooltip' data-bs-placement='left' title='$match_name'>
+          <i class='text-dark fa-solid fa-circle-$first_letter h2'></i>
+        </div>";
+        $match_link .= "<li class='d-flex p-3 $stripe_class'>
+          <div class='text-truncate' style='width: 400px;'>
+            <a href='/node/$nid'>$title</a>
+          </div>
+          <div class='font-weight-bold ms-5'>
+            $match_name
+          </div>
+          <div class='ms-2'>
+            $match_status
+          </div>
+        </li>";
+        $n++;
+      }
     }
     return $match_link;
   }
