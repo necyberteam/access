@@ -107,132 +107,6 @@ class AffinityGroupCommands extends DrushCommands {
     }
   }
 
-  /**
-   * Sync Affinity Group members with constant contact lists.
-   *
-   * Normally, the user joining an affinity group triggers a call to
-   * Constant Contact to add the user to the corresponsing CC email list.
-   * If CC was not hooked up at the time the user joins the AG, they will
-   * not be on the CC list. This function syncs the lists.
-   *
-   * @command access_affinitygroup:syncAGandCC
-   * @aliases syncAGandCC
-   * @usage   access_affinitygroup:syncAGandCC
-   */
-  public function syncAGandCC() {
-    // Get all the Affinity Groups.
-    $nids = \Drupal::entityQuery('node')
-      ->condition('status', 1)
-      ->condition('type', 'affinity_group')
-      ->execute();
-    $nodes = Node::loadMultiple($nids);
-    $cca = new ConstantContactApi();
-
-    foreach ($nodes as $node) {
-
-        $ccContacts = [];
-        $agContacts = [];
-        $agContactsNoCCid = [];
-
-        $agTitle = $node->getTitle();
-      try {
-        //if ($agTitle != 'OOKAMI') {
-          //continue;
-        //}
-        $this->output()->writeln('--------------------------------------');
-        $this->output()->writeln($agTitle);
-
-        // get constant contact list id
-        $listId = $node->get('field_list_id')->value;
-        $this->output()->writeln($listId);
-        if (!$listId || strlen($listId) < 1) {
-          $this->output()->writeln("!! NO LIST ID for $agTitle");
-          continue;
-        }
-
-        // assemble users belonging to this group (each stored on flag on the associated term),
-        $term = $node->get('field_affinity_group');
-        $flag_service = \Drupal::service('flag');
-        $flags = $flag_service->getAllEntityFlaggings($term->entity);
-
-        $this->output()->writeln('AG members count: ' . count($flags));
-        foreach ($flags as $flag) {
-          $uid = $flag->get('uid')->target_id;
-          //$this->output()->writeln($uid);
-          $user = User::load($uid);
-          $field_val = $user->get('field_constant_contact_id')->getValue();
-          if (!empty($field_val) && $field_val != 0) {
-            $ccId = $field_val[0]['value'];
-            $agContacts[] = $ccId;
-          } else {
-            // users without cc id. might not do anything with this here, not sure yet
-            $agContactsNoCCid[] = $uid;
-          }
-        }
-
-        $this->output()->writeln("Count of Users in this AG with no CC id : " . count($agContactsNoCCid));
-
-        // assemble list of users on the cc list
-        $resp = $cca->apiCall("/contacts?lists=$listId");
-        if (empty($resp->contacts)) {
-          $this->output()->writeln('!! CC members response: empty.');
-          continue;
-        }
-
-        foreach ($resp->contacts as $contact) {
-          $ccContacts[] = $contact->contact_id;
-        }
-
-        $this->output()->writeln('cc members count: ' . count($ccContacts));
-        $this->output()->writeln('ag members count: ' . count($agContacts));
-
-        $notInCC = array_diff($agContacts, $ccContacts);
-
-        //   $notInCC[0] = 'a33a32f2-ea28-11ed-9180-fa163edc3efc';
-        //     $notInCC[1] = '10064a00-edb8-11ed-8026-fa163ee12f58';
-
-        $this->output()->writeln("To be added count: " . count($notInCC));
-        $this->output()->writeln("CC ids for users being added: ");
-        $this->output()->writeln($notInCC);
-
-        if (count($notInCC)) {
-          $postData = [
-            'source' => [
-              'contact_ids' => $notInCC
-            ],
-            'list_ids' => [$listId],
-          ];
-
-          // TEMP OUT $cca->apiCall('/activities/add_list_memberships', json_encode($postData), 'POST');
-
-        }
-      } catch (Exception $e) {
-        $this->output()->writeln("!! exception: " . $e);
-      }
-    } // for each affinity group node
-  }
-
-
-  /**
-   * Clean obsolete allocations
-   *
-   * We need to periodically clean of lists of allocations from users
-   * who no longer have any. When we import users and update their allocations,
-   * we only get information about active users, which are the users who do have
-   * allocations.  We do not want to check for the absense of a user every time
-   * we run the import, so we have this utility function which will run less
-   * often.
-   * Here, we get the active users list, and find users in our database who are
-   * not on this list but who do have have lingering allocations on their profile.
-   *
-   * @command access_affinitygroup:cleanObsoleteAllocations
-   * @aliases cleanObsoleteAllocations
-   * @usage   access_affinitygroup:cleanObsoleteAllocations
-   */
-  public function cleanObsoleteAllocations() {
-
-
-  }
 
   /**
    * @command access_affinitygroup:showAffinityGroups
@@ -524,4 +398,27 @@ class AffinityGroupCommands extends DrushCommands {
 
     $this->output()->writeln($retval);
   }
+
+  /**
+   * @command access_affinitygroup:syncAGandCC
+   * @aliases syncAGandCC
+   * @usage   access_affinitygroup:syncAGandCC
+   */
+  public function syncAGandCC() {
+    $aui = new AllocationsUsersImport();
+    $aui->syncAGandCC(25, 27);
+    //$aui->syncAGandCC();
+  }
+
+  /**
+   * @command access_affinitygroup:allocCleanObs
+   * @aliases allocCleanObs
+   * @usage   access_affinitygroup:allocCleanObs
+   */
+  public function allocCleanObs() {
+    $aui = new AllocationsUsersImport();
+    $aui->cleanObsoleteAllocations(1, 2);
+    //$aui->cleanObsoleteAllocations();
+  }
+
 }

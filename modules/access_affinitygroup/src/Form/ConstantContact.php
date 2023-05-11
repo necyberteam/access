@@ -162,6 +162,59 @@ class ConstantContact extends FormBase {
       '#value' => $this->t('Generate Digest'),
       '#submit' => [[$this, 'doGenerateDigest']],
     ];
+    $form['x5'] = [
+      '#markup' => '<br><br><b>Allocations Maintenance</b><br>',
+    ];
+
+    $form['maint_sync_param_start'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Sync Group Start'),
+      '#min' => 1,
+      '#max' => 1000,
+      '#default_value' => 1,
+      '#description' => $this->t("Start count affinity group."),
+      '#required' => FALSE,
+    ];
+    $form['maint_sync_param_stop'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Sync Group Stop'),
+      '#min' => 1,
+      '#max' => 1000,
+      '#default_value' => 1000,
+      '#description' => $this->t("Stop count affinity group."),
+      '#required' => FALSE,
+    ];
+
+    $form['maint_sync_run'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Sync AG and CC'),
+      '#submit' => [[$this, 'doRunMaintSync']],
+    ];
+
+    $form['maint_obsclean_param_start'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Obsolete Clean Start'),
+      '#min' => 1,
+      '#max' => 20000,
+      '#default_value' => 1,
+      '#description' => $this->t("Start count clean obsolete allocations."),
+      '#required' => FALSE,
+    ];
+    $form['maint_obsclean_param_stop'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Obsolete Clean Stop'),
+      '#min' => 1,
+      '#max' => 20000,
+      '#default_value' => 20000,
+      '#description' => $this->t("Stop count clean obsolete allocations."),
+      '#required' => FALSE,
+    ];
+
+    $form['maint_obsclean_run'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Clean obsolete allocations'),
+      '#submit' => [[$this, 'doRunMaintObsClean']],
+    ];
     return $form;
   }
 
@@ -245,5 +298,25 @@ class ConstantContact extends FormBase {
     $aui = new AllocationsUsersImport();
     $aui->startBatch();
   }
+
+  /**
+   * Run the affinity group / constant contact membership list sync
+   */
+  public function doRunMaintSync() {
+    $aui = new AllocationsUsersImport();
+    $aui->syncAGandCC($form_state->getValue('maint_sync_param_start'),
+                      $form_state->getValue('maint_sync_param_stop'));
+  }
+
+  /**
+   * Clean out any obsolete user allocations for users no longer listed by
+   * allocations api.
+   */
+  public function doRunMaintObsClean() {
+    $aui = new AllocationsUsersImport();
+    $aui->cleanObsoleteAllocations($form_state->getValue('maint_obsclean_param_start'),
+                                   $form_state->getValue('maint_obsclean_param_stop'));
+  }
+
 
 }
