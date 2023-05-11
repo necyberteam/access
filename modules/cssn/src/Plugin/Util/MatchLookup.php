@@ -28,7 +28,20 @@ class MatchLookup {
   /**
    * Function to return matching nodes.
    */
-  public function __construct($match_fields, $match_user_id) {
+  public function __construct($match_fields, $match_user_id, $public = FALSE) {
+    // If not public, add engagements authored by User.
+    if (!$public) {
+      $query = \Drupal::database()->select('node_field_data', 'nfd');
+      $query->fields('nfd', ['nid']);
+      $query->condition('nfd.type', 'match_engagement');
+      $query->condition('nfd.uid', $match_user_id);
+      $result = $query->execute()->fetchAll();
+      $nids = array_column($result, 'nid');
+      $this->matches['author'] = [
+        'name' => 'Author',
+        'nodes' => \Drupal::entityTypeManager()->getStorage('node')->loadMultiple($nids),
+      ];
+    }
     foreach ($match_fields as $match_field_key => $match_field) {
       $this->runQuery($match_field, $match_field_key, $match_user_id);
     }
@@ -83,15 +96,18 @@ class MatchLookup {
    */
   public function sortStatusMatches() {
     $matches = $this->matches_sorted;
-    $recruiting = $this->arrayPickSort($matches, 'Recruiting');
-    $reviewing = $this->arrayPickSort($matches, 'Reviewing Applicants');
-    $in_progress = $this->arrayPickSort($matches, 'In Progress');
-    $finishing = $this->arrayPickSort($matches, 'Finishing Up');
-    $completed = $this->arrayPickSort($matches, 'Complete');
-    $on_hold = $this->arrayPickSort($matches, 'On Hold');
-    $halted = $this->arrayPickSort($matches, 'Halted');
+    $draft = $this->arrayPickSort($matches, 'draft');
+    $in_review = $this->arrayPickSort($matches, 'in_review');
+    $accepted = $this->arrayPickSort($matches, 'accepted');
+    $recruiting = $this->arrayPickSort($matches, 'recruiting');
+    $reviewing = $this->arrayPickSort($matches, 'reviewing_applicants');
+    $in_progress = $this->arrayPickSort($matches, 'in_progress');
+    $finishing = $this->arrayPickSort($matches, 'finishing_up');
+    $completed = $this->arrayPickSort($matches, 'complete');
+    $on_hold = $this->arrayPickSort($matches, 'on_hold');
+    $halted = $this->arrayPickSort($matches, 'halted');
     // Combine all of the arrays.
-    $matches_sorted = $recruiting + $reviewing + $in_progress + $finishing + $completed + $on_hold + $halted;
+    $matches_sorted = $draft + $in_review + $accepted + $recruiting + $reviewing + $in_progress + $finishing + $completed + $on_hold + $halted;
     $this->matches_sorted = $matches_sorted;
   }
 
@@ -104,7 +120,7 @@ class MatchLookup {
       return;
     }
     foreach ($array as $key => $value) {
-      if ($value['status'][0]['value'] == $sortby) {
+      if ($value['status'] && $value['status'][0]['value'] == $sortby) {
         $sorted[$key] = $value;
       }
     }
@@ -127,7 +143,10 @@ class MatchLookup {
       $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
       $title = $match['title'];
       $nid = $match['nid'];
-      $match_status = $match['status'][0]['value'];
+      $match_status = $match['status'];
+      if ($match_status) {
+        $match_status = $match_status[0]['value'];
+      }
       $match_name = $match['name'];
       if (($match_status == 'Recruiting' && $match_name == 'Interested') || $match_name != 'Interested') {
         $lowercase = lcfirst($match_name);

@@ -145,7 +145,7 @@ class CommunityPersonaController extends ControllerBase {
       'field_consultant' => 'Consultant',
       'field_researcher' => 'Researcher',
     ];
-    $matches = new MatchLookup($fields, $user->id());
+    $matches = new MatchLookup($fields, $user->id(), $public);
     // Sort by status.
     $matches->sortStatusMatches();
     $match_list = $matches->getMatchList();

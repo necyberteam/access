@@ -85,8 +85,13 @@ class PersonaBlock extends BlockBase {
             ? $user_entity->get('field_academic_status')->value : '';
 
       $academic_terms_map = $user_entity->get('field_academic_status')->getSettings()['allowed_values'];
-      $academic_status = $academic_terms_map[$academic_status];
-
+      // If $academic_status is not empty, map it to the label.
+      if (!empty($academic_status)) {
+        $academic_status = $academic_terms_map[$academic_status];
+      }
+      else {
+        $academic_status = '';
+      }
       $key = array_search('authenticated', $roles);
       if ($key !== FALSE) {
         unset($roles[$key]);
