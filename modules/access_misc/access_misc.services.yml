@@ -1,5 +1,0 @@
-services:
-  access_misc_event_subscriber:
-    class: '\Drupal\access_misc\EventSubscriber\AccessMiscDataLayerEventSubscriber'
-    tags:
-      - { name: 'event_subscriber' }
