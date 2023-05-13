@@ -782,6 +782,7 @@ function webform_submission_affinity_group_affinity_contact(&$form, FormStateInt
   $cc_list_id = $form['elements']['cc_list_id']['#value'];
   $ccListIds = [$cc_list_id];
   $message = $form['elements']['message']['value']['#value'];
+  $message .= '<p>Sent by ' . $form['elements']['name']['#value'] . '</p>';
   $pubDate = date('m/d/Y');
   emailToAffinityGroups($message, "Group Email: $affinity_group", $pubDate, $agNames, null, $ccListIds, 1, null);
 }
