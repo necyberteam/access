@@ -778,9 +778,9 @@ function webform_submission_affinity_group_affinity_contact_validate(&$form, For
  */
 function webform_submission_affinity_group_affinity_contact(&$form, FormStateInterface $form_state) {
   $affinity_group = $form['elements']['affinity_group']['#value'];
-  $cc_list_ids = [];
+  $agNames = [$affinity_group];
   $cc_list_id = $form['elements']['cc_list_id']['#value'];
-  $cc_list_ids[] = $cc_list_id;
+  $ccListIds = [$cc_list_id];
   $message = $form['elements']['message']['value']['#value'];
   $pubDate = date('m/d/Y');
   emailToAffinityGroups($message, "Group Email: $affinity_group", $pubDate, $agNames, null, $ccListIds, 1, null);
