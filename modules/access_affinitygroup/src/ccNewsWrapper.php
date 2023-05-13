@@ -252,21 +252,7 @@ TOPEXTRA;
               <p style="margin: 0;">
                 <br>
               </p>
-
-              <table style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
-                border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
-                <tbody>
-                  <tr>
-                    <td style="padding:10px 15px;" align="center">
-                      <a href="$newsUrl" rel="nofollow noopener noreferrer"
-                        style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;
-                               word-wrap:break-word;font-weight:bold;text-decoration:none;">
-                          VIEW ON WEBSITE
-                      </a>
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
+              $view_on_website
             </td>
           </tr>
         </table>
