@@ -21,21 +21,20 @@
  * agNames: array of affinity group names for top line
  * newsUrl: for button link to news item
  * logoUrl: url for logo image, or null for none.
-  */
-function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl, $logoUrl)
-{
-  // Build list of one or more affinity group names separated by 'or'.
+ */
+function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl, $logoUrl) {
+    // Build list of one or more affinity group names separated by 'or'.
     $agText = '';
     $or = '';
-foreach ($agNames as $agName) {
-    $agText = $agText . $or . $agName;
-    $or = ' or ';
-}
+    foreach ($agNames as $agName) {
+        $agText = $agText . $or . $agName;
+        $or = ' or ';
+    }
     $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
     $pubDateDisplay = null;
-if ($pubDate) {
-    $pubDateDisplay = <<<PUBDATE
+    if ($pubDate) {
+        $pubDateDisplay = <<<PUBDATE
         <table width="100%" border="0"
             cellpadding="0" cellspacing="0"
             style="table-layout:fixed;"
@@ -73,6 +72,31 @@ if ($pubDate) {
             </tbody>
         </table>
     LOGOHTML;
+    }
+
+    $viewOnWebsite = '';
+    if ($newsUrl != null) {
+        $viewOnWebsite = <<<VIEWONWEBSITE
+        <table width="100%" border="0" cellpadding="0" cellspacing="0" class="yiv2621404860button yiv2621404860button--padding-vertical yiv2621404860button--mobile-center">
+            <tbody>
+                <tr>
+                    <td align="left" valign="top" style="padding:10px 40px;" class="yiv2621404860button_container yiv2621404860content-padding-horizontal">
+                        <table border="0" cellpadding="0" cellspacing="0" class="yiv2621404860button_content">
+                            <tbody>
+                                <tr>
+                                    <td align="center" valign="middle" style="font-family:Arial, Verdana, Helvetica, sans-serif;color:#FFFFFF;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 20px;background-color:#3E3E3E;border-radius:3px;" bgcolor="#3E3E3E">
+                                        <a href="$newsUrl" target="_blank" style="color:#FFFFFF;text-decoration:none;">
+                                            View on website
+                                        </a>
+                                    </td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </td>
+                </tr>
+            </tbody>
+        </table>
+        VIEWONWEBSITE;
     }
 
     // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
@@ -388,37 +412,7 @@ if ($pubDate) {
 
                                                                                   <div style="line-height:20px;min-height:20px;"
                                                                                       class="yiv2621404860spacer"> </div>
-                                                                                  <table width="100%" border="0"
-                                                                                      cellpadding="0" cellspacing="0"
-                                                                                      style="table-layout:fixed;"
-                                                                                      class="yiv2621404860button yiv2621404860button--padding-vertical">
-                                                                                      <tbody>
-                                                                                          <tr>
-                                                                                              <td align="left"
-                                                                                                  style="padding:10px 40px;"
-                                                                                                  class="yiv2621404860button_container yiv2621404860content-padding-horizontal">
-                                                                                                  <table
-                                                                                                      style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
-                                                                                                      border="0"
-                                                                                                      cellpadding="0"
-                                                                                                      cellspacing="0"
-                                                                                                      bgcolor="#ffc42d"
-                                                                                                      class="yiv2621404860button_content-row">
-                                                                                                      <tbody>
-                                                                                                          <tr>
-                                                                                                              <td style="padding:10px 15px;"
-                                                                                                                  align="center"
-                                                                                                                  class="yiv2621404860button_content-cell">
-                                                                                                                  <a href="$newsUrl"
-                                                                                                                      rel="nofollow noopener noreferrer"
-                                                                                                                      style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;word-wrap:break-word;font-weight:bold;text-decoration:none;"
-                                                                                                                      class="yiv2621404860button_link">
-                                                                                                                      VIEW ON WEBSITE
-                                                                                                                  </a>
-                                                                                                              </td>
-                                                                                                          </tr>
-                                                                                                      </tbody>
-                                                                                                  </table>
+                                                                                        $viewOnWebsite
                                                                                               </td>
                                                                                           </tr>
                                                                                       </tbody>
