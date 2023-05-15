@@ -45,20 +45,24 @@ function access_misc_entity_view(array &$build, \Drupal\Core\Entity\EntityInterf
  * Implements hook_datalayer_alter()
  */
 function access_misc_datalayer_alter(&$data_layer) {
-  $dl_debug = TRUE;
+  $dl_debug = FALSE;
 
   $userId = \Drupal::currentUser()->id();
 
+  $account = \Drupal\user\Entity\User::load($userId);
+  $createdTime = $account->getCreatedTime();
+  $created = date("Y-m-d g:ia", $createdTime);
+
   if ($dl_debug) {
     $msg = __FUNCTION__ . '() ------- $userId = ' . $userId
-      . ' -- ' . basename(__FILE__) . ':' . __LINE__;
+      . ', created = ' . $created . ' -- ' . basename(__FILE__) . ':' . __LINE__;
     \Drupal::messenger()->addStatus($msg);
-    error_log('seamless: ' . $msg);
   }
 
-  // Obfuscate the uid field in data layer.
+  // hide the uid field in data layer, and add a hashed version of it
   if (isset($data_layer['userUid'])) {
     unset($data_layer['userUid']);
   }
   $data_layer['hashedUserId'] = hash('md4', $userId);
+  $data_layer['accountCreated'] = $created;
 }
