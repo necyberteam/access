@@ -300,9 +300,9 @@ class ConstantContact extends FormBase {
   }
 
   /**
-   * Run the affinity group / constant contact membership list sync
+   * Run the affinity group / constant contact membership list sync.
    */
-  public function doRunMaintSync() {
+  public function doRunMaintSync(array &$form, FormStateInterface $form_state) {
     $aui = new AllocationsUsersImport();
     $aui->syncAGandCC($form_state->getValue('maint_sync_param_start'),
                       $form_state->getValue('maint_sync_param_stop'));
@@ -312,11 +312,10 @@ class ConstantContact extends FormBase {
    * Clean out any obsolete user allocations for users no longer listed by
    * allocations api.
    */
-  public function doRunMaintObsClean() {
+  public function doRunMaintObsClean(array &$form, FormStateInterface $form_state) {
     $aui = new AllocationsUsersImport();
     $aui->cleanObsoleteAllocations($form_state->getValue('maint_obsclean_param_start'),
                                    $form_state->getValue('maint_obsclean_param_stop'));
   }
-
 
 }
