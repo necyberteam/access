@@ -46,6 +46,19 @@ class ProjectLookup {
     $query->condition($orGroup);
     $query->condition('wsd.webform_id', 'project');
     $result = $query->execute()->fetchAll();
+
+    $query_flag = \Drupal::database()->select('flagging', 'f');
+    $query_flag->fields('f', ['entity_id', 'flag_id']);
+    $query_flag->condition('f.uid', $project_user_id);
+    $query_flag->condition('f.flag_id', 'interested_in_project');
+    $result_flag = $query_flag->execute()->fetchAll();
+    $flagged_results = array_map(function($result_flag) {
+      return (object) [
+        'sid' => $result_flag->entity_id,
+        'name' => 'interested_in_project',
+      ];
+    }, $result_flag);
+    $result = array_merge($result, $flagged_results);
     if ($result != NULL) {
       foreach ($result as $project_result) {
         $wf = WebformSubmission::load($project_result->sid);
@@ -108,7 +121,7 @@ class ProjectLookup {
       $sid = $project['sid'];
       $project_status = $project['status'];
       $project_name = $project['name'];
-      // if (($project_status == 'Recruiting' && $project_name == 'Interested') || $project_name != 'Interested') {
+      if (($project_status == 'Recruiting' && $project_name == 'Interested') || $project_name != 'Interested') {
         $lowercase = lcfirst($project_name);
         $first_letter = substr($lowercase, 0, 1);
         $project_name = "<div data-bs-toggle='tooltip' data-bs-placement='left' title='$project_name'>
@@ -126,7 +139,7 @@ class ProjectLookup {
           </div>
         </li>";
         $n++;
-      // }
+      }
     }
     return $project_link;
   }
