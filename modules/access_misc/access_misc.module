@@ -43,26 +43,27 @@ function access_misc_entity_view(array &$build, \Drupal\Core\Entity\EntityInterf
 
 /**
  * Implements hook_datalayer_alter()
+ *
+ * If the user is not anonymous, add hashed user id and account creation
+ * date to dataLayer.
  */
 function access_misc_datalayer_alter(&$data_layer) {
-  $dl_debug = FALSE;
 
-  $userId = \Drupal::currentUser()->id();
+  if (!\Drupal::currentUser()->isAnonymous()) {
 
-  $account = \Drupal\user\Entity\User::load($userId);
-  $createdTime = $account->getCreatedTime();
-  $created = date("Y-m-d g:ia", $createdTime);
+    // Hide the uid field in data layer.
+    if (isset($data_layer['userUid'])) {
+      unset($data_layer['userUid']);
+    }
 
-  if ($dl_debug) {
-    $msg = __FUNCTION__ . '() ------- $userId = ' . $userId
-      . ', created = ' . $created . ' -- ' . basename(__FILE__) . ':' . __LINE__;
-    \Drupal::messenger()->addStatus($msg);
+    // Add hashed user id to data layer for logged in users.
+    $userId = \Drupal::currentUser()->id();
+    $data_layer['hashedUserId'] = hash('md4', $userId);
+
+    // Add account creation date to data layer for logged in users.
+    $account = \Drupal\user\Entity\User::load($userId);
+    $createdTime = $account->getCreatedTime();
+    $created = date("Y-m-d g:ia", $createdTime);
+    $data_layer['accountCreated'] = $created;
   }
-
-  // hide the uid field in data layer, and add a hashed version of it
-  if (isset($data_layer['userUid'])) {
-    unset($data_layer['userUid']);
-  }
-  $data_layer['hashedUserId'] = hash('md4', $userId);
-  $data_layer['accountCreated'] = $created;
 }
