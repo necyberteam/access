@@ -173,6 +173,7 @@ class CommunityPersonaController extends ControllerBase {
     $fields = [
       'email' => 'Project Leader',
       'mentor' => 'Mentor',
+      'mentors' => 'Mentor',
       'mentee_s_' => 'Mentee',
       'student' => 'Student-facilitator(s)',
       'interested_in_project' => 'Interested',

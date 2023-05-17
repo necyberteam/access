@@ -100,7 +100,8 @@ class ProjectLookup {
     }
     foreach ($array as $key => $value) {
       if ($value['status'] && $value['status'] == $sortby) {
-        $sorted[$key] = $value;
+        $sid = $value['sid'];
+        $sorted[$sid] = $value;
       }
     }
     return $sorted;
