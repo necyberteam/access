@@ -394,7 +394,7 @@ class CommunityPersonaController extends ControllerBase {
       // My Match Engagements.
       $match_link = $this->matchList($user, TRUE);
       // My Projects.
-      $projects = $this->projectList($user);
+      $projects = $this->projectList($user, TRUE);
 
       $persona_page['#title'] = "$user_first_name $user_last_name";
       $persona_page['string'] = [
