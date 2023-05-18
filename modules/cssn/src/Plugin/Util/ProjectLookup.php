@@ -52,7 +52,7 @@ class ProjectLookup {
     $query_flag->condition('f.uid', $project_user_id);
     $query_flag->condition('f.flag_id', 'interested_in_project');
     $result_flag = $query_flag->execute()->fetchAll();
-    $flagged_results = array_map(function($result_flag) {
+    $flagged_results = array_map(function ($result_flag) {
       return (object) [
         'sid' => $result_flag->entity_id,
         'name' => 'interested_in_project',

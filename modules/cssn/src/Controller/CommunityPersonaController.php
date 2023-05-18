@@ -176,6 +176,7 @@ class CommunityPersonaController extends ControllerBase {
       'mentors' => 'Mentor',
       'mentee_s_' => 'Mentee',
       'student' => 'Student-facilitator(s)',
+      'students' => 'Student-facilitator(s)',
       'interested_in_project' => 'Interested',
     ];
     $projects = new ProjectLookup($fields, $user->id(), $user->getEmail());
