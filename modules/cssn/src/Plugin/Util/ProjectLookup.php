@@ -42,8 +42,16 @@ class ProjectLookup {
     $orGroup = $query->orConditionGroup()
       ->condition('wsd.value', $project_user_id)
       ->condition('wsd.value', $project_user_email);
+    $orName = $query->orConditionGroup()
+      ->condition('wsd.name', 'mentor')
+      ->condition('wsd.name', 'mentors')
+      ->condition('wsd.name', 'mentee_s_')
+      ->condition('wsd.name', 'student')
+      ->condition('wsd.name', 'students')
+      ->condition('wsd.name', 'interested_in_project');
     $query->fields('wsd', ['sid', 'name']);
     $query->condition($orGroup);
+    $query->condition($orName);
     $query->condition('wsd.webform_id', 'project');
     $result = $query->execute()->fetchAll();
 
