@@ -285,6 +285,11 @@ function get_account_data_from_api($username) {
   }
   $secrets_json_text = file_get_contents($path);
   $secrets_data = json_decode($secrets_json_text, TRUE);
+  if (empty($secrets_data['ramps_api_key'])) {
+    $msg = "[User Profiles] Unable to find API key";
+    \Drupal::messenger()->addError($msg);
+    return;
+  }
   $api_key = $secrets_data['ramps_api_key'];
 
   $request_options = [
