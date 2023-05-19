@@ -39,6 +39,40 @@ use Drupal\Core\Form\FormStateInterface;
 const cAccessEmail = "supportapiaccess@access-ci.org";
 
 /**
+ * Implements hook_block_access().
+ * Hide views_block__affinity_group_block_7 block programmatically.
+ */
+function access_affinitygroup_block_access(\Drupal\block\Entity\Block $block, $operation, \Drupal\Core\Session\AccountInterface $account) {
+  if ($block->getPluginId() == 'views_block:affinity_group-block_7') {
+    // Load entity node from current node.
+    $node = \Drupal::routeMatch()->getParameter('node');
+    if ($node instanceof \Drupal\node\NodeInterface) {
+      $type = $node->getType();
+      if ($type == 'affinity_group') {
+        $coordinators = $node->get('field_coordinator')->getValue();
+        $current_user = \Drupal::currentUser();
+        $uid = $current_user->id();
+        $roles = $current_user->getRoles();
+        $hide_block = TRUE;
+        // Show block to coordinators.
+        foreach ($coordinators as $coordinator) {
+          if ($coordinator['target_id'] == $uid) {
+            $hide_block = FALSE;
+          }
+        }
+        // Show block to administrators.
+        if (in_array('administrator', $roles)) {
+          $hide_block = FALSE;
+        }
+        if ($hide_block) {
+          return \Drupal\Core\Access\AccessResult::forbidden();
+        }
+      }
+    }
+  }
+}
+
+/**
  * Implements hook_entity_presave().
  * Handles either
  *  case 1) User clicked Join flag on Affinity Group:
@@ -139,6 +173,23 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
  * CiDeR resources, both their title & description.
  */
 function access_affinitygroup_views_pre_render(ViewExecutable $view) {
+  if ($view->id() == 'affinity_group_members') {
+    // Afinity group user list change title to match AG title.
+    $url = new \Drupal\cssn\Plugin\Util\EndUrl();
+    if ($view->current_display == 'page_1') {
+      $url_end = $url->getUrlEnd();
+      $url_end = urldecode($url_end);
+      $view->setTitle($url_end);
+    }
+    if ($view->current_display == 'data_export_1') {
+      $url_penultimate = $url->getUrlArg('4');
+      if ($url_penultimate) {
+        $url_penultimate = urldecode($url_penultimate);
+        $url_penultimate = str_replace(' ', '_', $url_penultimate);
+        $view->setTitle($url_penultimate);
+      }
+    }
+  }
   if ($view->id() == 'affinity_group' && $view->current_display == 'group') {
 
     foreach ($view->result as $value) {

@@ -4,7 +4,10 @@
  * @file
  */
 
+use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\block\Entity\Block;
 use Drupal\cssn\Plugin\Util\RoleProgramSorter;
 use Drupal\user\Entity\User;
 
@@ -12,6 +15,47 @@ use Drupal\user\Entity\User;
  * @file
  * Module for CSSN.
  */
+
+/**
+ * Implements hook_block_access().
+ *
+ * Show welcometothecssn block to people in the ACCESS CSSN program/region.
+ * Show jointhecssn block to other people.
+ */
+function cssn_block_access(Block $block, $operation, AccountInterface $account) {
+  if ($block->getPluginId() == 'block_content:58e0d082-2224-43c2-a911-c41e5afc47b9') {
+    // if the User is part of the ACCESS CSSN program, show the welcome block.
+    $current_user = \Drupal::currentUser();
+    if ($current_user->isAnonymous()) {
+      return AccessResult::forbidden();
+    }
+    $user = User::load($current_user->id());
+    $regions = $user->get('field_region')->getValue();
+    foreach ($regions as $region) {
+      // ACCESS CSSN term id = 780.
+      if ($region['target_id'] == '780') {
+        return AccessResult::allowed();
+      }
+    }
+    return AccessResult::forbidden();
+  }
+  // Show jointhecssn block to other people.
+  if ($block->getPluginId() == 'block_content:eedf2b47-d6e0-40d9-9a83-1de706df2843') {
+    $current_user = \Drupal::currentUser();
+    if ($current_user->isAnonymous()) {
+      return AccessResult::allowed();
+    }
+    $user = User::load($current_user->id());
+    $regions = $user->get('field_region')->getValue();
+    foreach ($regions as $region) {
+      // ACCESS CSSN term id = 780.
+      if ($region['target_id'] == '780') {
+        return AccessResult::forbidden();
+      }
+    }
+    return AccessResult::allowed();
+  }
+}
 
 /**
  * Return a list of selectable roles for CSSN form.

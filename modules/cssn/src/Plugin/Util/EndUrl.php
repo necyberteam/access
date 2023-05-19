@@ -16,10 +16,16 @@ use Drupal\Core\Url;
  */
 class EndUrl {
   /**
-   * Array of sorted matches.
-   * $var array
+   * End of the url.
+   * $var string
    */
   private $urlEnd;
+
+  /**
+   * Url Parts.
+   * $var array
+   */
+  private $urlParts;
 
   /**
    * @inheritDoc
@@ -28,7 +34,18 @@ class EndUrl {
     $current_url = Url::fromRoute('<current>');
     $url_clean = Xss::filter($current_url->toString());
     $url_parts = explode('/', $url_clean);
+    $this->urlParts = $url_parts;
     $this->urlEnd = end($url_parts);
+  }
+
+  /**
+   * @inheritDoc
+   */
+  public function getUrlArg($arg) {
+    if (isset($this->urlParts[$arg]) === FALSE) {
+      return FALSE;
+    }
+    return $this->urlParts[$arg];
   }
 
   /**

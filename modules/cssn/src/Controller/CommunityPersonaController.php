@@ -8,6 +8,7 @@ use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\MatchLookup;
+use Drupal\cssn\Plugin\Util\ProjectLookup;
 use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\user\Entity\User;
 
@@ -163,6 +164,38 @@ class CommunityPersonaController extends ControllerBase {
   }
 
   /**
+   * Return list of projects.
+   *
+   * @return string
+   *   List of projects.
+   */
+  public function projectList($user, $public = FALSE) {
+    $fields = [
+      'email' => 'Project Leader',
+      'mentor' => 'Mentor',
+      'mentors' => 'Mentor',
+      'mentee_s_' => 'Mentee',
+      'student' => 'Student-facilitator(s)',
+      'students' => 'Student-facilitator(s)',
+      'interested_in_project' => 'Interested',
+    ];
+    $projects = new ProjectLookup($fields, $user->id(), $user->getEmail());
+    $projects->sortStatusProjects();
+    $project_list = $projects->getProjectList();
+    $project_link = "<ul class='list-unstyled'>";
+    if ($project_list == NULL && $public === FALSE) {
+      $project_link = '<p>' . t('You currently have not been associated with any Projects. Click below to find a project.') . "</p>";
+    }
+    if ($project_list == NULL && $public === TRUE) {
+      $project_link = '<p>' . t('No projects.') . "</p>";
+    }
+    if ($project_link == "<ul class='list-unstyled'>") {
+      $project_link .= $project_list . '</ul>';
+    }
+    return $project_link;
+  }
+
+  /**
    * Return list of Interests.
    *
    * @return string
@@ -233,6 +266,14 @@ class CommunityPersonaController extends ControllerBase {
     $match_engage_renderable = $match_engage_link->toRenderable();
     $build_match_engage_link = $match_engage_renderable;
     $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    // My Projects.
+    $projects = $this->projectList($current_user);
+    // Link to see Projects.
+    $project_url = Url::fromUri('internal:/form/project');
+    $project_link = Link::fromTextAndUrl('See projects', $project_url);
+    $project_renderable = $project_link->toRenderable();
+    $build_project_link = $project_renderable;
+    $build_project_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
       '#attached' => [
@@ -283,7 +324,18 @@ class CommunityPersonaController extends ControllerBase {
             {{ match_links|raw }}
             {{ request_match_link }}
           </div>
-        </div>',
+        </div>
+
+        <div class="border border-secondary my-3">
+          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+            <span class="h4 m-0 text-white">{{ project_title }}</span>
+          </div>
+          <div class="p-3">
+            {{ projects|raw }}
+            {{ request_project }}
+          </div>
+        </div>
+        ',
       '#context' => [
         'ag_title' => t('My Affinity Groups'),
         'ag_intro' => t('Connected with researchers of common interests.'),
@@ -298,6 +350,9 @@ class CommunityPersonaController extends ControllerBase {
         'match_title' => t('My MATCH Engagements'),
         'match_links' => $match_link,
         'request_match_link' => $build_match_engage_link,
+        'project_title' => t('My Projects'),
+        'projects' => $projects,
+        'request_project' => $build_project_link,
         'ws_title' => t('My Knowledge Base Contributions'),
         'ws_links' => $ws_link,
         'request_webform_link' => $build_webform_link,
@@ -340,6 +395,8 @@ class CommunityPersonaController extends ControllerBase {
       $ws_link = $this->knowledgeBaseContrib($user, TRUE);
       // My Match Engagements.
       $match_link = $this->matchList($user, TRUE);
+      // My Projects.
+      $projects = $this->projectList($user, TRUE);
 
       $persona_page['#title'] = "$user_first_name $user_last_name";
       $persona_page['string'] = [
@@ -381,7 +438,16 @@ class CommunityPersonaController extends ControllerBase {
             <div class="p-3">
               {{ match_links|raw }}
             </div>
-          </div>',
+          </div>
+          <div class="border border-secondary my-3">
+            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+              <span class="h4 m-0 text-white">{{ project_title }}</span>
+            </div>
+            <div class="p-3">
+              {{ projects|raw }}
+            </div>
+          </div>
+          ',
         '#context' => [
           'ag_title' => t('Affinity Groups'),
           'user_affinity_groups' => $user_affinity_groups,
@@ -393,6 +459,8 @@ class CommunityPersonaController extends ControllerBase {
           'ws_links' => $ws_link,
           'match_title' => t('MATCH Engagements'),
           'match_links' => $match_link,
+          'project_title' => t('Projects'),
+          'projects' => $projects,
         ],
       ];
       return $persona_page;
