@@ -84,8 +84,20 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
  * to verify that the user is not suspended before saving any entity (which includes
  * node, user, webform submission, event).  If the user is marked as suspended,
  * abort the save with an exception.
+ *
+ * Bypass this check if check_suspended_users is FALSE in user_profiles.constants.yml.
+ * This value gets set to FALSE in the local config split
+ * (web/sites/default/config/default/user_profile.settings.yml).
+ *
+ * Also bypass this step if doing an affinity group allocations run.
  */
 function user_profiles_entity_presave(Object $entity) {
+
+  $config = \Drupal::configFactory()->getEditable('user_profiles.settings');
+  $check_suspended_users = $config->get('check_suspended_users');
+  if (!$check_suspended_users) {
+    return;
+  }
 
   if (\Drupal::state()->get('access_affinitygroup.allocationsRun')) {
     return;
@@ -112,7 +124,7 @@ function user_profiles_cilogon_auth_pre_authorize($account, array $context) {
   global $debug;
   if ($debug) {
     $msg = basename(__FILE__) . ':' . __LINE__ . ' -- '
-    . 'will try user_load_by_name with $context = ' . print_r($context, TRUE);
+      . 'will try user_load_by_name with $context = ' . print_r($context, TRUE);
     \Drupal::messenger()->addStatus($msg);
     error_log($msg);
   }
@@ -183,24 +195,21 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
 
   if (array_key_exists('given_name', $userinfo)) {
     $account->set('field_user_first_name', $userinfo['given_name']);
-  }
-  else {
+  } else {
     $msg = ('given_name not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
   }
 
   if (array_key_exists('family_name', $userinfo)) {
     $account->set('field_user_last_name', $userinfo['family_name']);
-  }
-  else {
+  } else {
     $msg = ('family_name not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
   }
 
   if (array_key_exists('email', $userinfo)) {
     $account->setEmail($userinfo['email']);
-  }
-  else {
+  } else {
     $msg = ('email not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
   }
@@ -210,16 +219,14 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
   if (!array_key_exists('sub', $userinfo)) {
     $msg = ('sub not found in userinfo');
     \Drupal::messenger()->addError(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-  }
-  else {
+  } else {
     $sub = $userinfo['sub'];
 
     // But only use the handle (text before the @, if there is an @ in the sub)
     $at_position = strpos($sub, '@');
     if ($at_position > 0) {
       $user_handle = explode("@", $sub)[0];
-    }
-    else {
+    } else {
       $user_handle = $sub;
     }
 
@@ -257,8 +264,7 @@ function user_profiles_cilogon_auth_userinfo_save(UserInterface $account, array 
     if (!empty($sub)) {
       $msg = ('and set username to  = [' . $sub . ']');
       \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
-    }
-    else {
+    } else {
       $msg = ('did not set username because found no sub');
       \Drupal::messenger()->addStatus(basename(__FILE__) . ':' . __LINE__ . ' -- ' . $msg);
     }
@@ -307,8 +313,7 @@ function get_account_data_from_api($username) {
     $response = $client->request('GET', $request_url, $request_options);
     $userinfo = Json::decode((string) $response->getBody());
     return $userinfo;
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     // Display an addtional error message if response code is anything besides 404 (not found)
     if ($e->getCode() != 404) {
       $msg = "Could not retrieve user profile information: " . $e->getMessage();
