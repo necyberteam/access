@@ -5,3 +5,9 @@ filter_people_by_tags_form.form:
     _title: 'Filter users by flagged interest or skill'
   requirements:
     _role: 'administrator'
+misc.find:
+  path: '/find'
+  defaults:
+    _controller: '\Drupal\access_misc\Controller\Find::find'
+  requirements:
+    _permission: 'access content'
