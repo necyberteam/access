@@ -24,13 +24,18 @@ class AccessCommands extends DrushCommands {
         $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
         if (!file_exists($path)) {
             if ($options['verbose']) {
-                $this->output()->writeln('<error>Unable to find ACCESS API key</error>');
+                $this->output()->writeln('<error>Unable to find ACCESS API key file</error>');
             }
             return;
         }
         $secrets_json_text = file_get_contents($path);
         $secrets_data = json_decode($secrets_json_text, true);
-        $api_key = $secrets_data['access_api_key'];
+        if (!isset($secrets_data['access_api_key']) || !$secrets_data['access_api_key']) {
+            if ($options['verbose']) {
+                $this->output()->writeln('<error>Unable to find ACCESS API key</error>');
+            }
+            return;
+        }
 
         try {
             $curl = curl_init();
@@ -41,7 +46,7 @@ class AccessCommands extends DrushCommands {
             ));
             curl_setopt($curl, CURLOPT_HTTPHEADER, [
                 'XA-REQUESTER: MATCH',
-                'XA-API-KEY: ' . $api_key
+                'XA-API-KEY: ' . $secrets_data['access_api_key']
             ]);
 
             $response = curl_exec($curl);
