@@ -1,5 +1,11 @@
 <?php
 
+/**
+ * @file
+ */
+
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\views\ViewExecutable;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\access_misc\Plugin\Util\EventDateConvert;
@@ -8,11 +14,11 @@ use Drupal\access_misc\Plugin\Util\EventDateConvert;
  * Implements hook_views_post_render().
  */
 function access_misc_views_post_render(ViewExecutable $view) {
-  // Override view /admin/structure/views/view/resources/edit/page_2 title
+  // Override view /admin/structure/views/view/resources/edit/page_2 title.
   if ($view->id() == 'resources' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_2') {
     $tid = $view->getTitle();
     if (term::load($tid)) {
-      $title = 'Resources tagged ' . term::load($tid)->get('name')->value;
+      $title = 'CI Links tagged ' . term::load($tid)->get('name')->value;
       // Set the view title.
       $view->setTitle($title);
       // Set the route title.
@@ -25,7 +31,7 @@ function access_misc_views_post_render(ViewExecutable $view) {
 /**
  * Implements hook_entity_view_alter().
  */
-function access_misc_entity_view(array &$build, \Drupal\Core\Entity\EntityInterface $entity, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display) {
+function access_misc_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display) {
   switch ($entity->getEntityTypeId()) {
     case 'eventseries':
       $date = $build['event_instances'][0]['#title'];
@@ -33,6 +39,7 @@ function access_misc_entity_view(array &$build, \Drupal\Core\Entity\EntityInterf
       $convert_date = new EventDateConvert($dates[0], $dates[1]);
       $build['event_instances'][0]['#title'] = $convert_date->getStart() . " - " . $convert_date->getEnd();
       break;
+
     case 'eventinstance':
       $convert_date = new EventDateConvert($build['date'][0]['start_date']['#markup'], $build['date'][0]['end_date']['#markup']);
       $build['date'][0]['start_date']['#markup'] = $convert_date->getStart();

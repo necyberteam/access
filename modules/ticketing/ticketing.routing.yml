@@ -1,7 +1,7 @@
 ticketing.content:
-  path: '/open-a-ticket' 
-  defaults: 
-    _controller: '\Drupal\ticketing\Controller\TicketingController::doRedirect' 
+  path: '/open-a-ticket'
+  defaults:
+    _controller: '\Drupal\ticketing\Controller\TicketingController::doRedirect'
     _title: 'Ticket redirect'
-  requirements: 
-    _permission: 'authenticated user' 
+  requirements:
+    _permission: 'authenticated user'
