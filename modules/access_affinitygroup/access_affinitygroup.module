@@ -25,11 +25,11 @@
  * title changes.
  */
 
+use Drupal\Core\Session\AccountInterface;
+use Drupal\block\Entity\Block;
 use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\Core\Access\AccessResult;
 use Drupal\node\NodeInterface;
-use Drupal\Core\Session\AccountInterface;
-use Drupal\block\Entity\Block;
 use Drupal\node\Entity\Node;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 
@@ -48,7 +48,7 @@ const cAccessEmail = "supportapiaccess@access-ci.org";
  * Hide views_block__affinity_group_block_7 block programmatically.
  */
 function access_affinitygroup_block_access(Block $block, $operation, AccountInterface $account) {
-  if ($block->getPluginId() == 'views_block:affinity_group-block_7') {
+  if ($block->getPluginId() == 'views_block:affinity_group-block_7' || $block->getPluginId() == 'affinity_contact_group') {
     // Load entity node from current node.
     $node = \Drupal::routeMatch()->getParameter('node');
     if ($node instanceof NodeInterface) {
