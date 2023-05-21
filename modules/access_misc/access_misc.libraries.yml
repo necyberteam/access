@@ -2,3 +2,9 @@ misc_library:
   version: 1.x
   js:
     js/create_ticket_links.js: {}
+add_select:
+  version: 1.x
+  js:
+    js/add_select2: {}
+  dependencies:
+    - webform/webform.element.select2
