@@ -51,8 +51,8 @@ class ConstantContactApi {
       $this->configSettings = $config_factory->getEditable('access_affinitygroup.settings');
       $this->accessToken = $this->configSettings->get('access_token');
       $this->refreshToken = $this->configSettings->get('refresh_token');
-      // \Drupal::logger('access_affinitygroup')->notice('cca constructor get R:' . $this->refreshToken);
-      // \Drupal::logger('access_affinitygroup')->notice('cca constructor get A:' . $this->accessToken);
+      \Drupal::logger('access_affinitygroup')->notice('cca constructor get R:' . $this->refreshToken);
+      \Drupal::logger('access_affinitygroup')->notice('cca constructor get A:' . $this->accessToken);
       $cc_key = \Drupal::service('key.repository')->getKey('constant_contact_client_id')->getKeyValue();
       if (empty($cc_key)) {
         \Drupal::logger('access_affinitygroup')->error('Constant Contact: client id not in repository.');
@@ -70,19 +70,18 @@ class ConstantContactApi {
         $key_secret = urlencode(trim($key_secret));
       }
 
+      $this->clientSecret = $key_secret;
+      $this->supressErrDisplay = FALSE;
+
       if (empty($this->clientSecret) || empty($this->clientId)) {
         $nr = new NotifyRoles();
         $nr->notifyRole('site_developer', 'Constant Contact problem', 'Client secret and/or client id keys missing.');
       }
-
-      $this->clientSecret = $key_secret;
-
-      $this->supressErrDisplay = FALSE;
     }
     catch (\Exception $e) {
       \Drupal::logger('access_affinitygroup')->notice('Exception in constantContactApi constructor: ' . $e->getMessage());
-      // $nr = new NotifyRoles();
-      // $nr->notifyRole('site_developer', 'Constant Contact problem', 'Exception in constantContactApi constructor: ' . $e->getMessage());
+      $nr = new NotifyRoles();
+      $nr->notifyRole('site_developer', 'Constant Contact problem', 'Exception in constantContactApi constructor: ' . $e->getMessage());
     }
   }
 
@@ -131,17 +130,10 @@ class ConstantContactApi {
       if (isset($returned_token->error)) {
         \Drupal::logger('access_affinitygroup')->notice("cc init token err set, error, desc: " . $returned_token->error_description);
       }
-      if ($returned_token) {
-        // \Drupal::logger('access_affinitygroup')->notice("cc init token RF: " . $returned_token->refresh_token);
-      }
-      else {
-        // \Drupal::logger('access_affinitygroup')->notice("cc init token RT NOT");
-      }
 
       if ($returned_token && !isset($returned_token->error)) {
         $this->setAccessToken($returned_token->access_token);
         $this->setRefreshToken($returned_token->refresh_token);
-        // \Drupal::logger('access_affinitygroup')->notice("cc init r/a: " . $returned_token->refresh_token . " / " . $returned_token->access_token);
         \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
         \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
       }
@@ -205,8 +197,9 @@ class ConstantContactApi {
       }
       else {
         \Drupal::logger('access_affinitygroup')->error('New token: error');
-
         $this->apiError($result->error, $result->error_description);
+        $nr = new NotifyRoles();
+        $nr->notifyRole('site_developer', 'Constant Contact error.', 'New token error. See logs for access_affinitygroup.');
       }
     }
     catch (\Exception $e) {
@@ -409,14 +402,11 @@ class ConstantContactApi {
    * @return bool
    */
   public function getConnectionStatus() {
-    \Drupal::logger('cron_affinitygroup')->notice("GCS: at:". $this->accessToken);
-        \Drupal::logger('cron_affinitygroup')->notice("GCS: rt:". $this->refreshToken);
+
     if (empty($this->accessToken) || empty($this->refreshToken)) {
-      \Drupal::logger('cron_affinitygroup')->notice("GCS: false for tokens");
       return FALSE;
     }
     $this->apiCall('/account/summary');
-    \Drupal::logger('cron_affinitygroup')->notice("GCS: resp code " . $this->httpResponseCode);
     return ($this->httpResponseCode == 200);
   }
 
