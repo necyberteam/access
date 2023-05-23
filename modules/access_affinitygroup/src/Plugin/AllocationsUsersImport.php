@@ -261,7 +261,6 @@ class AllocationsUsersImport {
 
     $sandbox['batchNum']++;
     $context['message'] = "Processing in batch " . $sandbox['batchNum'];
-    \Drupal::logger('cron_affinitygroup')->notice('LCE in batch count:' . count($this->logCronErrors));
     $userNameArray = array_splice($sandbox['userNames'], 0, $this->batchSize);
 
     $apiKey = $this->getApiKey();
@@ -407,10 +406,7 @@ class AllocationsUsersImport {
 
     $this->collectCronLog("Batch " . $sandbox['batchNum'] . ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i');
 
-    \Drupal::logger('cron_affinitygroup')->notice("LCE for " . $sandbox['batchNum'] . " log before add " . count($this->logCronErrors));
-    \Drupal::logger('cron_affinitygroup')->notice("LCE for " . $sandbox['batchNum'] . " context before add " . count($context['results']['logCronErrors']));
     $context['results']['logCronErrors'] = array_merge($context['results']['logCronErrors'], $this->logCronErrors);
-    \Drupal::logger('cron_affinitygroup')->notice("LCE for " . $sandbox['batchNum'] . " count context after add " . count($context['results']['logCronErrors']));
 
     // Batch stops when finished is < 1.
     $context['finished'] = $sandbox['progress'] / $sandbox['max'];
@@ -436,9 +432,10 @@ class AllocationsUsersImport {
   }
 
   /**
-   * Collect problems adding user, etc  here to send as a dev alert email at end of cron
-   * also used for logging both errors and status
-   * we might do this in a file.
+   * Collect severe problems (logtype=err) to send as a developer alert
+   * email at end of the processing.
+   *
+   * $logType: err, i, d.  Determines logging category.
    */
   private function collectCronLog($msg, $logType = 'err') {
 
@@ -463,20 +460,16 @@ class AllocationsUsersImport {
    */
   private function emailDevCronLog($errorList) {
 
-    \Drupal::logger('cron_affinitygroup')->notice('IN EMAIL DEV CRON LOG count:' . count($errorList));
-
     if (empty($errorList) || count($errorList) == 0) {
       return;
     }
 
-    $body = 'ERRORS: ' . implode('\n', $errorList);
+    $body = 'ERRORS: ' . implode(' \r\n', $errorList);
 
     // Truncate to something reasonable to email in case of large error set.
     if (strlen($body) > 3000) {
-      $body = substr($body, 0, 3000) . "...\nsee logs for more.";
+      $body = substr($body, 0, 3000) . "\r\n...see logs for more.";
     }
-    \Drupal::logger('cron_affinitygroup')->notice('EMAIL body:' . $body);
-
     $nr = new NotifyRoles();
     $nr->notifyRole('site_developer', 'Errors during allocations import', $body);
   }
@@ -569,7 +562,7 @@ class AllocationsUsersImport {
             $cca = new ConstantContactApi();
             $cca->setSupressErrDisplay(TRUE);
             $cca->updateContact($ccId, $a['firstName'], $a['lastName'], $a['email']);
-            $this->collectCronLog('CC Account Update for ' . $a['username'] . ' ' . $a['email'] . ' ' . $ccId);
+            $this->collectCronLog('CC Account Update for ' . $a['username'] . ' ' . $a['email'] . ' ' . $ccId, 'i');
           }
         }
       }
@@ -664,7 +657,6 @@ class AllocationsUsersImport {
   private function updateUserCiderList($userDetails, $ciderRefnums) {
     $userDetails->set('field_cider_resources', NULL);
     foreach ($ciderRefnums as $refnum) {
-      // $this->collectCronLog("CIDER setting" . $refnum, 'd');
       $userDetails->get('field_cider_resources')->appendItem($refnum);
     }
     $userDetails->save();
@@ -691,7 +683,7 @@ class AllocationsUsersImport {
       $responseJson = Json::decode((string) $response->getBody());
     }
     catch (\Exception $e) {
-      $this->collectCronLog("Alloc resources api call $userName:" . $e->getMessage(), 'err');
+      $this->collectCronLog("Alloc get resources exeception at $userName:" . $e->getMessage(), 'err');
     }
     return $responseJson;
   }
@@ -707,7 +699,7 @@ class AllocationsUsersImport {
   public function syncAGandCC($agBegin = 0, $agEnd = 1000) {
     // Get all the Affinity Groups.
     $agCount = 0;
-    $this->collectCronLog("sync: ag $agBegin to $agEnd ", 'i');
+    $this->collectCronLog("Sync affinity groups and Constant Contact: ag $agBegin to $agEnd ", 'i');
     $nids = \Drupal::entityQuery('node')
       ->condition('status', 1)
       ->condition('type', 'affinity_group')
@@ -726,7 +718,7 @@ class AllocationsUsersImport {
 
       $agTitle = $node->getTitle();
       try {
-        $this->collectCronLog("$agCount: sync $agTitle", 'd');
+        $this->collectCronLog("$agCount: Sync $agTitle", 'd');
 
         // Get constant contact list id.
         $listId = $node->get('field_list_id')->value;
@@ -747,7 +739,6 @@ class AllocationsUsersImport {
           if (!empty($field_val) && $field_val != 0) {
             $ccId = $field_val[0]['value'];
             $agContacts[] = $ccId;
-            // $agContacts[] = substr($ccId, 0, 36);
           }
 
           else {
@@ -756,7 +747,7 @@ class AllocationsUsersImport {
           }
         }
 
-        $this->collectCronLog("sync: users in this AG with no CC id count : " . count($agContactsNoCCid), 'd');
+        $this->collectCronLog("Sync: users in this AG with no CC id count : " . count($agContactsNoCCid), 'd');
 
         // Assemble list of users on the cc list.
         $resp = $cca->apiCall("/contacts?lists=$listId");
@@ -769,15 +760,15 @@ class AllocationsUsersImport {
           $ccContacts[] = $contact->contact_id;
         }
 
-        $this->collectCronLog('members cc: ' . count($ccContacts) . ' ag: ' . count($agContacts), 'd');
+        $this->collectCronLog('Sync: cc: ' . count($ccContacts) . ' ag: ' . count($agContacts), 'd');
 
         $notInCC = array_diff($agContacts, $ccContacts);
-        $this->collectCronLog("sync: to be added to list $agTitle count: " . count($notInCC), 'i');
+        $this->collectCronLog("Sync: to be added to list $agTitle count: " . count($notInCC), 'i');
 
         if (count($notInCC)) {
           $postData = [
             'source' => [
-              'contact_ids' => $notInCC,
+              'contact_ids' => $notInCC
             ],
             'list_ids' => [$listId],
           ];
@@ -788,7 +779,7 @@ class AllocationsUsersImport {
       catch (\Exception $e) {
         $this->collectCronLog("Sync: " . $e->getMessage(), 'err');
       }
-    } // for each affinity group node
+    } // end for each affinity group node
   }
 
   /**
@@ -834,8 +825,8 @@ class AllocationsUsersImport {
           $user = User::load($userId);
 
           $userCiderArray = $user->get('field_cider_resources')->getValue();
-          // $this->collectCronLog($index . '. ' . $userId . ' ' . $user->getAccountName() . ' - ' . count($userCiderArray), 'i');
-          // If ciders are listed on user's account, see if they are on the allocaions api list
+
+          // If ciders are listed on user's account, see if they are on the allocations api list
           // of active users.
           if (count($userCiderArray) > 0) {
 
