@@ -7,6 +7,7 @@ use Drupal\user\Entity\User;
 use Drupal\node\Entity\Node;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Batch\BatchBuilder;
+use Drupal\access_misc\Plugin\Util\NotifyRoles;
 
 /**
  * @file
@@ -82,6 +83,13 @@ class AllocationsUsersImport {
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i');
 
+    // don't start imports if something is wrong with constant contact connection.
+    $cca = new ConstantContactApi();
+    if (!$cca->getConnectionStatus()) {
+      \Drupal::logger('cron_affinitygroup')->error('Contant Contact not connected.');
+      return;
+    }
+
     $portalUserNames = $this->getApiPortalUserNames($this->batchStartAt, $this->batchImportLimit);
     if (empty($portalUserNames)) {
       return;
@@ -151,8 +159,9 @@ class AllocationsUsersImport {
     if (!$success) {
       $this->collectCronLog('Batch: Import Allocations problem', 'err');
       \Drupal::messenger()->addMessage('Batch: Import Allocations problem');
-      return;
     }
+
+    $this->emailDevCronLog($results['logCronErrors']);
   }
 
   /**
@@ -235,6 +244,7 @@ class AllocationsUsersImport {
       $context['results']['newCCIds'] = 0;
       $context['results']['totalProcessed'] = 0;
       $context['results']['totalExamined'] = 0;
+      $context['results']['logCronErrors'] = [];
     }
 
     if (!$userNames) {
@@ -251,7 +261,7 @@ class AllocationsUsersImport {
 
     $sandbox['batchNum']++;
     $context['message'] = "Processing in batch " . $sandbox['batchNum'];
-
+    \Drupal::logger('cron_affinitygroup')->notice('LCE in batch count:' . count($this->logCronErrors));
     $userNameArray = array_splice($sandbox['userNames'], 0, $this->batchSize);
 
     $apiKey = $this->getApiKey();
@@ -397,6 +407,11 @@ class AllocationsUsersImport {
 
     $this->collectCronLog("Batch " . $sandbox['batchNum'] . ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i');
 
+    \Drupal::logger('cron_affinitygroup')->notice("LCE for " . $sandbox['batchNum'] . " log before add " . count($this->logCronErrors));
+    \Drupal::logger('cron_affinitygroup')->notice("LCE for " . $sandbox['batchNum'] . " context before add " . count($context['results']['logCronErrors']));
+    $context['results']['logCronErrors'] = array_merge($context['results']['logCronErrors'], $this->logCronErrors);
+    \Drupal::logger('cron_affinitygroup')->notice("LCE for " . $sandbox['batchNum'] . " count context after add " . count($context['results']['logCronErrors']));
+
     // Batch stops when finished is < 1.
     $context['finished'] = $sandbox['progress'] / $sandbox['max'];
     return TRUE;
@@ -426,10 +441,10 @@ class AllocationsUsersImport {
    * we might do this in a file.
    */
   private function collectCronLog($msg, $logType = 'err') {
-    global $logCronErrors;
 
     if ($logType === 'err') {
-      // $logCronErrors[] = $msg;
+
+      $this->logCronErrors[] = $msg;
       \Drupal::logger('cron_affinitygroup')->error($msg);
     }
     elseif ($logType === 'i') {
@@ -442,53 +457,28 @@ class AllocationsUsersImport {
   }
 
   /**
-   * Send an email with the collected cron errors to users with role: cyberdevs.
-   *
-   * @todo This function does not work correctly at this time.
+   * Send an email with the collected cron errors to users with
+   * role site_developer.  $errorList is an array of strings with
+   * the collected errors.
    */
-  private function emailDevCronLog() {
-    global $logCronErrors;
-    if (empty($logCronErrors) || count($logCronErrors) == 0) {
+  private function emailDevCronLog($errorList) {
+
+    \Drupal::logger('cron_affinitygroup')->notice('IN EMAIL DEV CRON LOG count:' . count($errorList));
+
+    if (empty($errorList) || count($errorList) == 0) {
       return;
     }
 
-    // Make destination list of emails of users with administrator role.
-    $userIds = \Drupal::entityQuery('user')
-      ->condition('status', 1)
-      ->condition('roles', 'cyberdevs')
-      ->execute();
-    $users = User::loadMultiple($userIds);
-    $toAddrs = '';
-    $userCount = count($users);
-    $iterate = 0;
-    foreach ($users as $user) {
-      $iterate++;
-      $toAddrs .= $user->get('mail')->getString();
-      if ($userCount != $iterate) {
-        $toAddrs .= ",";
-      }
-    }
+    $body = 'ERRORS: ' . implode('\n', $errorList);
 
-    $params = [];
-    $params['to'] = $toAddrs;
-    $body = '';
-    if (!empty($logCronErrors)) {
-      $body = 'ERRORS: ' . implode('\n', $logCronErrors);
+    // Truncate to something reasonable to email in case of large error set.
+    if (strlen($body) > 3000) {
+      $body = substr($body, 0, 3000) . "...\nsee logs for more.";
     }
-    // If (!empty($logCronInfo)) { $body = $body. '\nINFO: ' . implode('\n' , $logCronInfo);}.
-    $params['body'] = $body;
-    $params['title'] = 'ACCESS CRON: errors during xsede user + allocations import';
-    $langcode = \Drupal::currentUser()->getPreferredLangcode();
-    $module = 'access_affinitygroup';
-    $key = 'access_affinitygroup';
-    $mailManager = \Drupal::service('plugin.manager.mail');
-    $result = $mailManager->mail($module, $key, $toAddrs, $langcode, $params, NULL, TRUE);
-    if (
-      $result === FALSE
-      || (array_key_exists('result', $result) && !$result['result'])
-    ) {
-      \Drupal::logger('cron_affinitygroup')->error("Error sending mail to " . $toAddrs);
-    }
+    \Drupal::logger('cron_affinitygroup')->notice('EMAIL body:' . $body);
+
+    $nr = new NotifyRoles();
+    $nr->notifyRole('site_developer', 'Errors during allocations import', $body);
   }
 
   /**
@@ -757,7 +747,9 @@ class AllocationsUsersImport {
           if (!empty($field_val) && $field_val != 0) {
             $ccId = $field_val[0]['value'];
             $agContacts[] = $ccId;
+            // $agContacts[] = substr($ccId, 0, 36);
           }
+
           else {
             // Users without cc id. might not do anything with this here, not sure yet.
             $agContactsNoCCid[] = $uid;
@@ -866,4 +858,5 @@ class AllocationsUsersImport {
     }
     $this->collectCronLog("Finished Cleaning Obsolete: reset allocations on $obsoleteCount users", 'i');
   }
+
 }
