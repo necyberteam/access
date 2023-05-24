@@ -234,12 +234,12 @@ TOPEXTRA;
                 <br>
               </p>
 
-              <table style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
-                border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
+              <table cellpadding="0" cellspacing="0" >
                 <tbody>
                   <tr>
-                    <td style="padding:10px 15px;" align="center">
+                    <td class="news-btn"  align="center">
                       <a href="$newsUrl" rel="nofollow noopener noreferrer"
+
                         style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;
                                word-wrap:break-word;font-weight:bold;text-decoration:none;">
                           VIEW ON WEBSITE
@@ -271,6 +271,10 @@ function titleHTML($titleText) {
   return ($t);
 }
 
+/* style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
+border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
+ */
+
 /**
  * Returns complete url with host and full path
  * we assume all of our images are in the sites/default/files/inline_images dir.
@@ -298,6 +302,39 @@ function ccNewsCommonHTML($newsBody, $topExtra) {
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <style type="text/css" data-premailer="ignore">
+
+      /* for single event */
+      .field--label-hidden.field__label{
+        display: none;
+      }
+
+      div .field--name-title {
+        display: none;
+      }
+      /* single news and events */
+      td.news-btn {
+          background-color:#ffc42d!important;
+          border-color:black!important;
+          width: fit-content!important;
+          border-width:4px!important;
+          padding:10px 20px!important;
+      }
+      td.news-btn:hover {
+          border-color:red!important;
+          background-color:#ffffff!important;
+          border-width:4px!important;
+      }
+      .field__item:last-child {
+        padding-bottom: 15px;
+      }
+      div .field--name-body {
+        padding-bottom: 20px;
+      }
+      div .field--name-event-instances {
+        padding-bottom: 15px;
+      }
+
+
       @media only screen and (max-width:480px) {
         .footer-main-width {
           width: 100% !important;
