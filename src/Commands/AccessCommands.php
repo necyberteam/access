@@ -16,7 +16,7 @@ class AccessCommands extends DrushCommands {
    * @aliases ingest-organizations
    * @options limit The number of records to process
    */
-  public function ingestOrganizations($options = ['limit' => 100]) {
+  public function ingestOrganizations($options = ['limit' => NULL]) {
     $orgs = [];
 
     $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
@@ -111,7 +111,7 @@ class AccessCommands extends DrushCommands {
       }
       ]
        */
-
+      $orgs = array_slice($orgs, 0, $options['limit']);
       foreach ($orgs as $org) {
         $record = \Drupal::entityQuery('node')
           ->condition('type', 'access_organization')
