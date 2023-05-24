@@ -2,6 +2,8 @@
 
 namespace Drupal\access_affinitygroup\Plugin;
 
+use Drupal\access_misc\Plugin\Util\NotifyRoles;
+
 /**
  * Make Constant Contact api call.
  */
@@ -67,12 +69,19 @@ class ConstantContactApi {
       else {
         $key_secret = urlencode(trim($key_secret));
       }
-      $this->clientSecret = $key_secret;
 
+      $this->clientSecret = $key_secret;
       $this->supressErrDisplay = FALSE;
+
+      if (empty($this->clientSecret) || empty($this->clientId)) {
+        $nr = new NotifyRoles();
+        $nr->notifyRole('site_developer', 'Constant Contact problem', 'Client secret and/or client id keys missing.');
+      }
     }
     catch (\Exception $e) {
       \Drupal::logger('access_affinitygroup')->notice('Exception in constantContactApi constructor: ' . $e->getMessage());
+      $nr = new NotifyRoles();
+      $nr->notifyRole('site_developer', 'Constant Contact problem', 'Exception in constantContactApi constructor: ' . $e->getMessage());
     }
   }
 
@@ -121,17 +130,10 @@ class ConstantContactApi {
       if (isset($returned_token->error)) {
         \Drupal::logger('access_affinitygroup')->notice("cc init token err set, error, desc: " . $returned_token->error_description);
       }
-      if ($returned_token) {
-        \Drupal::logger('access_affinitygroup')->notice("cc init token RF: " . $returned_token->refresh_token);
-      }
-      else {
-        \Drupal::logger('access_affinitygroup')->notice("cc init token RT NOT");
-      }
 
       if ($returned_token && !isset($returned_token->error)) {
         $this->setAccessToken($returned_token->access_token);
         $this->setRefreshToken($returned_token->refresh_token);
-        \Drupal::logger('access_affinitygroup')->notice("cc init r/a: " . $returned_token->refresh_token . " / " . $returned_token->access_token);
         \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
         \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
       }
@@ -195,8 +197,9 @@ class ConstantContactApi {
       }
       else {
         \Drupal::logger('access_affinitygroup')->error('New token: error');
-
         $this->apiError($result->error, $result->error_description);
+        $nr = new NotifyRoles();
+        $nr->notifyRole('site_developer', 'Constant Contact error.', 'New token error. See logs for access_affinitygroup.');
       }
     }
     catch (\Exception $e) {
@@ -391,6 +394,20 @@ class ConstantContactApi {
     \Drupal::logger('cron_affinitygroup')->notice("Update $ccId, $firstname, $lastname, $mail");
 
     $this->apiCall("/contacts/$ccId", $contact, 'PUT');
+  }
+
+  /**
+   * Check if a valid connection can be made to constant contact.
+   *
+   * @return bool
+   */
+  public function getConnectionStatus() {
+
+    if (empty($this->accessToken) || empty($this->refreshToken)) {
+      return FALSE;
+    }
+    $this->apiCall('/account/summary');
+    return ($this->httpResponseCode == 200);
   }
 
   /**
