@@ -225,7 +225,7 @@ TOPEXTRA;
         <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
           <tr>
             <td class="text_content-cell content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
-                      font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px 10px 40px;" align="left" valign="top">
+                      font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 20px 40px 10px 40px;" align="left" valign="top">
               $titleDisplay
               <br>
               $pubDateDisplay
@@ -234,7 +234,7 @@ TOPEXTRA;
                 <br>
               </p>
 
-              <div>
+              <div style="padding-top:10px;padding-bottom:15px;">
                 <a href="$newsUrl" rel="nofollow noopener noreferrer"
                         class="view-on-website-btn">
                           VIEW ON WEBSITE
@@ -315,7 +315,7 @@ function ccNewsCommonHTML($newsBody, $topExtra) {
         border-color:#ffc42d!important;
         width: fit-content!important;
         color: #000000!important;
-        padding: 10px 20px;
+        padding: 10px 20px!important;
         border: 4px solid;
       }
 
@@ -324,15 +324,25 @@ function ccNewsCommonHTML($newsBody, $topExtra) {
         border-color:black!important;
         border: 4px solid;
       }
-
+      /* single event and news: spacing under fields such as location */
       .field__item:last-child {
         padding-bottom: 15px;
       }
       div .field--name-body {
         padding-bottom: 20px;
       }
+
+      /* remove link styling from event instance date on series*/
       div .field--name-event-instances {
         padding-bottom: 15px;
+      }
+      .field--name-event-instances a {
+        text-decoration: none!important;
+        color: #000000!important;
+        font-weight: bold!important;
+      }
+      div .field--name-body {
+        padding-bottom: 20px;
       }
 
       @media only screen and (max-width:480px) {
