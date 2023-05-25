@@ -234,20 +234,13 @@ TOPEXTRA;
                 <br>
               </p>
 
-              <table cellpadding="0" cellspacing="0" >
-                <tbody>
-                  <tr>
-                    <td class="news-btn"  align="center">
-                      <a href="$newsUrl" rel="nofollow noopener noreferrer"
-
-                        style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;
-                               word-wrap:break-word;font-weight:bold;text-decoration:none;">
+              <div>
+                <a href="$newsUrl" rel="nofollow noopener noreferrer"
+                        class="view-on-website-btn">
                           VIEW ON WEBSITE
-                      </a>
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
+                  </a>
+              </div>
+
             </td>
           </tr>
         </table>
@@ -312,18 +305,26 @@ function ccNewsCommonHTML($newsBody, $topExtra) {
         display: none;
       }
       /* single news and events */
-      td.news-btn {
-          background-color:#ffc42d!important;
-          border-color:black!important;
-          width: fit-content!important;
-          border-width:4px!important;
-          padding:10px 20px!important;
+
+      a.view-on-website-btn {
+        font-family:Roboto,sans-serif;
+        font-size: 16px!important;
+        font-weight: bold!important;
+        text-decoration: none!important;
+        background-color:#ffc42d!important;
+        border-color:#ffc42d!important;
+        width: fit-content!important;
+        color: #000000!important;
+        padding: 10px 20px;
+        border: 4px solid;
       }
-      td.news-btn:hover {
-          border-color:red!important;
-          background-color:#ffffff!important;
-          border-width:4px!important;
+
+      a.view-on-website-btn:hover {
+        background-color: #ffffff!important;
+        border-color:black!important;
+        border: 4px solid;
       }
+
       .field__item:last-child {
         padding-bottom: 15px;
       }
@@ -333,7 +334,6 @@ function ccNewsCommonHTML($newsBody, $topExtra) {
       div .field--name-event-instances {
         padding-bottom: 15px;
       }
-
 
       @media only screen and (max-width:480px) {
         .footer-main-width {
