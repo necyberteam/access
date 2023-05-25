@@ -113,10 +113,12 @@ class AccessCommands extends DrushCommands {
        */
       $orgs = array_slice($orgs, 0, $options['limit']);
       foreach ($orgs as $org) {
-        $record = \Drupal::entityQuery('node')
-          ->condition('type', 'access_organization')
-          ->condition('field_organization_id', $org->organization_id, '=')
-          ->execute();
+        $query = \Drupal::database()
+            ->select('node__field_organization_id', 'f')
+            ->fields('f', ['entity_id']);
+        $query->leftJoin('node', 'n', 'n.nid = f.entity_id');
+        $query->condition('f.field_organization_id_value', $org->organization_id);
+        $record = $query->execute()->fetchAll();
 
         if (!empty($record)) {
           if ($options['verbose']) {
