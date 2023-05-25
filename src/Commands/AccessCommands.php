@@ -116,7 +116,7 @@ class AccessCommands extends DrushCommands {
         $query = \Drupal::database()
             ->select('node__field_organization_id', 'f')
             ->fields('f', ['entity_id']);
-        $query->leftJoin('node', 'n', 'n.nid = f.entity_id');
+        $query->innerJoin('node', 'n', 'n.nid = f.entity_id');
         $query->condition('f.field_organization_id_value', $org->organization_id);
         $record = $query->execute()->fetchAll();
 
