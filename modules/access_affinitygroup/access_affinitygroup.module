@@ -764,7 +764,7 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
   }
 }
 
-// This include for constant contant wrapper html will become obsolete.
-include 'src/emailContent.php';
-// This is the new email wrapper.
+// email wrapper for affinity groups of category community.
+include 'src/ccCommunityWrapper.php';
+// email wrapper for affinity group not with category community (access template).
 include 'src/ccNewsWrapper.php';

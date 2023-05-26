@@ -225,7 +225,7 @@ TOPEXTRA;
         <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
           <tr>
             <td class="text_content-cell content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
-                      font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 10px 40px 10px 40px;" align="left" valign="top">
+                      font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 20px 40px 10px 40px;" align="left" valign="top">
               $titleDisplay
               <br>
               $pubDateDisplay
@@ -234,20 +234,13 @@ TOPEXTRA;
                 <br>
               </p>
 
-              <table style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
-                border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
-                <tbody>
-                  <tr>
-                    <td style="padding:10px 15px;" align="center">
-                      <a href="$newsUrl" rel="nofollow noopener noreferrer"
-                        style="color:#000000;font-family:Arial, Verdana, Helvetica, sans-serif;font-size:16px;
-                               word-wrap:break-word;font-weight:bold;text-decoration:none;">
+              <div style="padding-top:10px;padding-bottom:15px;">
+                <a href="$newsUrl" rel="nofollow noopener noreferrer"
+                        class="view-on-website-btn">
                           VIEW ON WEBSITE
-                      </a>
-                    </td>
-                  </tr>
-                  </tbody>
-                </table>
+                  </a>
+              </div>
+
             </td>
           </tr>
         </table>
@@ -270,6 +263,10 @@ function titleHTML($titleText) {
   TITLE;
   return ($t);
 }
+
+/* style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
+border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
+ */
 
 /**
  * Returns complete url with host and full path
@@ -298,6 +295,56 @@ function ccNewsCommonHTML($newsBody, $topExtra) {
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
     <style type="text/css" data-premailer="ignore">
+
+      /* for single event */
+      .field--label-hidden.field__label{
+        display: none;
+      }
+
+      div .field--name-title {
+        display: none;
+      }
+      /* single news and events */
+
+      a.view-on-website-btn {
+        font-family:Roboto,sans-serif;
+        font-size: 16px!important;
+        font-weight: bold!important;
+        text-decoration: none!important;
+        background-color:#ffc42d!important;
+        border-color:#ffc42d!important;
+        width: fit-content!important;
+        color: #000000!important;
+        padding: 10px 20px!important;
+        border: 4px solid;
+      }
+
+      a.view-on-website-btn:hover {
+        background-color: #ffffff!important;
+        border-color:black!important;
+        border: 4px solid;
+      }
+      /* single event and news: spacing under fields such as location */
+      .field__item:last-child {
+        padding-bottom: 15px;
+      }
+      div .field--name-body {
+        padding-bottom: 20px;
+      }
+
+      /* remove link styling from event instance date on series*/
+      div .field--name-event-instances {
+        padding-bottom: 15px;
+      }
+      .field--name-event-instances a {
+        text-decoration: none!important;
+        color: #000000!important;
+        font-weight: bold!important;
+      }
+      div .field--name-body {
+        padding-bottom: 20px;
+      }
+
       @media only screen and (max-width:480px) {
         .footer-main-width {
           width: 100% !important;
