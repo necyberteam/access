@@ -811,6 +811,7 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
     }
     elseif ($form_allowed) {
       $is_coordinator = FALSE;
+      $form['elements']['name']['#access'] = FALSE;
       if ($coordinator) {
         $uid = $user->id();
         foreach ($coordinator as $c) {
@@ -857,7 +858,7 @@ function webform_submission_affinity_group_affinity_contact(&$form, FormStateInt
   $message = $form['elements']['message']['value']['#value'];
   $message .= '<p>Sent by ' . $form['elements']['name']['#value'] . '</p>';
   $pubDate = date('m/d/Y');
-  emailToAffinityGroups($message, "Group Email: $affinity_group", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
+  emailToAffinityGroups($message, "$affinity_group", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
 }
 
 // Email wrapper for affinity groups of category community.
