@@ -22,9 +22,9 @@ class AffinityContactGroup extends BlockBase {
     $nid = \Drupal::routeMatch()->getParameter('node')->id();
     $contact['string'] = [
       '#type' => 'inline_template',
-      '#template' => '<a class="bg-secondary btn cursor-default text-white m-2" href="/form/affinity-group-contact?nid={{ nid }}">{{ contact_text }}</a>',
+      '#template' => '<a class="bg-secondary btn btn-outline-dark cursor-default text-white m-2" href="/form/affinity-group-contact?nid={{ nid }}">{{ contact_text }}</a>',
       '#context' => [
-        'contact_text' => $this->t('Contact Affinity Group'),
+        'contact_text' => $this->t('Email Affinity Group'),
         'nid' => $nid,
       ],
     ];
