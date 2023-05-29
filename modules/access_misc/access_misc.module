@@ -85,3 +85,15 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
     $form['#attached']['library'][] = 'access_misc/add_select';
   }
 }
+/*
+  * Implements hook_mail().
+  */
+function access_misc_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'notify_role':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
