@@ -101,7 +101,8 @@ class MatchNodeBlock extends BlockBase implements
         if ($field_value) {
           $field_value = $this->entityInterface->getStorage('user')->load($field_value[0]['target_id']);
           $msc_loaded[$field] = $field_value->get('field_user_first_name')->value . ' ' . $field_value->get('field_user_last_name')->value;
-        } else {
+        }
+        else {
           $msc_loaded[$field] = '';
         }
       }
@@ -128,22 +129,27 @@ class MatchNodeBlock extends BlockBase implements
           $term = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id);
           if ($term) {
             $tag_load = $term->get('name')->value;
-            $tag_list .= "<a href='/taxonomy/term/$tag_id'>$tag_load</a>";
-            if ($tag_count > $tag_iterate) {
-              $tag_list .= ", ";
-            }
+            $tag_list .= "<a class='tag' href='/taxonomy/term/$tag_id'>$tag_load</a>";
           }
         }
       }
       $status = $node->get('field_status')->getValue();
-      $works = '';
-      $works_label = '';
+      $skill_label = '';
+      $skill_level = '';
+      $qualifications = '';
+      $qualifications_label = '';
       if ($status) {
         $status = $status[0]['value'];
+        $is_recruiting = $status == 'recruiting' ? TRUE : FALSE;
         $skill = $node->get('field_programming_skill_level')->getValue();
         if ($skill) {
-          $works_label = $status == 'Recruiting' ? $this->t('Student skills needed:') : '';
-          $works = $status == 'Recruiting' ? $skill[0]['value'] : '';
+          $skill_label = $is_recruiting ? $this->t('Programming Skill Level:') : '';
+          $skill_level = $is_recruiting ? $skill[0]['value'] : '';
+        }
+        $qualifications = $node->get('field_qualifications')->getValue();
+        if ($qualifications) {
+          $qualifications_label = $is_recruiting ? $this->t('Preferred Qualifications:') : '';
+          $qualifications_value = $is_recruiting ? $qualifications[0]['value'] : '';
         }
       }
       $type = $node->get('field_node_type')->getValue();
@@ -154,7 +160,7 @@ class MatchNodeBlock extends BlockBase implements
       $interested_users = $this->getInterestedUsers($interested_users);
       $status = $node->get('field_status')->getValue() ?? $node->get('field_status')->getValue()[0]['value'];
       $interested_text = $this->t("I'm Interested");
-      $interested_button = $status == 'Recruiting' ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
+      $interested_button = $is_recruiting ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
       return [
         '#type' => 'inline_template',
         '#template' => '<div class="p-3">
@@ -171,9 +177,10 @@ class MatchNodeBlock extends BlockBase implements
             <div><span class="fw-bold">{{ consultant_label }}:</span> {{ consultant }}</div>
           {% endif %}
           {% if tags %}
-            <div><span class="fw-bold">{{ tags_label }}:</span> {{ tags | raw }}</div>
+            <div>{{ tags | raw }}</div>
           {% endif %}
-          <div><span class="fw-bold">{{ works_label }}</span> {{ works | raw }}</div>
+          <div><span class="fw-bold">{{ skill_label }}</span> {{ skill_level | raw }}</div>
+          <div><span class="fw-bold">{{ qualifications_label }}</span> {{ qualifications_value | raw }}</div>
         </div>
        {{ interested_button | raw }}
         {% if interested_users %}
@@ -193,11 +200,12 @@ class MatchNodeBlock extends BlockBase implements
           'student' => $msc_loaded['field_students'],
           'mentor_label' => $this->t('Mentor'),
           'mentor' => $msc_loaded['field_mentor'],
-          'tags_label' => $this->t('Tags'),
           'tags' => $tag_list,
           'image' => $image_loaded,
-          'works_label' => $works_label,
-          'works' => $works,
+          'skill_label' => $skill_label,
+          'skill_level' => $skill_level,
+          'qualifications_label' => $qualifications_label,
+          'qualifications_value' => $qualifications_value,
           'type' => $type,
           'interested_button' => $interested_button,
           'interested_users' => $interested_users,
@@ -227,7 +235,8 @@ class MatchNodeBlock extends BlockBase implements
     if ($node = $this->routMatchInterface->getParameter('node')) {
       // If there is node add its cachetag.
       return Cache::mergeTags(parent::getCacheTags(), ['node:' . $node->id()]);
-    } else {
+    }
+    else {
       // Return default tags instead.
       return parent::getCacheTags();
     }
@@ -242,4 +251,5 @@ class MatchNodeBlock extends BlockBase implements
     // Every new route this block will rebuild.
     return Cache::mergeContexts(parent::getCacheContexts(), ['route']);
   }
+
 }
