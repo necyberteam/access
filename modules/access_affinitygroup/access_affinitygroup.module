@@ -25,6 +25,11 @@
  * title changes.
  */
 
+use Drupal\cssn\Plugin\Util\EndUrl;
+use Drupal\Core\Access\AccessResult;
+use Drupal\node\NodeInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\block\Entity\Block;
 use Drupal\node\Entity\Node;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 
@@ -42,11 +47,11 @@ const cAccessEmail = "supportapiaccess@access-ci.org";
  * Implements hook_block_access().
  * Hide views_block__affinity_group_block_7 block programmatically.
  */
-function access_affinitygroup_block_access(\Drupal\block\Entity\Block $block, $operation, \Drupal\Core\Session\AccountInterface $account) {
+function access_affinitygroup_block_access(Block $block, $operation, AccountInterface $account) {
   if ($block->getPluginId() == 'views_block:affinity_group-block_7' || $block->getPluginId() == 'affinity_contact_group') {
     // Load entity node from current node.
     $node = \Drupal::routeMatch()->getParameter('node');
-    if ($node instanceof \Drupal\node\NodeInterface) {
+    if ($node instanceof NodeInterface) {
       $type = $node->getType();
       if ($type == 'affinity_group') {
         $coordinators = $node->get('field_coordinator')->getValue();
@@ -65,7 +70,7 @@ function access_affinitygroup_block_access(\Drupal\block\Entity\Block $block, $o
           $hide_block = FALSE;
         }
         if ($hide_block) {
-          return \Drupal\Core\Access\AccessResult::forbidden();
+          return AccessResult::forbidden();
         }
       }
     }
@@ -109,7 +114,8 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
 
       // If present, remove this AG from this user's block list.
       removeBlockedAG($taxonomyId, $userDetails);
-    } else {
+    }
+    else {
       // Case 2: Affinity group edit was saved by admin user.
       update_ag_leader_roles($entity);
       add_ag_taxonomy_term($entity);
@@ -155,7 +161,8 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
 
         if (!empty($list_id)) {
           $entity->set('field_list_id', $list_id);
-        } else {
+        }
+        else {
           showStatus('Bad Constant Contact list id.');
         }
       }
@@ -175,7 +182,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
 function access_affinitygroup_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'affinity_group_members') {
     // Afinity group user list change title to match AG title.
-    $url = new \Drupal\cssn\Plugin\Util\EndUrl();
+    $url = new EndUrl();
     if ($view->current_display == 'page_1') {
       $url_end = $url->getUrlEnd();
       $url_end = urldecode($url_end);
@@ -292,7 +299,8 @@ function update_removed_ag_leader_roles($entity, $coordinator_ids) {
         $user->removeRole('affinity_group_leader');
         $user->save();
         \Drupal::messenger()->addStatus('Removed Affinity Group Leader role for ' . $user->getAccountName());
-      } else {
+      }
+      else {
         \Drupal::messenger()->addStatus('Not removing Affinity Group Leader role for ' . $user->getAccountName()
           . ' because coordinator for another Affinity Group');
       }
@@ -309,7 +317,8 @@ function add_ag_taxonomy_term($entity) {
   $tid = NULL;
   if ($exists) {
     $tid = array_keys(ag_taxonomy_lookup($ag_title))[0];
-  } else {
+  }
+  else {
     $tid = create_ag_taxonomy_term($ag_title);
   }
 
@@ -346,7 +355,8 @@ function subscribeToCCList($taxonomyId, $userDetails) {
   $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
   if (empty($postJSON)) {
     showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");
-  } else {
+  }
+  else {
     $cca = new ConstantContactApi();
     $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
   }
@@ -387,7 +397,8 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       }
       // Put this AG on this user's block list if not already there.
       addBlockedAG($taxonomyId, $userDetails);
-    } else {
+    }
+    else {
       // Case 2: AG getting deleted.
       $title = $entity->getTitle();
       $cca = new ConstantContactApi();
@@ -440,7 +451,8 @@ function removeBlockedAG($agTaxonomyId, $userDetails) {
   foreach ($userBlockedArray as $userBlock) {
     if ($userBlock['target_id'] !== $agTaxonomyId) {
       $userBlockedTaxIds[] = $userBlock['target_id'];
-    } else {
+    }
+    else {
       $wasBlocked = TRUE;
     }
   }
@@ -527,11 +539,13 @@ function access_affinitygroup_user_login(UserInterface $account) {
     $cca_user_id = addUserToConstantContact($current_user->getEmail(), $firstName, $lastName);
     if (empty($cca_user_id)) {
       showStatus("Could not add user to Constant Contact.");
-    } else {
+    }
+    else {
       $user_detail->set('field_constant_contact_id', $cca_user_id);
       $user_detail->save();
     }
-  } else {
+  }
+  else {
     // This else just for debugging in early stages
     // showStatus("Login and NOT attempting add of new constant contact id.");.
   }
@@ -590,7 +604,8 @@ function access_affinitygroup_cron() {
       // $aui->updateUserAllocations();
       // emailDevCronLog(); // this function needs to be fixed.
     }
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     \Drupal::logger('cron_affinitygroup')->notice('exception in cron test: ' . $e->getMessage());
   } finally {
     \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
@@ -613,7 +628,8 @@ function shouldRun($function) {
     if ($hoursDiff >= 6) {
       return TRUE;
     }
-  } elseif ($function == 'users') {
+  }
+  elseif ($function == 'users') {
 
     // TEMP TEMP JUST DON'T RUN IMPORT CRON FOR NOW.
     return FALSE;
@@ -685,7 +701,8 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
   // Either use email template for access or community.
   if ($communityTemplate) {
     $emailHtml = ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $logoUrl);
-  } else {
+  }
+  else {
     $emailHtml = ccAccessNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
   }
 
@@ -759,14 +776,15 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
     }
   }
   if ($sent) {
-    showStatus("News item emailed to specified affinity groups.");
-  } else {
+    showStatus("Your message was sent to this Affinity Group.");
+  }
+  else {
     showStatus("Error while trying to email news items to affinity groups.");
   }
 }
 
 /**
- * hook_form_alter.
+ * Hook_form_alter.
  */
 function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'webform_submission_affinity_group_contact_add_form') {
@@ -774,10 +792,10 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
     $coordinator = FALSE;
     // Allow this form only if the node is an affinity group.
     if (isset($form['elements']['nid']['#default_value'])) {
-      $node = $form['elements']['nid']['#default_value'] == null ?
+      $node = $form['elements']['nid']['#default_value'] == NULL ?
         0 :
         Node::load($form['elements']['nid']['#default_value']);
-      $node_type = $node == null ? 0 : $node->getType();
+      $node_type = $node == NULL ? 0 : $node->getType();
       $form_allowed = $node_type == 'affinity_group' ? TRUE : FALSE;
       if ($form_allowed) {
         $coordinator = $node->get('field_coordinator')->getValue();
@@ -788,9 +806,10 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
     $roles = $user->getRoles();
     if (in_array('administrator', $roles) && $form_allowed) {
       $form_allowed = TRUE;
-    } elseif ($form_allowed) {
+    }
+    elseif ($form_allowed) {
       $is_coordinator = FALSE;
-      $form['elements']['name']['#access'] = false;
+      $form['elements']['name']['#access'] = FALSE;
       if ($coordinator) {
         $uid = $user->id();
         foreach ($coordinator as $c) {
@@ -810,7 +829,8 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
       $form['elements']['cc_list_id']['#default_value'] = $cc_list_id[0]['value'];
       $form['actions']['submit']['#submit'][] = 'webform_submission_affinity_group_affinity_contact';
       $form['#validate'][] = 'webform_submission_affinity_group_affinity_contact_validate';
-    } else {
+    }
+    else {
       \Drupal::messenger()->addMessage(t('It doesn\'t appear you came here from an affinity group page. Please go to an affinity group page and click the \'Contact Group\' link to send a message to that affinity group.'), 'warning');
       $form['actions']['submit']['#disabled'] = TRUE;
     }
@@ -822,7 +842,7 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
  */
 function webform_submission_affinity_group_affinity_contact_validate(&$form, FormStateInterface $form_state) {
   // Add form error stating that the form is not yet implemented.
-  //$form_state->setErrorByName('affinity_group', t('This form is not yet implemented.'));
+  // $form_state->setErrorByName('affinity_group', t('This form is not yet implemented.'));.
 }
 
 /**
@@ -836,7 +856,7 @@ function webform_submission_affinity_group_affinity_contact(&$form, FormStateInt
   $message = $form['elements']['message']['value']['#value'];
   $message .= '<p>Sent by ' . $form['elements']['name']['#value'] . '</p>';
   $pubDate = date('m/d/Y');
-  emailToAffinityGroups($message, "$affinity_group", $pubDate, $agNames, null, $ccListIds, 1, null);
+  emailToAffinityGroups($message, "$affinity_group", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
 }
 
 // This include for constant contant wrapper html will become obsolete.
