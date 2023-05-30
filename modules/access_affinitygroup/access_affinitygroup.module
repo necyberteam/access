@@ -25,21 +25,20 @@
  * title changes.
  */
 
-use Drupal\Core\Session\AccountInterface;
+use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\block\Entity\Block;
-use Drupal\cssn\Plugin\Util\EndUrl;
+use Drupal\Component\Utility\Xss;
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\cssn\Plugin\Util\EndUrl;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\node\NodeInterface;
 use Drupal\node\Entity\Node;
-use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
-
-use Drupal\Component\Utility\Xss;
-use Drupal\Core\Entity\EntityInterface;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
 use Drupal\views\ViewExecutable;
-use Drupal\Core\Form\FormStateInterface;
 
 const cAccessEmail = "supportapiaccess@access-ci.org";
 
@@ -776,7 +775,7 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
     }
   }
   if ($sent) {
-    showStatus("News item emailed to specified affinity groups.");
+    showStatus("Your message was sent to this Affinity Group.");
   }
   else {
     showStatus("Error while trying to email news items to affinity groups.");
