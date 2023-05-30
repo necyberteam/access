@@ -115,7 +115,8 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
 
       // If present, remove this AG from this user's block list.
       removeBlockedAG($taxonomyId, $userDetails);
-    } else {
+    }
+    else {
       // Case 2: Affinity group edit was saved by admin user.
       update_ag_leader_roles($entity);
       add_ag_taxonomy_term($entity);
@@ -161,7 +162,8 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
 
         if (!empty($list_id)) {
           $entity->set('field_list_id', $list_id);
-        } else {
+        }
+        else {
           showStatus('Bad Constant Contact list id.');
         }
       }
@@ -298,7 +300,8 @@ function update_removed_ag_leader_roles($entity, $coordinator_ids) {
         $user->removeRole('affinity_group_leader');
         $user->save();
         \Drupal::messenger()->addStatus('Removed Affinity Group Leader role for ' . $user->getAccountName());
-      } else {
+      }
+      else {
         \Drupal::messenger()->addStatus('Not removing Affinity Group Leader role for ' . $user->getAccountName()
           . ' because coordinator for another Affinity Group');
       }
@@ -315,7 +318,8 @@ function add_ag_taxonomy_term($entity) {
   $tid = NULL;
   if ($exists) {
     $tid = array_keys(ag_taxonomy_lookup($ag_title))[0];
-  } else {
+  }
+  else {
     $tid = create_ag_taxonomy_term($ag_title);
   }
 
@@ -352,7 +356,8 @@ function subscribeToCCList($taxonomyId, $userDetails) {
   $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
   if (empty($postJSON)) {
     showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");
-  } else {
+  }
+  else {
     $cca = new ConstantContactApi();
     $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
   }
@@ -393,7 +398,8 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       }
       // Put this AG on this user's block list if not already there.
       addBlockedAG($taxonomyId, $userDetails);
-    } else {
+    }
+    else {
       // Case 2: AG getting deleted.
       $title = $entity->getTitle();
       $cca = new ConstantContactApi();
@@ -446,7 +452,8 @@ function removeBlockedAG($agTaxonomyId, $userDetails) {
   foreach ($userBlockedArray as $userBlock) {
     if ($userBlock['target_id'] !== $agTaxonomyId) {
       $userBlockedTaxIds[] = $userBlock['target_id'];
-    } else {
+    }
+    else {
       $wasBlocked = TRUE;
     }
   }
@@ -533,11 +540,13 @@ function access_affinitygroup_user_login(UserInterface $account) {
     $cca_user_id = addUserToConstantContact($current_user->getEmail(), $firstName, $lastName);
     if (empty($cca_user_id)) {
       showStatus("Could not add user to Constant Contact.");
-    } else {
+    }
+    else {
       $user_detail->set('field_constant_contact_id', $cca_user_id);
       $user_detail->save();
     }
-  } else {
+  }
+  else {
     // This else just for debugging in early stages
     // showStatus("Login and NOT attempting add of new constant contact id.");.
   }
@@ -596,7 +605,8 @@ function access_affinitygroup_cron() {
       // $aui->updateUserAllocations();
       // emailDevCronLog(); // this function needs to be fixed.
     }
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     \Drupal::logger('cron_affinitygroup')->notice('exception in cron test: ' . $e->getMessage());
   } finally {
     \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
@@ -619,7 +629,8 @@ function shouldRun($function) {
     if ($hoursDiff >= 6) {
       return TRUE;
     }
-  } elseif ($function == 'users') {
+  }
+  elseif ($function == 'users') {
 
     // TEMP TEMP JUST DON'T RUN IMPORT CRON FOR NOW.
     return FALSE;
@@ -691,7 +702,8 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
   // Either use email template for access or community.
   if ($communityTemplate) {
     $emailHtml = ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $logoUrl);
-  } else {
+  }
+  else {
     $emailHtml = ccAccessNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
   }
 
