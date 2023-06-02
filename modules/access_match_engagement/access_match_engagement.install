@@ -85,4 +85,16 @@ function access_match_engagement_update_9001() {
       $database->insert($revision_table)->fields($row)->execute();
     }
   }
+
+}
+
+/**
+ * Change the match_engagement field_status values of 'accepted' to 'prelaunch'.
+ */
+function access_match_engagement_update_9002() {
+  $database = \Drupal::database();
+  $query = $database->update('node__field_status')
+    ->fields(['field_status_value' => 'prelaunch'])
+    ->condition('field_status_value', 'accepted')
+    ->execute();
 }
