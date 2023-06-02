@@ -136,7 +136,7 @@ class MatchNodeBlock extends BlockBase implements
       $status = $node->get('field_status')->getValue();
       $skill_label = '';
       $skill_level = '';
-      $qualifications = '';
+      $qualifications_value = '';
       $qualifications_label = '';
       if ($status) {
         $status = $status[0]['value'];
