@@ -71,9 +71,36 @@ function access_misc_datalayer_alter(&$data_layer) {
 
     // Add account creation date to data layer for logged in users.
     $account = User::load($userId);
-    $createdTime = $account->getCreatedTime();
-    $created = date("Y-m-d g:ia", $createdTime);
-    $data_layer['accountCreated'] = $created;
+
+    // Calculate a time-bucket for the age of the user's creation date as follows:
+    // 1: under 1 week
+    // 2: under 1 month
+    // 3: under 3 month
+    // 4: under 6 months
+    // 5: under 12 months
+    // 6: under 24 months
+    // 7: over 24 months
+
+    $created_time = $account->getCreatedTime();
+    $current_time = time();
+    $delta_time = $current_time - $created_time;
+    $delta_weeks = $delta_time / 60 / 60 / 24 / 7;
+    if ($delta_weeks < 1) {
+      $time_bucket = 1;
+    } else if ($delta_weeks < 4) {
+      $time_bucket = 2;
+    } else if ($delta_weeks < 12) {
+      $time_bucket = 3;
+    } else if ($delta_weeks < 24) {
+      $time_bucket = 4;
+    } else if ($delta_weeks < 52) {
+      $time_bucket = 5;
+    } else if ($delta_weeks < 104) {
+      $time_bucket = 6;
+    } else {
+      $time_bucket = 7;
+    }
+    $data_layer['user_created_within'] = $time_bucket;
   }
 }
 
