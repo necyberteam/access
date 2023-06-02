@@ -140,7 +140,7 @@ class MatchNodeBlock extends BlockBase implements
       $qualifications_label = '';
       if ($status) {
         $status = $status[0]['value'];
-        $is_recruiting = $status == 'recruiting' ? TRUE : FALSE;
+        $is_recruiting = strcasecmp($status, 'recruiting') == 0 ? TRUE : FALSE;
         $skill = $node->get('field_programming_skill_level')->getValue();
         if ($skill) {
           $skill_label = $is_recruiting ? $this->t('Programming Skill Level:') : '';
