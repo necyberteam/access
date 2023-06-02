@@ -136,11 +136,11 @@ class MatchNodeBlock extends BlockBase implements
       $status = $node->get('field_status')->getValue();
       $skill_label = '';
       $skill_level = '';
-      $qualifications = '';
+      $qualifications_value = '';
       $qualifications_label = '';
       if ($status) {
         $status = $status[0]['value'];
-        $is_recruiting = $status == 'recruiting' ? TRUE : FALSE;
+        $is_recruiting = strcasecmp($status, 'recruiting') == 0 ? TRUE : FALSE;
         $skill = $node->get('field_programming_skill_level')->getValue();
         if ($skill) {
           $skill_label = $is_recruiting ? $this->t('Programming Skill Level:') : '';
@@ -218,6 +218,14 @@ class MatchNodeBlock extends BlockBase implements
    * Get interested users.
    */
   public function getInterestedUsers($interested_users) {
+    // Only show interested users to match_sc, match_pm, and admin.
+    $accepted_roles = ['administrator', 'match_sc', 'match_pm'];
+    $current_user = \Drupal::currentUser();
+    $roles = $current_user->getRoles();
+    if (empty(in_array($accepted_roles, $roles))) {
+      return [];
+    };
+
     $interested_users = array_column($interested_users, 'target_id');
     $users = $this->entityInterface->getStorage('user')->loadMultiple($interested_users);
     $user_names = [];
