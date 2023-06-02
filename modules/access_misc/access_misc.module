@@ -100,7 +100,7 @@ function access_misc_datalayer_alter(&$data_layer) {
     } else {
       $time_bucket = 7;
     }
-    $data_layer['user_created_within '] = $time_bucket;
+    $data_layer['user_created_within'] = $time_bucket;
   }
 }
 
