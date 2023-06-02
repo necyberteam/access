@@ -43,7 +43,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     // Attach javascript.
     $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
 
-    // If creating a new enagement, use the request type from the url
+    // If creating a new engagement, use the request type from the url.
     if ($form_id == 'node_match_engagement_form') {
       $request = \Drupal::request();
       $request_type = $request->get("type");
@@ -204,14 +204,21 @@ function access_match_engagement_mail($key, &$message, $params) {
   }
 }
 
+/**
+ *
+ */
 function update_drupal_message($moderation_state) {
+  $message = '';
   if ($moderation_state == 'draft') {
-    $message = t('Thank you for submitting your project. Please change the status to "In Review" when you are ready to submit for review.');
+    $message = t('Thank you for submitting your project. Please change the status to "Submitted" when you are ready to submit for review.');
   }
   elseif ($moderation_state == 'in_review') {
     $message = t('Thank you for submitting your project. We will be in touch soon.');
   }
-  \Drupal::messenger()->addMessage($message);
+  // If $message is not empty, add it to the drupal message queue.
+  if ($message) {
+    \Drupal::messenger()->addMessage($message);
+  }
 }
 
 /**
@@ -221,7 +228,7 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'match_engagement') {
     $get_fields = $entity->getFields();
-    // set field_status to moderation_state.
+    // Set field_status to moderation_state.
     $moderation_state = $get_fields['moderation_state']->getValue();
     if ($moderation_state) {
       $moderation_state = $moderation_state[0]['value'];
@@ -229,7 +236,13 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
       Cache::invalidateTags($entity->getCacheTagsToInvalidate());
       update_drupal_message($moderation_state);
     }
-    // send email to engagement author if field_email_user is checked.
+    // Set field_researcher to current user if field_researcher is empty.
+    $researcher = $get_fields['field_researcher']->getValue();
+    if (empty($researcher)) {
+      $current_user = \Drupal::currentUser();
+      $entity->set('field_researcher', $current_user->id());
+    }
+    // Send email to engagement author if field_email_user is checked.
     $email_user = $get_fields['field_email_user']->getValue();
     if ($email_user[0]['value']) {
       $owner_user = $entity->getOwner();
