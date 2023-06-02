@@ -67,62 +67,120 @@ class AccessCommands extends DrushCommands {
       Example API response
 
       [
-      {
-      "organization_id": 2735,
-      "org_type_id": 4,
-      "organization_abbrev": "Exa Corp.",
-      "organization_name": "Exa Corporation",
-      "organization_url": null,
-      "organization_phone": null,
-      "nsf_org_code": "T103902",
-      "is_reconciled": true,
-      "amie_name": null,
-      "country_id": 210,
-      "state_id": 23,
-      "latitude": "42.497508",
-      "longitude": "-71.234265",
-      "is_msi": null,
-      "is_active": true,
-      "carnegieCategories":[],
-      "state": "Massachusetts",
-      "country": "United States",
-      "org_type": "Industrial"
-      },
-      {
-      "organization_id": 1231,
-      "org_type_id": 6,
-      "organization_abbrev": "Quetzal Computationa",
-      "organization_name": "Quetzal Computational Associates",
-      "organization_url": null,
-      "organization_phone": null,
-      "nsf_org_code": "6103790",
-      "is_reconciled": true,
-      "amie_name": null,
-      "country_id": null,
-      "state_id": null,
-      "latitude": "35.124329",
-      "longitude": "-106.586556",
-      "is_msi": null,
-      "is_active": false,
-      "carnegieCategories":[],
-      "state": null,
-      "country": null,
-      "org_type": "Other or Unknown"
-      }
+        {
+        "organization_id": 2735,
+        "org_type_id": 4,
+        "organization_abbrev": "Exa Corp.",
+        "organization_name": "Exa Corporation",
+        "organization_url": null,
+        "organization_phone": null,
+        "nsf_org_code": "T103902",
+        "is_reconciled": true,
+        "amie_name": null,
+        "country_id": 210,
+        "state_id": 23,
+        "latitude": "42.497508",
+        "longitude": "-71.234265",
+        "is_msi": null,
+        "is_active": true,
+        "carnegieCategories":[],
+        "state": "Massachusetts",
+        "country": "United States",
+        "org_type": "Industrial"
+        },
+        {
+        "organization_id": 1231,
+        "org_type_id": 6,
+        "organization_abbrev": "Quetzal Computationa",
+        "organization_name": "Quetzal Computational Associates",
+        "organization_url": null,
+        "organization_phone": null,
+        "nsf_org_code": "6103790",
+        "is_reconciled": true,
+        "amie_name": null,
+        "country_id": null,
+        "state_id": null,
+        "latitude": "35.124329",
+        "longitude": "-106.586556",
+        "is_msi": null,
+        "is_active": false,
+        "carnegieCategories":[],
+        "state": null,
+        "country": null,
+        "org_type": "Other or Unknown"
+        }
       ]
-       */
+      */
       $orgs = array_slice($orgs, 0, $options['limit']);
+
       foreach ($orgs as $org) {
         $query = \Drupal::database()
             ->select('node__field_organization_id', 'f')
             ->fields('f', ['entity_id']);
         $query->innerJoin('node', 'n', 'n.nid = f.entity_id');
         $query->condition('f.field_organization_id_value', $org->organization_id);
+        $query->orderBy('entity_id', 'asc');
         $record = $query->execute()->fetchAll();
 
         if (!empty($record)) {
           if ($options['verbose']) {
             $this->output()->writeln('<comment>Record already exists for "' . $org->organization_name . '".</comment>');
+          }
+
+          $node = \Drupal\node\Entity\Node::load($record[0]->entity_id);
+
+          $update = false;
+          $keys = array(
+            'title' => 'organization_name',
+            'field_organization_abbrev' => 'organization_abbrev',
+            'field_organization_name' => 'organization_name',
+            'field_organization_url' => 'organization_url',
+            'field_organization_phone' => 'organization_phone',
+            'field_state' => 'state',
+            'field_country' => 'country',
+            'field_org_type' => 'org_type',
+          );
+          foreach ($keys as $localkey => $foreignkey) {
+            if ($node->{$localkey}->value != $org->{$foreignkey}) {
+              $update = true;
+              $node->set($localkey, $org->{$foreignkey});
+              $this->output()->writeln('<comment>    -> ' . $localkey . ' out of sync.</comment>');
+            }
+          }
+          if ($node->field_latitude->value != $lat) {
+            $upate = true;
+            $node->set('field_latitude', $lat);
+            $this->output()->writeln('<comment>    -> latitude out of sync.</comment>');
+          }
+          if ($node->field_longitude->value != $lon) {
+            $upate = true;
+            $node->set('field_longitude', $lon);
+            $this->output()->writeln('<comment>    -> longitude out of sync.</comment>');
+          }
+          if (($node->field_is_msi->value && !$org->is_msi) || (!$node->field_is_msi->value && $org->is_msi)) {
+            $upate = true;
+            $node->set('field_is_msi', $org->is_msi ? 1 : 0);
+            $this->output()->writeln('<comment>    -> field_is_msi out of sync.</comment>');
+          }
+          if (($node->field_is_active->value && !$org->is_active) || (!$node->field_is_active->value && $org->is_active)) {
+            $upate = true;
+            $node->set('field_is_active', $org->is_active ? 1 : 0);
+            $this->output()->writeln('<comment>    -> field_is_active out of sync.</comment>');
+          }
+
+          if ($update) {
+            $result = $node->save();
+
+            if (!$result) {
+              $msg = '<error>    -> Failed to update record.</error>';
+            } else {
+              $msg = '<info>    -> Updated record.</info>';
+            }
+          } else {
+            $msg = '<comment>    -> No updates needed.</comment>';
+          }
+          if ($options['verbose']) {
+            $this->output()->writeln($msg);
           }
           continue;
         }
