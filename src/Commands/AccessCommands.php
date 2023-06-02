@@ -148,22 +148,22 @@ class AccessCommands extends DrushCommands {
             }
           }
           if ($node->field_latitude->value != $lat) {
-            $upate = true;
+            $update = true;
             $node->set('field_latitude', $lat);
             $this->output()->writeln('<comment>    -> latitude out of sync.</comment>');
           }
           if ($node->field_longitude->value != $lon) {
-            $upate = true;
+            $update = true;
             $node->set('field_longitude', $lon);
             $this->output()->writeln('<comment>    -> longitude out of sync.</comment>');
           }
           if (($node->field_is_msi->value && !$org->is_msi) || (!$node->field_is_msi->value && $org->is_msi)) {
-            $upate = true;
+            $update = true;
             $node->set('field_is_msi', $org->is_msi ? 1 : 0);
             $this->output()->writeln('<comment>    -> field_is_msi out of sync.</comment>');
           }
           if (($node->field_is_active->value && !$org->is_active) || (!$node->field_is_active->value && $org->is_active)) {
-            $upate = true;
+            $update = true;
             $node->set('field_is_active', $org->is_active ? 1 : 0);
             $this->output()->writeln('<comment>    -> field_is_active out of sync.</comment>');
           }
