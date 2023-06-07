@@ -215,6 +215,21 @@ function access_affinitygroup_views_pre_render(ViewExecutable $view) {
 }
 
 /**
+ * Implements hook_form_alter().
+ *
+ * Make the cider resources field read-only for non-administrator users.
+ */
+function access_affinitygroup_form_alter(&$form, &$form_state, $form_id) {
+  if ($form_id == 'node_affinity_group_edit_form') {
+    $current_user = \Drupal::currentUser();
+    $roles = $current_user->getRoles();
+    if (!in_array('administrator', $roles)) {
+      $form['field_cider_resources']['#disabled'] = TRUE;
+    }
+  }
+}
+
+/**
  * - update AG Leader roles for added or removed coordinators.
  */
 function update_ag_leader_roles($entity) {
@@ -488,7 +503,7 @@ function makeListMembershipJSON($flagEntityId, $userDetails) {
   }
 
   if (empty($list_cc_id)) {
-     \Drupal::logger('cron_affinitygroup')->notice('Missing Constant Contact List Id for Affinity Group.');
+    \Drupal::logger('cron_affinitygroup')->notice('Missing Constant Contact List Id for Affinity Group.');
     return NULL;
   }
 
@@ -539,7 +554,7 @@ function access_affinitygroup_user_login(UserInterface $account) {
 /**
  * Return the new ID if any.
  */
-function addUserToConstantContact($userEmail, $firstName, $lastName, $noDisplay=FALSE) {
+function addUserToConstantContact($userEmail, $firstName, $lastName, $noDisplay = FALSE) {
   $cca = new ConstantContactApi();
   if ($noDisplay) {
     $cca->setSupressErrDisplay(TRUE);
