@@ -25,6 +25,7 @@
  * title changes.
  */
 
+
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
@@ -781,8 +782,6 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
     showStatus("Error while trying to email news items to affinity groups.");
   }
 }
-
-// Email wrapper for affinity group not with category community (access template).
 
 /**
  * Hook_form_alter.

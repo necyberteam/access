@@ -23,18 +23,18 @@
  * logoUrl: url for logo image, or null for none.
  */
 function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl, $logoUrl) {
-  // Build list of one or more affinity group names separated by 'or'.
-  $agText = '';
-  $or = '';
-  foreach ($agNames as $agName) {
-    $agText = $agText . $or . $agName;
-    $or = ' or ';
-  }
-  $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+    // Build list of one or more affinity group names separated by 'or'.
+    $agText = '';
+    $or = '';
+    foreach ($agNames as $agName) {
+        $agText = $agText . $or . $agName;
+        $or = ' or ';
+    }
+    $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
-  $pubDateDisplay = NULL;
-  if ($pubDate) {
-    $pubDateDisplay = <<<PUBDATE
+    $pubDateDisplay = null;
+    if ($pubDate) {
+        $pubDateDisplay = <<<PUBDATE
         <table width="100%" border="0"
             cellpadding="0" cellspacing="0"
             style="table-layout:fixed;"
@@ -74,38 +74,8 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
     LOGOHTML;
   }
 
-  << << << < HEAD:modules / access_affinitygroup / src / ccCommunityWrapper . php
   // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
   $emailText = <<<EMAILTEXT
-=======
-    $viewOnWebsite = '';
-    if ($newsUrl != null) {
-        $viewOnWebsite = <<<VIEWONWEBSITE
-        <table width="100%" border="0" cellpadding="0" cellspacing="0" class="yiv2621404860button yiv2621404860button--padding-vertical yiv2621404860button--mobile-center">
-            <tbody>
-                <tr>
-                    <td align="left" valign="top" style="padding:10px 40px;" class="yiv2621404860button_container yiv2621404860content-padding-horizontal">
-                        <table border="0" cellpadding="0" cellspacing="0" class="yiv2621404860button_content">
-                            <tbody>
-                                <tr>
-                                    <td align="center" valign="middle" style="font-family:Arial, Verdana, Helvetica, sans-serif;color:#FFFFFF;font-size:14px;line-height:1.2;display:block;word-wrap:break-word;padding:10px 20px;background-color:#3E3E3E;border-radius:3px;" bgcolor="#3E3E3E">
-                                        <a href="$newsUrl" target="_blank" style="color:#FFFFFF;text-decoration:none;">
-                                            View on website
-                                        </a>
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </td>
-                </tr>
-            </tbody>
-        </table>
-        VIEWONWEBSITE;
-    }
-
-    // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
-    $emailText = <<<EMAILTEXT
->>>>>>> b14daef (access_affinitygroup: ccNewsWrapper reverted - emailContent tweaked view on website button d8-1455):modules/access_affinitygroup/src/emailContent.php
   <html>
   <body>[[trackingImage]]
       <div id="">
@@ -437,7 +407,6 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
                                                                                   </table>
 
                                                                                   <div style="line-height:20px;min-height:20px;"
-<<<<<<< HEAD:modules/access_affinitygroup/src/ccCommunityWrapper.php
                                                                                       class="spacer"> </div>
 
                                                                                   <div style="text-align:left; padding-left: 40px;padding-top:10px;padding-bottom:15px;">
@@ -447,14 +416,6 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
                                                                                     </a>
                                                                                   </div>
 
-=======
-                                                                                      class="yiv2621404860spacer"> </div>
-                                                                                        $viewOnWebsite
-                                                                                              </td>
-                                                                                          </tr>
-                                                                                      </tbody>
-                                                                                  </table>
->>>>>>> b14daef (access_affinitygroup: ccNewsWrapper reverted - emailContent tweaked view on website button d8-1455):modules/access_affinitygroup/src/emailContent.php
                                                                                   <div style="min-height:30px;line-height:30px;"
                                                                                       class="spacer"> </div>
                                                                               </td>
