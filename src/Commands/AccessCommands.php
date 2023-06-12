@@ -114,6 +114,26 @@ class AccessCommands extends DrushCommands {
       $orgs = array_slice($orgs, 0, $options['limit']);
 
       foreach ($orgs as $org) {
+        $lat = 0;
+        if ($org->latitude >= -90 && $org->latitude <= 90) {
+          $lat = $org->latitude;
+        }
+        else {
+          if ($options['verbose']) {
+            $this->output()->writeln('<error>Latitude out of range for ' . $org->organization_name . ' (' . $org->organization_id . ')</error>');
+          }
+        }
+
+        $lon = 0;
+        if ($org->longitude >= -180 && $org->longitude <= 180) {
+          $lon = $org->longitude;
+        }
+        else {
+          if ($options['verbose']) {
+            $this->output()->writeln('<error>Longitude out of range for ' . $org->organization_name . ' (' . $org->organization_id . ')</error>');
+          }
+        }
+
         $query = \Drupal::database()
             ->select('node__field_organization_id', 'f')
             ->fields('f', ['entity_id']);
@@ -205,26 +225,6 @@ class AccessCommands extends DrushCommands {
         else {
           if ($options['verbose']) {
             $this->output()->writeln('<info>Assigned Carnegie Code ' . $carnegie_code . ' for "' . $org->organization_name . '".</info>');
-          }
-        }
-
-        $lat = 0;
-        if ($org->latitude >= -90 && $org->latitude <= 90) {
-          $lat = $org->latitude;
-        }
-        else {
-          if ($options['verbose']) {
-            $this->output()->writeln('<error>Latitude out of range for ' . $org->organization_name . ' (' . $org->organization_id . ')</error>');
-          }
-        }
-
-        $lon = 0;
-        if ($org->longitude >= -180 && $org->longitude <= 180) {
-          $lon = $org->longitude;
-        }
-        else {
-          if ($options['verbose']) {
-            $this->output()->writeln('<error>Longitude out of range for ' . $org->organization_name . ' (' . $org->organization_id . ')</error>');
           }
         }
 
