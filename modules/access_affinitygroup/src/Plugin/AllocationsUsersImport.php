@@ -331,6 +331,12 @@ class AllocationsUsersImport {
           $newCiderRefnums = [];
           foreach ($aUser['resources'] as $cider) {
 
+            // special:  there is not a cider resource for this even though
+            // it can be listed on users' allocations list.
+            if ($cider['cider_resource_id'] == 'credits.allocations.access-ci.org') {
+              continue;
+            }
+
             $query = \Drupal::entityQuery('node');
             $refnum = $query
               ->condition('type', 'access_active_resources_from_cid')
@@ -740,7 +746,6 @@ class AllocationsUsersImport {
             $ccId = $field_val[0]['value'];
             $agContacts[] = $ccId;
           }
-
           else {
             // Users without cc id. might not do anything with this here, not sure yet.
             $agContactsNoCCid[] = $uid;
@@ -766,14 +771,17 @@ class AllocationsUsersImport {
         $this->collectCronLog("Sync: to be added to list $agTitle count: " . count($notInCC), 'i');
 
         if (count($notInCC)) {
+          $notInCC = array_values($notInCC);
+
           $postData = [
             'source' => [
-              'contact_ids' => $notInCC
+              'contact_ids' => $notInCC,
             ],
             'list_ids' => [$listId],
           ];
 
-          $cca->apiCall('/activities/add_list_memberships', json_encode($postData), 'POST');
+          $postData = json_encode($postData);
+          $cca->apiCall('/activities/add_list_memberships', $postData, 'POST');
         }
       }
       catch (\Exception $e) {
