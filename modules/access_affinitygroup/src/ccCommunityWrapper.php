@@ -23,18 +23,18 @@
  * logoUrl: url for logo image, or null for none.
  */
 function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl, $logoUrl) {
-    // Build list of one or more affinity group names separated by 'or'.
-    $agText = '';
-    $or = '';
-    foreach ($agNames as $agName) {
-        $agText = $agText . $or . $agName;
-        $or = ' or ';
-    }
-    $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
+  // Build list of one or more affinity group names separated by 'or'.
+  $agText = '';
+  $or = '';
+  foreach ($agNames as $agName) {
+    $agText = $agText . $or . $agName;
+    $or = ' or ';
+  }
+  $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
-    $pubDateDisplay = null;
-    if ($pubDate) {
-        $pubDateDisplay = <<<PUBDATE
+  $pubDateDisplay = NULL;
+  if ($pubDate) {
+    $pubDateDisplay = <<<PUBDATE
         <table width="100%" border="0"
             cellpadding="0" cellspacing="0"
             style="table-layout:fixed;"
