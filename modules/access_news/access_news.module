@@ -12,6 +12,8 @@ use Drupal\user\Entity\User;
 use Drupal\recurring_events\Entity\EventInstance;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 
+define('ACCESS_SUPPPORT_URL', "https://support.access-ci.org");
+
 /**
  * Implements hook_form_alter().
  *
@@ -47,7 +49,8 @@ function access_news_validate(&$form, FormStateInterface $form_state) {
         // Administrator can assign ACCESS News to any Affinity Group.
         if (in_array('administrator', \Drupal::currentUser()->getRoles())) {
           $authorized = TRUE;
-        } else {
+        }
+        else {
           // Load coordinator(s) for the Affinity Group.
           $coordinator_field = $n->get('field_coordinator');
           if ($coordinator_field) {
@@ -134,7 +137,8 @@ function access_news_node_insert(Node $node) {
         $message = t('Thank you for submitting your news. Please change the state to "Ready for Review" when you would like to publish it.');
         \Drupal::messenger()->addMessage($message);
       }
-    } else {
+    }
+    else {
       // For published news: Check if broadcast to listed AGs desired, do it if so.
       affinityGroupBroadcast($node, TRUE);
     }
@@ -156,7 +160,8 @@ function access_news_entity_insert(EntityInterface $entity) {
         $message = t('Thank you for submitting your event. Please change the state to "Ready for Review" when you would like to publish it.');
         \Drupal::messenger()->addMessage($message);
       }
-    } else {
+    }
+    else {
       // For published event: Check if broadcast to listed AGs desired, do it if so.
       affinityGroupBroadcast($entity, FALSE);
     }
@@ -239,13 +244,14 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 
       if (!count($ccListIdArray)) {
         showStatus("Missing Constant Contact Email List Id for Affinity Group");
-      } else {
+      }
+      else {
         // Gather items to insert into the email template.
         $titleArray = $getFields['title']->getValue();
         $title = $titleArray[0]['value'];
 
         // Make link to item, including utm for analytics.
-        $newsUrl = $node->toUrl()->setAbsolute()->toString();
+        $newsUrl = ACCESS_SUPPPORT_URL . $node->toUrl()->toString();
         $utmCampaign = filter_var($agNames[0], FILTER_SANITIZE_URL) . '-' . date('mdy');
         $newsUrl = appendUtmCC($newsUrl, $utmCampaign);
 
@@ -262,7 +268,8 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
           // We don't use the renderer because we need to separate the title.
           $bodyArray = $getFields['body']->getValue();
           $body = check_markup($bodyArray[0]['value'], 'basic_html');
-        } else {
+        }
+        else {
           // Newstype is eventseries.
           $pubDate = NULL;
 
@@ -286,7 +293,7 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
           $ccListIdArray,
           $useCommunityTemplate,
           $logoUrl
-        );
+              );
       }
     }
   }
@@ -339,10 +346,11 @@ function weeklyNewsReport($noSend) {
     $emailHTML = ccNewsRollupHTML($newsHTML, $eventHTML);
 
     // Create constant contact campaign. this does not send it.
-    $campaignName = uniqid('Access Weekly Digest: ' . $dtTomorrow->format('n/j/y') . ' ', FALSE);
+    $campaignName = uniqid('Access Digest: ' . $dtTomorrow->format('n/j/y') . ' ', FALSE);
 
     $ccResponse = setupEmailCampaign('The ACCESS Support Digest // ' . $dtTomorrow->format('F j, Y'), $emailHTML, $campaignName);
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
   }
   // Possible todo: if !nosend, send email to xx saying the draft is ready. Or perhaps send a CC test mail to the person.
@@ -393,20 +401,22 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
         $body = $node->body[0]->view('alt_teaser');
         $bodyDisp = \Drupal::service('renderer')->renderPlain($body);
 
-        $newsUrl = $node->toUrl()->setAbsolute()->toString();
+        $newsUrl = ACCESS_SUPPPORT_URL . $node->toUrl()->toString();
         $newsUrl = appendUtmCC($newsUrl, $utmCampaign);
 
         if ($nCount > 1) {
           $listDisplay = $listDisplay . $divider;
         }
         $itemDisplay = newsItemHTML($title, $pubDateDisp, $bodyDisp, $newsUrl);
-      } catch (Exception $e) {
+      }
+      catch (Exception $e) {
         $itemDisplay = 'Error retrieving news item: ' . $e->getMessage();
       }
 
       $listDisplay = $listDisplay . $itemDisplay;
     } // end for
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     $listDisplay = 'Error retrieving news: ' . $e->getMessage();
   }
   return $listDisplay;
@@ -440,7 +450,7 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
         $titleArray = $fields['title']->getValue();
         $title = $titleArray[0]['value'];
 
-        $eventUrl = $enode->toUrl()->setAbsolute()->toString();
+        $eventUrl = ACCESS_SUPPPORT_URL . $enode->toUrl()->toString();
         $eventUrl = appendUtmCC($eventUrl, $utmCampaign);
 
         // Event date-time is stored as array of 'value' and
@@ -458,7 +468,8 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
 
         if ($startEvent->format('dmy') == $endEvent->format('dmy')) {
           $endDisplay = $endEvent->format('g:i a');
-        } else {
+        }
+        else {
           $endDisplay = $endEvent->format('n/j/Y g:i a');
         }
 
@@ -477,7 +488,8 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
         }
 
         $itemDisplay = eventItemHTML($title, $dateTimeDisp, $bodyDisp, $eventUrl);
-      } catch (Exception $e) {
+      }
+      catch (Exception $e) {
         // kint("EXCEPTION  at $eCount: ". $e->getMessage());
         $itemDisplay = 'Error retrieving event item ' . $e->getMessage();
       }
@@ -487,7 +499,8 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
 
     $sectionHeader = sectionHeadHTML("Events and Trainings");
     $listDisplay = $sectionHeader . $listDisplay;
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     $listDisplay = 'Error retrieving events: ' . $e->getMessage();
   }
   return $listDisplay;
@@ -513,7 +526,8 @@ function access_news_cron() {
       \Drupal::state()->set('access_news.crontime-rollupnews', $currentTime);
       weeklyNewsReport(FALSE);
     }
-  } catch (Exception $e) {
+  }
+  catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('exception: ' . $e->getMessage());
   }
 }

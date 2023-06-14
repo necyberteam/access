@@ -10,10 +10,14 @@
  * Using this template, we send 2 types of emails:
  *  a) the weekly digest of news and event (aka "rollup" in the code)
  *  b) an individual news item or event "broadcast" as  email to an affinity group (perhaps multiple; not decided)
+ *
+ * Note: this code refers to "news" which has since been renamed to "announcements" on the website.
+ * The website now has "ACCESS News", which are articles suggested by community and written by communications
+ * team, and "announcenments", which anyone can submit for approval. We deal with the latter here.
  */
 
 /**
- * Used in weekly news rollup.
+ * Used in digest (announcements/events rollup).
  */
 function sectionHeadHTML($titleText) {
   $sectionHead = <<<SECTIONHEADHTML
@@ -64,7 +68,7 @@ function eventItemHTML($title, $eventDate, $description, $articleUrl) {
 }
 
 /**
- * Used in weekly news rollup - each news or event item
+ * Used in announcements/events digest - each announcement or event item
  * with a link at the bottom to the event.
  */
 function itemHTML($titleText, $main, $itemUrl, $itemLinkText) {
@@ -286,8 +290,7 @@ function ccNewsCommonHTML($newsBody, $topExtra) {
   $fbIcon = imageUrl('circleIconFacebook.png');
   $twIcon = imageUrl('circleIconTwitter.png');
   $ytIcon = imageUrl('circleIconYoutube.png');
-  $nsfLogo = \Drupal::request()->getSchemeAndHttpHost()
-    . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
+  $nsfLogo = ACCESS_SUPPPORT_URL . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
 
   $emailText = <<<EMAILTEXT
   <html lang="en-US">
@@ -729,7 +732,7 @@ function ccRollupBottomStatic1() {
                 When you join the ACCESS Support Affinity Group you'll receive these weekly digests.";
 
   $buttonText = "See Affinity Groups";
-  $buttonUrl = \Drupal::request()->getSchemeAndHttpHost() . '/affinity_groups';
+  $buttonUrl = ACCESS_SUPPPORT_URL . '/affinity_groups';
 
   $html = <<<ROLLUPSTATIC1
     <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">
@@ -799,13 +802,13 @@ function ccRollupBottomStatic1() {
  * "Share with the ACCESS Community" section.
  */
 function ccRollupBottomStatic2() {
-  $title = titleHTML('Do you have news or trainings to share?');
-  $newsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/news';
-  $eventsUrl = \Drupal::request()->getSchemeAndHttpHost() . '/events';
+  $title = titleHTML('Do you have announcements or trainings to share?');
+  $newsUrl = ACCESS_SUPPPORT_URL . '/announcements';
+  $eventsUrl = ACCESS_SUPPPORT_URL . '/events';
 
   $bodyHtml = <<<BODY
       <span>Add your </span>
-      <a href="$newsUrl">news</a>
+      <a href="$newsUrl">announcement</a>
       <span> or </span>
       <a href="$eventsUrl">event</a>
       <span> on the ACCESS Support website and we will include it in our digest.</span>
