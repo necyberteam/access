@@ -1,0 +1,8 @@
+access.autocomplete:
+    path: '/autocomplete/organizations'
+    defaults:
+        _controller: '\Drupal\access\Controller\JsonApiAccessController::handleAutocomplete'
+        _format: json
+    requirements:
+        _access: 'TRUE'
+
