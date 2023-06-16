@@ -12,6 +12,7 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -179,6 +180,25 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
   if ($form_id == 'node_match_engagement_form') {
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
+  }
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view_alter().
+ * For the display of a single match engagement (it's not a view)
+ * replace the link to user profile with link to community-persona.
+ */
+function access_match_engagement_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+
+  if ($display->getTargetBundle() == 'match_engagement') {
+    if (!empty($build['field_researcher'])) {
+      foreach ($entity->get('field_researcher')->getValue() as  $i => $researcher ) {
+        $uid = $researcher['target_id'];
+        $build['field_researcher'][$i]['#type'] = 'markup';
+        $name = $build['field_researcher'][$i]['#title'];
+        $build['field_researcher'][$i]['#markup'] = "<p><a href='/community-persona/{$uid}'>$name</a></p>";
+      }
+    }
   }
 }
 
