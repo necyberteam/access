@@ -20,16 +20,23 @@ class AffinityContactGroup extends BlockBase {
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
+    $current_user = \Drupal::currentUser();
+    $roles = $current_user->getRoles();
     // Adding a default for layout page.
     $nid = $node ? $node->id() : 291;
-    $contact['string'] = [
-      '#type' => 'inline_template',
-      '#template' => '<a class="btn btn-outline-dark cursor-default m-2" href="/form/affinity-group-contact?nid={{ nid }}">{{ contact_text }}</a>',
-      '#context' => [
-        'contact_text' => $this->t('Email Affinity Group'),
-        'nid' => $nid,
-      ],
+    $contact = [
+      ['#markup' => ''],
     ];
+    if (in_array('administrator', $roles) || in_array('affinity_group_leader', $roles)) {
+      $contact['string'] = [
+        '#type' => 'inline_template',
+        '#template' => '<a class="btn btn-outline-dark cursor-default m-2" href="/form/affinity-group-contact?nid={{ nid }}">{{ contact_text }}</a>',
+        '#context' => [
+          'contact_text' => $this->t('Email Affinity Group'),
+          'nid' => $nid,
+        ],
+      ];
+    }
 
     return $contact;
   }

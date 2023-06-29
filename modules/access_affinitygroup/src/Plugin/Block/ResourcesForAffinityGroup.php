@@ -42,6 +42,7 @@ class ResourcesForAffinityGroup extends BlockBase {
 
     // Grab node id.
     $node = \Drupal::routeMatch()->getParameter('node');
+
     // Adding a default for layout page.
     $nid = $node ? $node->id() : 291;
     // Load Announcement view.
