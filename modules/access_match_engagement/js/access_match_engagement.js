@@ -27,14 +27,13 @@ const selected = [];
 
 var options = document.getElementById('edit-field-tags').selectedOptions;
 set_tid = Array.from(options).map(({ value }) => value);
-if (set_tid.length > 0) {
+if (set_tid.length > 0 && set_tid[0] != "_none") {
   selected.push(...set_tid);
   // for each set_tid, add class selected to the button
   for (let tid of set_tid) {
     document.querySelectorAll("[data-tid='" + tid + "']")[0].classList.add("selected");
   }
 }
-console.log(selected);
 selectElement('edit-field-tags');
 
 const buttonPressed = e => {
@@ -49,7 +48,6 @@ const buttonPressed = e => {
     e.target.classList.add("selected");
     selected.push(e.target.dataset.tid);
   }
-  console.log(selected);
   selectElement('edit-field-tags')
 }
 
