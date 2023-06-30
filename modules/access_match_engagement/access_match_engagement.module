@@ -16,6 +16,7 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
 use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\views\Views;
 
 /**
  * Implements hook_views_pre_render().
@@ -41,6 +42,24 @@ function access_match_engagement_block_build_views_block_alter(array &$build, Bl
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
+    $view = Views::getView('node_add_tags');
+    $view->setDisplay('block_1');
+    $view->setArguments([$affinity_group_tax]);
+    $view->execute();
+    $rendered = $view->render();
+    $output = \Drupal::service('renderer')->render($rendered);
+    $form['oit_advanced'] = [
+      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+      '#weight' => 15,
+      '#allowed_tags' => [
+        'button',
+        'details',
+        'summary',
+        'span',
+        'h2',
+      ],
+    ];
+
     // Attach javascript.
     $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
 
