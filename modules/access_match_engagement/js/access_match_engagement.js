@@ -29,9 +29,12 @@ var options = document.getElementById('edit-field-tags').selectedOptions;
 set_tid = Array.from(options).map(({ value }) => value);
 if (set_tid.length > 0 && set_tid[0] != "_none") {
   selected.push(...set_tid);
-  // for each set_tid, add class selected to the button
   for (let tid of set_tid) {
-    document.querySelectorAll("[data-tid='" + tid + "']")[0].classList.add("selected");
+    currentButton = document.querySelectorAll("[data-tid='" + tid + "']");
+    // If a title is selected then the button won't exist.
+    if (currentButton.length > 0) {
+      currentButton[0].classList.add("selected");
+    }
   }
 }
 selectElement('edit-field-tags');
