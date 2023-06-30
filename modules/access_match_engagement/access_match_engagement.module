@@ -44,7 +44,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     $view = Views::getView('node_add_tags');
     $view->setDisplay('block_1');
-    $view->setArguments([$affinity_group_tax]);
     $view->execute();
     $rendered = $view->render();
     $output = \Drupal::service('renderer')->render($rendered);
@@ -211,7 +210,7 @@ function access_match_engagement_node_view(array &$build, EntityInterface $entit
 
   if ($display->getTargetBundle() == 'match_engagement') {
     if (!empty($build['field_researcher'])) {
-      foreach ($entity->get('field_researcher')->getValue() as  $i => $researcher ) {
+      foreach ($entity->get('field_researcher')->getValue() as $i => $researcher) {
         $uid = $researcher['target_id'];
         $build['field_researcher'][$i]['#type'] = 'markup';
         $name = $build['field_researcher'][$i]['#title'];
