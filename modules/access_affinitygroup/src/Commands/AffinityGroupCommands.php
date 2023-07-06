@@ -129,6 +129,7 @@ class AffinityGroupCommands extends DrushCommands {
     $nids = \Drupal::entityQuery('node')
       ->condition('status', 1)
       ->condition('type', 'affinity_group')
+      ->accessCheck(FALSE)
       ->execute();
     $nodes = Node::loadMultiple($nids);
 
@@ -221,6 +222,7 @@ class AffinityGroupCommands extends DrushCommands {
     $nids = \Drupal::entityQuery('node')
       ->condition('type', 'access_news')
       ->condition('status', 1)
+      ->accessCheck(FALSE)
       ->execute();
     $nodes = Node::loadMultiple($nids);
 
