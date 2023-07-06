@@ -46,7 +46,8 @@ class JsonApiAccessController {
         $limit = $limit ? $limit : 10;
 
         $query = \Drupal::entityQuery('node')
-            ->condition('type', 'access_organization');
+            ->condition('type', 'access_organization')
+            ->accessCheck(FALSE);
 
         // Search
         $search = $request->query->get('q');

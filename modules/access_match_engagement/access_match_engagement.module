@@ -367,6 +367,7 @@ function access_match_engagement_cron() {
       $uids = \Drupal::entityQuery('user')
         ->condition('status', 1)
         ->condition('roles', 'match_pm')
+        ->accessCheck(FALSE)
         ->execute();
       access_match_engagement_interested_email($uids);
       $config->set('interested', 0);

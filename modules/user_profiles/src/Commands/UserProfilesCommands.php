@@ -298,7 +298,8 @@ class UserProfilesCommands extends DrushCommands {
     $this->output()->writeln("Migrating webform submissions");
 
     $ws_query = \Drupal::entityQuery('webform_submission')
-      ->condition('uid', $user_from->id());
+      ->condition('uid', $user_from->id())
+      ->accessCheck(FALSE);
     $ws_results = $ws_query->execute();
     if ($ws_results == NULL) {
       $this->output()->writeln("  From-user has no webform submissions");

@@ -486,6 +486,7 @@ function makeListMembershipJSON($flagEntityId, $userDetails) {
   $query = \Drupal::entityQuery('node');
   $node_ids = $query
     ->condition('field_affinity_group', $flagEntityId)
+    ->accessCheck(FALSE)
     ->execute();
 
   $aval = array_values($node_ids);

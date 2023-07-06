@@ -100,6 +100,7 @@ class AllocationsUsersImport {
 
     // Get access support affinity group node for later.
     $nArray = \Drupal::entityQuery('node')
+      ->accessCheck(FALSE)
       ->condition('type', 'affinity_group')
       ->condition('title', 'ACCESS Support')
       ->execute();
@@ -341,6 +342,7 @@ class AllocationsUsersImport {
             $refnum = $query
               ->condition('type', 'access_active_resources_from_cid')
               ->condition('field_access_global_resource_id', $cider['cider_resource_id'])
+              ->accessCheck(FALSE)
               ->execute();
 
             if (empty($refnum)) {
@@ -377,6 +379,7 @@ class AllocationsUsersImport {
             $agNodeIds = $query
               ->condition('type', 'affinity_group')
               ->condition('field_cider_resources', $refnum)
+              ->accessCheck(FALSE)
               ->execute();
 
             foreach ($agNodeIds as $id) {
@@ -709,6 +712,7 @@ class AllocationsUsersImport {
     $nids = \Drupal::entityQuery('node')
       ->condition('status', 1)
       ->condition('type', 'affinity_group')
+      ->accessCheck(FALSE)
       ->execute();
     $nodes = Node::loadMultiple($nids);
     $cca = new ConstantContactApi();
@@ -815,6 +819,7 @@ class AllocationsUsersImport {
         // Make destination list of emails of users with administrator role.
         $userIds = \Drupal::entityQuery('user')
           ->condition('status', 1)
+          ->accessCheck(FALSE)
           ->execute();
         $userCount = count($userIds);
         $this->collectCronLog("Clean Obs: user count $userCount ", 'i');

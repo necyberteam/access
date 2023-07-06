@@ -55,6 +55,7 @@ class MatchLookup {
     $query = \Drupal::entityQuery('node')
       ->condition('type', 'match_engagement')
       ->condition($match_field, $match_user_id)
+      ->accessCheck(FALSE)
       ->execute();
     if ($query != NULL) {
       $this->matches[$match_field] = [

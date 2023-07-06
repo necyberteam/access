@@ -36,6 +36,7 @@ class AffinityGroupCommands extends DrushCommands {
     $nids = \Drupal::entityQuery('node')
       ->condition('status', 1)
       ->condition('type', 'affinity_group')
+      ->accessCheck(FALSE)
       ->execute();
     $nodes = Node::loadMultiple($nids);
     $cca = new ConstantContactApi();
@@ -238,6 +239,7 @@ class AffinityGroupCommands extends DrushCommands {
       ->condition('field_published_date.value', $fmDate1, '>=')
       ->condition('field_published_date.value', $fmDate2, '<=')
       ->condition('type', 'access_news')
+      ->accessCheck(FALSE)
       ->execute();
 
     $nodes = Node::loadMultiple($nids);

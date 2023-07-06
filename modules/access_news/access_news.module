@@ -374,6 +374,7 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
       ->condition('field_published_date.value', $fromDate, '>=')
       ->condition('field_published_date.value', $toDate, '<=')
       ->condition('type', 'access_news')
+      ->accessCheck(FALSE)
       ->execute();
 
     $nodes = Node::loadMultiple($nids);

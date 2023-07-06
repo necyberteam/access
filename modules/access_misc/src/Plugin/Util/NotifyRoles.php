@@ -21,6 +21,7 @@ class NotifyRoles {
     $userIds = \Drupal::entityQuery('user')
       ->condition('status', 1)
       ->condition('roles', $roleName)
+      ->accessCheck(FALSE)
       ->execute();
     $users = User::loadMultiple($userIds);
     $toAddrs = '';
