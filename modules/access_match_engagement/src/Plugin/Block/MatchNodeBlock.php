@@ -8,6 +8,7 @@ use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\file\Entity\File;
+use Drupal\Core\File\FileUrlGeneratorInterface;
 use Drupal\Core\Url;
 use Drupal\image\Entity\ImageStyle;
 use Drupal\Core\Routing\RouteMatchInterface;
@@ -30,6 +31,13 @@ class MatchNodeBlock extends BlockBase implements
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityInterface;
+
+  /**
+   * Invoke renderer.
+   *
+   * @var \Drupal\Core\File\FileUrlGeneratorInterface
+   */
+  protected $fileUrlGenerator;
 
   /**
    * Invoke renderer.
@@ -59,6 +67,7 @@ class MatchNodeBlock extends BlockBase implements
       $plugin_definition,
       $container->get('entity_type.manager'),
       $container->get('current_route_match'),
+      $container->get('file_url_generator'),
     );
   }
 
@@ -73,13 +82,21 @@ class MatchNodeBlock extends BlockBase implements
    *   Plugin Definition mixed.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_interface
    *   Invokes renderer.
-   * @param \Drupal\Core\Routing\RouteMatchInterface $route_match_interface
-   *   Invokes routeMatch.
+   * @param \Drupal\Core\File\FileUrlGeneratorInterface $file_url_generator
+   *   File url generator.
    */
-  public function __construct(array $configuration, $plugin_id, $plugin_definition, EntityTypeManagerInterface $entity_interface, RouteMatchInterface $route_match_interface) {
+  public function __construct(
+    array $configuration,
+    $plugin_id, $plugin_definition,
+    EntityTypeManagerInterface
+    $entity_interface,
+    RouteMatchInterface $route_match_interface,
+    FileUrlGeneratorInterface $file_url_generator
+  ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->entityInterface = $entity_interface;
     $this->routMatchInterface = $route_match_interface;
+    $this->fileUrlGenerator = $file_url_generator;
   }
 
   /**
@@ -111,7 +128,8 @@ class MatchNodeBlock extends BlockBase implements
       if ($image) {
         $img_file = File::load($image[0]['target_id']);
         $uri = $img_file->getFileUri();
-        $image_full = Url::fromUri(file_create_url($uri))->toString();
+        $file_url = $this->fileUrlGenerator->generateAbsoluteString($uri);
+        $image_full = Url::fromUri($file_url)->toString();
         $alt = $image[0]['alt'];
         $width = $image[0]['width'];
         $height = $image[0]['height'];
