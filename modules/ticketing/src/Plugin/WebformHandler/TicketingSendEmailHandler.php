@@ -194,8 +194,9 @@ class TicketingSendEmailHandler extends WebformHandlerBase {
   }
 
   public function getXMailMessageBody($description, $tags, $suggested_tag, $from_email) {
+    $ticketing_module_path = \Drupal::service('extension.list.module')->getPath('ticketing');
     return twig_render_template(
-          drupal_get_path('module', 'ticketing') . '/templates/ticketing-mail.html.twig',
+          $ticketing_module_path . '/templates/ticketing-mail.html.twig',
           [
             'theme_hook_original' => 'not-applicable',
             'problem_description' => $description,

@@ -68,8 +68,9 @@ class AccountSupportHandler extends WebformHandlerBase {
   }
 
   public function getXMailMessageBody($data) {
+    $ticketing_module_path = \Drupal::service('extension.list.module')->getPath('ticketing');
     return twig_render_template(
-          drupal_get_path('module', 'ticketing') . '/templates/account-support-mail.html.twig',
+          $ticketing_module_path . '/templates/account-support-mail.html.twig',
           [
             'theme_hook_original' => 'not-applicable',
             'name' => $data['your_name'],
