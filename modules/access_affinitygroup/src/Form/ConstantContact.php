@@ -29,7 +29,7 @@ class ConstantContact extends FormBase {
     $allocBatchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC');
     $allocBatchNoUserDetSav = \Drupal::state()->get('access_affinitygroup.allocBatchNoUserDetSave');
 
-    $noConstantContactCalls = \Drupal::state()->get('access_affinitygroup.noConstantContactCalls');
+    $noConstantContactCalls = \Drupal::configFactory()->getEditable('access_affinitygroup.settings')->get('noConstantContactCalls');
 
     $request = \Drupal::request();
     $code = $request->get('code');
@@ -302,10 +302,12 @@ class ConstantContact extends FormBase {
   }
 
   /**
-   * Save state variable access_affinitygroup.noConstantContactCalls according to checkbox  value.
+   * Save config setting access_affinitygroup.settings.noConstantContactCalls according to checkbox  value.
    */
   public function doSaveDisableCC(array &$form, FormStateInterface $form_state) {
-    \Drupal::state()->set('access_affinitygroup.noConstantContactCalls', $form_state->getValue('no_constant_contact_calls'));
+    $config = \Drupal::configFactory()->getEditable('access_affinitygroup.settings');
+    $config->set('noConstantContactCalls', $form_state->getValue('no_constant_contact_calls'));
+    $config->save();
   }
 
   /**

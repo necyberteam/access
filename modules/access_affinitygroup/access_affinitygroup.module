@@ -119,8 +119,14 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
       update_ag_leader_roles($entity);
       add_ag_taxonomy_term($entity);
 
-      // If not already there, add list to constant contact.
-      // get all existing lists.
+      // Add list to Constant Contact if this has not already been done.
+      // The list_id field will be set with Constant Contact's Id for this list.
+      if (!isCCEnabled()) {
+        showStatus("Constant Contact interface has been disabled.");
+        return;
+      }
+
+      // Get all existing CC lists.
       $cca = new ConstantContactApi();
       $lists = $cca->apiCall('/contact_lists ');
       if (empty($lists)) {
@@ -162,7 +168,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
           $entity->set('field_list_id', $list_id);
         }
         else {
-          showStatus('Bad Constant Contact list id.');
+          showStatus('Bad list id received from Constant Contact.');
         }
       }
     }
@@ -351,6 +357,11 @@ function create_ag_taxonomy_term($ag_title) {
  * Call CC API to add user to the email list corresponding to the entityId.
  */
 function subscribeToCCList($taxonomyId, $userDetails) {
+  if (!isCCEnabled()) {
+    showStatus("Can't add user to email list; Constant Contact interface has been disabled.");
+    return;
+  }
+
   $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
   if (empty($postJSON)) {
     showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");
@@ -390,7 +401,7 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       $userDetails = User::load($userId);
 
       $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
-      if (!empty($postJSON)) {
+      if (!empty($postJSON) && isCCEnabled()) {
         $cca = new ConstantContactApi();
         $ccResponse = $cca->apiCall('/activities/remove_list_memberships', $postJSON, 'POST');
       }
@@ -399,6 +410,9 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
     }
     else {
       // Case 2: AG getting deleted.
+      if (!isCCEnabled()) {
+        return;
+      }
       $title = $entity->getTitle();
       $cca = new ConstantContactApi();
       $lists = $cca->apiCall('/contact_lists');
@@ -551,9 +565,17 @@ function access_affinitygroup_user_login(UserInterface $account) {
 }
 
 /**
- * Return the new ID if any.
+ * Add user to the Constant Contact account.
+ * If user is already in the account, the existing ID will be returned here.
+ * Return the new ID if successful.
  */
 function addUserToConstantContact($userEmail, $firstName, $lastName, $noDisplay = FALSE) {
+  if (!isCCEnabled()) {
+    if (!$noDisplay) {
+      showStatus("Constant Contact interface has been disabled.");
+    }
+    return;
+  }
   $cca = new ConstantContactApi();
   if ($noDisplay) {
     $cca->setSupressErrDisplay(TRUE);
@@ -580,8 +602,10 @@ function access_affinitygroup_cron() {
   try {
     // Cronrunning true means allocations cron Todo, rename.
     \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
+
     // 1. Refresh the Constant Contact Token
     if (shouldRun('token')) {
+
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
       \Drupal::logger('access_affinitygroup')->notice('Running cron: token refresh' . date("Y-m-d H:i:s", $currentTime));
@@ -614,12 +638,16 @@ function access_affinitygroup_cron() {
 /**
  * Test if the cron function should run: either 'token' for refresh cc token,
  * or 'users' for running the allocations api.
- * we might read from module config file in future to see if function disabled.
  */
 function shouldRun($function) {
 
   $currentTime = \Drupal::time()->getCurrentTime();
   if ($function == 'token') {
+
+    if (!isCCEnabled()) {
+      return;
+    }
+
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-t', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
 
@@ -667,6 +695,19 @@ function needsCCId($u) {
     return FALSE;
   }
   return TRUE;
+}
+
+/**
+ * Default, if the config setting has not been set for some reason, is false.
+ */
+function isCCEnabled() {
+  $config = \Drupal::configFactory()->getEditable('access_affinitygroup.settings');
+  $disabled = $config->get('noConstantContactCalls');
+
+  if (isset($disabled)) {
+    return !$disabled;
+  }
+  return FALSE;
 }
 
 /**
@@ -719,8 +760,12 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
  * Nothing is sent at this point. Returns the response which included the
  * campaign id and campaign activity id needed for step leading to send.
  * campaignName must be unique to the cc account.
+ * Return: api response, or NULL if constant contact is disabled.
  */
 function setupEmailCampaign($emailSubject, $emailHtml, $campaignName) {
+  if (!isCCEnabled()) {
+    return NULL;
+  }
 
   $postData = [
     'name' => $campaignName,
@@ -737,7 +782,8 @@ function setupEmailCampaign($emailSubject, $emailHtml, $campaignName) {
     ],
   ];
 
-  // note: could include irl addr in postData if we want to change it, but don't have to as cc uses addr on record for footer address in email.
+  // note: could include irl addr in postData if we want to change it, but don't have to
+  // as cc uses addr on record for footer address in email.
   $postData = json_encode($postData);
   $cca = new ConstantContactApi();
   $ccResponse = $cca->apiCall('/emails', $postData, 'POST');
@@ -751,6 +797,10 @@ function setupEmailCampaign($emailSubject, $emailHtml, $campaignName) {
  * ccListIds: array of CC email List Ids, one for each AG
  */
 function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
+  if (!isCCEnabled()) {
+    showStatus("Constant Contact interface has been disabled.");
+    return;
+  }
   // first, get the activity object.
   $sent = FALSE;
   $cca = new ConstantContactApi();
@@ -769,9 +819,8 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
       // finally, send it, scheduled with 0 signifying: now.
       $schedule = ['scheduled_date' => '0'];
       $schedule = json_encode($schedule);
-      // @todo . This is where emails are actually sent via api call to constant contact.
       $ccResponse = $cca->apiCall("/emails/activities/$campaignActivityId/schedules", $schedule, 'POST');
-      $sent = TRUE;
+      $sent = ($ccResponse != NULL);
     }
   }
   if ($sent) {
