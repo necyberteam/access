@@ -19,6 +19,7 @@ class ConstantContact extends FormBase {
    * {@inheritdoc}
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
+
     $alloc_cron_disable = \Drupal::state()->get('access_affinitygroup.alloc_cron_disable');
     $alloc_cron_allow_ondemand = \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand');
 
@@ -27,6 +28,8 @@ class ConstantContact extends FormBase {
     $allocBatchStartAt = \Drupal::state()->get('access_affinitygroup.allocBatchStartAt');
     $allocBatchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC');
     $allocBatchNoUserDetSav = \Drupal::state()->get('access_affinitygroup.allocBatchNoUserDetSave');
+
+    $noConstantContactCalls = \Drupal::state()->get('access_affinitygroup.noConstantContactCalls');
 
     $request = \Drupal::request();
     $code = $request->get('code');
@@ -44,6 +47,10 @@ class ConstantContact extends FormBase {
 
     $url = Url::fromUri('internal:/admin/services/constantcontact-token', ['query' => ['refresh_token' => TRUE]]);
     $link = Link::fromTextAndUrl(t('Refresh Token'), $url)->toString()->getGeneratedLink();
+
+    $form['y0'] = [
+      '#markup' => '<h4>Set up or refresh Constant Contact Connection</h4>',
+    ];
 
     $form['scope'] = [
       '#type' => 'checkboxes',
@@ -75,8 +82,24 @@ class ConstantContact extends FormBase {
       '#markup' => $link,
     ];
 
-    $form['x1'] = [
-      '#markup' => '<br><br><b>Administration Allocations Import Cron Settings</b>',
+    $form['y2'] = [
+      '#markup' => '<br><br><h4>Disable all calls to Constant Contact API</h4>',
+    ];
+    $form['no_constant_contact_calls'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Disable calls to Constant Contact API'),
+      '#description' => $this->t('Uncheck for production site. '),
+      '#default_value' => $noConstantContactCalls,
+    ];
+    $form['saveccdisable'] = [
+      '#type' => 'submit',
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#value' => $this->t('Save Disable Setting'),
+      '#submit' => [[$this, 'doSaveDisableCC']],
+    ];
+
+    $form['y3'] = [
+      '#markup' => '<br><br><h4>Administration Allocations Import Cron Settings</h4>',
     ];
 
     $form['alloc_cron_disable'] = [
@@ -99,8 +122,8 @@ class ConstantContact extends FormBase {
       '#submit' => [[$this, 'doSaveCronSettings']],
     ];
 
-    $form['x2'] = [
-      '#markup' => '<br><br><b>Import allocations batch processing</b><br>',
+    $form['y4'] = [
+      '#markup' => '<br><br><h4>Import allocations manual batch</h4>',
     ];
 
     $form['batch_param_batchsize'] = [
@@ -117,7 +140,7 @@ class ConstantContact extends FormBase {
       '#type' => 'number',
       '#title' => $this->t('Process limit'),
       '#default_value' => $allocBatchImportLimit,
-      '#description' => $this->t("Limit allocations users processed, up to 105000."),
+      '#description' => $this->t("Limit number of users processed."),
       '#required' => FALSE,
     ];
     $form['batch_param_startat'] = [
@@ -153,8 +176,12 @@ class ConstantContact extends FormBase {
       '#submit' => [[$this, 'doBatch']],
     ];
 
-    $form['x4'] = [
-      '#markup' => '<br><br><b>Weekly Digest</b><br>',
+    $form['y5'] = [
+      '#markup' => '<br><br><h4>Generate Weekly Digest</h4>',
+    ];
+
+    $form['i5'] = [
+      '#markup' => 'Campaign created in Constant Contact, but not sent.<br>',
     ];
 
     $form['runNewsDigest'] = [
@@ -162,26 +189,29 @@ class ConstantContact extends FormBase {
       '#value' => $this->t('Generate Digest'),
       '#submit' => [[$this, 'doGenerateDigest']],
     ];
-    $form['x5'] = [
-      '#markup' => '<br><br><b>Allocations Maintenance</b><br>',
+
+    $form['y6'] = [
+      '#markup' => '<br><br><h4>Sync Constant Constact Lists</h4>',
+    ];
+    $form['i6'] = [
+      '#markup' => 'This process checks each Affinity Group membership, and associated <br>
+                    Constant Contact list, and then adds missing AG members to CC list.',
     ];
 
     $form['maint_sync_param_start'] = [
       '#type' => 'number',
-      '#title' => $this->t('Sync Group Start'),
       '#min' => 1,
       '#max' => 1000,
       '#default_value' => 1,
-      '#description' => $this->t("Start count affinity group."),
+      '#description' => $this->t("Start count affinity groups."),
       '#required' => FALSE,
     ];
     $form['maint_sync_param_stop'] = [
       '#type' => 'number',
-      '#title' => $this->t('Sync Group Stop'),
       '#min' => 1,
       '#max' => 1000,
       '#default_value' => 1000,
-      '#description' => $this->t("Stop count affinity group."),
+      '#description' => $this->t("Stop count affinity groups."),
       '#required' => FALSE,
     ];
 
@@ -191,9 +221,16 @@ class ConstantContact extends FormBase {
       '#submit' => [[$this, 'doRunMaintSync']],
     ];
 
+    $form['y7'] = [
+      '#markup' => '<br><br><h4>Clean up obsolete allocations for users</h4>',
+    ];
+    $form['i7'] = [
+      '#markup' => 'This process compares user current allocations according allocations api,<br>
+                   and removes obsolete CiDeR allocations from user profiles.',
+    ];
+
     $form['maint_obsclean_param_start'] = [
       '#type' => 'number',
-      '#title' => $this->t('Obsolete Clean Start'),
       '#min' => 1,
       '#max' => 20000,
       '#default_value' => 1,
@@ -202,7 +239,6 @@ class ConstantContact extends FormBase {
     ];
     $form['maint_obsclean_param_stop'] = [
       '#type' => 'number',
-      '#title' => $this->t('Obsolete Clean Stop'),
       '#min' => 1,
       '#max' => 20000,
       '#default_value' => 20000,
@@ -212,7 +248,7 @@ class ConstantContact extends FormBase {
 
     $form['maint_obsclean_run'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Clean obsolete allocations'),
+      '#value' => $this->t('Clean allocations'),
       '#submit' => [[$this, 'doRunMaintObsClean']],
     ];
     return $form;
@@ -266,7 +302,14 @@ class ConstantContact extends FormBase {
   }
 
   /**
-   *
+   * Save state variable access_affinitygroup.noConstantContactCalls according to checkbox  value.
+   */
+  public function doSaveDisableCC(array &$form, FormStateInterface $form_state) {
+    \Drupal::state()->set('access_affinitygroup.noConstantContactCalls', $form_state->getValue('no_constant_contact_calls'));
+  }
+
+  /**
+   * Save state variables for running and testing the allocations import batching according to checkbox  values.
    */
   public function doSaveBatchSettings(array &$form, FormStateInterface $form_state) {
     \Drupal::state()->set('access_affinitygroup.allocBatchBatchSize', $form_state->getValue('batch_param_batchsize'));
@@ -277,7 +320,7 @@ class ConstantContact extends FormBase {
   }
 
   /**
-   *
+   * *  save state variables for running and testing the allocations import cron according to checkbox  values.
    */
   public function doSaveCronSettings(array &$form, FormStateInterface $form_state) {
     \Drupal::state()->set('access_affinitygroup.alloc_cron_disable', $form_state->getValue('alloc_cron_disable'));
@@ -304,8 +347,10 @@ class ConstantContact extends FormBase {
    */
   public function doRunMaintSync(array &$form, FormStateInterface $form_state) {
     $aui = new AllocationsUsersImport();
-    $aui->syncAGandCC($form_state->getValue('maint_sync_param_start'),
-                      $form_state->getValue('maint_sync_param_stop'));
+    $aui->syncAGandCC(
+      $form_state->getValue('maint_sync_param_start'),
+      $form_state->getValue('maint_sync_param_stop')
+    );
   }
 
   /**
@@ -314,8 +359,10 @@ class ConstantContact extends FormBase {
    */
   public function doRunMaintObsClean(array &$form, FormStateInterface $form_state) {
     $aui = new AllocationsUsersImport();
-    $aui->cleanObsoleteAllocations($form_state->getValue('maint_obsclean_param_start'),
-                                   $form_state->getValue('maint_obsclean_param_stop'));
+    $aui->cleanObsoleteAllocations(
+      $form_state->getValue('maint_obsclean_param_start'),
+      $form_state->getValue('maint_obsclean_param_stop')
+    );
   }
 
 }
