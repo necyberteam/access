@@ -349,6 +349,9 @@ function weeklyNewsReport($noSend) {
     $campaignName = uniqid('Access Digest: ' . $dtTomorrow->format('n/j/y') . ' ', FALSE);
 
     $ccResponse = setupEmailCampaign('The ACCESS Support Digest // ' . $dtTomorrow->format('F j, Y'), $emailHTML, $campaignName);
+    if (!$ccResponse) {
+      \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: error setting up campaign. Make sure Constant Contact calls are not disabled.');
+    }
   }
   catch (Exception $e) {
     \Drupal::logger('cron_accessnews')->error('weeklyNewsReport: ' . $e->getMessage());
