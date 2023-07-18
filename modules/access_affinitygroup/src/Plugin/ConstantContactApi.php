@@ -188,18 +188,21 @@ class ConstantContactApi {
       \Drupal::logger('access_affinitygroup')->notice('New token httpCode: ' . $httpCode);
       curl_close($ch);
 
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+
       if (!isset($result->error)) {
         $this->setAccessToken($result->access_token);
         $this->setRefreshToken($result->refresh_token);
         \Drupal::logger('access_affinitygroup')->notice('New token N: ' . $result->refresh_token);
-        \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored");
+        \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored $host");
         \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
       }
       else {
-        \Drupal::logger('access_affinitygroup')->error('New token: error');
+
+        \Drupal::logger('access_affinitygroup')->error("New token error; host $host");
         $this->apiError($result->error, $result->error_description);
         $nr = new NotifyRoles();
-        $nr->notifyRole('site_developer', 'Constant Contact error.', 'New token error. See logs for access_affinitygroup.');
+        $nr->notifyRole('site_developer', 'Constant Contact error.', "New token error at host $host. See logs for access_affinitygroup.");
       }
     }
     catch (\Exception $e) {
