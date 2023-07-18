@@ -1,0 +1,4 @@
+extra_styles:
+  css:
+    theme:
+      css/styles.css: {}

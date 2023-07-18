@@ -1,0 +1,25 @@
+.square-tags>div {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 5px 5px 5px;
+}
+
+.square-tags>div div {
+  margin: 5px;
+  padding: 5px;
+}
+
+.square-tags div:first-child {
+  margin-left: 0;
+}
+
+.square-tags div>div {
+  border: 1px solid #dee2e6;
+}
+
+.square-tags div a {
+  color: #000;
+  text-decoration: none;
+  text-transform: inherit;
+  font-weight: 400;
+}

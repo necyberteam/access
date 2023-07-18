@@ -25,6 +25,7 @@
  * title changes.
  */
 
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\block\Entity\Block;
 use Drupal\cssn\Plugin\Util\EndUrl;
@@ -73,6 +74,16 @@ function access_affinitygroup_block_access(Block $block, $operation, AccountInte
         }
       }
     }
+  }
+}
+
+/**
+ * Implements hook_entity_view().
+ */
+function access_affinitygroup_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  $type = $entity->bundle();
+  if ($type == 'affinity_group') {
+    $build['#attached']['library'][] = 'access_affinitygroup/extra_styles';
   }
 }
 
