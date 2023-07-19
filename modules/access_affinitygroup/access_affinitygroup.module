@@ -845,9 +845,23 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
 
 /**
  * Hook_form_alter.
+ *
+ * For one of two form types:
+ * 1) node_affinity_group_edit_form:  Make the cider resources field read-only
+ *    for non-administrator users.
+ * 2) webform_submission_affinity_group_contact_add_form: sets up form for
+ *    sending one email to affinity group.
  */
 function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state, $form_id) {
-  if ($form_id == 'webform_submission_affinity_group_contact_add_form') {
+
+  if ($form_id == 'node_affinity_group_edit_form') {
+    $current_user = \Drupal::currentUser();
+    $roles = $current_user->getRoles();
+    if (!in_array('administrator', $roles)) {
+      $form['field_cider_resources']['#disabled'] = TRUE;
+    }
+  }
+  elseif ($form_id == 'webform_submission_affinity_group_contact_add_form') {
     $form_allowed = FALSE;
     $coordinator = FALSE;
     // Allow this form only if the node is an affinity group.
