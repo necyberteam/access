@@ -495,6 +495,8 @@ class AllocationsUsersImport {
       $u->set('field_institution', $aUser['organizationName']);
       $citzenships = $this->formatCitizenships($aUser['citizenships']);
       $u->set('field_citizenships', $citzenships);
+      $accessOrg = $this->findAccessOrg($aUser['organizationId']);
+      $u->set('field_access_organization', $accessOrg);
 
       $u->save();
       $y = $u->id();
@@ -512,7 +514,6 @@ class AllocationsUsersImport {
    * If email or name changed, update in constant contact, if user already has a CC Id.
    */
   private function userDetailUpdates($u, $a) {
-    // If  ($aUser['firstName'] , $aUser['lastName'], $aUser['email'].
     try {
       $needProfileUpdate = FALSE;
       $needCCUpdate = FALSE;
@@ -539,6 +540,7 @@ class AllocationsUsersImport {
         $needCCUpdate = TRUE;
       }
 
+      // This field will go away once we have the new field_access_organization in place.
       if ($a['organizationName'] !== $u->get('field_institution')->getString()) {
         $log .= ' org: ' . $u->get('field_institution')->getString() . ' to ' . $a['organizationName'];
         $u->set('field_institution', $a['organizationName']);
@@ -546,10 +548,24 @@ class AllocationsUsersImport {
       }
 
       $citizenships = $this->formatCitizenships($a['citizenships']);
-
       if ($citizenships !== $u->get('field_citizenships')->getString()) {
         $log .= ' cit: ' . $u->get('field_citizenships')->getString() . ' to ' . $citizenships;
         $u->set('field_citizenships', $citizenships);
+        $needProfileUpdate = TRUE;
+      }
+
+      // if organization id changed, update the organzation entity refernce field
+      $nid = $u->get('field_access_organization')->getValue();
+      if ($nid != NULL) {
+
+        $accessOrg = \Drupal::entityTypeManager()->getStorage('node')->load($nid[0]['target_id']);
+        if ($accessOrg != NULL) {
+          $accessOrgId = $accessOrg->get('field_organization_id')->getValue()[0]['value'];
+        }
+      }
+      if (!isset($accessOrgId) || $accessOrgId != $a['organizationId']) {
+        $accessOrgRef = $this->findAccessOrg($a['organizationId']);
+        $u->set('field_access_organization', $accessOrgRef);
         $needProfileUpdate = TRUE;
       }
 
@@ -601,6 +617,19 @@ class AllocationsUsersImport {
     catch (\Exception $e) {
     }
     return $citizenships;
+  }
+
+  /**
+   * Find the access organization entity reference for the given access org id.
+   *  This is the field that is on the user profile.
+   */
+  private function findAccessOrg($accessOrgId) {
+    $query = \Drupal::entityQuery('node')
+      ->condition('type', 'access_organization')
+      ->condition('field_organization_id', $accessOrgId)
+      ->execute();
+
+    return $query;
   }
 
   /**
