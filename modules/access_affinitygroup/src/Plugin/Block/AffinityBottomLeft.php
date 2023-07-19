@@ -3,42 +3,40 @@
 namespace Drupal\access_affinitygroup\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
+use Drupal\views\Views;
 use Drupal\Core\Cache\Cache;
 
 /**
  * Provides a button to contact affinity group.
  *
  * @Block(
- *   id = "affinity_contact_group",
- *   admin_label = "Affinity Contact Group",
+ *   id = "affinity_bottom_left",
+ *   admin_label = "Affinity Bottom left section",
  * )
  */
-class AffinityContactGroup extends BlockBase {
+class AffinityBottomLeft extends BlockBase {
 
   /**
    * {@inheritdoc}
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
-    $current_user = \Drupal::currentUser();
-    $roles = $current_user->getRoles();
     // Adding a default for layout page.
-    $nid = $node ? $node->id() : 291;
-    $contact = [
-      ['#markup' => ''],
-    ];
-    if (in_array('administrator', $roles) || in_array('affinity_group_leader', $roles)) {
-      $contact['string'] = [
-        '#type' => 'inline_template',
-        '#template' => '<a class="btn btn-outline-dark cursor-default m-2" href="/form/affinity-group-contact?nid={{ nid }}">{{ contact_text }}</a>',
-        '#context' => [
-          'contact_text' => $this->t('Email Affinity Group'),
-          'nid' => $nid,
-        ],
-      ];
+    $affinity_group_tax = '607';
+    if ($node) {
+      $field_affinity_group = $node->get('field_affinity_group')->getValue();
+      $affinity_group_tax = $field_affinity_group[0]['target_id'];
     }
+    $view = Views::getView('affinity_group_recurring_events');
+    $view->setDisplay('block_1');
+    $view->setArguments([$affinity_group_tax]);
+    $view->execute();
+    $rendered = $view->render();
+    $output = \Drupal::service('renderer')->render($rendered);
 
-    return $contact;
+    return [
+      ['#markup' => $output],
+    ];
   }
 
   /**
