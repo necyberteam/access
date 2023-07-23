@@ -557,7 +557,7 @@ class AllocationsUsersImport {
         $needProfileUpdate = TRUE;
       }
 
-      // if organization id changed, update the organzation entity refernce field
+      // If organization id changed, update the organzation entity refernce field.
       $nid = $u->get('field_access_organization')->getValue();
       if ($nid != NULL) {
 
@@ -770,10 +770,10 @@ class AllocationsUsersImport {
         $term = $node->get('field_affinity_group');
         $flag_service = \Drupal::service('flag');
         $flags = $flag_service->getAllEntityFlaggings($term->entity);
-
         foreach ($flags as $flag) {
           $uid = $flag->get('uid')->target_id;
           $user = User::load($uid);
+
           $field_val = $user->get('field_constant_contact_id')->getValue();
           if (!empty($field_val) && $field_val != 0) {
             $ccId = $field_val[0]['value'];
@@ -785,36 +785,65 @@ class AllocationsUsersImport {
           }
         }
 
-        $this->collectCronLog("Sync: users in this AG with no CC id count : " . count($agContactsNoCCid), 'd');
+        $this->collectCronLog("Sync: users in this AG with no CC id- count : " . count($agContactsNoCCid), 'd');
 
-        // Assemble list of users on the cc list.
-        $resp = $cca->apiCall("/contacts?lists=$listId");
+        // Assemble list of users on the cc list. CC returns members of lists in batches of 50.
+        $resp = $cca->apiCall("/contacts?lists=$listId&limit=50&include_count=true");
         if (empty($resp->contacts)) {
           $this->collectCronLog("sync: $agTitle CC list response: empty.", 'err');
           continue;
         }
-
         foreach ($resp->contacts as $contact) {
           $ccContacts[] = $contact->contact_id;
         }
+
+        // Loop through any paginated results.
+        do {
+          try {
+            $nextHref = NULL;
+
+            if (!empty($resp->_links->next)) {
+              $nextHref = $resp->_links->next->href;
+              // Remove extra leading '/v3'.
+              $nextHref = substr($nextHref, 3);
+            }
+
+            if (!empty($nextHref)) {
+
+              $resp = $cca->apiCall($nextHref);
+              foreach ($resp->contacts as $contact) {
+                $ccContacts[] = $contact->contact_id;
+              }
+            }
+          }
+          catch (\Exception $e) {
+            $this->collectCronLog("Sync:error in links loop " . $e->getMessage(), 'err');
+          }
+        } while (!empty($nextHref));
 
         $this->collectCronLog('Sync: cc: ' . count($ccContacts) . ' ag: ' . count($agContacts), 'd');
 
         $notInCC = array_diff($agContacts, $ccContacts);
         $this->collectCronLog("Sync: to be added to list $agTitle count: " . count($notInCC), 'i');
 
+        // to add users to cc lists, call cc api with chunks of 10
+        $chunkSize = 10;
         if (count($notInCC)) {
-          $notInCC = array_values($notInCC);
 
-          $postData = [
-            'source' => [
-              'contact_ids' => $notInCC,
-            ],
-            'list_ids' => [$listId],
-          ];
+          $chunked = array_chunk($notInCC, $chunkSize);
+          $chunked = array_values($chunked);
 
-          $postData = json_encode($postData);
-          $cca->apiCall('/activities/add_list_memberships', $postData, 'POST');
+          foreach ($chunked as $oneChunk) {
+            $postData = [
+              'source' => [
+                'contact_ids' => $oneChunk,
+              ],
+              'list_ids' => [$listId],
+            ];
+
+            $postData = json_encode($postData);
+            $cca->apiCall('/activities/add_list_memberships', $postData, 'POST');
+          }
         }
       }
       catch (\Exception $e) {
