@@ -1,0 +1,24 @@
+.js-webform-term-checkboxes {
+  display: none;
+}
+
+details.tags {
+  margin: 2em 0;
+}
+
+.tags-select {
+  display: inline-block;
+  border: 1px solid #000;
+  cursor: pointer;
+  padding: 5px;
+  margin: 5px;
+}
+
+.selected {
+  background-color: #1A5B6E;
+  color: #fff;
+}
+
+.tags h2 {
+  margin: 1em 0;
+}

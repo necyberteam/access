@@ -11,6 +11,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\views\ViewExecutable;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\access_misc\Plugin\Util\EventDateConvert;
+use Drupal\views\Views;
 
 /**
  * Implements hook_views_post_render().
@@ -110,6 +111,26 @@ function access_misc_datalayer_alter(&$data_layer) {
 function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_affinity_group_edit_form' || $form_id == 'node_affinity_group_form') {
     $form['#attached']['library'][] = 'access_misc/add_select';
+  }
+  // Custom tags on /form/ci-link webform.
+  if ($form_id == 'webform_submission_resource_add_form' || $form_id == 'webform_submission_resource_edit_form') {
+    $form['#attached']['library'][] = 'access_misc/custom_tags';
+    $view = Views::getView('node_add_tags');
+    $view->setDisplay('block_1');
+    $view->execute();
+    $rendered = $view->render();
+    $output = \Drupal::service('renderer')->render($rendered);
+    $form['custom_tags'] = [
+      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+      '#weight' => 3,
+      '#allowed_tags' => [
+        'button',
+        'details',
+        'summary',
+        'span',
+        'h2',
+      ],
+    ];
   }
 }
 /*

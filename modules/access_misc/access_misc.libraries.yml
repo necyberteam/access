@@ -8,3 +8,9 @@ add_select:
     js/add_select2: {}
   dependencies:
     - webform/webform.element.select2
+custom_tags:
+  css:
+    theme:
+      css/custom_tags.css: {}
+  js:
+    js/custom_tags.js: {}
