@@ -121,12 +121,13 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
     $rendered = $view->render();
     $output = \Drupal::service('renderer')->render($rendered);
     $form['custom_tags'] = [
-      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+      '#markup' => "<details open class='tags'><summary><label class='js-form-required form-required'>Select relevant tags</label></summary>$output</details>",
       '#weight' => 3,
       '#allowed_tags' => [
         'button',
         'details',
         'summary',
+        'label',
         'span',
         'h2',
       ],
