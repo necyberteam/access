@@ -1,4 +1,0 @@
-services:
-  plugin.manager.viewsaccess:
-    class: Drupal\access_affinitygroup\Plugin\views\access\ViewsCustomAccess
-    parent: default_plugin_manager
