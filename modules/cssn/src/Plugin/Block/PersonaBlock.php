@@ -78,11 +78,21 @@ class PersonaBlock extends BlockBase {
       $edit_link = $public ? "" : $edit_link;
       $first_name = $user_entity->get('field_user_first_name')->value;
       $last_name = $user_entity->get('field_user_last_name')->value;
-      $institution = $user_entity->get('field_institution')->value;
+
+      // Show access organization if set; otherwise, use institution field.
+      $orgArray = $user_entity->get('field_access_organization')->getValue();
+      if (!empty($orgArray) && !empty($orgArray[0])) {
+        $nodeId = $orgArray[0]['target_id'];
+        if (!empty($nodeId)) {
+          $orgNode = \Drupal::entityTypeManager()->getStorage('node')->load($nodeId);
+        }
+      }
+      $institution = isset($orgNode) ? $orgNode->getTitle() : $user_entity->get('field_institution')->value;
+
       $roles = $user_entity->getRoles();
       $is_student = array_search('student', $roles) !== FALSE;
       $academic_status = $is_student
-            ? $user_entity->get('field_academic_status')->value : '';
+        ? $user_entity->get('field_academic_status')->value : '';
 
       $academic_terms_map = $user_entity->get('field_academic_status')->getSettings()['allowed_values'];
       // If $academic_status is not empty, map it to the label.
