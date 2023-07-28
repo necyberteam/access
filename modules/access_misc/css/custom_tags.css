@@ -1,9 +1,20 @@
-.js-webform-term-checkboxes {
+#edit-tags--wrapper {
   display: none;
 }
 
 details.tags {
   margin: 2em 0;
+}
+
+details.tags {
+  max-height: 400px;
+  overflow-y: scroll;
+}
+
+details.tags summary {
+  position: sticky
+  top: 0;
+  background-color: #ddd;
 }
 
 .tags-select {
