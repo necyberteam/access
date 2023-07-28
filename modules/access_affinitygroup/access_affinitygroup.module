@@ -915,22 +915,23 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
  * Implements hook_inline_entity_form_table_fields_alter().
  */
 function access_affinitygroup_inline_entity_form_table_fields_alter(&$fields, $context) {
-if ($context['entity_type'] == 'node') {
-  // Add the resource field to the table.
-  $fields['field_cider_resource'] = [
-    'type' => 'field',
-    'label' => t('Resource'),
-    'weight' => 100,
-  ];
+  if ($context['entity_type'] == 'node') {
+    // Add the resource field to the table.
+    $fields['field_cider_resource'] = [
+      'type' => 'field',
+      'label' => t('Resource'),
+      'weight' => 100,
+    ];
 
-  $fields['body'] = [
-    'type' => 'field',
-    'label' => t('Description'),
-    'weight' => 200,
-  ];
+    $fields['body'] = [
+      'type' => 'field',
+      'label' => t('Description'),
+      'weight' => 200,
+    ];
 
-  // Hide the status field that Inline Entity Form usually displays.
-  unset($fields['status']);
+    // Hide the status field that Inline Entity Form usually displays.
+    unset($fields['status']);
+  }
 }
 
 /**
