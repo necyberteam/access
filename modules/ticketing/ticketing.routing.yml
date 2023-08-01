@@ -5,5 +5,5 @@ ticketing.content:
     _title: 'Ticket redirect'
   requirements:
     _role: 'authenticated'
-options:
+  options:
     no_cache: 'TRUE'
