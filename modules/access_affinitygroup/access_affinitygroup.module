@@ -847,8 +847,9 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
  * Hook_form_alter.
  *
  * For one of two form types:
- * 1) node_affinity_group_edit_form:  Make the cider resources field read-only
- *    for non-administrator users.
+ * 1) node_affinity_group_edit_form:
+ *  -- Make the associated cider resources field read-only for non-administrator users
+ *  -- hide recommended + associated cider resources fields depending on category
  * 2) webform_submission_affinity_group_contact_add_form: sets up form for
  *    sending one email to affinity group.
  */
@@ -861,8 +862,8 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
       $form['field_cider_resources']['#disabled'] = TRUE;
     }
 
-    // only AG set to Community should see Reccomended Ciders;
-    // only AG set to ACCESS RP category should see Associated Ciders
+    // Only AGs set to Community should see Reccomended Ciders;
+    // only AGs set to ACCESS RP category should see Associated Ciders.
     $category = $form['field_affinity_group_category']['widget']['#default_value'];
     if (!isset($category[0]) || $category[0] !== 'Community') {
       $form['field_recommended_access_res']['#access'] = FALSE;
@@ -922,11 +923,28 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
 }
 
 /**
+ * Hook_presave only for Recommended Cider field.
+ */
+function access_affinitygroup_node_presave(NodeInterface $node) {
+  $type = $node->getType();
+  if ($type == 'recommended_cider') {
+    $node->setTitle('');
+  }
+
+}
+
+/**
  * Implements hook_inline_entity_form_table_fields_alter().
  */
 function access_affinitygroup_inline_entity_form_table_fields_alter(&$fields, $context) {
   if ($context['entity_type'] == 'node') {
-    // Add the resource field to the table.
+
+    // Hide the status + title (aka 'label' here) fields
+    // that Inline Entity Form usually displays.
+    unset($fields['status']);
+    unset($fields['label']);
+
+    // Add the resource + description field to the table.
     $fields['field_cider_resource'] = [
       'type' => 'field',
       'label' => t('Resource'),
@@ -938,10 +956,14 @@ function access_affinitygroup_inline_entity_form_table_fields_alter(&$fields, $c
       'label' => t('Description'),
       'weight' => 200,
     ];
-
-    // Hide the status field that Inline Entity Form usually displays.
-    unset($fields['status']);
   }
+}
+
+/**
+ * When the user is editing a Recommened Resource, hide the title field.
+ */
+function access_affinitygroup_inline_entity_form_entity_form_alter(&$form, &$form_state) {
+  $form['title']['#access'] = FALSE;
 }
 
 /**
