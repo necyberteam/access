@@ -66,10 +66,8 @@ class Login {
     $_SESSION['cilogon_auth_destination'] = [$destination, ['query' => $query]];
 
     $response = $client->authorize($scopes);
-    $response->headers->set('Cache-Control', 'public, max-age=0');
     $response->send();
   }
-
 
 }
 
