@@ -1,0 +1,4 @@
+services:
+  access_misc.login:
+    class: Drupal\access_misc\Plugin\Login
+    arguments: ['@request_stack', '@service_container']

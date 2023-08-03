@@ -5,3 +5,10 @@ filter_people_by_tags_form.form:
     _title: 'Filter users by flagged interest or skill'
   requirements:
     _role: 'administrator'
+misc.login:
+  path: '/login'
+  defaults:
+    _controller: '\Drupal\access_misc\Controller\LoginController::login'
+    _title: ''
+  requirements:
+    _role: 'anonymous'
