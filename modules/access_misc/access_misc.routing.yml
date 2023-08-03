@@ -12,3 +12,5 @@ misc.login:
     _title: ''
   requirements:
     _role: 'anonymous'
+  options:
+    no_cache: 'TRUE'
