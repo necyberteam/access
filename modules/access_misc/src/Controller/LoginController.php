@@ -59,6 +59,8 @@ class LoginController extends ControllerBase {
     $this->login->login();
     // Submit the same form that submits on the login page.
     $form_state = new FormState();
+    $values['cilogon_auth_login_form'] = 'ciLogon_auth_access_misc';
+    $form_state->setValues($values);
     \Drupal::formBuilder()->submitForm('cilogon_auth_login_form', $form_state);
     return [];
   }
