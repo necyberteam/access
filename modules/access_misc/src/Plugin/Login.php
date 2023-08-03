@@ -2,7 +2,6 @@
 
 namespace Drupal\access_misc\Plugin;
 
-use Composer\DependencyResolver\Request;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RequestStack;
 use Drupal\Component\Utility\Xss;
