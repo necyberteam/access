@@ -55,8 +55,14 @@ class LoginController extends ControllerBase {
    * Route user to login.
    */
   public function login() {
-    $this->killSwitch->trigger();
-    $this->login->login();
+    if (\Drupal::currentUser()->isAuthenticated()) {
+      return [
+        '#markup' => '<p>Logged in</p>',
+      ];
+    } else {
+      $this->killSwitch->trigger();
+      $this->login->login();
+    }
     return [];
   }
 

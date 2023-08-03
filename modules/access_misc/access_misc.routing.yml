@@ -11,6 +11,4 @@ misc.login:
     _controller: '\Drupal\access_misc\Controller\LoginController::login'
     _title: ''
   requirements:
-    _role: 'anonymous'
-  options:
-    no_cache: 'TRUE'
+    _role: 'anonymous+authenticated'
