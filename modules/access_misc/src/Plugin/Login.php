@@ -67,6 +67,7 @@ class Login {
 
     $response = $client->authorize($scopes);
     $response->send();
+
   }
 
 }

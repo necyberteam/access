@@ -4,7 +4,6 @@ namespace Drupal\access_misc\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
-use Drupal\Component\Utility\Xss;
 use Drupal\access_misc\Plugin\Login;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
@@ -27,11 +26,12 @@ class LoginController extends ControllerBase {
    */
   protected $login;
 
-    /**
+  /**
    * Constructs request stuff.
    *
    * @param \Drupal\access_misc\Plugin\Login $login
    *   Login service.
+   *
    * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
    *    Kill switch.
    */
@@ -55,14 +55,11 @@ class LoginController extends ControllerBase {
    * Route user to login.
    */
   public function login() {
-    if (\Drupal::currentUser()->isAuthenticated()) {
-      return [
-        '#markup' => '<p>Logged in</p>',
-      ];
-    } else {
-      $this->killSwitch->trigger();
-      $this->login->login();
-    }
+    $this->killSwitch->trigger();
+    $this->login->login();
+    // Submit the same form that submits on the login page.
+    $form_state = new FormState();
+    \Drupal::formBuilder()->submitForm('cilogon_auth_login_form', $form_state);
     return [];
   }
 
