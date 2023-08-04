@@ -56,7 +56,7 @@ class LoginController extends ControllerBase {
    */
   public function login() {
     \Drupal::logger('access_misc')->notice('login function');
-    $this->killSwitch->trigger();
+    // $this->killSwitch->trigger();
     $this->login->login();
     return [];
   }
