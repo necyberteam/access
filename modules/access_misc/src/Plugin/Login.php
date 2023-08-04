@@ -68,8 +68,8 @@ class Login {
     \Drupal::logger('cilogon auth')->notice('destination: ' . $destination);
     \Drupal::logger('cilogon auth')->notice('query: ' . $query);
     $response = $client->authorize($scopes);
-    return $response;
-
+    $response->send();
+    \Drupal::service('page_cache_kill_switch')->trigger();
   }
 
 }
