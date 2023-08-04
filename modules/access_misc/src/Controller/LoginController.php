@@ -3,7 +3,6 @@
 namespace Drupal\access_misc\Controller;
 
 use Drupal\Core\Controller\ControllerBase;
-use Drupal\Core\Form\FormState;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Drupal\access_misc\Plugin\Login;
 use Symfony\Component\DependencyInjection\ContainerInterface;
@@ -56,6 +55,7 @@ class LoginController extends ControllerBase {
    * Route user to login.
    */
   public function login() {
+    \Drupal::logger('access_misc')->notice('login function');
     $this->killSwitch->trigger();
     $this->login->login();
     return [];

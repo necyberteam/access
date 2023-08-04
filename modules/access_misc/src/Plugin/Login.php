@@ -46,6 +46,8 @@ class Login {
    * Login user.
    */
   public function login() {
+    \Drupal::logger('access misc')->notice('in function.');
+
     $request = $this->requestStack->getCurrentRequest();
     $container = $this->container;
     $client_name = 'cilogon';
@@ -60,14 +62,13 @@ class Login {
     if (NULL !== $request->query->get('redirect')) {
       $query = Xss::filter($request->query->get('redirect'));
     }
-
     $_SESSION['cilogon_auth_op'] = 'login';
     $_SESSION['cilogon_auth_destination'] = [$destination, ['query' => $query]];
-
+    \Drupal::logger('cilogon auth')->notice('destination: ' . $destination);
+    \Drupal::logger('cilogon auth')->notice('query: ' . $query);
     $response = $client->authorize($scopes);
     $response->send();
 
   }
 
 }
-
