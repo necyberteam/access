@@ -58,6 +58,7 @@ class Login {
     $client = $pluginManager->createInstance($client_name, $configuration);
     $scopes = $claims->getScopes();
     $destination = $request->getRequestUri();
+    $destination = ($destination == '/login') ? '' : $destination;
     $query = NULL;
     if (NULL !== $request->query->get('redirect')) {
       $query = Xss::filter($request->query->get('redirect'));
