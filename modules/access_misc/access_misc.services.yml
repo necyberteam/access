@@ -1,0 +1,4 @@
+services:
+  access_misc.addtags:
+    class: Drupal\access_misc\Plugin\NodeAddTags
+    arguments: ['@renderer']

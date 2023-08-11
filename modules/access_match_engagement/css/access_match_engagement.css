@@ -1,20 +1,3 @@
 .hide {
   display: none;
 }
-
-#edit-field-tags-wrapper {
-  display: none;
-}
-
-.tags-select {
-  display: inline-block;
-  border: 1px solid #000;
-  cursor: pointer;
-  padding: 5px;
-  margin: 5px;
-}
-
-.selected {
-  background-color: #1A5B6E;
-  color: #fff;
-}

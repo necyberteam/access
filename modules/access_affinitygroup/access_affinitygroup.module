@@ -842,7 +842,7 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
 }
 
 /**
- * Hook_form_alter.
+ * hook_form_alter.
  *
  * For one of two form types:
  * 1) node_affinity_group_edit_form:  Make the cider resources field read-only
@@ -851,6 +851,24 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
  *    sending one email to affinity group.
  */
 function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_affinity_group_edit_form' || $form_id == 'node_affinity_group_form') {
+    $add_tags = \Drupal::service('access_misc.addtags');
+    $output = $add_tags->getView();
+    $form['oit_advanced'] = [
+      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+      '#weight' => 3,
+      '#allowed_tags' => [
+        'button',
+        'details',
+        'summary',
+        'span',
+        'h2',
+      ],
+    ];
+
+    // Attach javascript.
+    $form['#attached']['library'][] = 'access_misc/node_add_tags';
+  }
 
   if ($form_id == 'node_affinity_group_edit_form') {
     $current_user = \Drupal::currentUser();
