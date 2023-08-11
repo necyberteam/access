@@ -14,3 +14,9 @@ custom_tags:
       css/custom_tags.css: {}
   js:
     js/custom_tags.js: {}
+node_add_tags:
+  css:
+    theme:
+      css/node_add_tags.css: {}
+  js:
+    js/node_add_tags.js: {}

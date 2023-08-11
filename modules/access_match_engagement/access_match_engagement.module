@@ -42,11 +42,8 @@ function access_match_engagement_block_build_views_block_alter(array &$build, Bl
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
-    $view = Views::getView('node_add_tags');
-    $view->setDisplay('block_1');
-    $view->execute();
-    $rendered = $view->render();
-    $output = \Drupal::service('renderer')->render($rendered);
+    $add_tags = \Drupal::service('access_misc.addtags');
+    $output = $add_tags->getView();
     $form['oit_advanced'] = [
       '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
       '#weight' => 15,
@@ -60,7 +57,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     ];
 
     // Attach javascript.
-    $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
+    $form['#attached']['library'][] = 'access_misc/node_add_tags';
 
     // If creating a new engagement, use the request type from the url.
     if ($form_id == 'node_match_engagement_form') {
