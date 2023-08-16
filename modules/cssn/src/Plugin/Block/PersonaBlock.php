@@ -4,9 +4,9 @@ namespace Drupal\cssn\Plugin\Block;
 
 use Drupal\access_misc\Plugin\Util\RolesLabelLookup;
 use Drupal\Core\Block\BlockBase;
-use Drupal\cssn\Plugin\Util\EndUrl;
-use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\user\Entity\User;
 
 /**
@@ -102,9 +102,13 @@ class PersonaBlock extends BlockBase {
       else {
         $academic_status = '';
       }
-      $key = array_search('authenticated', $roles);
-      if ($key !== FALSE) {
-        unset($roles[$key]);
+      // Don't display these roles.
+      $roles_not_to_include = ['authenticated', 'administrator', 'Masquerade', 'exportpeople', 'site_developer'];
+      foreach ($roles_not_to_include as $role) {
+        $key = array_search($role, $roles);
+        if ($key !== FALSE) {
+          unset($roles[$key]);
+        }
       }
       $role = new RolesLabelLookup($roles);
       $roles = $role->getRoleLabelsString();
