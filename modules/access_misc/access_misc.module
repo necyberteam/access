@@ -35,7 +35,7 @@ function access_misc_views_post_render(ViewExecutable $view) {
 */
 function access_misc_preprocess_views_view_field(&$variables) {
   $view = $variables['view'];
-	$field = $variables['field'];
+  $field = $variables['field'];
   // Override view /admin/structure/views/view/resources/edit/page_1 sid_2.
   // Shows up as affinity group on /ci-links page.
   if ($view->id() == 'resources' && $view->current_display == 'page_1' && $field->options['id'] == 'sid_2' ) {
