@@ -153,7 +153,7 @@ class PersonaBlock extends BlockBase {
         $cssn = $cssn_renderable;
         $cssn['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
       }
-      $cssn_more_url = Url::fromUri('internal:/cssn');
+      $cssn_more_url = Url::fromUri('https://support.access-ci.org/cssn');
       $cssn_more_link = Link::fromTextAndUrl('Find out More', $cssn_more_url);
       $cssn_more_renderable = $cssn_more_link->toRenderable();
       $cssn_more = $cssn_more_renderable;
