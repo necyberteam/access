@@ -2,15 +2,15 @@
 
 namespace Drupal\cssn\Controller;
 
-use Drupal\webform\Entity\WebformSubmission;
-use Drupal\taxonomy\Entity\Term;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
+use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\cssn\Plugin\Util\MatchLookup;
 use Drupal\cssn\Plugin\Util\ProjectLookup;
-use Drupal\cssn\Plugin\Util\EndUrl;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
+use Drupal\webform\Entity\WebformSubmission;
 
 /**
  * Controller for Community Persona.
@@ -94,7 +94,7 @@ class CommunityPersonaController extends ControllerBase {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = Term::load($flagged_skill)->get('name')->value;
         $my_skills .= "<div class='border border-black m-1'>";
-        $my_skills .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-1' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
+        $my_skills .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-0 m-0' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
         $my_skills .= "</div>";
       }
     }
@@ -219,7 +219,7 @@ class CommunityPersonaController extends ControllerBase {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = Term::load($flagged_interest)->get('name')->value;
         $my_interests .= "<div class='border border-black m-1'>";
-        $my_interests .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-1' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-0 m-0' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
         $my_interests .= "</div>";
       }
     }
