@@ -3,8 +3,10 @@
 namespace Drupal\access_affinitygroup\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
-use Drupal\views\Views;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Url;
+use Drupal\views\Views;
+use Drupal\webform\Entity\WebformSubmission;
 
 /**
  * Displays Resources for Affinity Group in layout.
@@ -21,6 +23,80 @@ class ResourcesForAffinityGroup extends BlockBase {
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
+    // Load field_resources_entity_reference field.
+    $field_resources_entity_reference = $node->get('field_resources_entity_reference')->getValue();
+    if (!empty($field_resources_entity_reference)) {
+      $rendered = '<h3 class="border-bottom pb-2">CI Links</h3>';
+      $header = [
+        'title' => 'CI Link',
+        'description' => 'Skill Level',
+        'link' => 'Tags',
+      ];
+      $rows = [];
+      foreach ($field_resources_entity_reference as $value) {
+        $webform_submission = WebformSubmission::load($value['target_id']);
+        $submission_data = $webform_submission->getData();
+
+        // Ci link name and url.
+        $ci_link = [
+          '#type' => 'link',
+          '#title' => $submission_data['title'],
+          '#url' => Url::fromUri('internal:/ci-link/' . $value['target_id']),
+        ];
+        $ci_link_name = \Drupal::service('renderer')->render($ci_link)->__toString();
+
+        $tags = '';
+        foreach ($submission_data['tags'] as $tag) {
+          // Lookup tags.
+          $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($tag);
+          if ($term !== NULL) {
+            $link = [
+              '#type' => 'link',
+              '#title' => $term->getName(),
+              '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $tag]),
+            ];
+            $link_string = \Drupal::service('renderer')->render($link)->__toString();
+            $tags .= $link_string . ', ';
+          }
+        }
+        $tags = rtrim($tags, ', ');
+        // Lookup skills.
+        $skills = '';
+        foreach ($submission_data['skill_level'] as $skill) {
+          $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($skill);
+          if ($term !== NULL) {
+            $skills .= $term->getName() . ', ';
+          }
+        }
+        $skills = rtrim($skills, ', ');
+        $rows[] = [
+          'name' => [
+            'data' => [
+              '#markup' => $ci_link_name,
+            ],
+          ],
+          'skill' => [
+            'data' => [
+              '#markup' => $skills,
+            ],
+          ],
+          'tags' => [
+            'data' => [
+              '#markup' => $tags,
+            ],
+          ],
+        ];
+      }
+
+      $html['ci-links'] = [
+        '#theme' => 'table',
+        '#sticky' => TRUE,
+        '#header' => $header,
+        '#rows' => $rows,
+        '#attributes' => ['id' => 'ci-links', 'class' => ['table-search']],
+      ];
+      $rendered .= \Drupal::service('renderer')->render($html['ci-links']);
+    }
     // Adding a default for layout page.
     $ciLinks = '474';
     if ($node) {
@@ -38,8 +114,7 @@ class ResourcesForAffinityGroup extends BlockBase {
     $ci_links_view->setArguments([$ciLinks]);
     $ci_links_view->execute();
     $ci_link_table = $ci_links_view->render();
-    $rendered = \Drupal::service('renderer')->render($ci_link_table);
-
+    // $rendered = \Drupal::service('renderer')->render($ci_link_table);
     // Grab node id.
     $node = \Drupal::routeMatch()->getParameter('node');
 
@@ -54,7 +129,7 @@ class ResourcesForAffinityGroup extends BlockBase {
     $rendered .= \Drupal::service('renderer')->render($announcement_list);
 
     return [
-      ['#markup' => $rendered]
+      ['#markup' => $rendered],
     ];
   }
 
