@@ -97,24 +97,7 @@ class ResourcesForAffinityGroup extends BlockBase {
       ];
       $rendered .= \Drupal::service('renderer')->render($html['ci-links']);
     }
-    // Adding a default for layout page.
-    $ciLinks = '474';
-    if ($node) {
-      $ciLinks = '';
-      // Load Field field_resources_entity_reference.
-      $field_resources_entity_reference = $node->get('field_resources_entity_reference')->getValue();
-      foreach ($field_resources_entity_reference as $key => $value) {
-        $ciLinks .= $value['target_id'] . ',';
-      }
-      $ciLinks = rtrim($ciLinks, ',');
-    }
-    // Load CI Link view.
-    $ci_links_view = Views::getView('resources');
-    $ci_links_view->setDisplay('block_2');
-    $ci_links_view->setArguments([$ciLinks]);
-    $ci_links_view->execute();
-    $ci_link_table = $ci_links_view->render();
-    // $rendered = \Drupal::service('renderer')->render($ci_link_table);
+
     // Grab node id.
     $node = \Drupal::routeMatch()->getParameter('node');
 
