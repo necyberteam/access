@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\drupal_seamless_cilogon\StackMiddleware;
+namespace Drupal\access_misc\StackMiddleware;
 
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
 use Drupal\Core\State\StateInterface;
