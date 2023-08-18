@@ -28,13 +28,17 @@ class ResourcesForAffinityGroup extends BlockBase {
     if (!empty($field_resources_entity_reference)) {
       $rendered = '<h3 class="border-bottom pb-2">CI Links</h3>';
       $header = [
-        'title' => 'CI Link',
+        'title' => 'Title',
         'description' => 'Skill Level',
         'link' => 'Tags',
       ];
       $rows = [];
       foreach ($field_resources_entity_reference as $value) {
         $webform_submission = WebformSubmission::load($value['target_id']);
+        if (!$webform_submission) {
+          // Webform submissions are sanitized in dev enviroments.
+          continue;
+        }
         $submission_data = $webform_submission->getData();
 
         // Ci link name and url.
@@ -55,20 +59,31 @@ class ResourcesForAffinityGroup extends BlockBase {
               '#title' => $term->getName(),
               '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $tag]),
             ];
-            $link_string = \Drupal::service('renderer')->render($link)->__toString();
-            $tags .= $link_string . ', ';
+            $tags .= \Drupal::service('renderer')->render($link)->__toString();
           }
         }
-        $tags = rtrim($tags, ', ');
-        // Lookup skills.
+        $tags = '<div class="square-tags">' . $tags . '</div>';
+        // Lookup skills by id and make an array of names.
         $skills = '';
+        $skill_list = [];
         foreach ($submission_data['skill_level'] as $skill) {
           $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($skill);
           if ($term !== NULL) {
-            $skills .= $term->getName() . ', ';
+            array_push($skill_list, $term->getName());
           }
         }
-        $skills = rtrim($skills, ', ');
+        if (['Beginner'] == $skill_list) {
+          $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner.png" alt="Beginner">';
+        } elseif (['Beginner', 'Intermediate'] == $skill_list) {
+          $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner-medium.png" alt="Beginner, Intermediate">';
+        } elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
+          $skills = '<img src="/themes/custom/accesstheme/assets/SL-all.png" alt="Beginner, Intermediate, Advanced">';
+        } elseif (['Intermediate', 'Advanced'] == $skill_list) {
+          $skills = '<img src="/themes/custom/accesstheme/assets/SL-medium-advanced.png" alt="Intermediate, Advanced">';
+        } elseif (['Advanced'] == $skill_list) {
+          $skills = '<img src="/themes/custom/accesstheme/assets/SL-advanced.png" alt="Advanced">';
+        }
+
         $rows[] = [
           'name' => [
             'data' => [
@@ -98,12 +113,18 @@ class ResourcesForAffinityGroup extends BlockBase {
       $rendered .= \Drupal::service('renderer')->render($html['ci-links']);
     }
 
-    // Grab node id.
+    /**
+   * Grab node id.
+   */
     $node = \Drupal::routeMatch()->getParameter('node');
 
-    // Adding a default for layout page.
+    /**
+   * Adding a default for layout page.
+   */
     $nid = $node ? $node->id() : 291;
-    // Load Announcement view.
+    /**
+   * Load Announcement view.
+   */
     $announcement_view = Views::getView('access_news');
     $announcement_view->setDisplay('block_2');
     $announcement_view->setArguments([$nid]);
@@ -114,6 +135,7 @@ class ResourcesForAffinityGroup extends BlockBase {
     return [
       ['#markup' => $rendered],
     ];
+
   }
 
   /**
