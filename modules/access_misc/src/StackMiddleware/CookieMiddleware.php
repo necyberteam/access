@@ -58,12 +58,11 @@ class CookieMiddleware implements HttpKernelInterface {
    */
   public function handle(Request $request, $type = self::MASTER_REQUEST, $catch = TRUE) {
 
-    $user_is_authenticated = isset($_SERVER['HTTP_COOKIE']) ? TRUE : FALSE;
     $path = $request->getRequestUri();
     $arg = explode('/', $path);
 
-    if (str_starts_with($arg[1], 'login') && !$user_is_authenticated) {
-      $response->headers->set('Cache-Control', 'public, max-age=0');
+    if ($arg[1] == 'login') {
+      $request->headers->set('Cache-Control', 'public, max-age=0');
     }
 
     return $this->httpKernel->handle($request, $type, $catch);
