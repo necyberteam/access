@@ -2,3 +2,9 @@ services:
   access_misc.login:
     class: Drupal\access_misc\Plugin\Login
     arguments: ['@request_stack', '@service_container']
+
+  access_misc.CookieMiddleware:
+    class: '\Drupal\access_misc\StackMiddleware\CookieMiddleware'
+    arguments: ['@logger.factory', '@state']
+    tags:
+      - { name: http_middleware, priority: 250, responder: true }
