@@ -2,9 +2,10 @@
 
 namespace Drupal\access_misc\Controller;
 
+use Drupal\access_misc\Plugin\Login;
+use Drupal\Component\Utility\Xss;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
-use Drupal\access_misc\Plugin\Login;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
@@ -55,10 +56,22 @@ class LoginController extends ControllerBase {
    * Route user to login.
    */
   public function login() {
-    \Drupal::logger('access_misc')->notice('login function');
     $this->killSwitch->trigger();
-    //$this->login->login();
-    return [];
+    // Check if user is logged in.
+    if (\Drupal::currentUser()->isAuthenticated()) {
+      // Get redirect destination from url.
+      $destination = \Drupal::destination()->get();
+      $destination = Xss::filter($destination);
+      if (empty($destination)) {
+        $destination = '/';
+      }
+      // Redirect to destination.
+      return $this->redirect($destination);
+    }
+    return [
+      '#type' => 'markup',
+      '#markup' => "👋 " . $this->t("You shouldn't see this."),
+    ];
   }
 
 }
