@@ -63,11 +63,12 @@ class LoginController extends ControllerBase {
       // Get redirect destination from url.
       $destination = \Drupal::destination()->get();
       $destination = Xss::filter($destination);
-      if (empty($destination)) {
+      if (empty($destination) || $destination == '/login') {
         $destination = '/';
       }
       // Redirect to destination.
-      new RedirectResponse($destination)->send();
+      $redirect = new RedirectResponse($destination);
+      $redirect->send();
       return [
         '#type' => 'markup',
         '#markup' => "👋 " . $this->t("You shouldn't see this."),
