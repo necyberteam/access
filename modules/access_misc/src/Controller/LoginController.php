@@ -7,6 +7,7 @@ use Drupal\Component\Utility\Xss;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
 use Symfony\Component\DependencyInjection\ContainerInterface;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Controller for Match.
@@ -66,7 +67,11 @@ class LoginController extends ControllerBase {
         $destination = '/';
       }
       // Redirect to destination.
-      return $this->redirect($destination);
+      new RedirectResponse($destination)->send();
+      return [
+        '#type' => 'markup',
+        '#markup' => "👋 " . $this->t("You shouldn't see this."),
+      ];
     }
     return [
       '#type' => 'markup',
