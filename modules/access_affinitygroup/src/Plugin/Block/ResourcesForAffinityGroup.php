@@ -142,12 +142,7 @@ class ResourcesForAffinityGroup extends BlockBase {
    * {@inheritdoc}
    */
   public function getCacheTags() {
-    if ($node = \Drupal::routeMatch()->getParameter('node')) {
-      return Cache::mergeTags(parent::getCacheTags(), ['node:' . $node->id()]);
-    }
-    else {
-      return parent::getCacheTags();
-    }
+    return Cache::mergeTags(parent::getCacheTags(), ['affinity_group_ci_links']);
   }
 
   /**

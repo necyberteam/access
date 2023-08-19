@@ -25,15 +25,15 @@
  * title changes.
  */
 
-use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\block\Entity\Block;
-use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\taxonomy\Entity\Term;
@@ -842,7 +842,7 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
 }
 
 /**
- * hook_form_alter.
+ * Hook_form_alter.
  *
  * For one of two form types:
  * 1) node_affinity_group_edit_form:
@@ -980,6 +980,17 @@ function access_affinitygroup_inline_entity_form_table_fields_alter(&$fields, $c
  */
 function access_affinitygroup_inline_entity_form_entity_form_alter(&$form, &$form_state) {
   $form['title']['#access'] = FALSE;
+}
+
+/**
+ * Implements hook_entity_update().
+ * Invalidate affinity group ci links block cache when ci link is updated.
+ */
+function access_affinitygroup_entity_update(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'resource') {
+    \Drupal::service('cache_tags.invalidator')->invalidateTags(['affinity_group_ci_links']);
+  }
 }
 
 /**
