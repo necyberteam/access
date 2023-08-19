@@ -2,10 +2,11 @@
 
 namespace Drupal\access_misc\Controller;
 
-use Drupal\access_misc\Plugin\Login;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\PageCache\ResponsePolicy\KillSwitch;
+use Drupal\Core\Routing\RedirectDestinationInterface;
+use Drupal\Core\Session\AccountProxyInterface;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -15,6 +16,20 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class LoginController extends ControllerBase {
 
   /**
+   * Check user account.
+   *
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
+  protected $currentUser;
+
+  /**
+   * Perform redirect.
+   *
+   * @var \Drupal\Core\Routing\RedirectDestinationInterface
+   */
+  protected $redirectDestination;
+
+  /**
    * Page cache kill switch.
    *
    * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
@@ -22,23 +37,21 @@ class LoginController extends ControllerBase {
   protected $killSwitch;
 
   /**
-   * Call login service.
-   *
-   * @var \Drupal\access_misc\Plugin\Login
-   */
-  protected $login;
-
-  /**
    * Constructs request stuff.
    *
-   * @param \Drupal\access_misc\Plugin\Login $login
-   *   Login service.
-   *
-   * @var \Drupal\Core\PageCache\ResponsePolicy\KillSwitch
-   *    Kill switch.
+   * @param \Drupal\Core\Session\AccountProxyInterface $current_user
+   *   Used to get current active user.
+   * @param \Drupal\Core\Routing\RedirectDestinationInterface $redirect_destination
+   *   The redirect destination service.
+   * @param \Drupal\Core\PageCache\ResponsePolicy\KillSwitch $kill_switch
+   *   Kill switch.
    */
-  public function __construct(Login $login, KillSwitch $kill_switch) {
-    $this->login = $login;
+  public function __construct(AccountProxyInterface $current_user,
+                              KillSwitch $kill_switch,
+                              RedirectDestinationInterface $redirect_destination
+  ) {
+    $this->currentUser = $current_user;
+    $this->redirectDestination = $redirect_destination;
     $this->killSwitch = $kill_switch;
   }
 
@@ -47,9 +60,9 @@ class LoginController extends ControllerBase {
    */
   public static function create(ContainerInterface $container): self {
     return new self(
-      $container->get('access_misc.login'),
-      $container->get('page_cache_kill_switch')
-
+      $container->get('current_user'),
+      $container->get('page_cache_kill_switch'),
+      $container->get('redirect.destination')
     );
   }
 
@@ -59,16 +72,15 @@ class LoginController extends ControllerBase {
   public function login() {
     $this->killSwitch->trigger();
     // Check if user is logged in.
-    if (\Drupal::currentUser()->isAuthenticated()) {
+    if ($this->currentUser->isAuthenticated()) {
       // Get redirect destination from url.
-      $destination = \Drupal::destination()->get();
-      $destination = Xss::filter($destination);
+      $destination = Xss::filter($this->redirectDestination->get());
       if (empty($destination) || $destination == '/login') {
         $destination = '/';
       }
       // Redirect to destination.
-      $redirect = new RedirectResponse($destination);
-      $redirect->send();
+      $response = new RedirectResponse($destination);
+      $response->send();
       return [
         '#type' => 'markup',
         '#markup' => "👋 " . $this->t("You shouldn't see this."),

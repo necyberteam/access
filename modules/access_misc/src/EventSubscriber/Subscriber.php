@@ -2,7 +2,6 @@
 
 namespace Drupal\access_misc\EventSubscriber;
 
-use Drupal\Core\Routing\TrustedRedirectResponse;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -13,9 +12,7 @@ use Symfony\Component\HttpKernel\KernelEvents;
 class Subscriber implements EventSubscriberInterface {
 
   /**
-   * Event handler for KernelEvents::REQUEST events, specifically to support
-   * seamless login by checking if a non-authenticated user already has already
-   * been through seamless login.
+   * Redirect user if not authenticated and on /login page.
    */
   public function onRequest(RequestEvent $event) {
 
@@ -29,35 +26,6 @@ class Subscriber implements EventSubscriberInterface {
   }
 
   /**
-   * Add the cookie, via a redirect.
-   *
-   * @param \Symfony\Component\HttpKernel\Event\RequestEvent $event
-   *   Response event.   *.
-   */
-  protected function doSetCookie(RequestEvent $event, $seamless_debug, $cookie_name) {
-
-    $site_name = \Drupal::config('system.site')->get('name');
-    $cookie_value = \Drupal::state()->get('drupal_seamless_cilogon.seamless_cookie_value', $site_name);
-    $cookie_expiration = \Drupal::state()->get('drupal_seamless_cilogon.seamless_cookie_expiration', '+18 hours');
-    // Use value from form.
-    $cookie_expiration = strtotime($cookie_expiration);
-    $cookie_domain = \Drupal::state()->get('drupal_seamless_cilogon.seamless_cookie_domain', '.access-ci.org');
-    $cookie = new Cookie($cookie_name, $cookie_value, $cookie_expiration, '/', $cookie_domain);
-
-    $request = $event->getRequest();
-    $destination = $request->getRequestUri();
-
-    $redir = new TrustedRedirectResponse($destination, '302');
-    $redir->headers->setCookie($cookie);
-    $redir->headers->set('Cache-Control', 'public, max-age=0');
-    $redir->addCacheableDependency($destination);
-    $redir->addCacheableDependency($cookie);
-
-    $event->setResponse($redir);
-
-  }
-
-  /**
    * Redirect to Cilogon.
    *
    * @param \Symfony\Component\HttpKernel\Event\RequestEvent $event
@@ -66,9 +34,6 @@ class Subscriber implements EventSubscriberInterface {
   protected function doRedirectToCilogon(RequestEvent $event) {
     $request = $event->getRequest();
 
-    // \Drupal::service('page_cache_kill_switch')->trigger();
-    // Setup redirect to CILogon flow.
-    // @todo move some of the following to a constructor for this class?
     $container = \Drupal::getContainer();
     $client_name = 'cilogon';
     $config_name = 'cilogon_auth.settings.' . $client_name;
@@ -92,8 +57,7 @@ class Subscriber implements EventSubscriberInterface {
   }
 
   /**
-   * Subscribe to onRequest events.  This allows checking if a CILogon redirect is needed any time
-   * a page is requested.
+   * Subscribe to onRequest events.
    *
    * {@inheritdoc}
    */
