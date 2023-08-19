@@ -75,7 +75,7 @@ class LoginController extends ControllerBase {
     if ($this->currentUser->isAuthenticated()) {
       // Get redirect destination from url.
       $destination = Xss::filter($this->redirectDestination->get());
-      if (empty($destination) || $destination == '/login') {
+      if (empty($destination) || str_starts_with($destination, '/login')) {
         $destination = '/';
       }
       // Redirect to destination.
