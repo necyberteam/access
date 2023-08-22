@@ -4,9 +4,9 @@ namespace Drupal\cssn\Plugin\Block;
 
 use Drupal\access_misc\Plugin\Util\RolesLabelLookup;
 use Drupal\Core\Block\BlockBase;
-use Drupal\cssn\Plugin\Util\EndUrl;
-use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\user\Entity\User;
 
 /**
@@ -102,9 +102,13 @@ class PersonaBlock extends BlockBase {
       else {
         $academic_status = '';
       }
-      $key = array_search('authenticated', $roles);
-      if ($key !== FALSE) {
-        unset($roles[$key]);
+      // Don't display these roles.
+      $roles_not_to_include = ['authenticated', 'administrator', 'Masquerade', 'exportpeople', 'site_developer'];
+      foreach ($roles_not_to_include as $role) {
+        $key = array_search($role, $roles);
+        if ($key !== FALSE) {
+          unset($roles[$key]);
+        }
       }
       $role = new RolesLabelLookup($roles);
       $roles = $role->getRoleLabelsString();
@@ -149,7 +153,7 @@ class PersonaBlock extends BlockBase {
         $cssn = $cssn_renderable;
         $cssn['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
       }
-      $cssn_more_url = Url::fromUri('internal:/cssn');
+      $cssn_more_url = Url::fromUri('https://support.access-ci.org/cssn');
       $cssn_more_link = Link::fromTextAndUrl('Find out More', $cssn_more_url);
       $cssn_more_renderable = $cssn_more_link->toRenderable();
       $cssn_more = $cssn_more_renderable;

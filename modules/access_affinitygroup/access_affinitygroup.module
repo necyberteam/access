@@ -25,15 +25,15 @@
  * title changes.
  */
 
-use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\block\Entity\Block;
-use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\node\Entity\Node;
 use Drupal\node\NodeInterface;
 use Drupal\taxonomy\Entity\Term;
@@ -845,18 +845,47 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
  * Hook_form_alter.
  *
  * For one of two form types:
- * 1) node_affinity_group_edit_form:  Make the cider resources field read-only
- *    for non-administrator users.
+ * 1) node_affinity_group_edit_form:
+ *  -- Make the associated cider resources field read-only for non-administrator users
+ *  -- hide recommended + associated cider resources fields depending on category
  * 2) webform_submission_affinity_group_contact_add_form: sets up form for
  *    sending one email to affinity group.
  */
 function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_affinity_group_edit_form' || $form_id == 'node_affinity_group_form') {
+    $add_tags = \Drupal::service('access_misc.addtags');
+    $output = $add_tags->getView();
+    $form['oit_advanced'] = [
+      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+      '#weight' => 3,
+      '#allowed_tags' => [
+        'button',
+        'details',
+        'summary',
+        'span',
+        'h2',
+      ],
+    ];
+
+    // Attach javascript.
+    $form['#attached']['library'][] = 'access_misc/node_add_tags';
+  }
 
   if ($form_id == 'node_affinity_group_edit_form') {
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
     if (!in_array('administrator', $roles)) {
       $form['field_cider_resources']['#disabled'] = TRUE;
+    }
+
+    // Only AGs set to Community should see Reccomended Ciders;
+    // only AGs set to ACCESS RP category should see Associated Ciders.
+    $category = $form['field_affinity_group_category']['widget']['#default_value'];
+    if (!isset($category[0]) || $category[0] !== 'Community') {
+      $form['field_recommended_access_res']['#access'] = FALSE;
+    }
+    if (!isset($category[0]) || $category[0] !== 'ACCESS_RP') {
+      $form['field_cider_resources']['#access'] = FALSE;
     }
   }
   elseif ($form_id == 'webform_submission_affinity_group_contact_add_form') {
@@ -906,6 +935,61 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
       \Drupal::messenger()->addMessage(t('It doesn\'t appear you came here from an affinity group page. Please go to an affinity group page and click the \'Contact Group\' link to send a message to that affinity group.'), 'warning');
       $form['actions']['submit']['#disabled'] = TRUE;
     }
+  }
+}
+
+/**
+ * Hook_presave only for Recommended Cider field.
+ */
+function access_affinitygroup_node_presave(NodeInterface $node) {
+  $type = $node->getType();
+  if ($type == 'recommended_cider') {
+    $node->setTitle('');
+  }
+
+}
+
+/**
+ * Implements hook_inline_entity_form_table_fields_alter().
+ */
+function access_affinitygroup_inline_entity_form_table_fields_alter(&$fields, $context) {
+  if ($context['entity_type'] == 'node') {
+
+    // Hide the status + title (aka 'label' here) fields
+    // that Inline Entity Form usually displays.
+    unset($fields['status']);
+    unset($fields['label']);
+
+    // Add the resource + description field to the table.
+    $fields['field_cider_resource'] = [
+      'type' => 'field',
+      'label' => t('Resource'),
+      'weight' => 100,
+    ];
+
+    $fields['body'] = [
+      'type' => 'field',
+      'label' => t('Description'),
+      'weight' => 200,
+    ];
+  }
+}
+
+/**
+ * When the user is editing a Recommened Resource, hide the title field.
+ */
+function access_affinitygroup_inline_entity_form_entity_form_alter(&$form, &$form_state) {
+  $form['title']['#access'] = FALSE;
+}
+
+/**
+ * Implements hook_entity_update().
+ * Invalidate affinity group ci links block cache when ci link is updated.
+ */
+function access_affinitygroup_entity_update(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'resource') {
+    \Drupal::service('cache_tags.invalidator')->invalidateTags(['affinity_group_ci_links']);
   }
 }
 
