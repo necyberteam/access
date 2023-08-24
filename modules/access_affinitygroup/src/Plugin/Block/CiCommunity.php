@@ -19,7 +19,7 @@ class CiCommunity extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
-    $list = '<h3 class="border-bottom pb-2">Ask CI</h3><ul>';
+    $list = '';
     $node = \Drupal::routeMatch()->getParameter('node');
     // If on the layout page show node 327.
     $node = $node ? $node : \Drupal::entityTypeManager()->getStorage('node')->load(327);
@@ -54,6 +54,7 @@ class CiCommunity extends BlockBase {
       curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, TRUE);
       $result = json_decode(curl_exec($ch));
       $topics = $result->suggested_topics;
+      $list = '<h3 class="border-bottom pb-2">Ask CI</h3><ul>';
       foreach ($topics as $topic) {
         $last_update = $topic->last_posted_at;
         $last_update = strtotime($last_update);
@@ -62,9 +63,8 @@ class CiCommunity extends BlockBase {
         $list .= "<li><a href='https://ask.cyberinfrastructure.org/t/$topic->slug/$topic->id'>$topic->title</a> (Last Update: $last_update)</li>";
       }
       curl_close($ch);
-
+      $list .= '</ul>';
     }
-    $list .= '</ul>';
     return [
       ['#markup' => $list],
     ];
