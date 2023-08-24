@@ -56,11 +56,23 @@ class CiCommunity extends BlockBase {
       $topics = $result->suggested_topics;
       $list = '<h3 class="border-bottom pb-2">Ask CI</h3><ul>';
       foreach ($topics as $topic) {
-        $last_update = $topic->last_posted_at;
+        $list_topics[$topic->last_posted_at] = [
+          'title' => $topic->title,
+          'slug' => $topic->slug,
+          'id' => $topic->id,
+        ];
+      }
+      krsort($list_topics);
+      foreach ($list_topics as $list_key => $topic) {
+        $last_update = $list_key;
         $last_update = strtotime($last_update);
         $last_update = date('m-d-Y', $last_update);
 
-        $list .= "<li><a href='https://ask.cyberinfrastructure.org/t/$topic->slug/$topic->id'>$topic->title</a> (Last Update: $last_update)</li>";
+        $title = $topic['title'];
+        $slug = $topic['slug'];
+        $id = $topic['id'];
+
+        $list .= "<li><a href='https://ask.cyberinfrastructure.org/t/$slug/$id'>$title</a> (Last Update: $last_update)</li>";
       }
       curl_close($ch);
       $list .= '</ul>';
