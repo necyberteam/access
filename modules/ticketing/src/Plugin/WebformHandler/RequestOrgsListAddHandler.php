@@ -6,7 +6,7 @@ use Drupal\webform\Plugin\WebformHandlerBase;
 use Drupal\webform\WebformSubmissionInterface;
 
 /**
- * Create and send the request to add an organization to the access orginizations list
+ * Send the request to add an organization to the ACCESS organizations list.
  *
  * @WebformHandler(
  *   id = "ACCESS Orgs List Add Header",
@@ -18,7 +18,7 @@ use Drupal\webform\WebformSubmissionInterface;
  * )
  */
 class RequestOrgsListAddHandler extends WebformHandlerBase {
-  public $debug = false;
+  public $debug = TRUE;
 
   /**
    * {@inheritdoc}
@@ -33,20 +33,19 @@ class RequestOrgsListAddHandler extends WebformHandlerBase {
       // $data = Array ( [your_name] => a [email] => jasperjunk@gmail.com [access_id] => [comment] => )
     }
 
-    $to = "ACCESS-Allocations-DevOPS@tickets.access-ci.org";
+    $to = "support@access-ci.atlassian.net";
 
     if ($this->debug) {
-
       // FOR TESTING.
-      $to .= ', jasperjunk@gmail.com';
+      $to = 'andrew@elytra.net';
     }
 
     // Build up the email params.
     $params = [];
     $params['to'] = $to;
-    $body = (string) $this->getXMailMessageBody($data);
+    $body = (string) $this->getMailMessageBody($data);
     $params['body'] = $body;
-    $params['title'] = 'request to an an organization to ACCESS organization list from ' . $data['your_name'];
+    $params['title'] = 'Request to add an organization from ' . $data['your_name'];
 
     $langcode = \Drupal::currentUser()->getPreferredLangcode();
     $send = TRUE;
@@ -67,7 +66,10 @@ class RequestOrgsListAddHandler extends WebformHandlerBase {
     }
   }
 
-  public function getXMailMessageBody($data) {
+  /**
+   *
+   */
+  public function getMailMessageBody($data) {
     $ticketing_module_path = \Drupal::service('extension.list.module')->getPath('ticketing');
     return twig_render_template(
           $ticketing_module_path . '/templates/request-orgs-list-add-mail.html.twig',
