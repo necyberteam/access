@@ -23,6 +23,7 @@ class ResourcesForAffinityGroup extends BlockBase {
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
+    $node = $node ? $node : \Drupal::entityTypeManager()->getStorage('node')->load(327);
     // Load field_resources_entity_reference field.
     $field_resources_entity_reference = $node->get('field_resources_entity_reference')->getValue();
     if (!empty($field_resources_entity_reference)) {
@@ -74,13 +75,17 @@ class ResourcesForAffinityGroup extends BlockBase {
         }
         if (['Beginner'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner.png" alt="Beginner">';
-        } elseif (['Beginner', 'Intermediate'] == $skill_list) {
+        }
+        elseif (['Beginner', 'Intermediate'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner-medium.png" alt="Beginner, Intermediate">';
-        } elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
+        }
+        elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-all.png" alt="Beginner, Intermediate, Advanced">';
-        } elseif (['Intermediate', 'Advanced'] == $skill_list) {
+        }
+        elseif (['Intermediate', 'Advanced'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-medium-advanced.png" alt="Intermediate, Advanced">';
-        } elseif (['Advanced'] == $skill_list) {
+        }
+        elseif (['Advanced'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-advanced.png" alt="Advanced">';
         }
 
