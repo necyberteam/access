@@ -66,7 +66,11 @@ class CiCommunity extends BlockBase {
       $list .= '</ul>';
     }
     return [
-      ['#markup' => $list],
+      '#markup' => $list,
+      '#cache' => [
+        // Expire in one day in seconds.
+        'max-age' => 86400,
+      ],
     ];
   }
 
