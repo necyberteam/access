@@ -4,6 +4,14 @@ namespace Drupal\access_affinitygroup\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Entity\EntityTypeManagerInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Logger\LoggerChannelFactoryInterface;
+use Drupal\Core\Plugin\ContainerFactoryPluginInterface;
+use Drupal\Core\Routing\RouteMatchInterface;
+use Drupal\Core\Url;
+use GuzzleHttp\Client;
+use Symfony\Component\DependencyInjection\ContainerInterface;
 
 /**
  * Block of attached affinity group.
@@ -13,16 +21,90 @@ use Drupal\Core\Cache\Cache;
  *   admin_label = "Ci Community pulled via api",
  * )
  */
-class CiCommunity extends BlockBase {
+class CiCommunity extends BlockBase implements
+  ContainerFactoryPluginInterface {
+
+  /**
+   * The entity type manager.
+   *
+   * @var \Drupal\Core\Entity\EntityTypeManagerInterface
+   */
+  protected $entityTypeManager;
+
+  /**
+   * Invoke renderer.
+   *
+   * @var \Drupal\Core\Routing\RouteMatchInterface
+   */
+  protected $routMatchInterface;
+
+  /**
+   * The http_client service.
+   *
+   * @var \GuzzleHttp\Client
+   */
+  protected $httpClient;
+
+  /**
+   * Logger Factory.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelFactoryInterface
+   */
+  protected $loggerFactory;
+
+  /**
+   * {@inheritdoc}
+   *
+   * @param \Symfony\Component\DependencyInjection\ContainerInterface $container
+   *   Container pulled in.
+   * @param array $configuration
+   *   Configuration added.
+   * @param string $plugin_id
+   *   Plugin_id added.
+   * @param mixed $plugin_definition
+   *   Plugin_definition added.
+   *
+   * @return static
+   */
+  public static function create(ContainerInterface $container, array $configuration, $plugin_id, $plugin_definition): self {
+    return new self(
+      $configuration,
+      $plugin_id,
+      $plugin_definition,
+      $container->get('entity_type.manager'),
+      $container->get('current_route_match'),
+      $container->get('http_client'),
+      $container->get('logger.factory'),
+    );
+  }
+
+  /**
+   * Construct object.
+   */
+  public function __construct(
+                              array $configuration,
+                              $plugin_id,
+                              $plugin_definition,
+                              EntityTypeManagerInterface $entity_type_manager,
+                              RouteMatchInterface $route_match_interface,
+                              Client $http_client,
+                              LoggerChannelFactoryInterface $logger_interface
+  ) {
+    parent::__construct($configuration, $plugin_id, $plugin_definition);
+    $this->entityTypeManager = $entity_type_manager;
+    $this->routeMatchInterface = $route_match_interface;
+    $this->httpClient = $http_client;
+    $this->loggerFactory = $logger_interface->get('access_affinitygroup');
+  }
 
   /**
    * {@inheritdoc}
    */
   public function build() {
-    $list = '';
-    $node = \Drupal::routeMatch()->getParameter('node');
+    $html = [];
+    $node = $this->routeMatchInterface->getParameter('node');
     // If on the layout page show node 327.
-    $node = $node ? $node : \Drupal::entityTypeManager()->getStorage('node')->load(327);
+    $node = $node ? $node : $this->entityTypeManager->getStorage('node')->load(327);
     $qa_link = $node->get('field_ask_ci_locale')->getValue();
     $qa_link = $qa_link ?? $qa_link;
     if ($qa_link) {
@@ -34,15 +116,20 @@ class CiCommunity extends BlockBase {
       $cid = 0;
     }
     if ($cid) {
+      $header = [
+        'title' => 'Title',
+        'last_update' => 'Last Update',
+      ];
+      $rows = [];
       // Api call for grabbing the category.
       $category = "https://ask.cyberinfrastructure.org/c/$cid/show.json";
-      $client = \Drupal::httpClient();
+      $client = $this->httpClient;
       try {
         $request = $client->get($category);
         $result = $request->getBody()->getContents();
       }
       catch (RequestException $e) {
-        \Drupal::logger('access_affinitygroup')->error($e);
+        $this->loggerFactory->error($e);
       }
       $result = json_decode($result);
       $topic_url = explode('/', $result->category->topic_url);
@@ -56,7 +143,7 @@ class CiCommunity extends BlockBase {
         $result = $request->getBody()->getContents();
       }
       catch (RequestException $e) {
-        \Drupal::logger('access_affinitygroup')->error($e);
+        $this->loggerFactory->error($e);
       }
       $result = json_decode($result);
       $topics_list = $result->topic_list->topics;
@@ -70,11 +157,9 @@ class CiCommunity extends BlockBase {
           $result = $request->getBody()->getContents();
         }
         catch (RequestException $e) {
-          \Drupal::logger('access_affinitygroup')->error($e);
+          $this->loggerFactory->error($e);
         }
         $result = json_decode($result);
-        $topics = $result->suggested_topics;
-        $list = '<h3 class="border-bottom pb-2">Ask CI</h3><ul>';
         $last_update = $result->last_posted_at ? $result->last_posted_at : $result->created_at;
         $last_update = strtotime($last_update);
         $list_topics[$last_update] = [
@@ -84,33 +169,55 @@ class CiCommunity extends BlockBase {
         ];
       }
       krsort($list_topics);
+      $iteration = 0;
       foreach ($list_topics as $list_key => $topic) {
+        $iteration++;
+        if ($iteration > 5) {
+          break;
+        }
         $last_update = $list_key;
-        $last_update = date('m-d-Y', $last_update);
+        $last_update = date('m/d/y', $last_update);
 
         $title = $topic['title'];
         $slug = $topic['slug'];
         $id = $topic['id'];
+        $url = Url::fromUri("https://ask.cyberinfrastructure.org/t/$slug/$id");
+        $external_link = Link::fromTextAndUrl($title, $url)->toString();
 
-        $list .= "<li><a href='https://ask.cyberinfrastructure.org/t/$slug/$id'>$title</a> (Last Update: $last_update)</li>";
+        $rows[] = [
+          'name' => [
+            'data' => [
+              '#markup' => "$external_link",
+            ],
+          ],
+          'last_update' => [
+            'data' => [
+              '#markup' => $last_update,
+            ],
+            //'class' => 'text-end text-right',
+          ],
+        ];
       }
-      $list .= '</ul>';
     }
-
-    return [
-      '#markup' => $list,
-      '#cache' => [
-        // Expire in one day in seconds.
-        'max-age' => 86400,
-      ],
+    $ask_title = $this->t('Ask.CI Recent Questions');
+    $ask_title = "<h3 class='border-bottom pb-2'>$ask_title</h3>";
+    $html['ask-ci'] = [
+      '#theme' => 'table',
+      '#prefix' => $ask_title,
+      '#header' => $header,
+      '#rows' => $rows,
+      '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
+      // Expire in one day in seconds.
+      '#cache' => ["max-age" => 86400],
     ];
+    return $html;
   }
 
   /**
    * {@inheritdoc}
    */
   public function getCacheTags() {
-    if ($node = \Drupal::routeMatch()->getParameter('node')) {
+    if ($node = $this->routeMatchInterface->getParameter('node')) {
       return Cache::mergeTags(parent::getCacheTags(), ['node:' . $node->id()]);
     }
     else {
@@ -119,7 +226,7 @@ class CiCommunity extends BlockBase {
   }
 
   /**
-   *
+   * {@inheritdoc}
    */
   public function getCacheContexts() {
     return Cache::mergeContexts(parent::getCacheContexts(), ['route']);
