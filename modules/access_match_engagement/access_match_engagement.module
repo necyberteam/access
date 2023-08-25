@@ -8,15 +8,14 @@
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\views\Views;
 
 /**
  * Implements hook_views_pre_render().
@@ -192,6 +191,10 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       }
     }
   }
+
+  if ($form_id == 'node_match_engagement_edit_form') {
+    $form['#validate'][] = 'access_match_engagement_edit_validate';
+  }
   if ($form_id == 'node_match_engagement_form') {
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
@@ -223,6 +226,68 @@ function access_match_engagement_node_view(array &$build, EntityInterface $entit
 function access_match_engagement_submit_function(&$form, FormStateInterface $form_state) {
   $moderation_state = $form_state->getValues()['moderation_state'][0]['value'];
   update_drupal_message($moderation_state);
+}
+
+/**
+ * Validate edit form.
+ * Check that names in the Match Team student(s), consultant(s) or mentors(s) fields have the correct role s
+ * (student-facilitator/consultant/mentor).
+ * For mentor(s) or consultant(s) field, we will automatically add the role to the user iff they already
+ * are in the cssn system (defined by having the role 'cssn').
+ * We only check on the edit form because all of these fields are hidden on the initial form.
+ */
+function access_match_engagement_edit_validate(&$form, FormStateInterface $form_state) {
+
+  $error = '';
+  $values = $form_state->getValues();
+
+  $person_array = $values['field_students'];
+  $error .= match_check_role($person_array, 'student', FALSE);
+
+  $person_array = $values['field_mentor'];
+  $error .= match_check_role($person_array, 'mentor', TRUE);
+
+  $person_array = $values['field_consultant'];
+  $error .= match_check_role($person_array, 'consultant', TRUE);
+
+  if (!empty($error)) {
+    $form_state->setError($form, t($error));
+    // $form_state->setErrorByName('field_students', t($error));
+  }
+}
+
+function match_check_role($person_array, $role_name, $do_add_role) {
+
+  $error_msg = '';
+
+  // While checking each of these fields, the is_array skips the 'add another item' translatable markup item.
+  foreach ($person_array as $person) {
+    if (is_array($person) && !empty($person['target_id'])) {
+      $user = User::load($person['target_id']);
+      $has_role = validate_user_has_role($user, $role_name);
+      if (!$has_role) {
+        if ($do_add_role && validate_user_has_role($user, 'cssn')) {
+          $user->addRole($role_name);
+          $user->save();
+        }
+        else {
+          $error_msg .= t($user->getDisplayName() . ' is not a CSSN ' . $role_name . '. Please ask them to complete the <a href=":url">form to join the CSSN</a>.<br>', [':url' => 'https://support.access-ci.org/form/join-the-cssn-network']);
+        }
+      }
+    }
+  }
+  return ($error_msg);
+}
+
+function validate_user_has_role($user, $role_name) {
+
+  $roles_array = $user->getRoles();
+  foreach ($roles_array as $role) {
+    if ($role == $role_name) {
+      return TRUE;
+    }
+  }
+  return FALSE;
 }
 
 /**
