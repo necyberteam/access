@@ -106,18 +106,18 @@ class CiCommunity extends BlockBase implements
     // If on the layout page show node 327.
     $node = $node ? $node : $this->entityTypeManager->getStorage('node')->load(327);
     $qa_link = $node->get('field_ask_ci_locale')->getValue();
-    $qa_link = $qa_link ?? $qa_link;
-    if ($qa_link) {
-      $qa_link = explode('/', $qa_link[0]['uri']);
-      $qa_link_id = end($qa_link);
-      $cid = $qa_link[2] == 'ask.cyberinfrastructure.org' && is_numeric($qa_link_id) ? $qa_link_id : 0;
+    $qa_link_set = $qa_link ?? $qa_link;
+    if ($qa_link_set) {
+      $qa_link_parts = explode('/', $qa_link[0]['uri']);
+      $qa_link_id = end($qa_link_parts);
+      $cid = $qa_link_parts[2] == 'ask.cyberinfrastructure.org' && is_numeric($qa_link_id) ? $qa_link_id : 0;
     }
     else {
       $cid = 0;
     }
     if ($cid) {
       $header = [
-        'title' => 'Title',
+        'title' => 'Topics',
         'last_update' => 'Last Update',
       ];
       $rows = [];
@@ -199,11 +199,21 @@ class CiCommunity extends BlockBase implements
         ];
       }
     }
-    $ask_title = $this->t('Ask.CI Recent Questions');
+    $ask_title = $this->t('Ask.CI Recent Topics');
     $ask_title = "<h3 class='border-bottom pb-2'>$ask_title</h3>";
+    $options = [
+      'attributes' => [
+        'class' => [
+          'btn btn-primary m-2',
+        ],
+      ],
+    ];
+    $ci_url = Url::fromUri($qa_link[0]['uri'], $options);
+    $ci_external_link = Link::fromTextAndUrl('View on Ask.CI', $ci_url);
     $html['ask-ci'] = [
       '#theme' => 'table',
       '#prefix' => $ask_title,
+      '#suffix' => $ci_external_link->toString(),
       '#header' => $header,
       '#rows' => $rows,
       '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
