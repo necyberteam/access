@@ -194,7 +194,6 @@ class CiCommunity extends BlockBase implements
             'data' => [
               '#markup' => $last_update,
             ],
-            //'class' => 'text-end text-right',
           ],
         ];
       }
@@ -209,7 +208,7 @@ class CiCommunity extends BlockBase implements
       ],
     ];
     $ci_url = Url::fromUri($qa_link[0]['uri'], $options);
-    $ci_external_link = Link::fromTextAndUrl('View on Ask.CI', $ci_url);
+    $ci_external_link = Link::fromTextAndUrl($this->t('View on Ask.CI'), $ci_url);
     $html['ask-ci'] = [
       '#theme' => 'table',
       '#prefix' => $ask_title,
