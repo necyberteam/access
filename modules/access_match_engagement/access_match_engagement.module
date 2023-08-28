@@ -233,7 +233,7 @@ function access_match_engagement_submit_function(&$form, FormStateInterface $for
  * Check that names in the Match Team student(s), consultant(s) or mentors(s) fields have the correct role s
  * (student-facilitator/consultant/mentor).
  * For mentor(s) or consultant(s) field, we will automatically add the role to the user iff they already
- * are in the cssn system (defined by having the role 'cssn').
+ * are in the cssn system (defined by have an item in their program list = "ACCESS CSSN").
  * We only check on the edit form because all of these fields are hidden on the initial form.
  */
 function access_match_engagement_edit_validate(&$form, FormStateInterface $form_state) {
@@ -252,21 +252,28 @@ function access_match_engagement_edit_validate(&$form, FormStateInterface $form_
 
   if (!empty($error)) {
     $form_state->setError($form, t($error));
-    // $form_state->setErrorByName('field_students', t($error));
   }
 }
 
+/**
+ * assemble a list of messages for the user that tell if any
+ * of the users in person_array do not have the proper roles as
+ * described in the _validate function above. If do_add_Role is
+ * true, add the role to the user if the are already in the
+ * ACCESS_CSSN program
+ */
 function match_check_role($person_array, $role_name, $do_add_role) {
 
   $error_msg = '';
 
   // While checking each of these fields, the is_array skips the 'add another item' translatable markup item.
+
   foreach ($person_array as $person) {
     if (is_array($person) && !empty($person['target_id'])) {
       $user = User::load($person['target_id']);
       $has_role = validate_user_has_role($user, $role_name);
       if (!$has_role) {
-        if ($do_add_role && validate_user_has_role($user, 'cssn')) {
+        if ($do_add_role && user_in_program($user, 'ACCESS CSSN')) {
           $user->addRole($role_name);
           $user->save();
         }
@@ -279,6 +286,23 @@ function match_check_role($person_array, $role_name, $do_add_role) {
   return ($error_msg);
 }
 
+/**
+ *  Return boolean - whether a program is included in list of user's programs
+ */
+function user_in_program($user, $program_name) {
+  $regions = $user->get('field_region')->getValue();
+  $terms = [];
+  foreach ($regions as $region) {
+    $region_tid = $region['target_id'];
+    $terms[$region_tid] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
+  }
+  $program = implode(', ', $terms);
+  return(in_array($program_name, $terms));
+}
+
+/**
+ *
+ */
 function validate_user_has_role($user, $role_name) {
 
   $roles_array = $user->getRoles();
