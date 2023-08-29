@@ -77,17 +77,13 @@ class ResourcesForAffinityGroup extends BlockBase {
         }
         if (['Beginner'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner.png" alt="Beginner">';
-        }
-        elseif (['Beginner', 'Intermediate'] == $skill_list) {
+        } elseif (['Beginner', 'Intermediate'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner-medium.png" alt="Beginner, Intermediate">';
-        }
-        elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
+        } elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-all.png" alt="Beginner, Intermediate, Advanced">';
-        }
-        elseif (['Intermediate', 'Advanced'] == $skill_list) {
+        } elseif (['Intermediate', 'Advanced'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-medium-advanced.png" alt="Intermediate, Advanced">';
-        }
-        elseif (['Advanced'] == $skill_list) {
+        } elseif (['Advanced'] == $skill_list) {
           $skills = '<img src="/themes/custom/accesstheme/assets/SL-advanced.png" alt="Advanced">';
         }
 
