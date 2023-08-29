@@ -197,28 +197,28 @@ class CiCommunity extends BlockBase implements
           ],
         ];
       }
-    }
-    $ask_title = $this->t('Ask.CI Recent Topics');
-    $ask_title = "<h3 class='border-bottom pb-2'>$ask_title</h3>";
-    $options = [
-      'attributes' => [
-        'class' => [
-          'btn btn-primary m-2',
+      $ask_title = $this->t('Ask.CI Recent Topics');
+      $ask_title = "<h3 class='border-bottom pb-2'>$ask_title</h3>";
+      $options = [
+        'attributes' => [
+          'class' => [
+            'btn btn-primary m-2',
+          ],
         ],
-      ],
-    ];
-    $ci_url = Url::fromUri($qa_link[0]['uri'], $options);
-    $ci_external_link = Link::fromTextAndUrl($this->t('View on Ask.CI'), $ci_url);
-    $html['ask-ci'] = [
-      '#theme' => 'table',
-      '#prefix' => $ask_title,
-      '#suffix' => $ci_external_link->toString(),
-      '#header' => $header,
-      '#rows' => $rows,
-      '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
-      // Expire in one day in seconds.
-      '#cache' => ["max-age" => 86400],
-    ];
+      ];
+      $ci_url = Url::fromUri($qa_link[0]['uri'], $options);
+      $ci_external_link = Link::fromTextAndUrl($this->t('View on Ask.CI'), $ci_url);
+      $html['ask-ci'] = [
+        '#theme' => 'table',
+        '#prefix' => $ask_title,
+        '#suffix' => $ci_external_link->toString(),
+        '#header' => $header,
+        '#rows' => $rows,
+        '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
+        // Expire in one day in seconds.
+        '#cache' => ["max-age" => 86400],
+      ];
+    }
     return $html;
   }
 
