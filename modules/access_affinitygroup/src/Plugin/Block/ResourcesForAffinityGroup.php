@@ -23,8 +23,11 @@ class ResourcesForAffinityGroup extends BlockBase {
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
+    $node = $node ? $node : \Drupal::entityTypeManager()->getStorage('node')->load(327);
     // Load field_resources_entity_reference field.
     $field_resources_entity_reference = $node->get('field_resources_entity_reference')->getValue();
+    // Create empty string in case the following if statement is not true.
+    $rendered = '';
     if (!empty($field_resources_entity_reference)) {
       $rendered = '<h3 class="border-bottom pb-2">CI Links</h3>';
       $header = [
