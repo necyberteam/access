@@ -1,26 +1,35 @@
 <?php
 
 /**
+ * @file
+ * This file implements the mail hook for the ticketing module
+ * setting the message headers, from, subject, body, and cc values.
+ */
+
+/**
  * Implements hook_mail().
  */
-function ticketing_mail($key, &$message, $params)
-{
+function ticketing_mail($key, &$message, $params) {
   switch ($key) {
     case 'ticketing':
- 
+      // Send using submitter's email so the responder can be set in JSM.
+      $from = $params['from'];
+      $message['from'] = $from;
+      $message['headers']['From'] = $from;
+      $message['headers']['Sender'] = $from;
+      $message['headers']['Return-Path'] = $from;
+
       $message['subject'] = $params['title'];
       $message['body'][] = $params['body'];
 
-      // add any cc's
-      if (array_key_exists('headers', $params) && array_key_exists('cc', $params['headers']))
+      // Add any cc's.
+      if (array_key_exists('headers', $params) && array_key_exists('cc', $params['headers'])) {
         $message['headers']['cc'] = $params['headers']['cc'];
+      }
 
-      // set the custom header 'X-RT-Source:Form';
-      $message['headers']['X-RT-Source'] = 'Form';
-
-      $debug = false;
+      $debug = FALSE;
       if ($debug) {
-        $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'mail $message = ' . print_r($message, true);
+        $msg = basename(__FILE__) . ':' . __LINE__ . ' -- ' . 'mail $message = ' . print_r($message, TRUE);
         \Drupal::messenger()->addStatus($msg);
       }
 

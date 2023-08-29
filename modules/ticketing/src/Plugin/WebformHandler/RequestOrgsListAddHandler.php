@@ -18,7 +18,7 @@ use Drupal\webform\WebformSubmissionInterface;
  * )
  */
 class RequestOrgsListAddHandler extends WebformHandlerBase {
-  public $debug = false;
+  public $debug = FALSE;
 
   /**
    * {@inheritdoc}
@@ -43,6 +43,7 @@ class RequestOrgsListAddHandler extends WebformHandlerBase {
     // Build up the email params.
     $params = [];
     $params['to'] = $to;
+    $params['from'] = $data['your_email'];
     $body = (string) $this->getMailMessageBody($data);
     $params['body'] = $body;
     $params['title'] = 'Request to add an organization from ' . $data['your_name'];
