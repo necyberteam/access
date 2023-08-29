@@ -2,12 +2,12 @@
 
 namespace Drupal\access_affinitygroup\Plugin;
 
-use GuzzleHttp\Client;
-use Drupal\user\Entity\User;
-use Drupal\node\Entity\Node;
+use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Batch\BatchBuilder;
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
+use Drupal\node\Entity\Node;
+use Drupal\user\Entity\User;
+use GuzzleHttp\Client;
 
 /**
  * @file
@@ -398,7 +398,6 @@ class AllocationsUsersImport {
           foreach ($userBlockedArray as $userBlock) {
             $userBlockedAgTids[] = $userBlock['target_id'];
           }
-
           foreach ($agNodes as $agNid) {
             $this->setUserMembership($agNid, $userDetails, $userBlockedAgTids, TRUE);
           }
@@ -642,11 +641,18 @@ class AllocationsUsersImport {
    */
   private function setUserMembership($agNid, $userDetails, $blockList, $isJoin) {
     $ag = Node::load($agNid);
+
     $agTax = \Drupal::entityTypeManager()
       ->getStorage('taxonomy_term')
       ->loadByProperties(['name' => ($ag->get('title')->value)]);
-    $agTax = reset($agTax);
 
+    // If taxonomy not on some new affinity group, fail gracefully.
+    if (empty($agTax)) {
+      $this->collectCronLog('MISSING taxonomy for affinity group ' . $ag->get('title')->value, 'err');
+      return;
+    }
+
+    $agTax = reset($agTax);
     // For joining only, check if ag is on block list.
     if ($isJoin && in_array($agTax->id(), $blockList)) {
       $this->collectCronLog('...user blocked ' . $agTax->id() . ' ' . $ag->get('title')->value, 'd');
@@ -826,7 +832,7 @@ class AllocationsUsersImport {
         $notInCC = array_diff($agContacts, $ccContacts);
         $this->collectCronLog("Sync: to be added to list $agTitle count: " . count($notInCC), 'i');
 
-        // to add users to cc lists, call cc api with chunks of 10
+        // To add users to cc lists, call cc api with chunks of 10.
         $chunkSize = 10;
         if (count($notInCC)) {
 
