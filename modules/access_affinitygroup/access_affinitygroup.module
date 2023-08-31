@@ -135,7 +135,6 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
       emailToAffinityGroups($inf_body, "$inf_title", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
     }
   }
-  die();
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
