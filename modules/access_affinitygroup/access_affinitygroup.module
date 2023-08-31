@@ -105,6 +105,37 @@ function access_affinitygroup_entity_view(array &$build, EntityInterface $entity
  */
 function access_affinitygroup_entity_presave(EntityInterface $entity) {
   $type = $entity->bundle();
+  // Email any infrastructure news with the 'Email only subscribers' box checked.
+  if ($type == 'infrastructure_news') {
+    $inf_title = $entity->get('title')->getValue()[0]['value'];
+    $inf_body = $entity->get('body')->getValue()[0]['value'];
+    $doEmailSubscribers = $entity->get('field_do_email_subscribers')->getValue();
+    if ($doEmailSubscribers[0]['value']) {
+      $affectedInfrastructure = $entity->get('field_affected_infrastructure')->getValue();
+      $ag_nodes = [];
+      foreach ($affectedInfrastructure as $ais) {
+        $query = \Drupal::entityQuery('node');
+        $node_ids = $query
+          ->condition('type', 'affinity_group')
+          ->condition('field_cider_resources', $ais['target_id'])
+          ->accessCheck(FALSE)
+          ->execute();
+        foreach ($node_ids as $nid) {
+          $ag_nodes[$nid] = $nid;
+        }
+      }
+      $ccListIds = [];
+      $agNames = [];
+      foreach ($ag_nodes as $ag_node) {
+        $node = \Drupal::entityTypeManager()->getStorage('node')->load($ag_node);
+        $ccListIds[] = $node->get('field_list_id')->getValue()[0]['value'];
+        $agNames[] = $node->getTitle();
+      }
+      $pubDate = date('m/d/Y');
+      emailToAffinityGroups($inf_body, "$inf_title", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
+    }
+  }
+  die();
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
