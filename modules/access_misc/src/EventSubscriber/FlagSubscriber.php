@@ -24,8 +24,6 @@ class FlagSubscriber implements EventSubscriberInterface {
       $flagged = isset($flag_resource[$entity_sid][$flag_id]) ? $flag_resource[$entity_sid][$flag_id]++ : 1;
       $flag_resource[$entity_sid]['today'] = 1;
       \Drupal::state()->set('resource_flags', $flag_resource);
-      $messenger = \Drupal::messenger();
-      $messenger->addMessage('The lorax is watching ' . $entity_sid, 'status', TRUE);
     }
   }
 
@@ -45,8 +43,6 @@ class FlagSubscriber implements EventSubscriberInterface {
       }
       $flag_resource[$entity_sid]['today'] = 1;
       \Drupal::state()->set('resource_flags', $flag_resource);
-      $messenger = \Drupal::messenger();
-      $messenger->addMessage('The lorax is watching ' . $entity_sid, 'status', TRUE);
     }
   }
 

@@ -247,7 +247,7 @@ function access_misc_resource_email() {
       '#rows' => $rows,
       '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
     ];
-    $output = \Drupal::service('renderer')->renderRoot($html)->__toString();
+    $output = \Drupal::service('renderer')->renderPlain($html)->__toString();
     $params = [];
     $params['to'] = 'miles.france@protitude.com';
     $params['body'] = $output;
