@@ -21,7 +21,12 @@ class FlagSubscriber implements EventSubscriberInterface {
     $entity_sid = $flagging->getFlaggable()->id();
     if ($flag_id == 'outdated' || $flag_id == 'not_useful' || $flag_id == 'inaccurate') {
       $flag_resource = \Drupal::state()->get('resource_flags');
-      $flagged = isset($flag_resource[$entity_sid][$flag_id]) ? $flag_resource[$entity_sid][$flag_id]++ : 1;
+      if (isset($flag_resource[$entity_sid][$flag_id])) {
+        $flagged = isset($flag_resource[$entity_sid][$flag_id]) ? $flag_resource[$entity_sid][$flag_id]++ : 1;
+      }
+      else {
+        $flag_resource[$entity_sid][$flag_id] = 1;
+      }
       $flag_resource[$entity_sid]['today'] = 1;
       \Drupal::state()->set('resource_flags', $flag_resource);
     }
