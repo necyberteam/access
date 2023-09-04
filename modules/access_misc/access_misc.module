@@ -184,5 +184,94 @@ function access_misc_mail($key, &$message, $params) {
       $message['subject'] = $params['subject'];
       $message['body'][] = $params['body'];
       break;
+    case 'cilink_resources':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
   }
+}
+
+/**
+ * Build Resource Email.
+ */
+function access_misc_resource_email() {
+  $header = [
+    'resource' => 'Resource title',
+    'flags' => 'Flags',
+  ];
+  $rows = [];
+  $flag_resources = \Drupal::state()->get('resource_flags');
+  foreach ($flag_resources as $sid => $flag_resource) {
+    if ($flag_resource['today']) {
+      $flag = '';
+      if (isset($flag_resource['not_useful'])) {
+        $flag .= t('not_useful') . " " .$flag_resource['not_useful'] . "<br>";
+      }
+      if (isset($flag_resource['outdated'])) {
+        $flag .= t('outdated') . " " . $flag_resource['outdated'] . "<br>";
+      }
+      if (isset($flag_resource['inaccurate'])) {
+        $flag .= t('inaccurate') . " " . $flag_resource['inaccurate'] . "<br>";
+      }
+      // Webform lookup by submission id $sid.
+      $webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($sid);
+      $webform_title = $webform_submission->getWebform()->label();
+      // Link to webform submission.
+      $webform_submission_link = \Drupal::service('link_generator')
+        ->generate($webform_submission->label(), $webform_submission->toUrl());
+      $rows[] = [
+        'resource' => [
+          'data' => [
+            '#markup' => $webform_submission_link->getGeneratedLink(),
+          ],
+        ],
+        'flags' => [
+          'data' => [
+            '#markup' => $flag,
+          ],
+        ],
+      ];
+      // Reset today to 0 after processing
+      $flag_resources[$sid]['today'] = 0;
+      \Drupal::state()->set('resource_flags', $flag_resources);
+    }
+  }
+
+  if (!empty($rows)) {
+    $body = t('The following resources have been flagged as inaccurate, not useful, or outdated.');
+    $html['ask-ci'] = [
+      '#theme' => 'table',
+      '#prefix' => "<p>$body</p>",
+      '#header' => $header,
+      '#rows' => $rows,
+      '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
+    ];
+    $output = \Drupal::service('renderer')->renderRoot($html)->__toString();
+    $params = [];
+    $params['to'] = 'miles.france@protitude.com';
+    $params['body'] = $output;
+    $params['subject'] = t('CI Links flagged');
+    cilink_send('cilink-resources', $params);
+  }
+}
+
+/**
+ * Send email.
+ */
+function cilink_send($key, $params) {
+  $to = $params['to'];
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
+  $send = TRUE;
+  $module = 'access_misc';
+  $mailManager = \Drupal::service('plugin.manager.mail');
+  $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+  return $result;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function access_misc_cron() {
+  access_misc_resource_email();
 }
