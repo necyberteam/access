@@ -252,7 +252,7 @@ function access_misc_resource_email() {
     $params['to'] = 'miles.france@protitude.com';
     $params['body'] = $output;
     $params['subject'] = t('CI Links flagged');
-    cilink_send('cilink-resources', $params);
+    cilink_send('cilink_resources', $params);
   }
 }
 
