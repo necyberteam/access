@@ -55,6 +55,26 @@ function access_misc_preprocess_views_view_field(&$variables) {
 
     $variables['output'] = \Drupal\Core\Render\Markup::create($affinity_nodes);
   }
+  if ($view->id() == 'resource' && $view->current_display == 'page_1' ) {
+    if ($field->options['id'] == 'sid') {
+      $sid = $variables['output'];
+      $sid_string = $sid->__toString();
+      $flag = \Drupal::service('flag.link_builder')->build('webform_submission', $sid_string, 'outdated');
+      $variables['output'] = $flag;
+    }
+    if ($field->options['id'] == 'sid_1') {
+      $sid = $variables['output'];
+      $sid_string = $sid->__toString();
+      $flag = \Drupal::service('flag.link_builder')->build('webform_submission', $sid_string, 'not_useful');
+      $variables['output'] = $flag;
+    }
+    if ($field->options['id'] == 'sid_2') {
+      $sid = $variables['output'];
+      $sid_string = $sid->__toString();
+      $flag = \Drupal::service('flag.link_builder')->build('webform_submission', $sid_string, 'inaccurate');
+      $variables['output'] = $flag;
+    }
+  }
 }
 
 /**
