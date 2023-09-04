@@ -249,7 +249,7 @@ function access_misc_resource_email() {
     ];
     $output = \Drupal::service('renderer')->renderPlain($html);
     $params = [];
-    $params['to'] = 'miles.france@protitude.com';
+    $params['to'] = 'miles.france@protitude.com,andrew@elytra.net';
     $params['body'] = $output;
     $params['subject'] = t('CI Links flagged');
     cilink_send('cilink_resources', $params);
