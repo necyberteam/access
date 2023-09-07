@@ -28,6 +28,19 @@ function access_misc_views_post_render(ViewExecutable $view) {
       $route->setDefault('_title', $title);
     }
   }
+  if ($view->id() == 'resource' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') {
+    $url = \Drupal::request()->getRequestUri();
+    $url_chunked = explode('/', $url);
+    $title = 'Ci Link';
+    if (is_numeric($url_chunked[2])){
+      $sid = $url_chunked[2];
+      $webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($sid);
+      // Get title field from webform submission.
+      $webform_title = $webform_submission->getData('title');
+      $title = $webform_title['title'];
+    }
+    $view->setTitle($title);
+  }
 }
 
 /**
