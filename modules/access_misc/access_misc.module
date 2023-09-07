@@ -4,13 +4,15 @@
  * @file
  */
 
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\user\Entity\User;
+use Drupal\access_misc\Plugin\Util\EventDateConvert;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
-use Drupal\access_misc\Plugin\Util\EventDateConvert;
+use Drupal\user\Entity\User;
+use Drupal\views\ViewExecutable;
 
 /**
  * Implements hook_views_post_render().
@@ -32,28 +34,29 @@ function access_misc_views_post_render(ViewExecutable $view) {
 
 /**
  * Implements hook_preprocess_views_view_field().
-*/
+ */
 function access_misc_preprocess_views_view_field(&$variables) {
   $view = $variables['view'];
   $field = $variables['field'];
   // Override view /admin/structure/views/view/resources/edit/page_1 sid_2.
   // Shows up as affinity group on /ci-links page.
-  if ($view->id() == 'resources' && $view->current_display == 'page_1' && $field->options['id'] == 'sid_2' ) {
+  if ($view->id() == 'resources' && $view->current_display == 'page_1' && $field->options['id'] == 'sid_2') {
     $sid = $variables['output'];
     $query = \Drupal::entityQuery('node')
       ->condition('type', 'affinity_group')
-      ->condition('field_resources_entity_reference', $sid);
+      ->condition('field_resources_entity_reference', $sid)
+      ->accessCheck(FALSE);
     $nids = $query->execute();
     $affinity_nodes = '';
     foreach ($nids as $nid) {
       // Get node title.
-      $node = \Drupal\node\Entity\Node::load($nid);
+      $node = Node::load($nid);
       $title = $node->getTitle();
       $affinity_nodes .= '<a href="/node/' . $nid . '">' . $title . '</a>, ';
     }
     $affinity_nodes = rtrim($affinity_nodes, ', ');
 
-    $variables['output'] = \Drupal\Core\Render\Markup::create($affinity_nodes);
+    $variables['output'] = Markup::create($affinity_nodes);
   }
 }
 
@@ -106,25 +109,30 @@ function access_misc_datalayer_alter(&$data_layer) {
     // 4: under 6 months
     // 5: under 12 months
     // 6: under 24 months
-    // 7: over 24 months
-
+    // 7: over 24 months.
     $created_time = $account->getCreatedTime();
     $current_time = time();
     $delta_time = $current_time - $created_time;
     $delta_weeks = $delta_time / 60 / 60 / 24 / 7;
     if ($delta_weeks < 1) {
       $time_bucket = 1;
-    } else if ($delta_weeks < 4) {
+    }
+    elseif ($delta_weeks < 4) {
       $time_bucket = 2;
-    } else if ($delta_weeks < 12) {
+    }
+    elseif ($delta_weeks < 12) {
       $time_bucket = 3;
-    } else if ($delta_weeks < 24) {
+    }
+    elseif ($delta_weeks < 24) {
       $time_bucket = 4;
-    } else if ($delta_weeks < 52) {
+    }
+    elseif ($delta_weeks < 52) {
       $time_bucket = 5;
-    } else if ($delta_weeks < 104) {
+    }
+    elseif ($delta_weeks < 104) {
       $time_bucket = 6;
-    } else {
+    }
+    else {
       $time_bucket = 7;
     }
     $data_layer['user_created_within'] = $time_bucket;
@@ -154,9 +162,10 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
     ];
   }
 }
-/*
-  * Implements hook_mail().
-  */
+
+/**
+ * Implements hook_mail().
+ */
 function access_misc_mail($key, &$message, $params) {
   switch ($key) {
     case 'notify_role':
