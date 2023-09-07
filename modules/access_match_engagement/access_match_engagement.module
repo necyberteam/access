@@ -240,7 +240,10 @@ function access_match_engagement_edit_validate(&$form, FormStateInterface $form_
 
   $error = '';
   $values = $form_state->getValues();
-
+  $tag_count = count($values['field_tags']);
+  if ($tag_count < 1) {
+    $error .= t('Please add at least one tag.');
+  }
   $person_array = $values['field_students'];
   $error .= match_check_role($person_array, 'student', FALSE);
 
@@ -256,7 +259,7 @@ function access_match_engagement_edit_validate(&$form, FormStateInterface $form_
 }
 
 /**
- * assemble a list of messages for the user that tell if any
+ * Assemble a list of messages for the user that tell if any
  * of the users in person_array do not have the proper roles as
  * described in the _validate function above. If do_add_Role is
  * true, add the role to the user if the are already in the
@@ -267,7 +270,6 @@ function match_check_role($person_array, $role_name, $do_add_role) {
   $error_msg = '';
 
   // While checking each of these fields, the is_array skips the 'add another item' translatable markup item.
-
   foreach ($person_array as $person) {
     if (is_array($person) && !empty($person['target_id'])) {
       $user = User::load($person['target_id']);
@@ -287,7 +289,7 @@ function match_check_role($person_array, $role_name, $do_add_role) {
 }
 
 /**
- *  Return boolean - whether a program is included in list of user's programs
+ * Return boolean - whether a program is included in list of user's programs.
  */
 function user_in_program($user, $program_name) {
   $regions = $user->get('field_region')->getValue();
