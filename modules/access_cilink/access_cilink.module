@@ -6,7 +6,7 @@
 
 use Drupal\views\ViewExecutable;
 use Drupal\taxonomy\Entity\Term;
-use Drupal\user\Entity\User
+use Drupal\user\Entity\User;
 
 /**
  * Implements hook_views_pre_render().
