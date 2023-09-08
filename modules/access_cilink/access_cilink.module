@@ -214,7 +214,7 @@ function cilink_send($key, $params) {
   $to = $params['to'];
   $langcode = \Drupal::currentUser()->getPreferredLangcode();
   $send = TRUE;
-  $module = 'access_misc';
+  $module = 'access_cilink';
   $mailManager = \Drupal::service('plugin.manager.mail');
   $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
   return $result;
