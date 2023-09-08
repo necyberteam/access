@@ -1,0 +1,5 @@
+services:
+  access_cilink.flag_subscriber:
+    class: Drupal\access_cilink\EventSubscriber\FlagSubscriber
+    tags:
+      - { name: event_subscriber }

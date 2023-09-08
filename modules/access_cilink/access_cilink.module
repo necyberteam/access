@@ -1,0 +1,228 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\views\ViewExecutable;
+use Drupal\taxonomy\Entity\Term;
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function access_cilink_views_pre_render(ViewExecutable $view) {
+  if ($view->id() == 'resource' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') {
+    $view->element['#attached']['library'][] = 'access_cilink/resource_view';
+  }
+}
+
+/**
+ * Implements hook_views_post_render().
+ */
+function access_cilink_views_post_render(ViewExecutable $view) {
+  // Override view /admin/structure/views/view/resources/edit/page_2 title.
+  if ($view->id() == 'resources' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_2') {
+    $tid = $view->getTitle();
+    if (term::load($tid)) {
+      $title = 'CI Links tagged ' . term::load($tid)->get('name')->value;
+      // Set the view title.
+      $view->setTitle($title);
+      // Set the route title.
+      $route = \Drupal::routeMatch()->getCurrentRouteMatch()->getRouteObject();
+      $route->setDefault('_title', $title);
+    }
+  }
+  if ($view->id() == 'resource' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') {
+    $url = \Drupal::request()->getRequestUri();
+    $url_chunked = explode('/', $url);
+    $title = 'Ci Link';
+    if (is_numeric($url_chunked[2])){
+      $sid = $url_chunked[2];
+      $webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($sid);
+      // Get title field from webform submission.
+      $webform_title = $webform_submission->getData('title');
+      $title = $webform_title['title'];
+    }
+    $view->setTitle($title);
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_field().
+*/
+function access_cilink_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+  // Override view /admin/structure/views/view/resources/edit/page_1 sid_2.
+  // Shows up as affinity group on /ci-links page.
+  if ($view->id() == 'resources' && $view->current_display == 'page_1' && $field->options['id'] == 'sid_2' ) {
+    $sid = $variables['output'];
+    $query = \Drupal::entityQuery('node')
+      ->condition('type', 'affinity_group')
+      ->condition('field_resources_entity_reference', $sid);
+    $nids = $query->execute();
+    $affinity_nodes = '';
+    foreach ($nids as $nid) {
+      // Get node title.
+      $node = \Drupal\node\Entity\Node::load($nid);
+      $title = $node->getTitle();
+      $affinity_nodes .= '<a href="/node/' . $nid . '">' . $title . '</a>, ';
+    }
+    $affinity_nodes = rtrim($affinity_nodes, ', ');
+
+    $variables['output'] = \Drupal\Core\Render\Markup::create($affinity_nodes);
+  }
+  // Override view /admin/structure/views/view/resource/edit/page_1 sid_2.
+  // Shows up as affinity group on /ci-links/%sid page.
+  if ($view->id() == 'resource' && $view->current_display == 'page_1' ) {
+    if ($field->options['id'] == 'webform_submission_value') {
+      $html = $variables['output'];
+
+      // Regular expression pattern to match the "[[REPLACE]]:473" string
+      $pattern = '/\[\[REPLACEAFFINITY\]\]:(\d+)/';
+
+      // Match and extract the number using preg_match for Affinity Groups.
+      if (preg_match($pattern, $html, $matches)) {
+        $sid = $matches[1];
+        $query = \Drupal::entityQuery('node')
+          ->condition('type', 'affinity_group')
+          ->condition('field_resources_entity_reference', $sid);
+        $nids = $query->execute();
+        $affinity_nodes = '';
+        if ($nids) {
+          $affinity_nodes = '<h4>Affinity Group</h4>';
+        }
+        foreach ($nids as $nid) {
+          // Get node title.
+          $node = \Drupal\node\Entity\Node::load($nid);
+          $title = $node->getTitle();
+          $affinity_nodes .= '<a href="/node/' . $nid . '">' . $title . '</a>, ';
+        }
+        $replaced_text = rtrim($affinity_nodes, ', ');
+
+        $html = preg_replace($pattern, $replaced_text, $html);
+      }
+
+      // Regular expression pattern to match the "[[REPLACE]]:473" string
+      $pattern = '/\[\[REPLACE\]\]:(\d+)/';
+
+      // Match and extract the number using preg_match for report flags.
+      if (preg_match($pattern, $html, $matches)) {
+          $sid = $matches[1];
+          $flag_outdated = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'outdated');
+          $flag_outdated['#attributes']['class'][] = 'dropdown-item';
+          $flag_outdated = \Drupal::service('renderer')->renderPlain($flag_outdated);
+          $flag_not_useful = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'not_useful');
+          $flag_not_useful['#attributes']['class'][] = 'dropdown-item';
+          $flag_not_useful = \Drupal::service('renderer')->renderPlain($flag_not_useful);
+          $flag_inaccurate = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'inaccurate');
+          $flag_inaccurate['#attributes']['class'][] = 'dropdown-item';
+          $flag_inaccurate = \Drupal::service('renderer')->renderPlain($flag_inaccurate);
+
+          $replaced_text = "<li>$flag_outdated</li><li>$flag_not_useful</li><li>$flag_inaccurate</li>";
+
+          // Replace the matched string with the variable value
+          $updatedHtml = preg_replace($pattern, $replaced_text, $html);
+          $output = \Drupal\Core\Render\Markup::create($updatedHtml);
+          $variables['output'] = $output;
+      }
+    }
+  }
+}
+
+/*
+  * Implements hook_mail().
+  */
+function access_cilink_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'cilink_resources':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
+
+/**
+ * Build Resource Email.
+ */
+function access_cilink_resource_email() {
+  $header = [
+    'resource' => 'Resource title',
+    'flags' => 'Flags',
+  ];
+  $rows = [];
+  $flag_resources = \Drupal::state()->get('resource_flags');
+  foreach ($flag_resources as $sid => $flag_resource) {
+    if ($flag_resource['today']) {
+      $flag = '';
+      if (isset($flag_resource['not_useful'])) {
+        $flag .= t('not_useful') . " " .$flag_resource['not_useful'] . "<br>";
+      }
+      if (isset($flag_resource['outdated'])) {
+        $flag .= t('outdated') . " " . $flag_resource['outdated'] . "<br>";
+      }
+      if (isset($flag_resource['inaccurate'])) {
+        $flag .= t('inaccurate') . " " . $flag_resource['inaccurate'] . "<br>";
+      }
+      // Webform lookup by submission id $sid.
+      $webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($sid);
+      $webform_title = $webform_submission->getWebform()->label();
+      // Link to webform submission.
+      $webform_submission_link = \Drupal::service('link_generator')
+        ->generate($webform_submission->label(), $webform_submission->toUrl());
+      $rows[] = [
+        'resource' => [
+          'data' => [
+            '#markup' => $webform_submission_link->getGeneratedLink(),
+          ],
+        ],
+        'flags' => [
+          'data' => [
+            '#markup' => $flag,
+          ],
+        ],
+      ];
+      // Reset today to 0 after processing
+      $flag_resources[$sid]['today'] = 0;
+      \Drupal::state()->set('resource_flags', $flag_resources);
+    }
+  }
+
+  if (!empty($rows)) {
+    $body = t('The following resources have been flagged as inaccurate, not useful, or outdated.');
+    $html['ask-ci'] = [
+      '#theme' => 'table',
+      '#prefix' => "<p>$body</p>",
+      '#header' => $header,
+      '#rows' => $rows,
+      '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
+    ];
+    $output = \Drupal::service('renderer')->renderPlain($html);
+    $params = [];
+    $params['to'] = 'miles.france@protitude.com,andrew@elytra.net';
+    $params['body'] = $output;
+    $params['subject'] = t('CI Links flagged');
+    cilink_send('cilink_resources', $params);
+  }
+}
+
+/**
+ * Send email.
+ */
+function cilink_send($key, $params) {
+  $to = $params['to'];
+  $langcode = \Drupal::currentUser()->getPreferredLangcode();
+  $send = TRUE;
+  $module = 'access_misc';
+  $mailManager = \Drupal::service('plugin.manager.mail');
+  $result = $mailManager->mail($module, $key, $to, $langcode, $params, NULL, $send);
+  return $result;
+}
+
+/**
+ * Implements hook_cron().
+ */
+function access_cilink_cron() {
+  access_cilink_resource_email();
+}

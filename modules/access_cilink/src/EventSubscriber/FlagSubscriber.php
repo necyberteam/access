@@ -2,10 +2,10 @@
 
 /**
 * @file
-* Contains \Drupal\access_misc\EventSubscriber\FlagSubscriber.
+* Contains \Drupal\access_cilink\EventSubscriber\FlagSubscriber.
 */
 
-namespace Drupal\access_misc\EventSubscriber;
+namespace Drupal\access_cilink\EventSubscriber;
 
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Drupal\flag\Event\FlagEvents;
