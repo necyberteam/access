@@ -241,7 +241,7 @@ function cilink_send($key, $params) {
  */
 function access_cilink_cron() {
   $run_email = FALSE;
-  if ((date('G', time()) == 08) && (date('i', time()) < 15)) {
+  if ((date('G', time()) == 8) && (date('i', time()) < 15)) {
     $run_email = TRUE;
   }
   if ($run_email) {
