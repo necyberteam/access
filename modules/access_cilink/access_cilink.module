@@ -6,6 +6,7 @@
 
 use Drupal\views\ViewExecutable;
 use Drupal\taxonomy\Entity\Term;
+use Drupal\user\Entity\User
 
 /**
  * Implements hook_views_pre_render().
@@ -199,8 +200,23 @@ function access_cilink_resource_email() {
       '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
     ];
     $output = \Drupal::service('renderer')->renderPlain($html);
+
+    // Lookup users by role.
+    $uids = \Drupal::entityQuery('user')
+      ->condition('status', 1)
+      ->condition('roles', 'kb_pm')
+      ->accessCheck(FALSE)
+      ->execute();
+      $to_email = '';
+      foreach ($uids as $uid) {
+        $user = User::load($uid);
+        $to_email .= $user->getEmail() . ',';
+      }
+      // Remove the last comma.
+      $to_email = rtrim($to_email, ',');
+
     $params = [];
-    $params['to'] = 'miles.france@protitude.com,andrew@elytra.net';
+    $params['to'] = $to_email;
     $params['body'] = $output;
     $params['subject'] = t('CI Links flagged');
     cilink_send('cilink_resources', $params);
@@ -224,5 +240,12 @@ function cilink_send($key, $params) {
  * Implements hook_cron().
  */
 function access_cilink_cron() {
-  access_cilink_resource_email();
+  $run_email = FALSE;
+  if ((date('G', time()) == 08) && (date('i', time()) < 15)) {
+    $run_email = TRUE;
+  }
+  if ($run_email) {
+    \Drupal::logger('access_cilinks')->notice('Running access_cilink email cron.');
+    access_cilink_resource_email();
+  }
 }
