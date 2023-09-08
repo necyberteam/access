@@ -4,13 +4,15 @@
  * @file
  */
 
-use Drupal\Core\Form\FormStateInterface;
-use Drupal\user\Entity\User;
+use Drupal\access_misc\Plugin\Util\EventDateConvert;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\views\ViewExecutable;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
-use Drupal\access_misc\Plugin\Util\EventDateConvert;
+use Drupal\user\Entity\User;
+use Drupal\views\ViewExecutable;
 
 /**
  * Implements hook_entity_view_alter().
@@ -61,25 +63,30 @@ function access_misc_datalayer_alter(&$data_layer) {
     // 4: under 6 months
     // 5: under 12 months
     // 6: under 24 months
-    // 7: over 24 months
-
+    // 7: over 24 months.
     $created_time = $account->getCreatedTime();
     $current_time = time();
     $delta_time = $current_time - $created_time;
     $delta_weeks = $delta_time / 60 / 60 / 24 / 7;
     if ($delta_weeks < 1) {
       $time_bucket = 1;
-    } else if ($delta_weeks < 4) {
+    }
+    elseif ($delta_weeks < 4) {
       $time_bucket = 2;
-    } else if ($delta_weeks < 12) {
+    }
+    elseif ($delta_weeks < 12) {
       $time_bucket = 3;
-    } else if ($delta_weeks < 24) {
+    }
+    elseif ($delta_weeks < 24) {
       $time_bucket = 4;
-    } else if ($delta_weeks < 52) {
+    }
+    elseif ($delta_weeks < 52) {
       $time_bucket = 5;
-    } else if ($delta_weeks < 104) {
+    }
+    elseif ($delta_weeks < 104) {
       $time_bucket = 6;
-    } else {
+    }
+    else {
       $time_bucket = 7;
     }
     $data_layer['user_created_within'] = $time_bucket;
