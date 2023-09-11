@@ -1,0 +1,6 @@
+resource_view:
+  js:
+    js/resource_view.js: {}
+  css:
+    theme:
+      css/resource_view.css: {}
