@@ -2,6 +2,10 @@
   display: none;
 }
 
+details.tags {
+  padding:40px;
+}
+
 details.tags summary {
   cursor: pointer;
 }
