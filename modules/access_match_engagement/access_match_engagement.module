@@ -191,9 +191,10 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     }
   }
 
-  if ($form_id == 'node_match_engagement_edit_form') {
-    $form['#validate'][] = 'access_match_engagement_edit_validate';
+  if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form')  {
+    $form['#validate'][] = 'access_match_engagement_form_validate';
   }
+
   if ($form_id == 'node_match_engagement_form') {
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
@@ -228,29 +229,32 @@ function access_match_engagement_submit_function(&$form, FormStateInterface $for
 }
 
 /**
- * Validate edit form.
+ * Validate form
+ * Need at least one tag.
  * Check that names in the Match Team student(s), consultant(s) or mentors(s) fields have the correct role s
  * (student-facilitator/consultant/mentor).
  * For mentor(s) or consultant(s) field, we will automatically add the role to the user iff they already
  * are in the cssn system (defined by have an item in their program list = "ACCESS CSSN").
- * We only check on the edit form because all of these fields are hidden on the initial form.
  */
-function access_match_engagement_edit_validate(&$form, FormStateInterface $form_state) {
+function access_match_engagement_form_validate(&$form, FormStateInterface $form_state) {
 
   $error = '';
   $values = $form_state->getValues();
-  $tag_count = count($values['field_tags']);
-  if ($tag_count < 1) {
-    $error .= t('Please add at least one tag.');
+  if (!empty($values)) {
+
+    $tag_count = count($values['field_tags']);
+    if ($tag_count < 1) {
+      $error .= t('Please add at least one tag.');
+    }
+    $person_array = $values['field_students'];
+    $error .= match_check_role($person_array, 'student', FALSE);
+
+    $person_array = $values['field_mentor'];
+    $error .= match_check_role($person_array, 'mentor', TRUE);
+
+    $person_array = $values['field_consultant'];
+    $error .= match_check_role($person_array, 'consultant', TRUE);
   }
-  $person_array = $values['field_students'];
-  $error .= match_check_role($person_array, 'student', FALSE);
-
-  $person_array = $values['field_mentor'];
-  $error .= match_check_role($person_array, 'mentor', TRUE);
-
-  $person_array = $values['field_consultant'];
-  $error .= match_check_role($person_array, 'consultant', TRUE);
 
   if (!empty($error)) {
     $form_state->setError($form, t($error));
