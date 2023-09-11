@@ -160,7 +160,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_match_steering_committee_m']['#disabled'] = TRUE;
       $form['field_node_type']['#access'] = FALSE;
       $form['field_email_user']['#access'] = FALSE;
-      $form['field_notes_to_author']['#acces'] = FALSE;
     }
     if (in_array('match_sc', $roles)) {
       // Show author, status, and last saved date to SC.
@@ -174,13 +173,13 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $node = $node_storage->load($node_param->id());
       $type = $node->get('field_node_type')->value;
       if ($type == 'plus') {
-        unset($form['field_requested_engagement']['widget']['#options'][12]);
-        unset($form['field_requested_engagement']['widget']['#options'][18]);
+        $form['field_requested_engagement']['#access'] = FALSE;
         $form['field_consultant']['#access'] = FALSE;
       }
       if ($type == 'premier') {
         $title = $node->get('title')->value;
         $form['#title'] = t('Edit Premier Engagement ') . $title;
+        // Engagement length: hide 3 months; leave in 6, 12 and 18 months.
         unset($form['field_requested_engagement']['widget']['#options'][3]);
         $form['field_mentor']['#access'] = FALSE;
         $form['field_students']['#access'] = FALSE;
