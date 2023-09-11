@@ -2,10 +2,12 @@
 
 namespace Drupal\access_cilink\Controller;
 
-use Drupal\Core\Controller\ControllerBase;
 use Drupal\Component\Utility\Xss;
-use Drupal\Core\Url;
+use Drupal\Core\Controller\ControllerBase;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
+use Drupal\node\Entity\Node;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Controller for Match.
@@ -27,12 +29,14 @@ class CiLinkController extends ControllerBase {
    */
   protected $webform_submission;
 
-
+  /**
+   *
+   */
   public function __construct() {
     $url = \Drupal::request()->getRequestUri();
     $url_chunked = explode('/', $url);
     $webform_submission = 0;
-    if (is_numeric($url_chunked[2])){
+    if (is_numeric($url_chunked[2])) {
       $this->sid = $url_chunked[2];
       $this->webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($this->sid);
     }
@@ -79,9 +83,9 @@ class CiLinkController extends ControllerBase {
       if ($title && empty($link)) {
         $link = $title;
       }
-      $options = array(
+      $options = [
         'attributes' => ['class' => ['btn', 'btn-outline-dark', 'btn-outline-primary', 'btn-sm']],
-      );
+      ];
       $external_link = Link::fromTextAndUrl($title, Url::fromUri($link, $options))->toString();
       $link_data .= '<li class="p-0 my-1 mx-0">' . $external_link->__toString() . '</li>';
     }
@@ -92,7 +96,7 @@ class CiLinkController extends ControllerBase {
     if (in_array(304, $skill_level) && in_array(305, $skill_level) && !in_array(306, $skill_level)) {
       $skill_graph = '<img src="/themes/custom/accesstheme/assets/SL-beginner-medium.png" alt="Beginner and Intermediate"/>';
     }
-    elseif(!in_array(304, $skill_level) && in_array(305, $skill_level) && in_array(306, $skill_level)) {
+    elseif (!in_array(304, $skill_level) && in_array(305, $skill_level) && in_array(306, $skill_level)) {
       $skill_graph = '<img src="/themes/custom/accesstheme/assets/SL-medium-advanced.png" alt="Intermediate and Advanced"/>';
     }
     elseif (in_array(304, $skill_level) && in_array(305, $skill_level) && in_array(306, $skill_level)) {
@@ -101,7 +105,7 @@ class CiLinkController extends ControllerBase {
     elseif (in_array(304, $skill_level)) {
       $skill_graph = '<img src="/themes/custom/accesstheme/assets/SL-beginner.png" alt="Beginner"/>';
     }
-    elseif(in_array(305, $skill_level)) {
+    elseif (in_array(305, $skill_level)) {
       $skill_graph = '<img src="/themes/custom/accesstheme/assets/SL-medium.png" alt="Intermediate"/>';
     }
     elseif (in_array(306, $skill_level)) {
@@ -119,29 +123,28 @@ class CiLinkController extends ControllerBase {
     }
     foreach ($nids as $nid) {
       // Get node title.
-      $node = \Drupal\node\Entity\Node::load($nid);
+      $node = Node::load($nid);
       $title = $node->getTitle();
       $affinity_nodes .= '<a href="/node/' . $nid . '">' . $title . '</a>, ';
     }
     $affinity_nodes = rtrim($affinity_nodes, ', ');
 
-
     // Check if user is logged in.
     $user = \Drupal::currentUser();
-    $options = array(
+    $options = [
       'query' => ['destination' => '/ci-links/' . $this->sid],
       'attributes' => ['class' => ['fw-normal']],
-    );
+    ];
     $login = Link::fromTextAndUrl($this->t('Login to vote'), Url::fromUri('internal:/user/login', $options))->toString();
 
-    // Upvote widget
+    // Upvote widget.
     $flag_upvote = \Drupal::service('flag.link_builder')->build('webform_submission', $this->sid, 'upvote');
     $flag_upvote = \Drupal::service('renderer')->renderPlain($flag_upvote);
     $flag_upvote_count = \Drupal::service('flag.count')->getEntityFlagCounts($this->webform_submission);
     $flag_upvote_set = $flag_upvote_count['upvote'] ?? 0;
     $flag_upvote_count = $flag_upvote_set ? $flag_upvote_count['upvote'] : 0;
 
-    // Flags
+    // Flags.
     $flag_outdated = \Drupal::service('flag.link_builder')->build('webform_submission', $this->sid, 'outdated');
     $flag_outdated['#attributes']['class'][] = 'dropdown-item';
     $flag_outdated = \Drupal::service('renderer')->renderPlain($flag_outdated);
@@ -239,7 +242,7 @@ class CiLinkController extends ControllerBase {
    * Redirect to cilinks page.
    */
   public function cilink() {
-    $response = new \Symfony\Component\HttpFoundation\RedirectResponse('/ci-links/' . $this->sid);
+    $response = new RedirectResponse('/ci-links/' . $this->sid);
     $response->send();
     return [
       '#type' => 'markup',
