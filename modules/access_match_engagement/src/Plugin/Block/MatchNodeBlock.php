@@ -177,8 +177,19 @@ class MatchNodeBlock extends BlockBase implements
       // Lookup user names from uid.
       $interested_users = $this->getInterestedUsers($interested_users);
       $status = $node->get('field_status')->getValue() ?? $node->get('field_status')->getValue()[0]['value'];
-      $interested_text = $this->t("I'm Interested");
-      $interested_button = $is_recruiting ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
+      $interested_button = '';
+      if ($is_recruiting) {
+        $interested_list = $node->get('field_match_interested_users')->getValue();
+        $user = \Drupal::currentUser()->id();
+        if (array_search($user, array_column($interested_list, 'target_id')) !== FALSE) {
+          $uninterested_text = $this->t("I'm no longer Interested");
+          $interested_button = "<a class='btn btn-primary' href='/node/$nid/interested'>$uninterested_text</a>";
+        }
+        else {
+          $interested_text = $this->t("I'm Interested");
+          $interested_button = $is_recruiting ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
+        }
+      }
       return [
         '#type' => 'inline_template',
         '#template' => '<div class="p-3">

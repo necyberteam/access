@@ -22,7 +22,14 @@ class MatchController extends ControllerBase {
       $current_user = \Drupal::currentUser()->id();
       $interested_users = $node->get('field_match_interested_users')->getValue();
       if (array_search($current_user, array_column($interested_users, 'target_id')) !== FALSE) {
-        \Drupal::messenger()->addStatus(t("You're already on the interested list"));
+        foreach ($interested_users as $key => $interested_user) {
+          if ($interested_user['target_id'] == $current_user) {
+            unset($interested_users[$key]);
+          }
+        }
+        $node->set('field_match_interested_users', $interested_users);
+        $node->save();
+        \Drupal::messenger()->addStatus(t("You have been removed from the interested list"));
       } else {
         $interested_users[] = ['target_id' => $current_user];
         // Get current user.
