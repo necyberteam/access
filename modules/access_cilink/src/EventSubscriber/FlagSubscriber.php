@@ -29,9 +29,6 @@ class FlagSubscriber implements EventSubscriberInterface {
         $flag_resource[$entity_sid][$flag_id] = 1;
       }
       $flag_resource[$entity_sid]['today'] = 1;
-      // Need to invalidate cache for the view to properly update link.
-      $view = Views::getView('resource');
-      $view->storage->invalidateCaches();
       // Set state to send email later.
       \Drupal::state()->set('resource_flags', $flag_resource);
     }
@@ -54,9 +51,6 @@ class FlagSubscriber implements EventSubscriberInterface {
         $flag_resource[$entity_sid][$flag_id] = 0;
       }
       $flag_resource[$entity_sid]['today'] = 1;
-      // Need to invalidate cache for the view to properly update link.
-      $view = Views::getView('resource');
-      $view->storage->invalidateCaches();
       // Set state to send email later.
       \Drupal::state()->set('resource_flags', $flag_resource);
     }
