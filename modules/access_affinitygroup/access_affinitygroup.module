@@ -112,6 +112,9 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
     $doEmailSubscribers = $entity->get('field_do_email_subscribers')->getValue();
     if ($doEmailSubscribers[0]['value']) {
       $affectedInfrastructure = $entity->get('field_affected_infrastructure')->getValue();
+      $entity_id = $entity->id();
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+      $email_link = $host . '/node/' . $entity_id;
       $ag_nodes = [];
       foreach ($affectedInfrastructure as $ais) {
         $query = \Drupal::entityQuery('node');
@@ -129,8 +132,6 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
         $ccListIds = [$node->get('field_list_id')->getValue()[0]['value']];
         $agNames = [$node->getTitle()];
         $pubDate = date('m/d/Y');
-        $host = \Drupal::request()->getSchemeAndHttpHost();
-        $email_link = $host . '/' . $node->id();
         emailToAffinityGroups($inf_body, "$inf_title", $pubDate, $agNames, $email_link, $ccListIds, 1, NULL);
       }
     }
