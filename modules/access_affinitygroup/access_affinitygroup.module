@@ -129,7 +129,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
         $ccListIds = [$node->get('field_list_id')->getValue()[0]['value']];
         $agNames = [$node->getTitle()];
         $pubDate = date('m/d/Y');
-        $node_url = "node/" . $node->id();
+        $node_url = "/node/" . $node->id();
         emailToAffinityGroups($inf_body, "$inf_title", $pubDate, $agNames, $node_url, $ccListIds, 1, NULL);
       }
     }
