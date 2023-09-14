@@ -107,6 +107,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $accepted = !in_array($moderation_state, $unaccepted_states);
 
     if (!$accepted) {
+      $form['field_milestone_completion_date']['widget'][0]['#after_build'][] = 'access_match_engagement_customize_required_date';
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
       $form['field_project_deliverables']['#access'] = FALSE;
@@ -198,16 +199,24 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
         $form['field_programming_skill_level']['#access'] = FALSE;
       }
     }
-  }
-
-  if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     $form['#validate'][] = 'access_match_engagement_form_validate';
   }
 
   if ($form_id == 'node_match_engagement_form') {
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
+
   }
+}
+
+/**
+ * This callback is used on a date field, the first milestone goal, that is
+ * required only after the state of the form has been changed to accepted.
+ */
+function access_match_engagement_customize_required_date($element, $form_state) {
+  unset($element['#required']);
+  unset($element['value']['#required']);
+  return $element;
 }
 
 /**
