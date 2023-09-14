@@ -129,9 +129,8 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
         $ccListIds = [$node->get('field_list_id')->getValue()[0]['value']];
         $agNames = [$node->getTitle()];
         $pubDate = date('m/d/Y');
-        \Drupal::logger('access_affinitygroup')->notice("agtitle: " . $node->getTitle());
-        \Drupal::logger('access_affinitygroup')->notice("ccListIds: " . implode($ccListIds));
-        emailToAffinityGroups($inf_body, "$inf_title", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
+        $node_url = "node/" . $node->id();
+        emailToAffinityGroups($inf_body, "$inf_title", $pubDate, $agNames, $node_url, $ccListIds, 1, NULL);
       }
     }
   }
