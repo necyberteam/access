@@ -92,13 +92,20 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     // Hide status field. We will set automatically with the moderation state.
     $form['field_status']['#access'] = FALSE;
 
+    // Form has been accepted, moderation-wise.
+    // Fixup certain date-time fields to act as date-only.
+    $date_only_fields = ame_get_dateonly_fields();
+    foreach ($date_only_fields as $fieldname) {
+      $form[$fieldname]['widget'][0]['value']['#date_time_element'] = 'none';
+      $form[$fieldname]['widget'][0]['value']['#date_time_format'] = '';
+    }
+
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
     $unaccepted_states = ['draft', 'in_review'];
     $moderation_state = $form['moderation_state']['widget'][0]['state']['#default_value'];
     $accepted = !in_array($moderation_state, $unaccepted_states);
 
-    // Hide these fields until the engagement is accepted.
     if (!$accepted) {
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
@@ -154,6 +161,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
     }
+
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
@@ -238,7 +246,6 @@ function access_match_engagement_submit_function(&$form, FormStateInterface $for
  * are in the cssn system (defined by have an item in their program list = "ACCESS CSSN").
  */
 function access_match_engagement_form_validate(&$form, FormStateInterface $form_state) {
-
   $error = '';
   $values = $form_state->getValues();
   if (!empty($values)) {
@@ -318,6 +325,27 @@ function validate_user_has_role($user, $role_name) {
     }
   }
   return FALSE;
+}
+
+/**
+ * Return a list of datetime field names where we
+ * want to hide the time portion.
+ */
+function ame_get_dateonly_fields() {
+  return [
+    "field_milestone_actual_date",
+    "field_actual_completion_date_1",
+    "field_actual_completion_date_2",
+    "field_actual_completion_date_3",
+    "field_actual_completion_date_4",
+    "field_milestone_completion_date",
+    "field_completion_date_goal_1",
+    "field_completion_date_goal_2",
+    "field_completion_date_goal_3",
+    "field_completion_date_goal_4",
+    "field_launch_presentation_date",
+    "field_wrap_presentation_date",
+  ];
 }
 
 /**
