@@ -115,7 +115,8 @@ class CiLinkController extends ControllerBase {
     // Affinity groups.
     $query = \Drupal::entityQuery('node')
       ->condition('type', 'affinity_group')
-      ->condition('field_resources_entity_reference', $this->sid);
+      ->condition('field_resources_entity_reference', $this->sid)
+      ->accessCheck(FALSE);
     $nids = $query->execute();
     $affinity_nodes = '';
     if ($nids) {

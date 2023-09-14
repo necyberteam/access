@@ -62,7 +62,8 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $sid = $variables['output'];
     $query = \Drupal::entityQuery('node')
       ->condition('type', 'affinity_group')
-      ->condition('field_resources_entity_reference', $sid);
+      ->condition('field_resources_entity_reference', $sid)
+      ->accessCheck(FALSE);
     $nids = $query->execute();
     $affinity_nodes = '';
     foreach ($nids as $nid) {
@@ -89,7 +90,8 @@ function access_cilink_preprocess_views_view_field(&$variables) {
         $sid = $matches[1];
         $query = \Drupal::entityQuery('node')
           ->condition('type', 'affinity_group')
-          ->condition('field_resources_entity_reference', $sid);
+          ->condition('field_resources_entity_reference', $sid)
+          ->accessCheck(FALSE);
         $nids = $query->execute();
         $affinity_nodes = '';
         if ($nids) {
