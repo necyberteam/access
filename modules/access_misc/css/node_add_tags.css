@@ -3,7 +3,9 @@
 }
 
 details.tags {
-  padding:30px;
+  padding:1rem;
+  max-height: 300px;
+  overflow: auto;
 }
 
 details.tags summary {
