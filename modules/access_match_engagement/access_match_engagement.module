@@ -205,7 +205,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
   if ($form_id == 'node_match_engagement_form') {
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
-
   }
 }
 
@@ -214,8 +213,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
  * required only after the state of the form has been changed to accepted.
  */
 function access_match_engagement_customize_required_date($element, $form_state) {
-  unset($element['#required']);
-  unset($element['value']['#required']);
+
+  $element['#required'] = FALSE;
+  $element['value']['#required'] = FALSE;
   return $element;
 }
 
