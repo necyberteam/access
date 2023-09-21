@@ -2,16 +2,16 @@
 
 namespace Drupal\user_profiles\Form;
 
+use Drupal\Component\Utility\Xss;
 use Drupal\Core\Database\Connection;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
-use Drupal\Component\Utility\Xss;
 use Drupal\Core\Render\Renderer;
+use Drupal\user_profiles\Commands\UserProfilesCommands;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\user_profiles\Commands\UserProfilesCommands;
 
 /**
  * Give user option on what to do with a duplicate email account.
@@ -295,9 +295,9 @@ class ResolveDuplicateUser extends ConfigFormBase {
       $current_user = $current_user->load($current_user_uid);
       $current_user_email = $current_user->getEmail();
       $current_user_new_email = Xss::filter($submitted_values['new_email']);
-      $current_user->setEmail($current_user_new_email);
-      $current_user->save();
-      $this->messengerInterface->addMessage($this->t('Your email has been changed from %current_user_email to %current_user_new_email.', [
+      $email_change_verification = \Drupal::service('email_change_verification.service');
+      $email_change_verification->changeRequest($current_user, $current_user_new_email);
+      $this->messengerInterface->addMessage($this->t('An email has been sent to %current_user_new_email to verify you want to change your email from %current_user_email to %current_user_new_email.', [
         '%current_user_email' => $current_user_email,
         '%current_user_new_email' => $current_user_new_email,
       ]));
@@ -307,9 +307,8 @@ class ResolveDuplicateUser extends ConfigFormBase {
       $dup_user = $dup_user->load(($dup_user_uid));
       $dup_user_email = $dup_user->getEmail();
       $dup_user_new_email = Xss::filter($submitted_values['new_email']);
-      $dup_user_name = $dup_user->getAccountName();
-      $dup_user->setEmail($dup_user_new_email);
-      $dup_user->save();
+      $email_change_verification = \Drupal::service('email_change_verification.service');
+      $email_change_verification->changeRequest($dup_user_email, $dup_user_new_email);
       $this->messengerInterface->addMessage($this->t('Your email for %dup_user_name has been changed from %dup_user_email to %dup_user_new_email.', [
         '%dup_user_name' => $dup_user_name,
         '%dup_user_email' => $dup_user_email,
