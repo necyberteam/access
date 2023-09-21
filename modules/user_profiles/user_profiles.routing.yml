@@ -1,0 +1,7 @@
+filter_people_by_tags_form.form:
+  path: 'user/resolve_duplicate'
+  defaults:
+    _form: '\Drupal\user_profiles\Form\ResolveDuplicateUser'
+    _title: 'Change duplicate user account'
+  requirements:
+    _role: 'authenticated'
