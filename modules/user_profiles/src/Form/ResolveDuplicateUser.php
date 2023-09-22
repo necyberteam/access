@@ -283,37 +283,25 @@ class ResolveDuplicateUser extends ConfigFormBase {
     if ($submitted_values['actions'] === 'current_delete') {
       $current_user = \Drupal::service('entity_type.manager')->getStorage('user');
       $current_user = $current_user->load($current_user_uid);
-      $current_user_name = $current_user->getAccountName();
       $user_profile_commands->mergeUser($current_user_uid, $dup_user_uid);
-      $current_user->delete();
-      $this->messengerInterface->addMessage($this->t('Your account %current_user_name has been deleted.', [
-        '%current_user_name' => $current_user_name,
-      ]));
+      $response = new RedirectResponse("/user/$current_user_uid/cancel");
+      $response->send();
     }
     elseif ($submitted_values['actions'] === 'current_edit_email') {
       $current_user = \Drupal::service('entity_type.manager')->getStorage('user');
       $current_user = $current_user->load($current_user_uid);
-      $current_user_email = $current_user->getEmail();
       $current_user_new_email = Xss::filter($submitted_values['new_email']);
       $email_change_verification = \Drupal::service('email_change_verification.service');
       $email_change_verification->changeRequest($current_user, $current_user_new_email);
-      $this->messengerInterface->addMessage($this->t('An email has been sent to %current_user_new_email to verify you want to change your email from %current_user_email to %current_user_new_email.', [
-        '%current_user_email' => $current_user_email,
-        '%current_user_new_email' => $current_user_new_email,
-      ]));
+      // Email change verification displays user message.
     }
     elseif ($submitted_values['actions'] === 'dup_new_email') {
       $dup_user = \Drupal::service('entity_type.manager')->getStorage('user');
       $dup_user = $dup_user->load(($dup_user_uid));
-      $dup_user_email = $dup_user->getEmail();
       $dup_user_new_email = Xss::filter($submitted_values['new_email']);
       $email_change_verification = \Drupal::service('email_change_verification.service');
-      $email_change_verification->changeRequest($dup_user_email, $dup_user_new_email);
-      $this->messengerInterface->addMessage($this->t('Your email for %dup_user_name has been changed from %dup_user_email to %dup_user_new_email.', [
-        '%dup_user_name' => $dup_user_name,
-        '%dup_user_email' => $dup_user_email,
-        '%dup_user_new_email' => $dup_user_new_email,
-      ]));
+      $email_change_verification->changeRequest($dup_user, $dup_user_new_email);
+      // Email change verification displays user message.
     }
     elseif ($submitted_values['actions'] === 'dup_delete') {
       $dup_user = \Drupal::service('entity_type.manager')->getStorage('user');
