@@ -9,6 +9,8 @@ use Drupal\Core\Form\ConfigFormBase;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Messenger\MessengerInterface;
 use Drupal\Core\Render\Renderer;
+use Drupal\Core\Session\AccountProxyInterface;
+use Drupal\email_change_verification\EmailChangeService;
 use Drupal\user_profiles\Commands\UserProfilesCommands;
 use Symfony\Component\DependencyInjection\ContainerInterface;
 use Symfony\Component\HttpFoundation\RedirectResponse;
@@ -21,13 +23,6 @@ use Symfony\Component\HttpFoundation\RedirectResponse;
 class ResolveDuplicateUser extends ConfigFormBase {
 
   /**
-   * Store CSV data.
-   *
-   * @var string
-   */
-  private $csv;
-
-  /**
    * Variable for the form state.
    *
    * @var array
@@ -35,11 +30,25 @@ class ResolveDuplicateUser extends ConfigFormBase {
   private $formState;
 
   /**
+   * Call email change service.
+   *
+   * @var \Drupal\email_change_verification\EmailChangeService
+   */
+  protected $emailChangeService;
+
+  /**
    * The entity type manager.
    *
    * @var \Drupal\Core\Entity\EntityTypeManagerInterface
    */
   protected $entityTypeManager;
+
+  /**
+   * Get current user data.
+   *
+   * @var \Drupal\Core\Session\AccountProxyInterface
+   */
+  protected $currentUser;
 
   /**
    * The database connection.
@@ -85,6 +94,10 @@ class ResolveDuplicateUser extends ConfigFormBase {
    *   Implement messenger service.
    * @param \Drupal\Core\Render\Renderer $renderer
    *   Invokes renderer.
+   * @param Drupal\Core\Session\AccountProxyInterface $current_user
+   *   Get current user data.
+   * @param \Drupal\email_change_verification\EmailChangeService $email_change_service
+   *   Calls email change service.
    * @param \Drupal\Core\Entity\EntityTypeManagerInterface $entity_type_manager
    *   Invokes entity type manager.
    * @param \Drupal\Core\Database\Connection $database
@@ -93,11 +106,15 @@ class ResolveDuplicateUser extends ConfigFormBase {
   public function __construct(
     MessengerInterface $messenger,
     Renderer $renderer,
+    AccountProxyInterface $current_user,
+    EmailChangeService $email_change_service,
     EntityTypeManagerInterface $entity_type_manager,
     Connection $database
   ) {
     $this->messengerInterface = $messenger;
     $this->render = $renderer;
+    $this->currentUser = $current_user;
+    $this->emailChangeService = $email_change_service;
     $this->entityTypeManager = $entity_type_manager;
     $this->database = $database;
   }
@@ -109,7 +126,9 @@ class ResolveDuplicateUser extends ConfigFormBase {
     return new self(
       $container->get('messenger'),
       $container->get('renderer'),
+      $container->get('current_user'),
       $container->get('entity_type.manager'),
+      $container->get('email_change_verification.service'),
       $container->get('database')
     );
   }
@@ -119,20 +138,20 @@ class ResolveDuplicateUser extends ConfigFormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
     // Get current user.
-    $account = \Drupal::service('current_user');
+    $account = $this->currentUser;
     // Get user email.
     $name = $account->getAccountName();
     $email = $account->getEmail();
     $account_uid = $account->id();
     // Mysql query to check for duplicate email.
-    $query = \Drupal::database()->select('users_field_data', 'ufd');
+    $query = $this->database->select('users_field_data', 'ufd');
     $query->fields('ufd', ['uid']);
     $query->condition('ufd.mail', $email);
     $query->condition('ufd.uid', $account->id(), '<>');
     $dup_uid = $query->execute()->fetchCol();
     if (!empty($dup_uid)) {
       // User load.
-      $dup_user = \Drupal::service('entity_type.manager')->getStorage('user');
+      $dup_user = $this->entityTypeManager->getStorage('user');
       $dup_user = $dup_user->load($dup_uid[0]);
       $dup_last_access = $dup_user->getLastAccessedTime();
       $dup_name = $dup_user->getAccountName();
@@ -143,11 +162,18 @@ class ResolveDuplicateUser extends ConfigFormBase {
         $current_user['string'] = [
           '#type' => 'inline_template',
           '#template' => '
-            <h3>Current Account</h3>
-            <p>{{ name_label }}: {{ name }}</p>
-            <p>{{ email_label }}: {{ email }}</p>
+            <div class="border border-secondary my-3">
+              <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+                <h3 class="text-white m-0">{{ title }}</h3>
+              </div>
+              <div class="p-3">
+                <p>{{ name_label }}: {{ name }}</p>
+                <p>{{ email_label }}: {{ email }}</p>
+              </div>
+            </div>
           ',
           '#context' => [
+            'title' => 'Current Account',
             'name_label' => $this->t('Name'),
             'name' => $name,
             'email_label' => $this->t('Email'),
@@ -173,9 +199,15 @@ class ResolveDuplicateUser extends ConfigFormBase {
         $dup_user_account['string'] = [
           '#type' => 'inline_template',
           '#template' => '
-            <h3>{{ title }}</h3>
-            <p>{{ name_label }}: {{ name }}</p>
-            <p>{{ email_label }}: {{ email }}</p>
+            <div class="border border-secondary my-3">
+              <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+                <h3>{{ title }}</h3>
+              </div>
+              <div class="p-3">
+                <p>{{ name_label }}: {{ name }}</p>
+                <p>{{ email_label }}: {{ email }}</p>
+              </div>
+            </div>
           ',
           '#context' => [
             'title' => $this->t('Duplicate Account'),
@@ -281,30 +313,30 @@ class ResolveDuplicateUser extends ConfigFormBase {
     $current_user_uid = Xss::filter($submitted_values['account_uid']);
     $dup_user_uid = Xss::filter($submitted_values['dup_account_uid']);
     if ($submitted_values['actions'] === 'current_delete') {
-      $current_user = \Drupal::service('entity_type.manager')->getStorage('user');
+      $current_user = $this->entityTypeManager->getStorage('user');
       $current_user = $current_user->load($current_user_uid);
       $user_profile_commands->mergeUser($current_user_uid, $dup_user_uid);
       $response = new RedirectResponse("/user/$current_user_uid/cancel");
       $response->send();
     }
     elseif ($submitted_values['actions'] === 'current_edit_email') {
-      $current_user = \Drupal::service('entity_type.manager')->getStorage('user');
+      $current_user = $this->entityTypeManager->getStorage('user');
       $current_user = $current_user->load($current_user_uid);
       $current_user_new_email = Xss::filter($submitted_values['new_email']);
-      $email_change_verification = \Drupal::service('email_change_verification.service');
+      $email_change_verification = $this->emailChangeService;
       $email_change_verification->changeRequest($current_user, $current_user_new_email);
       // Email change verification displays user message.
     }
     elseif ($submitted_values['actions'] === 'dup_new_email') {
-      $dup_user = \Drupal::service('entity_type.manager')->getStorage('user');
+      $dup_user = $this->entityTypeManager->getStorage('user');
       $dup_user = $dup_user->load(($dup_user_uid));
       $dup_user_new_email = Xss::filter($submitted_values['new_email']);
-      $email_change_verification = \Drupal::service('email_change_verification.service');
+      $email_change_verification = $this->emailChangeService;
       $email_change_verification->changeRequest($dup_user, $dup_user_new_email);
       // Email change verification displays user message.
     }
     elseif ($submitted_values['actions'] === 'dup_delete') {
-      $dup_user = \Drupal::service('entity_type.manager')->getStorage('user');
+      $dup_user = $this->entityTypeManager->getStorage('user');
       $dup_user = $dup_user->load(Xss::filter($dup_user_uid));
       $dup_user_name = $dup_user->getAccountName();
       $user_profile_commands->mergeUser($dup_user_uid, $current_user_uid);
