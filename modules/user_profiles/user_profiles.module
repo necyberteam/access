@@ -49,6 +49,11 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
       break;
 
     case 'user_form':
+      $user_roles = \Drupal::currentUser()->getRoles();
+      $is_admin = in_array('administrator', $user_roles);
+      if (!$is_admin) {
+        $form['actions']['delete']['#access'] = FALSE;
+      }
       if ($is_asp) {
         $user_roles = \Drupal::currentUser()->getRoles();
         $is_admin = in_array('administrator', $user_roles);
