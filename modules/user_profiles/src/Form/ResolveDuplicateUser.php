@@ -127,8 +127,8 @@ class ResolveDuplicateUser extends ConfigFormBase {
       $container->get('messenger'),
       $container->get('renderer'),
       $container->get('current_user'),
-      $container->get('entity_type.manager'),
       $container->get('email_change_verification.service'),
+      $container->get('entity_type.manager'),
       $container->get('database')
     );
   }
