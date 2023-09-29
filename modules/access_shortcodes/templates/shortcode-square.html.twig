@@ -1,0 +1,22 @@
+{#
+/**
+ * @file
+ * Default theme implementation for the accordion shortcode.
+ *
+ * Available variables:
+ * - icon: image for the square.
+ * - title: Title.
+ * - text: Main text.
+ * - link: Link.
+ * - color: Color of the border.
+ * - flipText: Optional text for the flip side.
+ * - flipBtnText: Optional text for the button on the flip side.
+ */
+#}
+<a class="group aspect-square flex flex-col justify-center items-center w-full md--w-1/3 border-4 border-solid border-{{ color }} hover--border-md-teal no-underline p-10 m-2 first-of-type--ms-0 last-of-type:me-0" href="{{ link }}">
+
+	<img class="not-prose block" src="{{ icon }}">
+	<h3 class="group-hover--text-md-teal">{{ title }}</h3>
+	<p class="group-hover--text-md-teal">{{ text }}</p>
+</a>
+
