@@ -84,12 +84,6 @@ class AffinityBottomLeft extends BlockBase {
         $output .= '<p>[' . $edate . '] ' . $e['title'] . '</p>';
       }
     }
-    $view = Views::getView('affinity_group_recurring_events');
-    $view->setDisplay('block_1');
-    $view->setArguments([$affinity_group_tax]);
-    $view->execute();
-    $rendered = $view->render();
-    // $output = \Drupal::service('renderer')->render($rendered);
     return [
       ['#markup' => $output],
     ];
