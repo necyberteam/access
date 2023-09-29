@@ -167,12 +167,8 @@ function access_misc_update_9010() {
   \Drupal::state()->set('resource_flags', $flag);
 }
 
-**
- * Update XDMoD page content
- * /
-
 /**
- *
+ * Update XDMoD page content.
  */
 function access_misc_update_10000(&$sandbox) {
   // XDMoD page.
