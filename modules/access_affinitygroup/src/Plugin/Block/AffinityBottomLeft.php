@@ -22,13 +22,7 @@ class AffinityBottomLeft extends BlockBase {
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
-    $nid = $node ? $node->id() : 327;
-    // Adding a default for layout page.
-    $affinity_group_tax = '607';
-    if ($node) {
-      $field_affinity_group = $node->get('field_affinity_group')->getValue();
-      $affinity_group_tax = $field_affinity_group[0]['target_id'];
-    }
+    $nid = $node ? $node->id() : 219;
     $query = \Drupal::entityQuery('eventseries')
       ->condition('status', 1)
       ->condition('field_affinity_group_node', $nid, '=')
