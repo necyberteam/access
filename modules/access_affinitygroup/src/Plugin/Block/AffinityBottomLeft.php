@@ -41,35 +41,37 @@ class AffinityBottomLeft extends BlockBase {
         $eiid[] = $event['target_id'];
       }
     }
-    $event_list = [];
-    foreach ($eiid as $ei) {
-      $event = \Drupal::entityTypeManager()->getStorage('eventinstance')->load($ei);
-      $event_status = $event->get('status')->getValue()[0]['value'];
-      $event_date = $event->get('date')->getValue()[0]['value'];
-      // Setup date in same format as today's date so I can get future events.
-      $start_date = date_create($event_date);
-      $edate = date_format($start_date, "Y-m-d");
-      $date_now = date("Y-m-d");
-      if ($event_status && $date_now <= $edate) {
-        $series = $event->getEventSeries();
-        $series_title = $series->get('title')->getValue()[0]['value'];
-        $link = [
-          '#type' => 'link',
-          '#title' => $series_title,
-          '#url' => Url::fromUri('internal:/events/' . $ei),
-        ];
-        $link_name = \Drupal::service('renderer')->render($link)->__toString();
-        $event_list[$ei] = [
-          'date' => $event_date,
-          'title' => $link_name,
-        ];
-      }
-    }
-    // Sort events by date.
-    usort($event_list, fn($a, $b) => $a['date'] <=> $b['date']);
 
     $output = '';
+
     if (!empty($eiid)) {
+      $event_list = [];
+      foreach ($eiid as $ei) {
+        $event = \Drupal::entityTypeManager()->getStorage('eventinstance')->load($ei);
+        $event_status = $event->get('status')->getValue()[0]['value'];
+        $event_date = $event->get('date')->getValue()[0]['value'];
+        // Setup date in same format as today's date so I can get future events.
+        $start_date = date_create($event_date);
+        $edate = date_format($start_date, "Y-m-d");
+        $date_now = date("Y-m-d");
+        if ($event_status && $date_now <= $edate) {
+          $series = $event->getEventSeries();
+          $series_title = $series->get('title')->getValue()[0]['value'];
+          $link = [
+            '#type' => 'link',
+            '#title' => $series_title,
+            '#url' => Url::fromUri('internal:/events/' . $ei),
+          ];
+          $link_name = \Drupal::service('renderer')->render($link)->__toString();
+          $event_list[$ei] = [
+            'date' => $event_date,
+            'title' => $link_name,
+          ];
+        }
+      }
+      // Sort events by date.
+      usort($event_list, fn($a, $b) => $a['date'] <=> $b['date']);
+
       $output = '<h3 class="my-3">Upcoming Events</h3>';
       foreach ($event_list as $e) {
         $start_date = date_create($e['date']);
