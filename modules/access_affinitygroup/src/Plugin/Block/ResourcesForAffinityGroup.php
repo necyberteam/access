@@ -5,7 +5,6 @@ namespace Drupal\access_affinitygroup\Plugin\Block;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Url;
-use Drupal\views\Views;
 use Drupal\webform\Entity\WebformSubmission;
 
 /**
@@ -156,10 +155,14 @@ class ResourcesForAffinityGroup extends BlockBase {
       $link_name = \Drupal::service('renderer')->render($link)->__toString();
       $published_date = $node->get('field_published_date')->getValue();
       $published_date = $published_date[0]['value'];
-      $announcements[$published_date] = $link_name;
+      $announcements[$anid] = [
+        'link' => $link_name,
+        'date' => $published_date,
+      ];
     }
 
-    arsort($announcements);
+    // Sort announcements by date.
+    usort($announcements, fn($b, $a) => $a['date'] <=> $b['date']);
 
     // Set announcements title.
     $rendered .= '<h3 class="border-bottom pb-2">Announcements</h3>';
@@ -170,9 +173,10 @@ class ResourcesForAffinityGroup extends BlockBase {
       </div>';
     }
 
-    foreach ($announcements as $date => $title) {
-      // Format $date
-      $create_date = date_create($date);
+    foreach ($announcements as $announcement) {
+      // Format $date.
+      $title = $announcement['link'];
+      $create_date = date_create($announcement['date']);
       $adate = date_format($create_date, "m-d-Y");
       $rendered .= '<div class="announcement mb-3"><span class="announcement-title">' . $title . '</span> <span class="announcement-date">[' . $adate . ']</span></div>';
     }
