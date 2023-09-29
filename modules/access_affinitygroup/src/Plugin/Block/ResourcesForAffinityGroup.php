@@ -162,7 +162,13 @@ class ResourcesForAffinityGroup extends BlockBase {
     arsort($announcements);
 
     // Set announcements title.
-    $rendered = '<h3 class="border-bottom pb-2">Announcements</h3>';
+    $rendered .= '<h3 class="border-bottom pb-2">Announcements</h3>';
+
+    if (empty($nids)) {
+      $rendered .= '<div class="alert alert-warning">
+        <p>There are no announcements at this time. Please check back later or visit the <a href="/announcements">Announcements</a> page.</p>
+      </div>';
+    }
 
     foreach ($announcements as $date => $title) {
       // Format $date
