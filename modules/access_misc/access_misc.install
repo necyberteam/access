@@ -4,6 +4,7 @@
  * @file
  */
 
+use Drupal\node\Entity\Node;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\Entity\WebformSubmission;
 
