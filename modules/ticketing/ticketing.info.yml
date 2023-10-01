@@ -1,5 +1,5 @@
 name: Ticketing
-description: Ticketing Module
+description: 'Ticketing Module'
 package: Custom
 type: module
 core_version_requirement: ^9 || ^10

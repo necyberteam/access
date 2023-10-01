@@ -7,6 +7,19 @@
  */
 
 /**
+ *
+ */
+function ticketing_theme() {
+  return [
+    'ticketing_block' => [
+      'variables' => [
+        'data' => [],
+      ],
+    ],
+  ];
+}
+
+/**
  * Implements hook_mail().
  */
 function ticketing_mail($key, &$message, $params) {

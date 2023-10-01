@@ -1,0 +1,69 @@
+<!-- USer ticketing choices in a set of radio buttons -->
+
+<script>
+
+  // TODO: put script in lib
+  // TODO: problem to solve: with  when not logged in, everything goes to the access login controller,
+  //        no matter the selection
+  // TODO: Hide original Create Ticket div create-ticket-button-div?
+  // TODO: Search bar - supposed to be the same as the main?
+  // TODO: probably don't need id on radio buttons
+
+  /* on change, set up the url corresponding to user's ticket choice. */
+  var matches = document.querySelectorAll("input.form-check-input");
+  for (match in matches) {
+    console.log(match.value)
+    matches[match].onchange = ticketChoiceChange;
+  }
+
+  function ticketChoiceChange(e) {
+    //alert("in onchange: " + e.target.checked);
+    console.log("in onchange: " + e.target.id + " : " + e.target.value + " : " + e.target.checked);
+    var url = null;
+
+    if (e.target.id=='ticket-login-access') {
+      document.getElementById('ticket-choice-form').action  = "/open-a-ticket-access-login";
+    }
+    else {
+      // for ticket-login-other or ticket-other-question
+      document.getElementById('ticket-choice-form').action  = "/open-a-ticket/" + e.target.id;
+    }
+    console.log("url is:"+url);
+  }
+</script>
+
+<div class="container">
+<div class="row ">
+<div class="col"></div>
+
+<div class="col-5" style="font-size:1.2rem">
+<form id="ticket-choice-form"  method="POST" action="/open-a-ticket-access-login">
+<h2 class="py-4">How can we help you?</h2>
+  <div class="form-check">
+  <input class="form-check-input" type="radio" name="ticketChoices" id="ticket-login-access" value="ticket-login-access" checked>
+  <label class="form-check-label" for="ticket-login-access">
+      I need help logging into ACCESS website
+  </label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="radio" name="ticketChoices" id="ticket-login-other" value="ticket-login-other">
+  <label class="form-check-label" for="ticket-login-other">
+    I need help logging in to other affiliated infrastructure
+  </label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="radio" name="ticketChoices" id="ticket-other-question" value="ticket-other-question">
+  <label class="form-check-label" for="ticket-other-question">
+    I have another question
+  </label>
+</div>
+
+<div class="py-4">
+<button type="submit" class="btn btn-primary" >OPEN A TICKET</button>
+</div>
+</form>
+</div>
+
+<div class="col"></div>
+</div>
+</div>
