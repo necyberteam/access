@@ -26,8 +26,8 @@ class SquareShortcode extends ShortcodeBase {
       'text' => '',
       'link' => '',
       'color' => '',
-      'flipText' => '',
-      'flipBtnText' => '',
+      'fliptext' => '',
+      'flipbtntext' => '',
     ],
       $attributes
     );
@@ -37,8 +37,8 @@ class SquareShortcode extends ShortcodeBase {
     $text = $attributes['text'];
     $link = $attributes['link'];
     $color = $attributes['color'];
-    $flipText = $attributes['flipText'];
-    $flipBtnText = $attributes['flipBtnText'];
+    $flipText = $attributes['fliptext'];
+    $flipBtnText = $attributes['flipbtntext'];
 
     $output = [
       '#theme' => 'shortcode_square',
