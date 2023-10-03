@@ -143,6 +143,7 @@ class ResolveDuplicateUser extends ConfigFormBase {
     $name = $account->getAccountName();
     $email = $account->getEmail();
     $account_uid = $account->id();
+
     // Mysql query to check for duplicate email.
     $query = $this->database->select('users_field_data', 'ufd');
     $query->fields('ufd', ['uid']);
@@ -167,7 +168,7 @@ class ResolveDuplicateUser extends ConfigFormBase {
                 <h3 class="text-white m-0">{{ title }}</h3>
               </div>
               <div class="p-3">
-                <p>{{ name_label }}: {{ name }}</p>
+                <p>{{ name_label }}: <a href="/community-persona">{{ name }}</a></p>
                 <p>{{ email_label }}: {{ email }}</p>
               </div>
             </div>
@@ -192,7 +193,7 @@ class ResolveDuplicateUser extends ConfigFormBase {
         $current_radios = [];
         if ($current_name_editable) {
           $current_radios = [
-            'current_delete' => $this->t('Delete current account'),
+            'current_delete' => $this->t('Merge current account information to the duplicate account and remove the current account'),
             'current_edit_email' => $this->t('Edit current account email'),
           ];
         }
@@ -204,7 +205,7 @@ class ResolveDuplicateUser extends ConfigFormBase {
                 <h3>{{ title }}</h3>
               </div>
               <div class="p-3">
-                <p>{{ name_label }}: {{ name }}</p>
+                <p>{{ name_label }}: <a href="/community-persona/{{ uid }}">{{ name }}</a></p>
                 <p>{{ email_label }}: {{ email }}</p>
               </div>
             </div>
@@ -213,6 +214,7 @@ class ResolveDuplicateUser extends ConfigFormBase {
             'title' => $this->t('Duplicate Account'),
             'name_label' => $this->t('Name'),
             'name' => $dup_name,
+            'uid' => $dup_uid[0],
             'email_label' => $this->t('Email'),
             'email' => $dup_email,
           ],
@@ -230,7 +232,7 @@ class ResolveDuplicateUser extends ConfigFormBase {
         // Check if $name contains '@access-ci.org'.
         if ($dup_name_editable) {
           $dup_radios = [
-            'dup_delete' => $this->t('Delete duplicate account'),
+            'dup_delete' => $this->t('Merge duplicate account information to the current account and remove the duplicate account'),
             'dup_new_email' => $this->t('Edit duplicate account email'),
           ];
           if (isset($current_radios)) {
@@ -243,6 +245,10 @@ class ResolveDuplicateUser extends ConfigFormBase {
         else {
           $radios = $current_radios;
         }
+        $help_radio = [
+          'help_ticket' => $this->t("I'm not sure what to do. Select this option to let us help in deciding how best to handle the duplicate account. You will be redirected to open a ticket on the ACCESS Support portal. Please provide your name and email and as much relevant information as you can."),
+        ];
+        $radios = array_merge($radios, $help_radio);
         $form['actions'] = [
           '#type' => 'radios',
           '#title' => $this->t('Select one of the following to resolve your duplicate account.'),
@@ -344,6 +350,10 @@ class ResolveDuplicateUser extends ConfigFormBase {
       $this->messengerInterface->addMessage($this->t('Your account %dup_user_name has been deleted.', [
         '%dup_user_name' => $dup_user_name,
       ]));
+    }
+    elseif ($submitted_values['actions'] === 'help_ticket') {
+      $response = new RedirectResponse('https://access-ci.atlassian.net/servicedesk/customer/portal/2/group/3/create/30');
+      $response->send();
     }
   }
 
