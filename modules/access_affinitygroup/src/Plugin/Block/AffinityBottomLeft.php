@@ -25,12 +25,14 @@ class AffinityBottomLeft extends BlockBase {
     $query = \Drupal::entityQuery('eventseries')
       ->condition('status', 1)
       ->condition('field_affinity_group_node', $nid, '=')
+      ->accessCheck(TRUE)
       ->sort('created', 'DESC');
     $esid = $query->execute();
     foreach ($esid as $es) {
       $query = \Drupal::entityQuery('eventinstance')
         ->condition('status', 1)
         ->condition('eventseries_id', $es, '=')
+        ->accessCheck(TRUE)
         ->sort('created', 'DESC');
       $eiid = $query->execute();
     }
