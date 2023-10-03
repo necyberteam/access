@@ -283,7 +283,7 @@ class ResolveDuplicateUser extends ConfigFormBase {
     $form['submit'] = [
       '#type' => 'submit',
       '#arg' => 'filter',
-      '#value' => $this->t('Edit'),
+      '#value' => $this->t('Continue'),
       '#weight' => 9,
     ];
 
