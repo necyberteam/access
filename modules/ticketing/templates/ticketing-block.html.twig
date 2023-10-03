@@ -1,0 +1,83 @@
+<!-- USer ticketing choices in a set of radio buttons -->
+
+<div class="container">
+  <div class="section container pb-4 bg-light md-full-width">
+    <div class="row">
+      <div class="col text-start text-md-center">
+        <div class="app-container text-start" id="root">
+                &nbsp;
+        </div>
+        <script src="https://musical-bubblegum-000179.netlify.app/static/js/main.0c533d56.js"></script>
+      </div>
+    </div>
+    <link href="https://musical-bubblegum-000179.netlify.app/static/css/main.8e99b55e.css" rel="stylesheet">
+  </div>
+
+  <div class="row ">
+  <div class="col"></div>
+
+<div class="col-5" style="font-size:1.2rem">
+<div id="ticket-form-account-name" data-value="{{ data.account_name }}" > </div>
+<div id="ticket-form-display-name" data-value="{{ data.display_name }}" > </div>
+<form id="ticket-choice-form"  method="PUT" action="https://access-ci.atlassian.net/servicedesk/customer/portal/2/group/3/create/30">
+<h2 class="py-4">How can we help you?</h2>
+  <div class="form-check">
+  <input class="form-check-input" type="radio" name="ticketChoices" value="ticket-login-access" checked>
+  <label class="form-check-label" for="ticket-login-access">
+      I need help logging into ACCESS website
+  </label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="radio" name="ticketChoices" value="ticket-login-other">
+  <label class="form-check-label" for="ticket-login-other">
+    I need help logging in to other affiliated infrastructure
+  </label>
+</div>
+<div class="form-check">
+  <input class="form-check-input" type="radio" name="ticketChoices" value="ticket-other-question">
+  <label class="form-check-label" for="ticket-other-question">
+    I have another question
+  </label>
+</div>
+
+<div class="py-4">
+<button type="submit" class="btn btn-primary" >OPEN A TICKET</button>
+</div>
+</form>
+</div>
+
+<div class="col"></div>
+</div>
+</div>
+
+<script>
+  // TODO: put script in lib
+  // TODO: Hide original Create Ticket div create-ticket-button-div?
+  /* Set up the url corresponding to user's choide of type.  */
+  let matches = document.querySelectorAll("input.form-check-input");
+  for (match in matches) {
+    matches[match].onchange = ticketChoiceChange;
+  }
+
+  let accountDiv = document.getElementById('ticket-form-account-name');
+  let accountName = accountDiv? accountDiv.getAttribute('data-value') : '';
+  let displayDiv = document.getElementById('ticket-form-display-name');
+  let displayName = displayDiv? displayDiv.getAttribute('data-value') : '';
+
+  function ticketChoiceChange(e) {
+
+    let url = null;
+
+    if (e.target.id=='ticket-other-question') {
+      url = '/open-a-ticket';
+    }
+    else {
+      let base = 'https://access-ci.atlassian.net/servicedesk/customer/portal/2/group/3/create/';
+      url = (e.target.id == 'ticket-login-access') ? base + '30' : base + '31';
+      if (accountName) {
+        url = encodeURI(url + '?customfield_10103=' + accountName + '&customfield_10108=' + displayName);
+      }
+    }
+    document.getElementById('ticket-choice-form').action  = url;
+  }
+</script>
