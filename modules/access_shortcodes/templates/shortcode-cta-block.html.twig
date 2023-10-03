@@ -12,10 +12,10 @@
  * - btnText: optional text for button
  */
 #}
-<div id="cta" class="flex items-center justify-center bg-cover h-[390px]" style="background-image: url({{ bg }})">
-	<div class="flex flex-row p-5 bg-dark-teal/80 text-white">
+<div id="cta" class="flex items-center justify-center item-center bg-cover h-[390px]" style="background-image: url({{ bg }})">
+	<div class="flex flex-row items-center p-5 bg-dark-teal/80 text-white">
 		{% if img %}
-			<img class="me-4" src="{{ img }}" alt="{{ alt }}"/>
+			<img class="w-24 h-fit me-4" src="{{ img }}" alt="{{ alt }}"/>
 		{% endif %}
 		<div class="flex flex-col">
 			<h2 class="">{{ title }}</h2>
