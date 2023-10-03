@@ -48,25 +48,48 @@ class AffinityBottomLeft extends BlockBase {
       $event_list = [];
       foreach ($eiid as $ei) {
         $event = \Drupal::entityTypeManager()->getStorage('eventinstance')->load($ei);
-        $event_status = $event->get('status')->getValue()[0]['value'];
-        $event_date = $event->get('date')->getValue()[0]['value'];
-        // Setup date in same format as today's date so I can get future events.
-        $start_date = date_create($event_date);
-        $edate = date_format($start_date, "Y-m-d");
         $date_now = date("Y-m-d");
-        if ($event_status && $date_now <= $edate) {
-          $series = $event->getEventSeries();
-          $series_title = $series->get('title')->getValue()[0]['value'];
-          $link = [
-            '#type' => 'link',
-            '#title' => $series_title,
-            '#url' => Url::fromUri('internal:/events/' . $ei),
-          ];
-          $link_name = \Drupal::service('renderer')->render($link)->__toString();
-          $event_list[$ei] = [
-            'date' => $event_date,
-            'title' => $link_name,
-          ];
+        if ($event) {
+          $event_status = $event->get('status')->getValue()[0]['value'];
+          $event_date = $event->get('date')->getValue()[0]['value'];
+          // Setup date in same format as today's date so I can get future events.
+          $start_date = date_create($event_date);
+          $edate = date_format($start_date, "Y-m-d");
+          if ($event_status && $date_now <= $edate) {
+            $series = $event->getEventSeries();
+            $series_title = $series->get('title')->getValue()[0]['value'];
+            $link = [
+              '#type' => 'link',
+              '#title' => $series_title,
+              '#url' => Url::fromUri('internal:/events/' . $ei),
+            ];
+            $link_name = \Drupal::service('renderer')->render($link)->__toString();
+            $event_list[$ei] = [
+              'date' => $event_date,
+              'title' => $link_name,
+            ];
+          }
+        }
+        else {
+          $single_event = \Drupal::entityTypeManager()->getStorage('eventseries')->load($ei);
+          $single_event_status = $single_event->get('status')->getValue()[0]['value'];
+          $single_event_date = $single_event->getSeriesStart()->__toString();
+          $start_date = date_create($single_event_date);
+          $single_event_date = date_format($start_date, "Y-m-d");
+          if ($single_event_status && $date_now <= $single_event_date) {
+            $series = $single_event;
+            $series_title = $series->get('title')->getValue()[0]['value'];
+            $link = [
+              '#type' => 'link',
+              '#title' => $series_title,
+              '#url' => Url::fromUri('internal:/events/' . $ei),
+            ];
+            $link_name = \Drupal::service('renderer')->render($link)->__toString();
+            $event_list[$ei] = [
+              'date' => $event_date,
+              'title' => $link_name,
+            ];
+          }
         }
       }
       // Sort events by date.
