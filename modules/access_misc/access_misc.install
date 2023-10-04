@@ -158,7 +158,7 @@ function access_misc_update_9008() {
   $node->save();
 }
 
-/**k
+/**
  * Set resource flag state.
  */
 function access_misc_update_9010() {
