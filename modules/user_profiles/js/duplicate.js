@@ -1,8 +1,12 @@
 function toggleEmail(id) {
   if (document.getElementById(id).checked) {
     document.getElementsByClassName('form-item-new-email')[0].style.visibility = 'visible';
+    document.getElementsByClassName('form-item-new-email')[0].style.display = 'block';
   }
-  else document.getElementsByClassName('form-item-new-email')[0].style.visibility = 'hidden';
+  else {
+    document.getElementsByClassName('form-item-new-email')[0].style.visibility = 'hidden';
+    document.getElementsByClassName('form-item-new-email')[0].style.display = 'none';
+  }
 }
 function radioSelected() {
   // If id edit-actions-current-edit-email exists.
