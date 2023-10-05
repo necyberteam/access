@@ -133,7 +133,8 @@ class ResourcesForAffinityGroup extends BlockBase {
       ->condition('type', 'access_news')
       ->condition('status', 1)
       ->condition('field_affinity_group_node', $nid, '=')
-      ->sort('created', 'DESC');
+      ->sort('created', 'DESC')
+      ->accessCheck(TRUE);
     $nids = $query->execute();
     // Get the field_affinity_announcements field from $nid.
     $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
