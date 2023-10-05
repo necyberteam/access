@@ -2,12 +2,26 @@
 
 /**
  * @file
- * This file implements the mail hook for the ticketing module
- * setting the message headers, from, subject, body, and cc values.
+ *
  */
 
 /**
+ * Implements hook_theme.
+ */
+function ticketing_theme() {
+  return [
+    'ticketing_block' => [
+      'variables' => [
+        'data' => [],
+      ],
+    ],
+  ];
+}
+
+/**
  * Implements hook_mail().
+ * Mail hook for the ticketing module
+ * setting the message headers, from, subject, body, and cc values.
  */
 function ticketing_mail($key, &$message, $params) {
   switch ($key) {
