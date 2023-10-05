@@ -185,3 +185,131 @@ function update_node_body($nid, $body, $format) {
     $node->save();
   }
 }
+
+/**
+ * Update XDMoD page content.
+ */
+function access_misc_update_10000(&$sandbox) {
+  // XDMoD page.
+  $nid = 269;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+    <section class="mb-10" id="about">
+      <p class="text-dark-teal text-2xl mb-10">View information about allocations, usage data and usage efficiency as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
+      <div class="grid grid-cols-1 md--grid-cols-3">
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Optimize Job Efficiency</p><p>View information about active and expired allocations.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Monitor allocation usage</p>
+            <p>View information about active and expired allocations.</p>
+          </div>
+      </div>
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold">View historical usage</p>
+          <p>View both personal usage and that of aggregated users. View information about active and expired allocations.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="mb-10" id="using-xdmod">
+    <h2>Using XDMoD</h2>
+    <p>
+      [accordion summary="What do I need to do to start using XDMoD?" text="Anyone with an ACCESS Identity can login to XDMoD. Information about your ACCESS allocations and historical usage of ACCESS resources is automatically populated."][/accordion]
+      [accordion summary="How can I find information about my ACCESS allocation usage?" text="Just log on to XDMoD and click on the “Allocations” tab. It will display information about your allocations."][/accordion]
+      [accordion summary="How can I use XDMoD to improve my job efficiency and allocation usage efficiency?" text="Many jobs do not use all of the resources asked for so they effectively use the allocation inefficiently. Your recent jobs show in the “ Jobs” window on the DashBoard tab that is displayed when you login to XDMoD. Click on a job to view detailed information. For older jobs, you can use the “Search” button in the Job Viewer tab. If you know the Job Identifier and the compute resource then you can use the Quick Job Lookup. Alternatively, you can search for your jobs by entering “User” in the filter of the Advanced Search, finding your user name in the Select a Value box, then selecting the job you want to view in the viewer from the list of jobs displayed. Use the output of the Job Viewer to check for how many cores and nodes are actually used as opposed to how many you may have requested."][/accordion]
+      [accordion summary="How can I view historical usage in XDMoD?" text="You can view your own historical usage or the historical aggregated usage by logging in to XDMoD and using the Usage tab to make simple plots of data or the Metric Explorer tab to make more complex plots. A great variety of information is available from XDMoD. "][/accordion]
+    </p>
+  </section>
+  <section class="mb-10" id="xdmod-support">
+    <h2>XDMoD Support</h2>
+    <div class="flex">
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-launch.svg" title="LAUNCH XDMoD" link="https://xdmod.access-cs.org"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-documentation.svg" title="DOCUMENTATION" link="https://metrics.access-cs.org"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-contactus.svg" title="CONTACT US" link="https://support.access-ci.org/open-a-ticket"][/square]
+    </div>
+  </section>
+</div>
+<div class="col-2 sticky top-0">
+  <nav class="bg-md-teal p-5">
+    <a class="font-extrabold text-white no-underline hover--underline hover--text-light-teal block" href="#">ACCESS XDMoD </a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#using-xdmod">Using XDMoD</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#">XDMoD Support</a>
+  </nav>
+</div>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Update CCEP page content.
+ */
+function access_misc_update_10001(&$sandbox) {
+  // CCEP page.
+  $nid = 365;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+    <section class="mb-10" id="about">
+       <p class="text-dark-teal text-2xl mb-10">CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more!</p>
+        <p>Submissions are reviewed once a month. Please submit by October 1 for SC23 or two months prior to the conference that you desire to attend.</p>
+    </section>
+    <section class="mb-10" id="tier1">
+      <h2>Tier 1: $1,000</h2>
+      [accordion summary="Intro to ACCESS lecture" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for Basic, Intermediate, or Advanced User. This ideally should be a review of multiple ACCESS resources (e.g. how to get an allocation, how to get started, tips and tricks, software and hardware overview) or a general review of offerings that Support/Allocations provides to the community."][/accordion]
+      [accordion summary="Intro to ACCESS lecture for domain specific conference" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for a domain specific conference (e.g. AGU, ODSC, IPSA, etc) or community (biology department, chemistry honor society, political science affinity group, media studies lecture series, etc.)"][/accordion]
+      [accordion summary="Documentation OR tutorial/lecture on requested topic" text="Expand the knowledge base by contributing in one of these areas of expertise.<ul><li>LLM</li><li>Intro to Linux</li><li>Python</li><li>Job Scheduling</li><li>Data Transfer, Software Installations</li><li>Parallel Programming</li><li>GPU Acceleration</li><li>Rust</li></ul>"][/accordion]
+      [accordion summary="Expand the community knowledge base by adding CI Links" text='Share your expertise by contributing 10 of your &ldquo;go-to&rdquo; research computing-related websites, training modules, tutorials and/or documentation pages to the <a href="/ci-links">CI Links</a> page. Please contribute first, then apply for your reward. Submissions will be reviewed once a month by the CCEP committee.'][/accordion]
+      [accordion summary="ACCESS Support User Stories*" text="<em>* Currently unavailable.</em> Provide detailed information about your experience with ACCESS— the resources and software you used, and how it affected your research. Your feedback could be used to improve ACCESS Support services and/or featured as a case study on the website."][/accordion]
+    </section>
+    <section class="mb-10" id="tier2">
+      <h2>Tier 2: $2,500</h2>
+      [accordion summary="Intro to ACCESS lecture AND event" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for Basic, Intermediate, or Advanced User. This ideally should be a review of multiple ACCESS resources (e.g. how to get an allocation, how to get started, tips and tricks, software and hardware overview) or a general review of offerings that Support/Allocations provides to the community AND host a live community event such as a workshop or tutorial, a DEI meeting, or a gathering of students/faculty/staff to promote awareness and use of ACCESS resources."][/accordion]
+      [accordion summary="Intro to ACCESS lecture for domain specific conference AND a written document" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for a domain specific conference (e.g. AGU, ODSC, IPSA, etc) or community (biology department, chemistry honor society, political science affinity group, media studies lecture series, etc.) AND a written document that can be shared and reused for training in the future."][/accordion]
+      [accordion summary="Documentation AND tutorial/lecture/event on requested topic" text="Expand the knowledge base by contributing in one of these areas of expertise.<ul><li>LLM</li><li>Intro to Linux</li><li>Python</li><li>Job Scheduling</li><li>Data Transfer, Software Installations</li><li>Parallel Programming</li><li>GPU Acceleration</li><li>Rust</li></ul>"][/accordion]
+      [accordion summary="Share your expertise on ask.CI, the Q&A platform for the research computing community" text='Expand the community knowledge base by contributing 10 posts (new topics or answers to existing topics, with a maximum of 5 new topics) on ask.CI. Submissions will be reviewed once a month by the CCEP committee. Please post first, then apply for your reward.'][/accordion]
+      [accordion summary="Tag Taxonomy Curation*" text="<em>* Currently unavailable.</em> Assess current tag taxonomy structure and suggest modifications to better serve the ACCESS computer researcher ecosystem."][/accordion]
+      [accordion summary="Serve as a MATCH Plus Mentor*" text="<em>* This opportunity will reopen Spring 2024</em>"][/accordion]
+      [accordion summary="Serve on the CCEP Review Committee*" text="<em>* This opportunity will reopen Spring 2024</em>"][/accordion]
+    </section>
+    <section class="mb-10">
+      <a class="btn btn-primary" href="https://forms.gle/u4d4kCtsYNQgzxjq5">Apply to CCEP</a>
+    </section>
+  </div>
+  <div class="col-2 sticky top-0">
+      <nav class="bg-md-teal p-5">
+        <a class="font-extrabold text-white no-underline hover--underline hover--text-light-teal block" href="#">CCEP</a>
+        <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#tier1">Tier 1</a>
+        <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#tier2">Tier 2</a>
+        <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#fine-print">Fine Print</a>
+      </nav>
+    </div>
+  </div>
+</div>
+<div id="fine-print" class="py-10 bg-light-teal -mx-50% px-50%">
+  <div class="container">
+    <h2>Important Fine Print</h2>
+    <p>CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more! Submissions are reviewed once a month. Please submit by October 1 for SC23 or two months prior to the conference that you desire to attend.</p>
+    <p><a href="/ccep-pilot-details">See all the details</a></p>
+  </div>
+</div>
+EOT;
+  update_node_body($nid, $body, $format);
+}
