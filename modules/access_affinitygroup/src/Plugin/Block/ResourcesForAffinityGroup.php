@@ -177,7 +177,7 @@ class ResourcesForAffinityGroup extends BlockBase {
       // Format $date.
       $title = $announcement['link'];
       $create_date = date_create($announcement['date']);
-      $adate = date_format($create_date, "m-d-Y");
+      $adate = date_format($create_date, "m/d/y");
       $rendered .= '<div class="announcement mb-3"><span class="announcement-title">' . $title . '</span> <span class="announcement-date">[' . $adate . ']</span></div>';
     }
 
