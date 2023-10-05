@@ -5,7 +5,7 @@ misc_library:
 add_select:
   version: 1.x
   js:
-    js/add_select2: {}
+    js/add_select2.js: {}
   dependencies:
     - webform/webform.element.select2
 custom_tags:

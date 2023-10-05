@@ -8,11 +8,17 @@ use Drupal\access_misc\Plugin\Util\EventDateConvert;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Render\Markup;
-use Drupal\node\Entity\Node;
-use Drupal\taxonomy\Entity\Term;
-use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
+use Drupal\user\Entity\User;
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function access_misc_views_pre_render(ViewExecutable $view) {
+  if ($view->id() == 'infrastructure_news') {
+    $view->element['#attached']['library'][] = 'access_misc/add_select';
+  }
+}
 
 /**
  * Implements hook_entity_view_alter().
@@ -117,9 +123,9 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
   }
 }
 
-/*
-  * Implements hook_mail().
-  */
+/**
+ * Implements hook_mail().
+ */
 function access_misc_mail($key, &$message, $params) {
   switch ($key) {
     case 'notify_role':
@@ -127,5 +133,5 @@ function access_misc_mail($key, &$message, $params) {
       $message['subject'] = $params['subject'];
       $message['body'][] = $params['body'];
       break;
-    }
+  }
 }

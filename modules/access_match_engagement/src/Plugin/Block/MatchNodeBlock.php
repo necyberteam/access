@@ -87,7 +87,8 @@ class MatchNodeBlock extends BlockBase implements
    */
   public function __construct(
     array $configuration,
-    $plugin_id, $plugin_definition,
+    $plugin_id,
+    $plugin_definition,
     EntityTypeManagerInterface
     $entity_interface,
     RouteMatchInterface $route_match_interface,
@@ -116,10 +117,11 @@ class MatchNodeBlock extends BlockBase implements
       foreach ($fields as $field) {
         $field_value = $node->get($field)->getValue();
         if ($field_value) {
-          $field_value = $this->entityInterface->getStorage('user')->load($field_value[0]['target_id']);
-          $msc_loaded[$field] = $field_value->get('field_user_first_name')->value . ' ' . $field_value->get('field_user_last_name')->value;
-        }
-        else {
+          $user_id = $field_value[0]['target_id'];
+          $field_value = $this->entityInterface->getStorage('user')->load($user_id);
+          $user_name = $field_value->get('field_user_first_name')->value . ' ' . $field_value->get('field_user_last_name')->value;
+          $msc_loaded[$field] = "<a href=\"/community-persona/$user_id\">$user_name</a>";
+        } else {
           $msc_loaded[$field] = '';
         }
       }
@@ -224,11 +226,11 @@ class MatchNodeBlock extends BlockBase implements
         {% endif %}',
         '#context' => [
           'consultant_label' => $this->t('Consultant'),
-          'consultant' => $msc_loaded['field_consultant'],
+          'consultant' => $this->t($msc_loaded['field_consultant']),
           'student_label' => $this->t('Student'),
-          'student' => $msc_loaded['field_students'],
+          'student' => $this->t($msc_loaded['field_students']),
           'mentor_label' => $this->t('Mentor'),
-          'mentor' => $msc_loaded['field_mentor'],
+          'mentor' => $this->t($msc_loaded['field_mentor']),
           'tags' => $tag_list,
           'image' => $image_loaded,
           'skill_label' => $skill_label,
@@ -272,8 +274,7 @@ class MatchNodeBlock extends BlockBase implements
     if ($node = $this->routMatchInterface->getParameter('node')) {
       // If there is node add its cachetag.
       return Cache::mergeTags(parent::getCacheTags(), ['node:' . $node->id()]);
-    }
-    else {
+    } else {
       // Return default tags instead.
       return parent::getCacheTags();
     }
@@ -288,5 +289,4 @@ class MatchNodeBlock extends BlockBase implements
     // Every new route this block will rebuild.
     return Cache::mergeContexts(parent::getCacheContexts(), ['route']);
   }
-
 }
