@@ -20,6 +20,8 @@ class AffinityBottomLeft extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    $output = '';
+
     $node = \Drupal::routeMatch()->getParameter('node');
     // Adding a default for layout page.
     $affinity_group_tax = '607';
@@ -32,7 +34,30 @@ class AffinityBottomLeft extends BlockBase {
     $view->setArguments([$affinity_group_tax]);
     $view->execute();
     $rendered = $view->render();
-    $output = \Drupal::service('renderer')->render($rendered);
+    if ($rendered) {
+      $output .= \Drupal::service('renderer')->render($rendered);
+    }
+
+   /**
+   * Grab node id.
+   */
+    $node = \Drupal::routeMatch()->getParameter('node');
+
+   /**
+   * Adding a default for layout page.
+   */
+    $nid = $node ? $node->id() : 291;
+
+   /**
+   * Load Announcement view.
+   */
+    $announcement_view = Views::getView('access_news');
+    $announcement_view->setDisplay('block_2');
+    $announcement_view->setArguments([$nid]);
+    $announcement_view->execute();
+    $announcement_list = $announcement_view->render();
+    $output .= \Drupal::service('renderer')->render($announcement_list);
+
 
     return [
       ['#markup' => $output],

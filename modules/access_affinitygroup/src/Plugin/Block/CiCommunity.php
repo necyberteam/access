@@ -117,8 +117,26 @@ class CiCommunity extends BlockBase implements
     }
     if ($cid) {
       $header = [
-        'title' => 'Topics',
-        'last_update' => 'Last Update',
+        [
+          'data' => 'Topics',
+          'class' => [
+            'border-x-0',
+            'border-b-2',
+            'border-t-0',
+            'border-black',
+            'border-solid',
+          ],
+        ],
+        [
+          'data' => 'Last Update',
+          'class' => [
+            'border-x-0',
+            'border-b-2',
+            'border-t-0',
+            'border-black',
+            'border-solid',
+          ],
+        ]
       ];
       $rows = [];
       // Api call for grabbing the category.
@@ -189,16 +207,30 @@ class CiCommunity extends BlockBase implements
             'data' => [
               '#markup' => "$external_link",
             ],
+            'class' => [
+              'border-x-0',
+              'border-b-2',
+              'border-t-0',
+              'border-black',
+              'border-solid',
+            ],
           ],
           'last_update' => [
             'data' => [
               '#markup' => $last_update,
             ],
+            'class' => [
+              'border-x-0',
+              'border-b-2',
+              'border-t-0',
+              'border-black',
+              'border-solid',
+            ],
           ],
         ];
       }
       $ask_title = $this->t('Ask.CI Recent Topics');
-      $ask_title = "<h3 class='border-bottom pb-2'>$ask_title</h3>";
+      $ask_title = "<h3 class='text-white border-bottom pb-2 bg-dark-teal py-2 px-4'>$ask_title</h3>";
       $options = [
         'attributes' => [
           'class' => [
@@ -214,7 +246,7 @@ class CiCommunity extends BlockBase implements
         '#suffix' => $ci_external_link->toString(),
         '#header' => $header,
         '#rows' => $rows,
-        '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0']],
+        '#attributes' => ['id' => 'ask-ci', 'class' => ['border-0 border-spacing-0']],
         // Expire in one day in seconds.
         '#cache' => ["max-age" => 86400],
       ];
