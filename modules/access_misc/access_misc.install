@@ -185,3 +185,100 @@ function update_node_body($nid, $body, $format) {
     $node->save();
   }
 }
+
+/**
+ * Update Science Gateways page content.
+ */
+function access_misc_update_10002(&$sandbox) {
+  // Science Gateways page.
+  $nid = 278;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+
+<div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+
+	<section class="mb-10" id="about">
+      	<p class="text-dark-teal text-2xl mb-10">A science portal or science gateway is a community-developed set of tools, applications, and data integrated through a web-based portal or a suite of applications. They provide access to tools used in cutting-edge research – telescopes, seismic shake tables, supercomputers, sky surveys, undersea sensors, and more. These gateways often connect diverse resources and make them easily accessible, lowering the barriers traditionally required to access these resources.
+       </p>
+
+	<div class="grid grid-cols-1 md--grid-cols-3">
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Advance access to resources</p>
+           <p>By connecting science gateways to cutting-edge ACCESS resources and software, training and research workflows are streamlined through one interface.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Collaborative space</p>
+           <p>Gateways provide an interactive community space for sharing knowledge of methods, code, data, results, and training materials.</p>
+          </div>
+      </div>
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold">Enhanced research products</p><p>Gateways provide a space to share research outcomes and supplementary products. They enable collaborators, peers, and future researchers to discover and learn.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-10" id="using-science-gateways">
+ 	<h2>Using Science Gateways</h2>
+	<p>	Through user-friendly online interfaces, Science Gateways combine cyberinfrastructure components and support a community-specific set of tools, applications, and data collections.
+	</p>
+	<p> Search existing science gateways in our <a href=https://catalog.sciencegateways.org/#/home>gateways catalog</a> or talk to <a href=https://sciencegateways.org/work-with-us>SGX3 for support</a>  in choosing a science gateway. You can join an existing science gateway by creating an account or communicating to the team hosting the science gateway with an inquiry to join. Many science gateway teams hope you will join them and look to grow their communities.
+	</p>
+<p>
+    	[accordion summary="How do I use a Gateway?" text="You can use most science gateways like a typical website. Many science gateways provide open access to research products which you can find from the home page of the science gateway or search engines on the science gateway. To access HPC resources, run software, or add your own research products, most science gateways will ask that you authenticate. Depending on the science gateway, you may either create a local account on gateway or authenticate through another known entity like your university's login portal, Google, or other service."][/accordion]
+
+[accordion summary="What are some examples of Science Gateways?" text="There are over 630 science gateways and related software in our <a href=https://catalog.sciencegateways.org/#/home>gateways catalog</a>. Some of the most popular science gateways include: <ul><li><a href=https://www.phylo.org/>CIPRES</a> - a public resource for phylogenetics and population biology.</li><li><a href=https://nanohub.org/>nanoHUB</a> - a diverse community of nanotechnology researchers and educators.</li><li><a href=https://genapp.rocks/>GenApp</a> - a framework for rapidly building and deploying graphical front ends for command line applications to an extensible variety of targets.</li><li><a href=https://opentopography.org/>OpenTopography</a> - a science gateway that facilitates community access to high-resolution, Earth science-oriented, topography data, and related tools and resources.</li><li><a href=https://nemar.org/>NEMAR</a> - an open access data, tools, and compute resource for finding, assessing and processing human NeuroElectroMagnetic data (EEG, MEG, iEEG) shared by its authors through OpenNeuro.org.</li><li><a href=https://www.designsafe-ci.org/>DesignSafe</a> - a natural hazards research science gateway where researchers store, analyze, curate, publish, and discover data within their community.</li><li><a href=https://ebird.org/home>eBird</a> - a science gateway where birdwatching data is collected and shared to power new data-driven approaches to science, conservation and education.</li><li><a href=https://gateway.delta.ncsa.illinois.edu/>Delta Science Gateway</a> - a gateway for researchers who want to enable others in the community to use their applications and run them on the GPU-centric NCSA Delta computational resource.</li></ul>"][/accordion]
+
+[accordion summary="What's involved with adapting a Science Gateway?" text="<p>You can join an existing science gateway by creating an account or communicating to the team hosting the science gateway with an inquiry to join. Many science gateway teams hope you will join them and look to grow their communities.</p><p>If you would like to establish your own science gateway, you can work with these science gateway providers to request a new science gateway for your project. When you do create your own science gateway, you have the opportunity to design it to fit your project’s needs. Some of the below projects are open source and some offer full support in managing and hosting your science gateway. The benefit of working with a fully hosted team is you can outsource the management, development, and security to these experienced and fully staffed teams.</p><ul><li><a href=https://hubzero.org/>Hubzero®</a> - a software platform for building powerful websites that host analytical tools, publish data, share resources, collaborate and build communities in a single web-based ecosystem.</li><li><a href=https://tacc-cloud.readthedocs.io/en/latest/>Tapis</a> - an open source, science-as-a-service API platform for powering your digital lab.</li><li><a href=https://openondemand.org/>Open OnDemand </a> - a platform that empowers students, researchers, and industry professionals with remote web access to supercomputers.</li><li><a href=https://airavata.apache.org/>Apache Airavata</a> - a software framework that enables you to compose, manage, execute, and monitor large scale applications and workflows.</li><li><a href=https://usegalaxy.org/ >Galaxy</a> -  is an open source, web-based platform for data intensive biomedical research.</li><li><a href=https://www.globus.org/>Globus</a> - a secure, reliable research data management service.</li><li><a href=https://pegasus.isi.edu/>Pegasus</a> - a project that encompasses a set of technologies that help workflow-based applications execute in a number of different environments including desktops, campus clusters, grids, and clouds.</li></ul>"][/accordion]
+
+      	[accordion summary="Why should I use a Gateway?" text="Science gateways elevate your research. They provide an actively supported space to streamline all your research workflow processes in one interface. They also break down barriers to research outcomes and educational training."][/accordion]
+
+    </p>
+  </section>
+</div>
+<div class="col-2 sticky top-0">
+  <nav class="bg-md-teal p-5">
+    <a class="font-extrabold text-white no-underline hover--underline hover--text-light-teal block" href="#">Science Gateways</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#using-science-gateways">Using Science Gateways</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#science-gateways-support">Science Gateways Support</a>
+  </nav>
+</div>
+</div>
+
+<section class="bg-light-teal -mx-50% px-50% py-10" id="science-gateways-support">
+<h2>Science Gateways Support</h2>
+    <div class="flex col-3">
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-consult.svg" title="Technical Consultancy" link="https://sciencegateways.org/work-with-us" text="Advice on the best platform for your project or on integrating HPC resources into your science gateway pipeline."][/square]
+
+ [square icon="/themes/contrib/asp-theme/images/icons/ico-training.svg" title="Workforce Development" link="https://sciencegateways.org/education-training" text="Mentoring, career development, internships, workshops & hackathons." ][/square]
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-workforce.svg" title="Sustainability Training" link="https://sciencegateways.org/education-training/sustainability-training" text="Learn to articulate your project’s value, define stakeholder interactions, and explore funding models." ][/square]
+
+</div>
+<div class="flex col-3">
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-ui.svg" title="Usability Consultancy" link="https://sciencegateways.org/work-with-us" text="The SGX3 Usability Team can help create a new user interface or improve an existing design."][/square]
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-blueprint.svg" title="Blueprint Factory" link="https://sciencegateways.org/our-services/blueprint-factories" text="CIPs, scientists, and resource operators explore future domain needs and create plans for the next generation of science gateways." ][/square]
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-contactus.svg" title="Contact Us" link="https://sciencegateways.org/work-with-us" text="Want to work with us? Request a consult, share a letter of collaboration, or ask a question." ][/square]
+    </div>
+  </section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
