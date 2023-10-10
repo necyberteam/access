@@ -230,7 +230,7 @@ class CiCommunity extends BlockBase implements
         ];
       }
       $ask_title = $this->t('Ask.CI Recent Topics');
-      $ask_title = "<h3 class='text-white border-bottom pb-2 bg-dark-teal py-2 px-4'>$ask_title</h3>";
+      $ask_title = "<h3 class='text-white-er border-bottom pb-2 bg-dark-teal py-2 px-4'>$ask_title</h3>";
       $options = [
         'attributes' => [
           'class' => [

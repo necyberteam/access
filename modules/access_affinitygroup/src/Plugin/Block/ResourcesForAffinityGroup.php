@@ -29,7 +29,7 @@ class ResourcesForAffinityGroup extends BlockBase {
     // Create empty string in case the following if statement is not true.
     $rendered = '';
     if (!empty($field_resources_entity_reference)) {
-      $rendered = '<h2 class="text-white border-bottom pb-2 bg-dark-teal py-2 px-4">CI Links</h2>';
+      $rendered = '<h2 class="text-white-er border-bottom pb-2 bg-dark-teal py-2 px-4">CI Links</h2>';
       $header = [
         [
           'data' => 'Title',
@@ -88,6 +88,7 @@ class ResourcesForAffinityGroup extends BlockBase {
               '#type' => 'link',
               '#title' => $term->getName(),
               '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $tag]),
+              '#attributes' => ['class' => ['no-underline']],
             ];
             $tags .= \Drupal::service('renderer')->render($link)->__toString();
           }

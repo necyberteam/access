@@ -35,7 +35,12 @@ class AffinityBottomLeft extends BlockBase {
     $view->execute();
     $rendered = $view->render();
     if ($rendered) {
-      $output .= \Drupal::service('renderer')->render($rendered);
+      $view_output = \Drupal::service('renderer')->render($rendered)->__toString();
+      $strip = preg_replace('/\s+/', '', $view_output);
+      // Don't show empty view.
+      if ($strip != '<divclass="bg-md-tealp-4text-white-erfont-boldmb-6mt-4viewview-affinity-group-recurring-eventsview-id-affinity_group_recurring_eventsview-display-id-block_1"></div>') {
+        $output .= $view_output;
+      }
     }
 
    /**
