@@ -2,17 +2,15 @@
 
 namespace Drupal\access_affinitygroup\Commands;
 
-use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
-use Drush\Commands\DrushCommands;
-use Drupal\node\Entity\Node;
-use Drupal\user\Entity\User;
-use Drupal\recurring_events\Entity\EventSeries;
-use Drupal\recurring_events\Entity\EventInstance;
-use Drupal\recurring_events\EventInterface;
-use Drupal\recurring_events\Plugin\ComputedField\EventInstances;
+use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
+use Drupal\node\Entity\Node;
+use Drupal\recurring_events\Entity\EventInstance;
+use Drupal\recurring_events\Entity\EventSeries;
+use Drupal\user\Entity\User;
+use Drush\Commands\DrushCommands;
 
 /**
  * A Drush commandfile for Affinity Groups.
@@ -20,6 +18,7 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
  * @package Drupal\access_affinitygroup\Commands
  */
 class AffinityGroupCommands extends DrushCommands {
+
   /**
    * Add existing Affinity Group members to Constant Contact lists.
    *
@@ -29,7 +28,7 @@ class AffinityGroupCommands extends DrushCommands {
    *
    * @command access_affinitygroup:initConstantContact
    * @aliases initConstantContact
-   * @usage   access_affinitygroup:initConstantContact
+   * @usage access_affinitygroup:initConstantContact
    */
   public function initConstantContact() {
     // Get all the Affinity Groups.
@@ -76,14 +75,16 @@ class AffinityGroupCommands extends DrushCommands {
         if (!empty($field_val) && $field_val != 0) {
           $cc_id = $field_val[0]['value'];
           $this->output()->writeln($first_name . ' ' . $last_name . ' already has cc id: ' . $cc_id);
-        } else {
+        }
+        else {
           // User did not already have the CC id.
           // Check if they are already in CC.
           $resp = $cca->apiCall('/contacts?status=all&email=' . $user->getEmail());
           if ($resp->contacts) {
             $cc_id = $resp->contacts[0]->contact_id;
             $this->output()->writeln($cc_id);
-          } else {
+          }
+          else {
             // Try to add to CC.
             $cc_id = $cca->addContact($first_name, $last_name, $user->getEmail());
             // Delay for api limit.
@@ -108,11 +109,11 @@ class AffinityGroupCommands extends DrushCommands {
     }
   }
 
-
   /**
    * @command access_affinitygroup:showAffinityGroups
-   * @param   $agName default: show all, otherwise, only show affinity group
-   *                  with this title (case-sensitive)
+   * @param   $agName
+   *   default: show all, otherwise, only show affinity group
+   *   with this title (case-sensitive)
    * @option  uidonly
    *         Only show user ids in list, not names or cc ids
    * @option  headonly
@@ -120,7 +121,7 @@ class AffinityGroupCommands extends DrushCommands {
    * @aliases showAffinityGroups
    * @usage   access_affinitygroup:showAffinityGroups
    */
-  public function showAffinityGroups(string $agName = '', $options = ['uidonly' => false, 'headonly' => false]) {
+  public function showAffinityGroups(string $agName = '', $options = ['uidonly' => FALSE, 'headonly' => FALSE]) {
     $uidOnly = $options['uidonly'];
     $headOnly = $options['headonly'];
 
@@ -148,23 +149,26 @@ class AffinityGroupCommands extends DrushCommands {
 
       if (!$list_id || strlen($list_id) < 1) {
         $this->output()->writeln('NO list id');
-      } else {
+      }
+      else {
         $this->output()->writeln('list id: ' . $list_id);
       }
 
       $agCat = $node->get('field_affinity_group_category')->value;
       if (empty($agCat)) {
         $this->output()->writeln('NO category');
-      } else {
+      }
+      else {
         $this->output()->writeln('category: ' . $agCat);
       }
 
-      // logo
+      // Logo.
       if (!empty($node->get('field_image')->entity)) {
         $uri = $node->get('field_image')->entity->getFileUri();
         $absUrl = \Drupal::service('file_url_generator')->generateAbsoluteString($uri);
         $this->output()->writeln('image uri: ' . $uri);
-      } else {
+      }
+      else {
         $this->output()->writeln('NO image uri');
       }
 
@@ -181,7 +185,7 @@ class AffinityGroupCommands extends DrushCommands {
 
       foreach ($flags as $flag) {
         $uCount += 1;
-        //$this->output()->writeln('-- '.$uCount.'.');
+        // $this->output()->writeln('-- '.$uCount.'.');
         $uid = $flag->get('uid')->target_id;
         $this->output()->writeln('-- ' . $uCount . '. ' . $uid);
         if (!$uidOnly) {
@@ -218,7 +222,7 @@ class AffinityGroupCommands extends DrushCommands {
     // Get all the News.
     $nCount = 0;
 
-    //->condition('status', 1)
+    // ->condition('status', 1)
     $nids = \Drupal::entityQuery('node')
       ->condition('type', 'access_news')
       ->condition('status', 1)
@@ -235,8 +239,7 @@ class AffinityGroupCommands extends DrushCommands {
     $this->output()->writeln('from: ' . $fmDate1);
     $this->output()->writeln('to:   ' . $fmDate2);
 
-    //$a = $ddtA->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
-
+    // $a = $ddtA->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
     $nids = \Drupal::entityQuery('node')
       ->condition('field_published_date.value', $fmDate1, '>=')
       ->condition('field_published_date.value', $fmDate2, '<=')
@@ -255,7 +258,7 @@ class AffinityGroupCommands extends DrushCommands {
 
       $view_builder = \Drupal::entityTypeManager()->getViewBuilder('node');
       $renderArray = $view_builder->view($node, 'newsBody');
-      //            $renderArray = $view_builder->view($node);
+      // $renderArray = $view_builder->view($node);
       $display = \Drupal::service('renderer')->renderPlain($renderArray);
       $this->output()->writeln($display);
 
@@ -294,9 +297,10 @@ class AffinityGroupCommands extends DrushCommands {
     $this->output()->writeln($fmDate2);
 
     // Get all event instances (published: status=1)
-    // in the date range
+    // in the date range.
     $eCount = 0;
     $eids = \Drupal::entityQuery('eventinstance')
+      ->accessCheck(TRUE)
       ->condition('status', 1)
       ->condition('date.value', $fmDate1, '>=')
       ->condition('date.value', $fmDate2, '<')
@@ -313,22 +317,21 @@ class AffinityGroupCommands extends DrushCommands {
       $eCount += 1;
 
       $this->output()->writeln($eCount . '. ' . $title);
-      //$this->output()->writeln('status:' . $enode->get('status')->value);
+      // $this->output()->writeln('status:' . $enode->get('status')->value);
       $this->output()->writeln('date:' . $enode->get('date')->value);
       $this->output()->writeln('');
 
       // $enode->get('date')->value is in UTC 2023-02-13T19:33:00  (this was input as 2:33 pm NY time)
-
-      // get the custom view display eventinstance.email_summary
+      // Get the custom view display eventinstance.email_summary
       $view_builder = \Drupal::entityTypeManager()->getViewBuilder('eventinstance');
       $renderArray = $view_builder->view($enode, 'rollup_list');
       $display = \Drupal::service('renderer')->renderPlain($renderArray);
 
-      //$this->output()->writeln($display);
-
-      //TEMP
+      // $this->output()->writeln($display);
+      // TEMP
     }
   }
+
   /**
    * @command access_affinitygroup:showEventsS
    *
@@ -341,6 +344,7 @@ class AffinityGroupCommands extends DrushCommands {
     $eCount = 0;
 
     $nids = \Drupal::entityQuery('eventseries')
+      ->accessCheck(TRUE)
       ->condition('status', 1)
       ->execute();
 
@@ -356,24 +360,21 @@ class AffinityGroupCommands extends DrushCommands {
 
       $this->output()->writeln($eCount . '. ' . $title);
       $this->output()->writeln('status:' . $node->get('status')->value);
-      //$this->output()->writeln($node->get('body')->summary);  // show just summary,
-      //$this->output()->writeln($node->get('body')->value);
-
+      // $this->output()->writeln($node->get('body')->summary);  // show just summary,
+      // $this->output()->writeln($node->get('body')->value);
       $view_builder = \Drupal::entityTypeManager()->getViewBuilder('eventinstance');
-      //$renderArray = $view_builder->view($node);
-      //$this->output()->writeln('c-----------');
+      // $renderArray = $view_builder->view($node);
+      // $this->output()->writeln('c-----------');
       $body = '';
-      //$body = \Drupal::service('renderer')->renderPlain($renderArray);
-      //$this->output()->writeln('d-----------');
-      //$this->output()->writeln($body);
-      //$this->output()->writeln('e-----------');
-
-      //$this->output()->writeln($node->getCreated());
-
-      //                $this->output()->writeln($node->get('status')->value);
+      // $body = \Drupal::service('renderer')->renderPlain($renderArray);
+      // $this->output()->writeln('d-----------');
+      // $this->output()->writeln($body);
+      // $this->output()->writeln('e-----------');
+      // $this->output()->writeln($node->getCreated());
+      // $this->output()->writeln($node->get('status')->value);
       //               $this->output()->writeln($node->get('body')->summary);  // show just summary,
-      //which only has something if spefically set. otherwise we need to override with a trunc of body.
-      //$this->output()->writeln($node->get('body')->summary);   // show whole body
+      // which only has something if spefically set. otherwise we need to override with a trunc of body.
+      // $this->output()->writeln($node->get('body')->summary);   // show whole body
       //             $this->output()->writeln($node->get('field_published_date')->value);
     }
   }
@@ -385,7 +386,7 @@ class AffinityGroupCommands extends DrushCommands {
    * @usage   access_affinitygroup:newsRollup
    */
   public function newsRollup() {
-    $retval = weeklyNewsReport(true);
+    $retval = weeklyNewsReport(TRUE);
     $this->output()->writeln($retval);
   }
 
@@ -397,7 +398,7 @@ class AffinityGroupCommands extends DrushCommands {
    */
   public function importAllocations() {
     $aui = new AllocationsUsersImport();
-    //$retval = $aui->importUserAllocations();
+    // $retval = $aui->importUserAllocations();
     $retval = $aui->startBatch();
 
     $this->output()->writeln($retval);
@@ -411,7 +412,7 @@ class AffinityGroupCommands extends DrushCommands {
   public function syncAGandCC() {
     $aui = new AllocationsUsersImport();
     $aui->syncAGandCC(25, 27);
-    //$aui->syncAGandCC();
+    // $aui->syncAGandCC();
   }
 
   /**
@@ -422,7 +423,7 @@ class AffinityGroupCommands extends DrushCommands {
   public function allocCleanObs() {
     $aui = new AllocationsUsersImport();
     $aui->cleanObsoleteAllocations(1, 2);
-    //$aui->cleanObsoleteAllocations();
+    // $aui->cleanObsoleteAllocations();
   }
 
 }
