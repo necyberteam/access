@@ -121,7 +121,7 @@ class CiCommunity extends BlockBase implements
           'data' => 'Topics',
           'class' => [
             'border-x-0',
-            'border-b-2',
+            'border-b',
             'border-t-0',
             'border-black',
             'border-solid',
@@ -131,7 +131,7 @@ class CiCommunity extends BlockBase implements
           'data' => 'Last Update',
           'class' => [
             'border-x-0',
-            'border-b-2',
+            'border-b',
             'border-t-0',
             'border-black',
             'border-solid',
@@ -209,7 +209,7 @@ class CiCommunity extends BlockBase implements
             ],
             'class' => [
               'border-x-0',
-              'border-b-2',
+              'border-b',
               'border-t-0',
               'border-black',
               'border-solid',
@@ -221,7 +221,7 @@ class CiCommunity extends BlockBase implements
             ],
             'class' => [
               'border-x-0',
-              'border-b-2',
+              'border-b',
               'border-t-0',
               'border-black',
               'border-solid',

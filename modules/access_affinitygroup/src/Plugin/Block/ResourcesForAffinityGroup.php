@@ -35,7 +35,7 @@ class ResourcesForAffinityGroup extends BlockBase {
           'data' => 'Title',
           'class' => [
             'border-x-0',
-            'border-b-2',
+            'border-b',
             'border-t-0',
             'border-black',
             'border-solid',
@@ -45,7 +45,7 @@ class ResourcesForAffinityGroup extends BlockBase {
           'data' => 'Tags',
           'class' => [
             'border-x-0',
-            'border-b-2',
+            'border-b',
             'border-t-0',
             'border-black',
             'border-solid',
@@ -55,7 +55,7 @@ class ResourcesForAffinityGroup extends BlockBase {
           'data' => 'Skill Level',
           'class' => [
             'border-x-0',
-            'border-b-2',
+            'border-b',
             'border-t-0',
             'border-black',
             'border-solid',
@@ -88,12 +88,12 @@ class ResourcesForAffinityGroup extends BlockBase {
               '#type' => 'link',
               '#title' => $term->getName(),
               '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $tag]),
-              '#attributes' => ['class' => ['no-underline']],
+              '#attributes' => ['class' => ['no-underline', 'border', 'border-black', 'border-solid', 'px-5', 'py-2', 'mr-2', 'mb-2', 'hover--border-dark-teal', 'hover--text-dark-teal', 'w-fit']],
             ];
             $tags .= \Drupal::service('renderer')->render($link)->__toString();
           }
         }
-        $tags = '<div class="square-tags border-2 border-black border-solid px-2 mr-2 mb-2 w-fit">' . $tags . '</div>';
+        $tags = '<div class="square-tags flex flex-wrap">' . $tags . '</div>';
         // Lookup skills by id and make an array of names.
         $skills = '';
         $skill_list = [];
@@ -122,10 +122,11 @@ class ResourcesForAffinityGroup extends BlockBase {
             ],
             'class' => array(
               'border-x-0',
-              'border-b-2',
+              'border-b',
               'border-t-0',
               'border-black',
               'border-solid',
+              'pb-4',
             ),
           ],
           'tags' => [
@@ -134,10 +135,11 @@ class ResourcesForAffinityGroup extends BlockBase {
             ],
             'class' => array(
               'border-x-0',
-              'border-b-2',
+              'border-b',
               'border-t-0',
               'border-black',
               'border-solid',
+              'pb-4',
             ),
           ],
           'skill' => [
@@ -146,10 +148,11 @@ class ResourcesForAffinityGroup extends BlockBase {
             ],
             'class' => array(
               'border-x-0',
-              'border-b-2',
+              'border-b',
               'border-t-0',
               'border-black',
               'border-solid',
+              'pb-4',
             ),
           ],
         ];
