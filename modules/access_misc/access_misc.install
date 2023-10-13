@@ -644,3 +644,101 @@ Try these cutting-edge tools designed to streamline your time to science. These 
 EOT;
   update_node_body($nid, $body, $format);
 }
+
+/**
+ * Update Pegasus page content and formatting for new theme.
+ */
+function access_misc_update_10005(&$sandbox) {
+  // Pegasus.
+  $nid = 268;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+    <section class="mb-5" id="about">
+      <p class="text-dark-teal text-2xl mb-10">Construct, run, and debug workflows from a Jupyter Notebook. Perform simple interactions on the command line. Work across environments and get started quickly with sample workflows using a Python API.</p>
+      <div class="grid grid-cols-1 md--grid-cols-3">
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Data Management</p><p>Data transfer, input selection, and output registration as auxiliary jobs to the workflow.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Error Recovery</p>
+           <p>Tasks are retried, workflow-level checkpointing, re-mapping and alternative data sources for data staging.</p>
+          </div>
+      </div>
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold">Provenance Tracking</p><p>Trace a workflow and its outputs, including information about data sources and software used.</p>
+        </div>
+      </div>
+    </div>
+    <div class="mb-0">
+      <a class="btn btn-primary mb-5" href="https://access.pegasus.isi.edu">TRY PEGASUS</a>
+      <a class="btn btn-secondary  mb-5" href="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html">SEE DOCUMENTATION</a>
+    </div>
+  </section>
+
+  <section class="mb-10" id="pegasus-workflows">
+
+<div class="flex items-center">
+    <div>
+        <h2 class="colored-square colored-square-orange">Workflows</h2>
+        <div><p>We have Jupyter based training notebooks available that walk you through creating simple diamond workflow (and more complex ones) using the Pegasus Python API and executing them on ACCESS resources.</p>
+       </div>
+    </div>
+    <div>
+       <img class='not-prose' src='/themes/contrib/asp-theme/images/misc/pegasus-workflow.jpg' >
+    </div>
+</div>
+
+      [accordion summary="Why use workflows" text="<div><p>Scientific Workflow Management Systems (WMS) such as Pegasus are vital tools for scientists and researchers in a wide range of fields. They provide a structured environment for the design, execution, and monitoring of complex computational tasks, enabling researchers to manage and process large amounts of data efficiently.<br><span class='font-semibold'>Some reasons you should consider using a system like Pegasus WMS:</span></p><div class='grid grid-cols-6 gap-5'><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/agreement.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REPRODUCIBILITY</p>Document and reproduce your analyses, ensuring their validity, with scientific workflows.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/cycle.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>AUTOMATION</p>Automate repetitive and time-consuming tasks and reduce your workload.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/decision.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>SCALABILITY</p>Handle large data sets and complex analyses and take on bigger research problems.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/growth.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REUSABILITY</p>Build libraries of reusable code and tools that can be adapted by other researchers.</div></div></div>"][/accordion]
+
+      [accordion summary="See workflow examples" text="<div class='grid  grid-cols-1 md--grid-cols-10 gap-5 mb-10'><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal font-extrabold'>SINGLE JOB</p><img class='h-full  not-prose mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step1.jpg' alt='workflow step 1'><div class='text center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Single-Job.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal  font-extrabold'>SET OF JOBS</p><img class='h-full  not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step2.jpg' alt='workflow step 2'><div class='text=center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Set-of-Independent-Jobs.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-4'><p class='text-center text-dark-teal font-extrabold'>SPLIT/MERGE WORKFLOW</p><img class='h-full  not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step3.jpg' alt='workflow step 3'><div><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Merge-Workflow.html'>SEE EXAMPLE</a></div></div></div>"][/accordion]
+</section>
+
+<section class="mb-10" id="using-pegasus">
+    <h2 class="colored-square colored-square-orange">Getting Started with Pegasus</h2>
+   <p>To start you need some Python/Jupyter Notebook knowledge, familiarity with a terminal window, and an ACCESS allocation. <a href="https://allocations.access-ci.org/">How to get an ACCESS Allocation</a>.
+   </p>
+
+[accordion summary="Get setup" text="<p>Logon with your ACCESS ID and use Open OnDemand. You specify which allocations you have the first time you logon.</p><div class='grid grid-cols-2 gap-5'><div><img class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/ci-logon.jpg' alt='C I logon screen'><p class='text-center text-dark-teal font-extrabold mb-2'>SINGLE SIGN ON WITH YOUR ACCESS ID</p><p class='text-center'>All registered users with an active allocation automatically have an ACCESS Pegasus account.</div><div><img  class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/sdsc.jpg' alt='sdsc'><p class='text-center text-dark-teal font-extrabold mb-2'>CONFIGURE RESOURCES ONCE</p><p class='text-center'>Use Open OnDemand instance at resource providers to install SSH keys and determine location allocation ID.</p></div></div>"][/accordion]
+
+      [accordion summary="Run workflows on ACCESS" text="<p>To get started you only need some Python/Jupyter Notebook knowledge, some experience using a terminal window, and an ACCESS allocation.</p><div class='grid grid-cols-1 md--grid-cols-2 gap-y-5 gap-x-10'><div><img class='border  border-black border-solid not-prose' src='/themes/contrib/asp-theme/images/misc/create-the-workflow.jpg'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-bold'>1</p><div class='mb-0 text-dark-teal font-extrabold'>CREATE THE WORKFLOW</div><ul class='my-0'><li>Use Pegasus API in Jupyter Notebook or use our examples</li><li>Submit your workflow for execution,</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/commandline.gif'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-bold'>2</p><p class='mb-0 text-dark-teal font-extrabold'>PROVISION COMPUTE RESOURCES</p><ul class='my-0'><li>Use HTCondor Annex tool to provision pilot jobs on your allocated ACCESS resources</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/monitor-execution.jpg'></div><div class='flex-col items-center'><p class='mb-0 text-5xl text-orange font-bold'>3</p><p class='mb-0 text-dark-teal font-extrabold'>MONITOR THE EXECUTION</p><ul class='my-0'><li>Follow the workflow execution within the notebook or in the terminal</li><li>You can see what resources you brought in using the terminal</li></ul></div></div>"][/accordion]
+  </section>
+</div>
+
+<div class="col-2 sticky top-0">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white no-underline hover--underline hover--text-light-teal block" href="#">ACCESS Pegasus</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-workflows">Workflows</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#using-pegasus">Getting Started with Pegasus</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-support">Pegasus Support</a>
+  </nav>
+</div>
+</div>
+<section class="bg-light-teal -mx-50% px-50% py-10" id="pegasus-support">
+  <div class="container">
+    <h2 class="colored-square colored-square-orange">ACCESS Pegasus Support</h2>
+    <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+      [square icon="/themes/contrib/asp-theme/images/icons/video-orange.svg" color="orange" title="TUTORIAL VIDEO" link="https://www.youtube.com/watch?v=4wiyLFGwJg4" text="A step by step guide  to using ACCESS Pegasus"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-documentation.svg" title="DOCUMENTATION" link="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html" text="Detailed information about setup and use"][/square]
+      [square icon="/themes/contrib/asp-theme/images/logos/pegasus-b.svg" title="AFFINITY GROUP" link="https://support.access-ci.org/affinity-groups/pegasus" text="Announcements, Slack, email list and Github"][/square]
+    </div>
+  </div>
+</section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
