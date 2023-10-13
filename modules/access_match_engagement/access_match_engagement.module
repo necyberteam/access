@@ -57,6 +57,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
 
     // Attach javascript.
     $form['#attached']['library'][] = 'access_misc/node_add_tags';
+    $form['#attached']['library'][] = 'access_match_engagement/access_match_engagement';
 
     // If creating a new engagement, use the request type from the url.
     if ($form_id == 'node_match_engagement_form') {
@@ -91,14 +92,22 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     // Hide status field. We will set automatically with the moderation state.
     $form['field_status']['#access'] = FALSE;
 
+    // Form has been accepted, moderation-wise.
+    // Fixup certain date-time fields to act as date-only.
+    $date_only_fields = ame_get_dateonly_fields();
+    foreach ($date_only_fields as $fieldname) {
+      $form[$fieldname]['widget'][0]['value']['#date_time_element'] = 'none';
+      $form[$fieldname]['widget'][0]['value']['#date_time_format'] = '';
+    }
+
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
     $unaccepted_states = ['draft', 'in_review'];
     $moderation_state = $form['moderation_state']['widget'][0]['state']['#default_value'];
     $accepted = !in_array($moderation_state, $unaccepted_states);
 
-    // Hide these fields until the engagement is accepted.
     if (!$accepted) {
+      $form['field_milestone_completion_date']['widget'][0]['#after_build'][] = 'access_match_engagement_customize_required_date';
       $form['field_requested_engagement']['#access'] = FALSE;
       $form['field_project_image']['#access'] = FALSE;
       $form['field_project_deliverables']['#access'] = FALSE;
@@ -153,6 +162,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
     }
+
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
@@ -160,7 +170,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_match_steering_committee_m']['#disabled'] = TRUE;
       $form['field_node_type']['#access'] = FALSE;
       $form['field_email_user']['#access'] = FALSE;
-      $form['field_notes_to_author']['#acces'] = FALSE;
     }
     if (in_array('match_sc', $roles)) {
       // Show author, status, and last saved date to SC.
@@ -174,13 +183,13 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $node = $node_storage->load($node_param->id());
       $type = $node->get('field_node_type')->value;
       if ($type == 'plus') {
-        unset($form['field_requested_engagement']['widget']['#options'][12]);
-        unset($form['field_requested_engagement']['widget']['#options'][18]);
+        $form['field_requested_engagement']['#access'] = FALSE;
         $form['field_consultant']['#access'] = FALSE;
       }
       if ($type == 'premier') {
         $title = $node->get('title')->value;
         $form['#title'] = t('Edit Premier Engagement ') . $title;
+        // Engagement length: hide 3 months; leave in 6, 12 and 18 months.
         unset($form['field_requested_engagement']['widget']['#options'][3]);
         $form['field_mentor']['#access'] = FALSE;
         $form['field_students']['#access'] = FALSE;
@@ -190,15 +199,24 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
         $form['field_programming_skill_level']['#access'] = FALSE;
       }
     }
+    $form['#validate'][] = 'access_match_engagement_form_validate';
   }
 
-  if ($form_id == 'node_match_engagement_edit_form') {
-    $form['#validate'][] = 'access_match_engagement_edit_validate';
-  }
   if ($form_id == 'node_match_engagement_form') {
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
   }
+}
+
+/**
+ * This callback is used on a date field, the first milestone goal, that is
+ * required only after the state of the form has been changed to accepted.
+ */
+function access_match_engagement_customize_required_date($element, $form_state) {
+
+  $element['#required'] = FALSE;
+  $element['value']['#required'] = FALSE;
+  return $element;
 }
 
 /**
@@ -229,26 +247,31 @@ function access_match_engagement_submit_function(&$form, FormStateInterface $for
 }
 
 /**
- * Validate edit form.
+ * Validate form
+ * Need at least one tag.
  * Check that names in the Match Team student(s), consultant(s) or mentors(s) fields have the correct role s
  * (student-facilitator/consultant/mentor).
  * For mentor(s) or consultant(s) field, we will automatically add the role to the user iff they already
  * are in the cssn system (defined by have an item in their program list = "ACCESS CSSN").
- * We only check on the edit form because all of these fields are hidden on the initial form.
  */
-function access_match_engagement_edit_validate(&$form, FormStateInterface $form_state) {
-
+function access_match_engagement_form_validate(&$form, FormStateInterface $form_state) {
   $error = '';
   $values = $form_state->getValues();
+  if (!empty($values)) {
 
-  $person_array = $values['field_students'];
-  $error .= match_check_role($person_array, 'student', FALSE);
+    $tag_count = count($values['field_tags']);
+    if ($tag_count < 1) {
+      $error .= t('Please add at least one tag.');
+    }
+    $person_array = $values['field_students'];
+    $error .= match_check_role($person_array, 'student', FALSE);
 
-  $person_array = $values['field_mentor'];
-  $error .= match_check_role($person_array, 'mentor', TRUE);
+    $person_array = $values['field_mentor'];
+    $error .= match_check_role($person_array, 'mentor', TRUE);
 
-  $person_array = $values['field_consultant'];
-  $error .= match_check_role($person_array, 'consultant', TRUE);
+    $person_array = $values['field_consultant'];
+    $error .= match_check_role($person_array, 'consultant', TRUE);
+  }
 
   if (!empty($error)) {
     $form_state->setError($form, t($error));
@@ -256,7 +279,7 @@ function access_match_engagement_edit_validate(&$form, FormStateInterface $form_
 }
 
 /**
- * assemble a list of messages for the user that tell if any
+ * Assemble a list of messages for the user that tell if any
  * of the users in person_array do not have the proper roles as
  * described in the _validate function above. If do_add_Role is
  * true, add the role to the user if the are already in the
@@ -267,7 +290,6 @@ function match_check_role($person_array, $role_name, $do_add_role) {
   $error_msg = '';
 
   // While checking each of these fields, the is_array skips the 'add another item' translatable markup item.
-
   foreach ($person_array as $person) {
     if (is_array($person) && !empty($person['target_id'])) {
       $user = User::load($person['target_id']);
@@ -287,7 +309,7 @@ function match_check_role($person_array, $role_name, $do_add_role) {
 }
 
 /**
- *  Return boolean - whether a program is included in list of user's programs
+ * Return boolean - whether a program is included in list of user's programs.
  */
 function user_in_program($user, $program_name) {
   $regions = $user->get('field_region')->getValue();
@@ -297,7 +319,7 @@ function user_in_program($user, $program_name) {
     $terms[$region_tid] = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->load($region_tid)->getName();
   }
   $program = implode(', ', $terms);
-  return(in_array($program_name, $terms));
+  return (in_array($program_name, $terms));
 }
 
 /**
@@ -312,6 +334,27 @@ function validate_user_has_role($user, $role_name) {
     }
   }
   return FALSE;
+}
+
+/**
+ * Return a list of datetime field names where we
+ * want to hide the time portion.
+ */
+function ame_get_dateonly_fields() {
+  return [
+    "field_milestone_actual_date",
+    "field_actual_completion_date_1",
+    "field_actual_completion_date_2",
+    "field_actual_completion_date_3",
+    "field_actual_completion_date_4",
+    "field_milestone_completion_date",
+    "field_completion_date_goal_1",
+    "field_completion_date_goal_2",
+    "field_completion_date_goal_3",
+    "field_completion_date_goal_4",
+    "field_launch_presentation_date",
+    "field_wrap_presentation_date",
+  ];
 }
 
 /**

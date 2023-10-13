@@ -1,0 +1,16 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\webform\Entity\WebformSubmission;
+use Drupal\webform\Entity\Webform;
+
+/**
+ * Disable swiftmailer enable symfony_mailer.
+ */
+function access_update_9001() {
+  \Drupal::service('module_installer')->uninstall(['swiftmailer']);
+  \Drupal::service('module_installer')->install(['symfony_mailer']);
+}

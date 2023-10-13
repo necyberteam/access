@@ -5,7 +5,6 @@ namespace Drupal\access_affinitygroup\Plugin\Block;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Url;
-use Drupal\views\Views;
 use Drupal\webform\Entity\WebformSubmission;
 
 /**
@@ -104,15 +103,19 @@ class ResourcesForAffinityGroup extends BlockBase {
           }
         }
         if (['Beginner'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/custom/accesstheme/assets/SL-beginner.png" alt="Beginner">';
-        } elseif (['Beginner', 'Intermediate'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/custom/accesstheme/assets/SL-beginner-medium.png" alt="Beginner, Intermediate">';
-        } elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/custom/accesstheme/assets/SL-all.png" alt="Beginner, Intermediate, Advanced">';
-        } elseif (['Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/custom/accesstheme/assets/SL-medium-advanced.png" alt="Intermediate, Advanced">';
-        } elseif (['Advanced'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/custom/accesstheme/assets/SL-advanced.png" alt="Advanced">';
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner.png" alt="Beginner">';
+        }
+        elseif (['Beginner', 'Intermediate'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner-medium.png" alt="Beginner, Intermediate">';
+        }
+        elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-all.png" alt="Beginner, Intermediate, Advanced">';
+        }
+        elseif (['Intermediate', 'Advanced'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-medium-advanced.png" alt="Intermediate, Advanced">';
+        }
+        elseif (['Advanced'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-advanced.png" alt="Advanced">';
         }
 
         $rows[] = [
@@ -120,40 +123,40 @@ class ResourcesForAffinityGroup extends BlockBase {
             'data' => [
               '#markup' => $ci_link_name,
             ],
-            'class' => array(
+            'class' => [
               'border-x-0',
               'border-b',
               'border-t-0',
               'border-black',
               'border-solid',
               'pb-4',
-            ),
+            ],
           ],
           'tags' => [
             'data' => [
               '#markup' => $tags,
             ],
-            'class' => array(
+            'class' => [
               'border-x-0',
               'border-b',
               'border-t-0',
               'border-black',
               'border-solid',
               'pb-4',
-            ),
+            ],
           ],
           'skill' => [
             'data' => [
               '#markup' => $skills,
             ],
-            'class' => array(
+            'class' => [
               'border-x-0',
               'border-b',
               'border-t-0',
               'border-black',
               'border-solid',
               'pb-4',
-            ),
+            ],
           ],
         ];
       }

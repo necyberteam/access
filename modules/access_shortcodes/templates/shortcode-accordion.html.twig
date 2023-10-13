@@ -8,8 +8,9 @@
  * - text: Main text of the accordion.
  */
 #}
-<details class="border-0 bg-light-teal open:bg-white duration-300 relative">
-	<summary class="bg-light-teal ps-5 pe-10 py-4 text-lg text-dark-teal font-extrabold leading-5 cursor-pointer">{{ summary }}</summary>
+{% set classes = "bg-#{color} ps-5 pe-10 py-4 text-lg font-extrabold leading-5 cursor-pointer" %}
+<details class="border-0 open:bg-white duration-300 relative">
+	<summary {{ attributes.addClass(classes) }}>{{ summary }}</summary>
 	<div class="bg-white px-5 py-3">
 		{{ text | raw }}
 	</div>
