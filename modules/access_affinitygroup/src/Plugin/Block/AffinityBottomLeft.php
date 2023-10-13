@@ -20,6 +20,8 @@ class AffinityBottomLeft extends BlockBase {
    * {@inheritdoc}
    */
   public function build() {
+    $output = '';
+
     $node = \Drupal::routeMatch()->getParameter('node');
     $nid = $node ? $node->id() : 219;
     $query = \Drupal::entityQuery('eventseries')
@@ -43,6 +45,39 @@ class AffinityBottomLeft extends BlockBase {
         $eiid[] = $event['target_id'];
       }
     }
+    $view = Views::getView('affinity_group_recurring_events');
+    $view->setDisplay('block_1');
+    $view->setArguments([$affinity_group_tax]);
+    $view->execute();
+    $rendered = $view->render();
+    if ($rendered) {
+      $view_output = \Drupal::service('renderer')->render($rendered)->__toString();
+      $strip = preg_replace('/\s+/', '', $view_output);
+      // Don't show empty view.
+      if ($strip != '<divclass="bg-md-tealp-4text-white-erfont-boldmb-6mt-4viewview-affinity-group-recurring-eventsview-id-affinity_group_recurring_eventsview-display-id-block_1"></div>') {
+        $output .= $view_output;
+      }
+    }
+
+    /**
+    * Grab node id.
+    */
+    $node = \Drupal::routeMatch()->getParameter('node');
+
+    /**
+    * Adding a default for layout page.
+    */
+    $nid = $node ? $node->id() : 291;
+
+    /**
+    * Load Announcement view.
+    */
+    $announcement_view = Views::getView('access_news');
+    $announcement_view->setDisplay('block_2');
+    $announcement_view->setArguments([$nid]);
+    $announcement_view->execute();
+    $announcement_list = $announcement_view->render();
+    $output .= \Drupal::service('renderer')->render($announcement_list);
 
     $output = '';
 
