@@ -36,7 +36,6 @@ function access_shortcodes_theme() {
       'variables' => [
         'summary' => '',
         'text' => '',
-        'color' => '',
       ],
     ],
     'shortcode_square' => [

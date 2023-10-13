@@ -1,6 +1,6 @@
-cilink_view:
+resource_view:
   js:
-    js/cilink_view.js: {}
+    js/resource_view.js: {}
   css:
     theme:
-      css/cilink_view.css: {}
+      css/resource_view.css: {}
