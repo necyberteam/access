@@ -361,3 +361,23 @@ function access_misc_update_10003(&$sandbox) {
 EOT;
   update_node_body($nid, $body, $format);
 }
+
+/**
+ * Update CSSN page content.
+ */
+function access_misc_update_10004(&$sandbox) {
+  // Match Engagement Guide page id.
+  $nid = 273;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid md--grid-cols-3 grid-cols-1 gap-5">
+  [square icon="/sites/default/files/cssn/share-persona.svg" title="Share your community persona" link="/"][/square]
+  [square icon="/sites/default/files/cssn/contribute-kb.svg" title="Contribute to the knowledgebase" link="/knowledge-base"][/square]
+  [square icon="/sites/default/files/cssn/travel.svg" title="Apply for CCEP travel rewards" link="/"][/square]
+  [square icon="/sites/default/files/cssn/match-graphic.svg" title="Participate in match engagements" link="/"][/square]
+  [square icon="/sites/default/files/cssn/cssn-ag.svg" title="Join the CSSN group" link="/"][/square]
+  [square icon="/sites/default/files/cssn/events-opportunities.svg" title="Exclusive events and opportunities" link="/"][/square]
+</div>
+EOT;
+  update_node_body($nid, $body, $format);
+}
