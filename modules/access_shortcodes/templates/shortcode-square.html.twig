@@ -13,12 +13,12 @@
  * - flipBtnText: Optional text for the button on the flip side.
  */
 #}
-{% set classes = "group aspect-square flex flex-col justify-center items-center w-[90%] max-w-[240px] bg-white border-4 border-solid border-#{color} no-underline p-2" %}
-{% set text_hover_classes = "text-center overflow-wrap-anywhere group-hover--text-md-teal" %}
+{% set classes = "group aspect-square flex flex-col justify-center items-center bg-white border-4 border-solid border-#{color} no-underline p-5" %}
+{% set text_classes = "text-center overflow-wrap-anywhere group-hover--text-md-teal" %}
 {% set img_classes = "not-prose block h-16" %}
 
 {% if flipText is not empty or flipBtnText is not empty %}
-{% set text_hover_classes = "group-hover--text-white group-hover--hidden" %}
+{% set text_classes = "group-hover--text-white group-hover--hidden" %}
 
 	{% set classes = classes ~ " hover--bg-#{color} hover--border-#{color}" %}
 	{% set img_classes = img_classes ~ " group-hover--hidden" %}
@@ -28,12 +28,12 @@
 
 <a class=" {{ classes }}" href="{{ link }}">
 	<img class="{{ img_classes }}" src="{{ icon }}">
-	<h3 class="{{ text_hover_classes }}">{{ title }}</h3>
+	<h3 class="{{ text_classes }}">{{ title }}</h3>
 	{% if text is not empty %}
-		<p class="{{ text_hover_classes }}">{{ text }}</p>
+		<p class="{{ text_classes }} text-sm leading-tight">{{ text }}</p>
 	{% endif %}
 	{% if flipText is not empty %}
-		<p class="{{ text_hover_classes }} hidden">{{ flipText }}</p>
+		<p class="{{ text_classes }} hidden">{{ flipText }}</p>
 	{% endif %}
 	{% if flipBtnText is not empty %}
 		<span class="btn btn-primary {{ text_hover_classes }} hidden">{{ flipBtnText }}</span>
