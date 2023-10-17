@@ -18,12 +18,15 @@
 {% set img_classes = "not-prose block h-16" %}
 
 {% if flipText is not empty or flipBtnText is not empty %}
-{% set text_classes = "group-hover--text-white group-hover--hidden" %}
-
-	{% set classes = classes ~ " hover--bg-#{color} hover--border-#{color}" %}
+	{% set text_classes = "group-hover--text-white group-hover--hidden" %}
+	{% set classes = classes ~ " hover--bg-#{color} hover--border-md-teal" %}
 	{% set img_classes = img_classes ~ " group-hover--hidden" %}
 {% else %}
-	{% set classes = classes ~ " hover--border-md-teal" %}
+	{% if color == 'dark-teal' %}
+		{% set classes = classes ~ " hover--border-orange" %}
+	{% else %}
+		{% set classes = classes ~ " hover--border-md-teal" %}
+	{% endif %}
 {% endif %}
 
 <a class=" {{ classes }}" href="{{ link }}">
