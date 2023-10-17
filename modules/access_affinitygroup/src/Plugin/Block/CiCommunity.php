@@ -234,7 +234,7 @@ class CiCommunity extends BlockBase implements
       $options = [
         'attributes' => [
           'class' => [
-            'btn btn-primary m-2',
+            'btn btn-primary ms-0',
           ],
         ],
       ];
