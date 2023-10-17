@@ -78,7 +78,7 @@ class AffinityBottomLeft extends BlockBase {
             '#url' => Url::fromUri('internal:/events/' . $ei),
             '#attributes' => [
               'class' => [
-                'text-white',
+                'text-white-er',
                 'hover--text-light-teal',
                 'hover--no-underline',
               ],
@@ -95,21 +95,21 @@ class AffinityBottomLeft extends BlockBase {
       }
     }
     $output = '<div class="bg-md-teal p-4 mb-10">';
-    $output .= '<h3 class="text-white mt-0 mb-3">Upcoming Events</h3>';
+    $output .= '<h3 class="text-white-er mt-0 mb-3">Upcoming Events</h3>';
     if ($node) {
       $affinity_group_tax = $node->get('field_affinity_group')->getValue()[0]['target_id'];
     }
-    $past_events = '<a class="text-white hover--text-light-teal hover--no-underline" href="/past-events?field_affinity_group_target_id=' . $affinity_group_tax . '">past events</a>';
+    $past_events = '<a class="text-white-er hover--text-light-teal hover--no-underline" href="/past-events?field_affinity_group_target_id=' . $affinity_group_tax . '">past events</a>';
     if (!empty($event_list)) {
       foreach ($event_list as $e) {
         $start_date = date_create($e['date']);
         $edate = date_format($start_date, "n/d/Y g:i A T");
-        $output .= '<p class="text-white">[' . $edate . '] ' . $e['title'] . '</p>';
+        $output .= '<p class="text-white-er">[' . $edate . '] ' . $e['title'] . '</p>';
       }
-      $output .= '<span class="text-white text-sm uppercase">See ' . $past_events . '</span>';
+      $output .= '<span class="text-white-er text-sm uppercase">See ' . $past_events . '</span>';
     }
     else {
-      $output .= '<p class="text-white">No upcoming events.</p><p class="text-white text-sm uppercase">View ' . $past_events . '</p>';
+      $output .= '<p class="text-white-er">No upcoming events.</p><p class="text-white-er text-sm uppercase">View ' . $past_events . '</p>';
     }
     $output .= '</div>';
 
