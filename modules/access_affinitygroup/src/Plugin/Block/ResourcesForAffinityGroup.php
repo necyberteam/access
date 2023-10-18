@@ -28,7 +28,7 @@ class ResourcesForAffinityGroup extends BlockBase {
     // Create empty string in case the following if statement is not true.
     $rendered = '';
     if (!empty($field_resources_entity_reference)) {
-      $rendered = '<h2 class="text-white-er border-bottom pb-2 bg-dark-teal py-2 px-4">CI Links</h2>';
+      $rendered = '<h2 class="text-white-er text-xl font-semibold border-bottom pb-2 bg-dark-teal py-2 px-4">CI Links</h2>';
       $header = [
         [
           'data' => 'Title',
@@ -76,7 +76,7 @@ class ResourcesForAffinityGroup extends BlockBase {
           '#title' => $submission_data['title'],
           '#url' => Url::fromUri('internal:/ci-link/' . $value['target_id']),
         ];
-        $ci_link_name = \Drupal::service('renderer')->render($ci_link)->__toString();
+        $ci_link_name = '<div>' . \Drupal::service('renderer')->render($ci_link)->__toString() . '</div>';
 
         $tags = '';
         foreach ($submission_data['tags'] as $tag) {
@@ -87,9 +87,9 @@ class ResourcesForAffinityGroup extends BlockBase {
               '#type' => 'link',
               '#title' => $term->getName(),
               '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $tag]),
-              '#attributes' => ['class' => ['no-underline', 'border', 'border-black', 'border-solid', 'px-5', 'py-2', 'mr-2', 'mb-2', 'hover--border-dark-teal', 'hover--text-dark-teal', 'w-fit']],
+              '#attributes' => ['class' => ['px-2', 'py-1', 'font-normal', 'no-underline', 'border', 'border-black', 'border-solid', 'hover--border-dark-teal', 'hover--text-dark-teal', 'w-fit']],
             ];
-            $tags .= \Drupal::service('renderer')->render($link)->__toString();
+            $tags .= '<div class="mr-4 me-4 mb-2">' . \Drupal::service('renderer')->render($link)->__toString() . '</div>';
           }
         }
         $tags = '<div class="square-tags flex flex-wrap">' . $tags . '</div>';
