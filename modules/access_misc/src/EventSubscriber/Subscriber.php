@@ -23,6 +23,10 @@ class Subscriber implements EventSubscriberInterface {
     if ($route_name == 'misc.login' && !$user_is_authenticated) {
       $this->doRedirectToCilogon($event);
     }
+
+    if ($route_name == 'user.login' && !$user_is_authenticated) {
+      $this->doRedirectToCilogon($event);
+    }
   }
 
   /**
