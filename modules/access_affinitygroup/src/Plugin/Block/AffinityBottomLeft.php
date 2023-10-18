@@ -38,6 +38,7 @@ class AffinityBottomLeft extends BlockBase {
       ->sort('created', 'DESC');
     $esid = $query->execute();
     foreach ($esid as $es) {
+      $eiids = [];
       $eiids[] = $this->getEventInstances($es);
       foreach ($eiids as $e) {
         foreach ($e as $ei) {
