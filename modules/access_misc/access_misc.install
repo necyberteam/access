@@ -197,7 +197,7 @@ function access_misc_update_10000(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 row-span-2">
     <section class="mb-10" id="about">
-      <p class="text-dark-teal text-2xl mb-10">View information about allocations, usage data and usage efficiency as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">View information about allocations, usage data and usage efficiency as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
       <div class="grid grid--cols-1 md--grid-cols-3">
         <div class="flex">
           <div class="not-prose shrink-0 me-3">
@@ -271,7 +271,7 @@ function access_misc_update_10001(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5">
   <div class="col-1 col-span-3 row-span-2">
     <section class="mb-10" id="about">
-       <p class="text-dark-teal text-2xl mb-10">CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more!</p>
+       <p class="prose text-dark-teal text-2xl leading-9 mb-10">CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more!</p>
         <p>Submissions are reviewed once a month. Please submit by October 1 for SC23 or two months prior to the conference that you desire to attend.</p>
     </section>
     <section class="mb-10" id="tier1">
@@ -329,7 +329,7 @@ function access_misc_update_10002(&$sandbox) {
   <div class="col-1 col-span-3 row-span-2">
 
 	<section class="mb-10" id="about">
-      	<p class="text-dark-teal text-2xl mb-10">A science portal or science gateway is a community-developed set of tools, applications, and data integrated through a web-based portal or a suite of applications. They provide access to tools used in cutting-edge research – telescopes, seismic shake tables, supercomputers, sky surveys, undersea sensors, and more. These gateways often connect diverse resources and make them easily accessible, lowering the barriers traditionally required to access these resources.
+      	<p class="prose text-dark-teal text-2xl leading-9 mb-10">A science portal or science gateway is a community-developed set of tools, applications, and data integrated through a web-based portal or a suite of applications. They provide access to tools used in cutting-edge research – telescopes, seismic shake tables, supercomputers, sky surveys, undersea sensors, and more. These gateways often connect diverse resources and make them easily accessible, lowering the barriers traditionally required to access these resources.
        </p>
 
 	<div class="grid grid-cols-1 md--grid-cols-3">
@@ -424,7 +424,7 @@ function access_misc_update_10003(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 ">
     <section class="mb-5" id="about">
-      <p class="text-dark-teal text-2xl mb-2">
+      <p class="text-dark-teal text-2xl prose leading-9 mb-2">
         Steering Committee members review engagement request and decide whether it should be a MATCH Plus or MATCH Premier Engagement. Committee members then match CSSN members to the researcher needs and help the project move along to completion. 
       </p>
     </section>
@@ -466,7 +466,7 @@ function access_misc_update_10004(&$sandbox) {
   $nid = 6109;
   $format = 'full_no_editor';
   $body = <<<EOT
-<p class="prose leading-9 text-dark-teal text-2xl mb-10">
+<p class="prose text-dark-teal text-2xl leading-9 mb-10">
 Try these cutting-edge tools designed to streamline your time to science. These tools drastically reduce development time, allowing researchers to swiftly unlock the full potential of HPC systems.
 </p>
 <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-10" >
@@ -656,7 +656,7 @@ function access_misc_update_10005(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 row-span-2">
     <section class="mb-5" id="about">
-      <p class="text-dark-teal text-2xl mb-10">Construct, run, and debug workflows from a Jupyter Notebook. Perform simple interactions on the command line. Work across environments and get started quickly with sample workflows using a Python API.</p>
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">Construct, run, and debug workflows from a Jupyter Notebook. Perform simple interactions on the command line. Work across environments and get started quickly with sample workflows using a Python API.</p>
       <div class="grid grid-cols-1 md--grid-cols-3">
         <div class="flex">
           <div class="not-prose shrink-0 me-3">
