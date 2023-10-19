@@ -234,7 +234,7 @@ function access_misc_update_10000(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 row-span-2">
     <section class="mb-10" id="about">
-      <p class="text-dark-teal text-2xl mb-10">View information about allocations, usage data and usage efficiency as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">View information about allocations, usage data and usage efficiency as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
       <div class="grid grid--cols-1 md--grid-cols-3">
         <div class="flex">
           <div class="not-prose shrink-0 me-3">
@@ -308,7 +308,7 @@ function access_misc_update_10001(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5">
   <div class="col-1 col-span-3 row-span-2">
     <section class="mb-10" id="about">
-       <p class="text-dark-teal text-2xl mb-10">CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more!</p>
+       <p class="prose text-dark-teal text-2xl leading-9 mb-10">CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more!</p>
         <p>Submissions are reviewed once a month. Please submit by October 1 for SC23 or two months prior to the conference that you desire to attend.</p>
     </section>
     <section class="mb-10" id="tier1">
@@ -366,7 +366,7 @@ function access_misc_update_10002(&$sandbox) {
   <div class="col-1 col-span-3 row-span-2">
 
 	<section class="mb-10" id="about">
-      	<p class="text-dark-teal text-2xl mb-10">A science portal or science gateway is a community-developed set of tools, applications, and data integrated through a web-based portal or a suite of applications. They provide access to tools used in cutting-edge research – telescopes, seismic shake tables, supercomputers, sky surveys, undersea sensors, and more. These gateways often connect diverse resources and make them easily accessible, lowering the barriers traditionally required to access these resources.
+      	<p class="prose text-dark-teal text-2xl leading-9 mb-10">A science portal or science gateway is a community-developed set of tools, applications, and data integrated through a web-based portal or a suite of applications. They provide access to tools used in cutting-edge research – telescopes, seismic shake tables, supercomputers, sky surveys, undersea sensors, and more. These gateways often connect diverse resources and make them easily accessible, lowering the barriers traditionally required to access these resources.
        </p>
 
 	<div class="grid grid-cols-1 md--grid-cols-3">
@@ -461,7 +461,7 @@ function access_misc_update_10003(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 ">
     <section class="mb-5" id="about">
-      <p class="text-dark-teal text-2xl mb-2">
+      <p class="text-dark-teal text-2xl prose leading-9 mb-2">
         Steering Committee members review engagement request and decide whether it should be a MATCH Plus or MATCH Premier Engagement. Committee members then match CSSN members to the researcher needs and help the project move along to completion. 
       </p>
     </section>
@@ -503,44 +503,44 @@ function access_misc_update_10004(&$sandbox) {
   $nid = 6109;
   $format = 'full_no_editor';
   $body = <<<EOT
-<p class="text-dark-teal text-2xl mb-10">
+<p class="prose text-dark-teal text-2xl leading-9 mb-10">
 Try these cutting-edge tools designed to streamline your time to science. These tools drastically reduce development time, allowing researchers to swiftly unlock the full potential of HPC systems.
 </p>
 <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-10" >
 	<div class="border border-black border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
-		<img class="mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/access-ondemand.svg">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/access-ondemand.svg">
 		<p class="font-black text-center">Improving the ACCESS experience</p>
 	</div>
 
-	<div class="flex flex-col items-center">
-		<p class="font-extrabold">Utilize remote computing resources easily from any device. The simplified interface makes it easy to use  your favorite apps for data visualization, simulations, modeling, and more. 		</p>
+	<div class="flex flex-col">
+		<p>Utilize remote computing resources easily from any device. The simplified interface makes it easy to use  your favorite apps for data visualization, simulations, modeling, and more. 		</p>
        	<div>
-			<a  class="btn btn-primary" href="/ondemand">FIND OUT MORE</a>
+			<a  class="btn btn-primary" href="/tools/ondemand">FIND OUT MORE</a>
 		</div>
 	</div>
 
 	<div>
-		<div class="flex">
+		<div class="flex mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
           	<span class="font-extrabold">Remote access web portal</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <span class="font-extrabold">Zero installation</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <span class="font-extrabold">Easy to use</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
@@ -551,44 +551,44 @@ Try these cutting-edge tools designed to streamline your time to science. These 
 	<div class="border border-black border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
-		<img class="mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/pegasus-stacked.svg">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/pegasus-stacked.svg">
 		<p class="font-black text-center">Easy to use hosted workflow system</p>
 	</div>
 
-	<div class="flex flex-col items-center">
-		<p class="font-extrabold">Orchestrate jobs and data movements across ACCESS resource providers. Workflow can be a single task, or contain 1,000s of tasks with interdependencies.</p>
+	<div class="flex flex-col ">
+		<p>Orchestrate jobs and data movements across ACCESS resource providers. Workflow can be a single task, or contain 1,000s of tasks with interdependencies.</p>
        <div>
-			<a  class="btn btn-primary" href="/pegasus">FIND OUT MORE</a>
+			<a  class="btn btn-primary" href="/tools/pegasus">FIND OUT MORE</a>
 		</div>
 	</div>
 
 	<div>
-		<div class="flex">
+		<div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
           	<span class="font-extrabold">Data Management</span>
 	    </div>
 
-	    <div class="flex">
+	    <div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
           	<span class="font-extrabold">Provenance Tracking</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
           	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <span class="font-extrabold">Automatic Error Recovery</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
           	<span class="font-extrabold">Reproducibility</span>
 	    </div>
-		<div class="flex">
+		<div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
@@ -599,43 +599,43 @@ Try these cutting-edge tools designed to streamline your time to science. These 
 	<div class="border border-black border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
-		<img class="mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/science-gateways.svg">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/science-gateways.svg">
 		<p class="font-black text-center">Web platforms for research and education</p>
 	</div>
 
-	<div class="flex flex-col items-center">
-		<p class="font-extrabold">Grow and broaden participation for communities of scientists and educators through simple web interfaces connected to software, data, and HPC resources.</p>
+	<div class="flex flex-col">
+		<p>Grow and broaden participation for communities of scientists and educators through simple web interfaces connected to software, data, and HPC resources.</p>
        <div>
-			<a  class="btn btn-primary" href="/science-gateways">FIND OUT MORE</a>
+			<a  class="btn btn-primary" href="/tools/science-gateways">FIND OUT MORE</a>
 		</div>
 	</div>
 
 	<div>
-		<div class="flex">
+		<div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
           	<span class="font-extrabold">630+ science gateways</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
           	<span class="font-extrabold">Education and technical advice</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <span class="font-extrabold">Project sustainability training</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <span class="font-extrabold">User interface design consulting</span>
 	    </div>
-		<div class="flex">
+		<div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
@@ -646,31 +646,31 @@ Try these cutting-edge tools designed to streamline your time to science. These 
 	<div class="border border-black border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
-		<img class="mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/xdmod-dk.png">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/xdmod-dk.png">
 		<p class="font-black text-center">Data to analyze and optimize your work</p>
 	</div>
 
-	<div class="flex flex-col items-center">
-		<p class="font-extrabold">XDMoD collects usage data from all ACCESS allocated resources and provides a user interface to display the data.</p>
+	<div class="flex flex-col">
+		<p>XDMoD collects usage data from all ACCESS allocated resources and provides a user interface to display the data.</p>
     	<div>
-			<a  class="btn btn-primary" href="/xdmod">FIND OUT MORE</a>
+			<a  class="btn btn-primary" href="/tools/xdmod">FIND OUT MORE</a>
 		</div>
 	</div>
 
 	<div>
-		<div class="flex">
+		<div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
           	<span class="font-extrabold">Monitor allocation usage</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <span class="font-extrabold">Optimize job efficiency and allocation usage</span>
 	    </div>
-	    <div class="flex">
+	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
@@ -693,14 +693,14 @@ function access_misc_update_10005(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 row-span-2">
     <section class="mb-5" id="about">
-      <p class="text-dark-teal text-2xl mb-10">Construct, run, and debug workflows from a Jupyter Notebook. Perform simple interactions on the command line. Work across environments and get started quickly with sample workflows using a Python API.</p>
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">Construct, run, and debug workflows from a Jupyter Notebook. Perform simple interactions on the command line. Work across environments and get started quickly with sample workflows using a Python API.</p>
       <div class="grid grid-cols-1 md--grid-cols-3">
         <div class="flex">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <div>
-            <p class="font-extrabold">Data Management</p><p>Data transfer, input selection, and output registration as auxiliary jobs to the workflow.</p>
+            <p class="font-extrabold mb-1">Data Management</p><p>Data transfer, input selection, and output registration as auxiliary jobs to the workflow.</p>
           </div>
         </div>
         <div class="flex">
@@ -708,61 +708,60 @@ function access_misc_update_10005(&$sandbox) {
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <div>
-            <p class="font-extrabold">Error Recovery</p>
-           <p>Tasks are retried, workflow-level checkpointing, re-mapping and alternative data sources for data staging.</p>
+            <p class="font-extrabold mb-1">Error Recovery</p>
+            <p>Retried tasks, workflow checkpoints, remapping, and alternative data sources for staging.</p>
           </div>
-      </div>
-      <div class="flex">
-        <div class="not-prose shrink-0 me-3">
-          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
         </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Provenance Tracking</p><p>Trace a workflow and its outputs, including information about data sources and software used.</p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-5 mb-0">
+        <a class="btn btn-primary mb-5" href="https://access.pegasus.isi.edu">TRY PEGASUS</a>
+        <a class="btn btn-md-teal mb-5" href="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html">SEE DOCUMENTATION</a>
+      </div>
+    </section>
+
+    <section class="pt-10 mb-10" id="pegasus-workflows">
+
+      <div class="flex items-center">
         <div>
-          <p class="font-extrabold">Provenance Tracking</p><p>Trace a workflow and its outputs, including information about data sources and software used.</p>
+          <h2 class="colored-square colored-square-orange">Workflows</h2>
+          <div><p>We have Jupyter based training notebooks available that walk you through creating simple diamond workflow (and more complex ones) using the Pegasus Python API and executing them on ACCESS resources.</p>
         </div>
       </div>
+      <div>
+        <img class='not-prose' src='/themes/contrib/asp-theme/images/misc/pegasus-workflow.jpg' >
+      </div>
     </div>
-    <div class="mb-0">
-      <a class="btn btn-primary mb-5" href="https://access.pegasus.isi.edu">TRY PEGASUS</a>
-      <a class="btn btn-secondary  mb-5" href="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html">SEE DOCUMENTATION</a>
-    </div>
+
+    [accordion summary="Why use workflows" text="<div><p>Scientific Workflow Management Systems (WMS) such as Pegasus are vital tools for scientists and researchers in a wide range of fields. They provide a structured environment for the design, execution, and monitoring of complex computational tasks, enabling researchers to manage and process large amounts of data efficiently.<br><span class='font-semibold'>Some reasons you should consider using a system like Pegasus WMS:</span></p><div class='grid grid-cols-6 gap-5'><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/agreement.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REPRODUCIBILITY</p>Document and reproduce your analyses, ensuring their validity, with scientific workflows.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/cycle.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>AUTOMATION</p>Automate repetitive and time-consuming tasks and reduce your workload.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/decision.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>SCALABILITY</p>Handle large data sets and complex analyses and take on bigger research problems.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/growth.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REUSABILITY</p>Build libraries of reusable code and tools that can be adapted by other researchers.</div></div></div>"][/accordion]
+
+    [accordion summary="See workflow examples" text="<div class='grid  grid-cols-1 md--grid-cols-10 gap-5 mb-10'><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal font-extrabold'>SINGLE JOB</p><img class='h-full  not-prose mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step1.jpg' alt='workflow step 1'><div class='text center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Single-Job.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal  font-extrabold'>SET OF JOBS</p><img class='h-full  not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step2.jpg' alt='workflow step 2'><div class='text=center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Set-of-Independent-Jobs.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-4'><p class='text-center text-dark-teal font-extrabold'>SPLIT/MERGE WORKFLOW</p><img class='h-full  not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step3.jpg' alt='workflow step 3'><div><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Merge-Workflow.html'>SEE EXAMPLE</a></div></div></div>"][/accordion]
   </section>
 
-  <section class="mb-10" id="pegasus-workflows">
-
-<div class="flex items-center">
-    <div>
-        <h2 class="colored-square colored-square-orange">Workflows</h2>
-        <div><p>We have Jupyter based training notebooks available that walk you through creating simple diamond workflow (and more complex ones) using the Pegasus Python API and executing them on ACCESS resources.</p>
-       </div>
-    </div>
-    <div>
-       <img class='not-prose' src='/themes/contrib/asp-theme/images/misc/pegasus-workflow.jpg' >
-    </div>
-</div>
-
-      [accordion summary="Why use workflows" text="<div><p>Scientific Workflow Management Systems (WMS) such as Pegasus are vital tools for scientists and researchers in a wide range of fields. They provide a structured environment for the design, execution, and monitoring of complex computational tasks, enabling researchers to manage and process large amounts of data efficiently.<br><span class='font-semibold'>Some reasons you should consider using a system like Pegasus WMS:</span></p><div class='grid grid-cols-6 gap-5'><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/agreement.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REPRODUCIBILITY</p>Document and reproduce your analyses, ensuring their validity, with scientific workflows.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/cycle.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>AUTOMATION</p>Automate repetitive and time-consuming tasks and reduce your workload.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/decision.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>SCALABILITY</p>Handle large data sets and complex analyses and take on bigger research problems.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/growth.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REUSABILITY</p>Build libraries of reusable code and tools that can be adapted by other researchers.</div></div></div>"][/accordion]
-
-      [accordion summary="See workflow examples" text="<div class='grid  grid-cols-1 md--grid-cols-10 gap-5 mb-10'><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal font-extrabold'>SINGLE JOB</p><img class='h-full  not-prose mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step1.jpg' alt='workflow step 1'><div class='text center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Single-Job.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal  font-extrabold'>SET OF JOBS</p><img class='h-full  not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step2.jpg' alt='workflow step 2'><div class='text=center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Set-of-Independent-Jobs.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-4'><p class='text-center text-dark-teal font-extrabold'>SPLIT/MERGE WORKFLOW</p><img class='h-full  not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step3.jpg' alt='workflow step 3'><div><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Merge-Workflow.html'>SEE EXAMPLE</a></div></div></div>"][/accordion]
-</section>
-
-<section class="mb-10" id="using-pegasus">
+  <section class="pt-10 mb-10" id="using-pegasus">
     <h2 class="colored-square colored-square-orange">Getting Started with Pegasus</h2>
-   <p>To start you need some Python/Jupyter Notebook knowledge, familiarity with a terminal window, and an ACCESS allocation. <a href="https://allocations.access-ci.org/">How to get an ACCESS Allocation</a>.
-   </p>
+    <p>To start you need some Python/Jupyter Notebook knowledge, familiarity with a terminal window, and an ACCESS allocation. <a href="https://allocations.access-ci.org/">How to get an ACCESS Allocation</a>.</p>
 
-[accordion summary="Get setup" text="<p>Logon with your ACCESS ID and use Open OnDemand. You specify which allocations you have the first time you logon.</p><div class='grid grid-cols-2 gap-5'><div><img class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/ci-logon.jpg' alt='C I logon screen'><p class='text-center text-dark-teal font-extrabold mb-2'>SINGLE SIGN ON WITH YOUR ACCESS ID</p><p class='text-center'>All registered users with an active allocation automatically have an ACCESS Pegasus account.</div><div><img  class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/sdsc.jpg' alt='sdsc'><p class='text-center text-dark-teal font-extrabold mb-2'>CONFIGURE RESOURCES ONCE</p><p class='text-center'>Use Open OnDemand instance at resource providers to install SSH keys and determine location allocation ID.</p></div></div>"][/accordion]
+    [accordion summary="Get setup" text="<p>Logon with your ACCESS ID and use Open OnDemand. You specify which allocations you have the first time you logon.</p><div class='grid grid-cols-2 gap-5'><div><img class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/ci-logon.jpg' alt='C I logon screen'><p class='text-dark-teal font-extrabold mb-2'>SINGLE SIGN ON WITH YOUR ACCESS ID</p><p>All registered users with an active allocation automatically have an ACCESS Pegasus account.</div><div><img  class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/sdsc.jpg' alt='sdsc'><p class='text-dark-teal font-extrabold mb-2'>CONFIGURE RESOURCES ONCE</p><p>Use Open OnDemand instance at resource providers to install SSH keys and determine location allocation ID.</p></div></div>"][/accordion]
 
-      [accordion summary="Run workflows on ACCESS" text="<p>To get started you only need some Python/Jupyter Notebook knowledge, some experience using a terminal window, and an ACCESS allocation.</p><div class='grid grid-cols-1 md--grid-cols-2 gap-y-5 gap-x-10'><div><img class='border  border-black border-solid not-prose' src='/themes/contrib/asp-theme/images/misc/create-the-workflow.jpg'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-bold'>1</p><div class='mb-0 text-dark-teal font-extrabold'>CREATE THE WORKFLOW</div><ul class='my-0'><li>Use Pegasus API in Jupyter Notebook or use our examples</li><li>Submit your workflow for execution,</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/commandline.gif'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-bold'>2</p><p class='mb-0 text-dark-teal font-extrabold'>PROVISION COMPUTE RESOURCES</p><ul class='my-0'><li>Use HTCondor Annex tool to provision pilot jobs on your allocated ACCESS resources</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/monitor-execution.jpg'></div><div class='flex-col items-center'><p class='mb-0 text-5xl text-orange font-bold'>3</p><p class='mb-0 text-dark-teal font-extrabold'>MONITOR THE EXECUTION</p><ul class='my-0'><li>Follow the workflow execution within the notebook or in the terminal</li><li>You can see what resources you brought in using the terminal</li></ul></div></div>"][/accordion]
+    [accordion summary="Run workflows on ACCESS" text="<p>To get started you only need some Python/Jupyter Notebook knowledge, some experience using a terminal window, and an ACCESS allocation.</p><div class='grid grid-cols-1 md--grid-cols-2 gap-y-5 gap-x-10'><div><img class='border  border-black border-solid not-prose' src='/themes/contrib/asp-theme/images/misc/create-the-workflow.jpg'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-medium'>1</p><div class='mb-0 text-dark-teal font-extrabold'>CREATE THE WORKFLOW</div><ul class='my-0'><li>Use Pegasus API in Jupyter Notebook or use our examples</li><li>Submit your workflow for execution,</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/commandline.gif'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-medium'>2</p><p class='mb-0 text-dark-teal font-extrabold'>PROVISION COMPUTE RESOURCES</p><ul class='my-0'><li>Use HTCondor Annex tool to provision pilot jobs on your allocated ACCESS resources</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/monitor-execution.jpg'></div><div class='flex-col items-center'><p class='mb-0 text-5xl text-orange font-medium'>3</p><p class='mb-0 text-dark-teal font-extrabold'>MONITOR THE EXECUTION</p><ul class='my-0'><li>Follow the workflow execution within the notebook or in the terminal</li><li>You can see what resources you brought in using the terminal</li></ul></div></div>"][/accordion]
   </section>
 </div>
 
-<div class="col-2 sticky top-0">
+<div class="hidden md--block col-2 sticky top-10">
   <nav class="bg-md-teal mb-10 p-5">
-    <a class="font-extrabold text-white no-underline hover--underline hover--text-light-teal block" href="#">ACCESS Pegasus</a>
-    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
-    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-workflows">Workflows</a>
-    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#using-pegasus">Getting Started with Pegasus</a>
-    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-support">Pegasus Support</a>
+    <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS Pegasus</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-workflows">Workflows</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#using-pegasus">Getting Started with Pegasus</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-support">Pegasus Support</a>
   </nav>
 </div>
 </div>
@@ -803,4 +802,98 @@ function access_misc_update_10006(&$sandbox) {
 EOT;
   update_block_body($bid, $body, $format);
   node_replace(458, 6110);
+}
+
+/**
+ * Update ACCESS OnDemand page for new theme.
+ */
+function access_misc_update_10006(&$sandbox) {
+  // ACCESS OnDemand node.
+  $nid = 267;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+  	<div class="grid grid-cols-1 md--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+
+	<section class="mb-10" id="about">
+      	<p class="prose text-dark-teal text-2xl leading-9 mb-10"> Open OnDemand is an easy-to-use web portal that is being deployed on ACCESS resources to allow researchers to compute from anywhere without client software or command-line interface, and significantly speed up the time to science.</p>
+
+	<div class="grid grid-cols-1 md--grid-cols-3">
+
+  	<div class="flex">
+    	<div class="not-prose shrink-0 me-3">
+      	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+     	</div>
+      <div>
+        <p class="font-extrabold">Zero Installation</p>
+        <p>Run entirely in your browser. No software installation required.</p>
+      </div>
+      </div>
+
+     	<div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Easy to use</p>
+            <p>A simple interface so you can start computing immediately.</p>
+          </div>
+      </div>
+
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold">Compatible with any device</p>
+	  <p>Launch on any device with a browser—even a mobile phone or tablet.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="mb-10" id="ondemand-faq">
+ 	<h2 class="colored-square colored-square-orange">ACCESS OnDemand FAQ</h2>
+
+    	[accordion summary="What is the difference between ACCESS OnDemand and Open OnDemand?" text=" ACCESS OnDemand is a standardized instance of Open OnDemand that is being adopted by ACCESS resource providers. <a href='https://www.youtube.com/watch?v=4-w-4wjlnPk&ab_channel=OH-TECH'>Watch a video about Open OnDemand.</a>"][/accordion]
+
+    	[accordion summary="How can I learn to use ACCESS OnDemand?" text="Follow the links of the participating RPs (listed above) for  instructions on using their ACCESS OnDemand (AOD) service. You need to have an ACCESS allocation at the participating RP to use AOD."][/accordion]
+
+    	[accordion summary="How do I get help using ACCESS OnDemand at a specific Resource Provider?" text="Each RP has support pages associated with their ACCESS OnDemand service. These are linked in the table above. If you don’t find the answer you need on these pages, or at the resource provider’s help desk, you can open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>. The Open OnDemand team also offers a variety of ways to get support for platform-related topics. "][/accordion]
+
+    	[accordion summary=" How do I request to have an application installed on a resource I use?" text="Open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>."][/accordion]
+
+    	[accordion summary="I’m an ACCESS resource provider and I want to make OnDemand available on my systems. How do I get started?" text="Please follow the steps outlined in the <a href='https://readthedocs.access-ci.org/projects/integration-roadmaps/en/latest/tasks/ACCESS_OnDemand_Portal_Integration_v1.html'>ACCESS OnDemand service integration roadmap</a>."][/accordion]
+
+    	[accordion summary="Open OnDemand has made it really easy for me to use ACCESS resources. Where can I learn more about it or get engaged in the community?" text="<a href='https://openondemand.org/get-involved'>Read this page</a> to learn the many ways to join the Open OnDemand community and get involved. Join our <a href='https://support.access-ci.org/affinity-groups/open-ondemand'>Affinity Group</a> to get up to the minute announcements about our community-organized monthly Tips and Tricks Calls and other events."][/accordion]
+
+  </section>
+</div>
+
+<div class="col-2 sticky top-10">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white no-underline hover--underline hover--text-light-teal block" href="#">ACCESS OnDemand</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#ondemand-faq">ACCESS OnDemand FAQ</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#ondemand-support">ACCESS OnDemand Support</a>
+  </nav>
+</div>
+</div>
+
+<section class="bg-light-teal -mx-50% px-50% py-10" id="ondemand-support">
+  <h2 class="colored-square colored-square-orange">ACCESS OnDemand Support</h2>
+
+  <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+
+  [square icon="/themes/contrib/asp-theme/images/logos/ood.jpg" title="Affinity Group" link="https://support.access-ci.org/affinity-groups/open-ondemand" text="Announcements, links to Slack, Discourse, email and Github."][/square]
+
+	[square icon="/themes/contrib/asp-theme/images/icons/documentation.svg" title="Documentation" link="https://osc.github.io/ood-documentation/latest" text="Search for a specific topic or browse for general info." ][/square]
+
+	[square icon="/themes/contrib/asp-theme/images/icons/discourse.svg" title="Discourse" link="https://discourse.openondemand.org" text="Browse recent questions on the Get Help thread or leave one of your own." ][/square]
+
+	</div>
+</section>
+EOT;
+  update_node_body($nid, $body, $format);
 }

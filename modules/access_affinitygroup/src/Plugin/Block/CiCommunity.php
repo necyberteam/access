@@ -136,7 +136,7 @@ class CiCommunity extends BlockBase implements
             'border-black',
             'border-solid',
           ],
-        ]
+        ],
       ];
       $rows = [];
       // Api call for grabbing the category.
@@ -230,11 +230,11 @@ class CiCommunity extends BlockBase implements
         ];
       }
       $ask_title = $this->t('Ask.CI Recent Topics');
-      $ask_title = "<h3 class='text-white-er border-bottom pb-2 bg-dark-teal py-2 px-4'>$ask_title</h3>";
+      $ask_title = "<h2 class='text-white-er text-xl font-semibold border-bottom pb-2 bg-dark-teal py-2 px-4'>$ask_title</h2>";
       $options = [
         'attributes' => [
           'class' => [
-            'btn btn-primary m-2',
+            'btn btn-primary ms-0',
           ],
         ],
       ];
