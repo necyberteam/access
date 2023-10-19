@@ -7,6 +7,7 @@
 use Drupal\node\Entity\Node;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\Entity\WebformSubmission;
+use Drupal\redirect\Entity\Redirect;
 
 /**
  * Update Resource webform submissions.
@@ -184,6 +185,42 @@ function update_node_body($nid, $body, $format) {
     ]);
     $node->save();
   }
+}
+
+/**
+ * Helper function to update block body text.
+ */
+function update_block_body($bid, $body, $format) {
+    $block = \Drupal\block_content\Entity\BlockContent::load($bid);
+    $block->set('body', [
+      'format' => $format,
+      'value' => $body,
+    ]);
+    $block->save();
+}
+
+/**
+ * Helper function to Remove a node and replace it with another node.
+ */
+function node_replace($old_node, $new_node) {
+  $prev_node = \Drupal::entityTypeManager()->getStorage('node')->load($old_node);
+  $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $old_node);
+  $prev_node->delete();
+
+  $next_node = \Drupal::entityTypeManager()->getStorage('node')->load($new_node);
+  $path_alias = \Drupal\path_alias\Entity\PathAlias::create([
+    'path' => "/node/$new_node",
+    'alias' => $url_alias,
+  ]);
+  $path_alias->save();
+  $next_node->save();
+  // Create redirect from old node to new node.
+  // Redirect::create([
+  //   'redirect_source' => "node/$old_node",
+  //   'redirect_redirect' => $url_alias,
+  //   'language' => 'und',
+  //   'status_code' => '301',
+  // ])->save();
 }
 
 /**
@@ -740,6 +777,31 @@ function access_misc_update_10005(&$sandbox) {
 </section>
 EOT;
   update_node_body($nid, $body, $format);
+}
+
+/**
+ * Block update for Announcements block.
+ */
+function access_misc_update_10006(&$sandbox) {
+  $bid = 63;
+  $format = 'full_html';
+  $body = <<<EOT
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title mt-0">
+            Posting Announcements
+        </h3>
+        <p>
+            Do you have an announcement to share with the ACCESS community?
+        </p>
+        <p>
+            <a class="btn btn-outline-secondary bg-white text-sm" href="/news-request">Add Announcement</a>
+        </p>
+    </div>
+</div>
+EOT;
+  update_block_body($bid, $body, $format);
+  node_replace(458, 6110);
 }
 
 /**
