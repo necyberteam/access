@@ -741,3 +741,97 @@ function access_misc_update_10005(&$sandbox) {
 EOT;
   update_node_body($nid, $body, $format);
 }
+
+/**
+ * Update ACCESS OnDemand page for new theme.
+ */
+function access_misc_update_10006(&$sandbox) {
+  // ACCESS OnDemand node.
+  $nid = 267;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+  	<div class="grid grid-cols-1 md--grid-cols-4  gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+
+	<section class="mb-10" id="about">
+      	<p class="prose text-dark-teal text-2xl leading-9 mb-10"> Open OnDemand is an easy-to-use web portal that is being deployed on ACCESS resources to allow researchers to compute from anywhere without client software or command-line interface, and significantly speed up the time to science.</p>
+
+	<div class="grid grid-cols-1 md--grid-cols-3">
+
+  	<div class="flex">
+    	<div class="not-prose shrink-0 me-3">
+      	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+     	</div>
+      <div>
+            <p class="font-extrabold">Zero Installation</p>
+           <p>Run entirely in your browser. No software installation required.</p>
+          </div>
+      </div>
+
+     	<div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold">Easy to use</p>
+            <p>A simple interface so you can start computing immediately.</p>
+          </div>
+      </div>
+
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold">Compatible with any device</p>
+					<p>Launch on any device with a browser—even a mobile phone or tablet.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="mb-10" id="ondemand-faq">
+ 	<h2 class="colored-square colored-square-orange">ACCESS OnDemand FAQ</h2>
+
+    	[accordion summary="What is the difference between ACCESS OnDemand and Open OnDemand?" text=" ACCESS OnDemand is a standardized instance of Open OnDemand that is being adopted by ACCESS resource providers. <a href='https://www.youtube.com/watch?v=4-w-4wjlnPk&ab_channel=OH-TECH'>Watch a video about Open OnDemand.</a>"][/accordion]
+
+    	[accordion summary="How can I learn to use ACCESS OnDemand?" text="Follow the links of the participating RPs (listed above) for  instructions on using their ACCESS OnDemand (AOD) service. You need to have an ACCESS allocation at the participating RP to use AOD."][/accordion]
+
+    	[accordion summary="How do I get help using ACCESS OnDemand at a specific Resource Provider?" text="Each RP has support pages associated with their ACCESS OnDemand service. These are linked in the table above. If you don’t find the answer you need on these pages, or at the resource provider’s help desk, you can open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>. The Open OnDemand team also offers a variety of ways to get support for platform-related topics. "][/accordion]
+
+    	[accordion summary=" How do I request to have an application installed on a resource I use?" text="Open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>."][/accordion]
+
+    	[accordion summary="I’m an ACCESS resource provider and I want to make OnDemand available on my systems. How do I get started?" text="Please follow the steps outlined in the <a href='https://readthedocs.access-ci.org/projects/integration-roadmaps/en/latest/tasks/ACCESS_OnDemand_Portal_Integration_v1.html'>ACCESS OnDemand service integration roadmap</a>."][/accordion]
+
+    	[accordion summary="Open OnDemand has made it really easy for me to use ACCESS resources. Where can I learn more about it or get engaged in the community?" text="<a href='https://openondemand.org/get-involved'>Read this page</a> to learn the many ways to join the Open OnDemand community and get involved. Join our <a href='https://support.access-ci.org/affinity-groups/open-ondemand'>Affinity Group</a> to get up to the minute announcements about our community-organized monthly Tips and Tricks Calls and other events."][/accordion]
+
+  </section>
+</div>
+
+<div class="col-2 sticky top-0">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white no-underline hover--underline hover--text-light-teal block" href="#">ACCESS OnDemand</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#ondemand-faq">ACCESS OnDemand FAQ</a>
+    <a class="font-semibold text-white no-underline hover--underline hover--text-light-teal block ms-4" href="#ondemand-support">ACCESS OnDemand Support</a>
+  </nav>
+</div>
+</div>
+
+<section class="bg-light-teal -mx-50% px-50% py-10" id="ondemand-support">
+	<h2 class="colored-square colored-square-orange">ACCESS OnDemand Support</h2>
+
+  <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+
+  [square icon="/themes/contrib/asp-theme/images/logos/ood.jpg" title="Affinity Group" link="https://support.access-ci.org/affinity-groups/open-ondemand" text="Announcements, links to Slack, Discourse, email and Github."][/square]
+
+	[square icon="/themes/contrib/asp-theme/images/icons/documentation.svg" title="Documentation" link="https://osc.github.io/ood-documentation/latest" text="Search for a specific topic or browse for general info." ][/square]
+
+	[square icon="/themes/contrib/asp-theme/images/icons/discourse.svg" title="Discourse" link="https://discourse.openondemand.org" text="Browse recent questions on the Get Help thread or leave one of your own." ][/square]
+
+	</div>
+</section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
