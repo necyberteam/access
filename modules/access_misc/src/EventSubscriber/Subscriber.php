@@ -3,6 +3,7 @@
 namespace Drupal\access_misc\EventSubscriber;
 
 use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\XSS;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
