@@ -130,7 +130,9 @@ class AffinityBottomLeft extends BlockBase {
     $announcement_view->setArguments([$nid]);
     $announcement_view->execute();
     $announcement_list = $announcement_view->render();
+    $output .= '<div class="bg-md-teal p-4 mb-10">';
     $output .= \Drupal::service('renderer')->render($announcement_list);
+    $output .= '</div>';
 
     return [
       ['#markup' => $output],
