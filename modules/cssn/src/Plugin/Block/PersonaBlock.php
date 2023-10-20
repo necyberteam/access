@@ -48,7 +48,7 @@ class PersonaBlock extends BlockBase {
         $user_image = '<img src="' . $user_image . '" class="img-fluid mb-3 border border-black" />';
       }
       else {
-        $user_image = '<svg version="1.1" class="mb-3 border border-black" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+        $user_image = '<svg version="1.1" class="mb-3" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
            viewBox="0 0 448 448" style="enable-background:new 0 0 448 448;" xml:space="preserve">
             <style type="text/css">
               .st0{fill:#ECF9F8;}
@@ -166,7 +166,7 @@ class PersonaBlock extends BlockBase {
 
       $persona_block['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="persona p-3">
+        '#template' => '<div class="persona">
                           {{ user_image | raw }}
                           <h2>{{ first_name }} {{ last_name }}</h2>
                           <h4 class="institution">{{ institution }}</h4>
