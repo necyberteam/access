@@ -5,10 +5,11 @@
  */
 
 use Drupal\menu_link_content\Entity\MenuLinkContent;
+use Drupal\block_content\Entity\BlockContent;
 use Drupal\node\Entity\Node;
+use Drupal\path_alias\Entity\PathAlias;
 use Drupal\webform\Entity\Webform;
 use Drupal\webform\Entity\WebformSubmission;
-use Drupal\redirect\Entity\Redirect;
 
 /**
  * Update Resource webform submissions.
@@ -192,12 +193,12 @@ function update_node_body($nid, $body, $format) {
  * Helper function to update block body text.
  */
 function update_block_body($bid, $body, $format) {
-    $block = \Drupal\block_content\Entity\BlockContent::load($bid);
-    $block->set('body', [
-      'format' => $format,
-      'value' => $body,
-    ]);
-    $block->save();
+  $block = BlockContent::load($bid);
+  $block->set('body', [
+    'format' => $format,
+    'value' => $body,
+  ]);
+  $block->save();
 }
 
 /**
@@ -209,7 +210,7 @@ function node_replace($old_node, $new_node) {
   $prev_node->delete();
 
   $next_node = \Drupal::entityTypeManager()->getStorage('node')->load($new_node);
-  $path_alias = \Drupal\path_alias\Entity\PathAlias::create([
+  $path_alias = PathAlias::create([
     'path' => "/node/$new_node",
     'alias' => $url_alias,
   ]);
