@@ -38,6 +38,7 @@ class CommunityPersonaController extends ControllerBase {
       $user_affinity_groups = '<p>' . t('Not connected to any Affinity groups.') . "</p>";
     }
     if ($user_affinity_groups == "<ul>") {
+      $user_affinity_groups = "<ul class='grid grid-cols-2'>";
       foreach ($affinity_groups as $affinity_group) {
         $query = \Drupal::database()->select('taxonomy_index', 'ti');
         $query->condition('ti.tid', $affinity_group);
@@ -48,7 +49,7 @@ class CommunityPersonaController extends ControllerBase {
           $url = Url::fromRoute('entity.node.canonical', ['node' => $affinity_group_loaded->id()]);
           $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
           $link = $project_link->toString()->__toString();
-          $user_affinity_groups .= "<li>$link</li>";
+          $user_affinity_groups .= "<li class='marker--text-md-teal'>$link</li>";
         }
       }
       $user_affinity_groups .= '</ul>';
@@ -67,7 +68,7 @@ class CommunityPersonaController extends ControllerBase {
     $affinity_link = Link::fromTextAndUrl('All Affinity Groups', $affinity_url);
     $affinity_renderable = $affinity_link->toRenderable();
     $build_affinity_link = $affinity_renderable;
-    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    $build_affinity_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-md-teal', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     return $build_affinity_link;
   }
 
@@ -94,7 +95,7 @@ class CommunityPersonaController extends ControllerBase {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = Term::load($flagged_skill)->get('name')->value;
         $my_skills .= "<div class='border border-black m-1'>";
-        $my_skills .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-0 m-0' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
+        $my_skills .= "<a class='no-underline font-normal px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
         $my_skills .= "</div>";
       }
     }
@@ -110,7 +111,7 @@ class CommunityPersonaController extends ControllerBase {
   public function knowledgeBaseContrib($user, $public = FALSE) {
     $ws_query = \Drupal::entityQuery('webform_submission')
       ->condition('uid', $user->id())
-      ->condition('uri', '/form/resource')
+      ->condition('uri', '/form/ci-link')
       ->accessCheck(FALSE);
     $ws_results = $ws_query->execute();
     $ws_link = "<ul>";
@@ -121,12 +122,15 @@ class CommunityPersonaController extends ControllerBase {
       $ws_link = '<p>' . t('No contributions to the Knowledge Base.') . "</p>";
     }
     if ($ws_link == "<ul>") {
-      $ws_link = '<ul>';
+      $ws_link = "<ul class='list-unstyled list-none m-0 p-0'>";
+      $n = 1;
       foreach ($ws_results as $ws_result) {
+        $stripe_class = $n % 2 == 0 ? 'bg-light bg-light-teal' : '';
         $ws = WebformSubmission::load($ws_result);
         $url = $ws->toUrl()->toString();
         $ws_data = $ws->getData();
-        $ws_link .= '<li><a href=' . $url . '>' . $ws_data['title'] . '</a></li>';
+        $ws_link .= '<li class="p-3 ' . $stripe_class . '"><a href=' . $url . '>' . $ws_data['title'] . '</a></li>';
+        $n++;
       }
       $ws_link .= '</ul>';
     }
@@ -151,14 +155,14 @@ class CommunityPersonaController extends ControllerBase {
     // Sort by status.
     $matches->sortStatusMatches();
     $match_list = $matches->getMatchList();
-    $match_link = "<ul class='list-unstyled'>";
+    $match_link = "<ul class='list-unstyled m-0 p-0'>";
     if ($match_list == NULL && $public === FALSE) {
       $match_link = '<p>' . t('You currently have not been matched with any Engagements. Click below to find an Engagement.') . "</p>";
     }
     if ($match_list == NULL && $public === TRUE) {
       $match_link = '<p>' . t('No matched Engagements.') . "</p>";
     }
-    if ($match_link == "<ul class='list-unstyled'>") {
+    if ($match_link == "<ul class='list-unstyled m-0 p-0'>") {
       $match_link .= $match_list . '</ul>';
     }
     return $match_link;
@@ -183,14 +187,11 @@ class CommunityPersonaController extends ControllerBase {
     $projects = new ProjectLookup($fields, $user->id(), $user->getEmail());
     $projects->sortStatusProjects();
     $project_list = $projects->getProjectList();
-    $project_link = "<ul class='list-unstyled'>";
-    if ($project_list == NULL && $public === FALSE) {
-      $project_link = '<p>' . t('You currently have not been associated with any Projects. Click below to find a project.') . "</p>";
+    $project_link = "<ul class='list-unstyled list-none m-0 p-0'>";
+    if ($project_list == NULL) {
+      $project_link = 'na';
     }
-    if ($project_list == NULL && $public === TRUE) {
-      $project_link = '<p>' . t('No projects.') . "</p>";
-    }
-    if ($project_link == "<ul class='list-unstyled'>") {
+    if ($project_link == "<ul class='list-unstyled list-none m-0 p-0'>") {
       $project_link .= $project_list . '</ul>';
     }
     return $project_link;
@@ -219,7 +220,7 @@ class CommunityPersonaController extends ControllerBase {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = Term::load($flagged_interest)->get('name')->value;
         $my_interests .= "<div class='border border-black m-1'>";
-        $my_interests .= "<a style='text-transform: inherit; font-weight: 400;' class='btn btn-white btn-sm p-0 m-0' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
+        $my_interests .= "<a class='no-underline font-normal px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
         $my_interests .= "</div>";
       }
     }
@@ -258,7 +259,7 @@ class CommunityPersonaController extends ControllerBase {
     $webform_link = Link::fromTextAndUrl('Add CI Link', $webform_url);
     $webform_renderable = $webform_link->toRenderable();
     $build_webform_link = $webform_renderable;
-    $build_webform_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    $build_webform_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-md-teal', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     // My Match Engagements.
     $match_link = $this->matchList($current_user);
     // Link to see all Match Engagements.
@@ -266,15 +267,15 @@ class CommunityPersonaController extends ControllerBase {
     $match_engage_link = Link::fromTextAndUrl('See engagements', $match_engage_url);
     $match_engage_renderable = $match_engage_link->toRenderable();
     $build_match_engage_link = $match_engage_renderable;
-    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-md-teal', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     // My Projects.
     $projects = $this->projectList($current_user);
     // Link to see Projects.
     $project_url = Url::fromUri('internal:/form/project');
-    $project_link = Link::fromTextAndUrl('See projects', $project_url);
+    $project_link = Link::fromTextAndUrl('Add CI Link', $project_url);
     $project_renderable = $project_link->toRenderable();
     $build_project_link = $project_renderable;
-    $build_project_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+    $build_project_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-md-teal', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     $persona_page['string'] = [
       '#type' => 'inline_template',
       '#attached' => [
@@ -282,34 +283,34 @@ class CommunityPersonaController extends ControllerBase {
           'cssn/cssn_library',
         ],
       ],
-      '#template' => '<div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+      '#template' => '<div class="border border-secondary my-3 mb-6">
+          <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ mi_title }}</span>
           </div>
-          <div class="d-flex flex-wrap p-3">
+          <div class="d-flex flex flex-wrap p-3">
             {{ my_interests|raw }}
           </div>
           <div class="p-3">{{ edit_interest_link }}</div>
         </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+        <div class="border border-secondary my-3 mb-6">
+          <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ me_title }}</span>
           </div>
-          <div class="d-flex flex-wrap p-3">
+          <div class="d-flex flex flex-wrap p-3">
             {{ my_skills|raw }}
           </div>
           <div class="p-3">{{ edit_skill_link }}</div>
         </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
+        <div class="border border-secondary my-3 mb-6">
+          <div class="text-white h4 py-2 px-3 m-0 bg-dark bg-md-teal text-2xl p-4">{{ ag_title }}</div>
             <div class="p-3">
               <p>{{ ag_intro }}</p>
               {{ user_affinity_groups|raw }}
               {{ affinity_link }}
             </div>
         </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+        <div class="border border-secondary my-3 mb-6">
+          <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 m-0 text-white">{{ ws_title }}</span>
           </div>
           <div class="p-3">
@@ -317,8 +318,8 @@ class CommunityPersonaController extends ControllerBase {
             {{ request_webform_link }}
           </div>
         </div>
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+        <div class="border border-secondary my-3 mb-6">
+          <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 m-0 text-white">{{ match_title }}</span>
           </div>
           <div class="p-3">
@@ -327,15 +328,17 @@ class CommunityPersonaController extends ControllerBase {
           </div>
         </div>
 
-        <div class="border border-secondary my-3">
-          <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-            <span class="h4 m-0 text-white">{{ project_title }}</span>
+        {% if projects != "na" %}
+          <div class="border border-secondary my-3 mb-6">
+            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
+              <span class="h4 m-0 text-white">{{ project_title }}</span>
+            </div>
+            <div class="p-3">
+              {{ projects|raw }}
+              {{ request_project }}
+            </div>
           </div>
-          <div class="p-3">
-            {{ projects|raw }}
-            {{ request_project }}
-          </div>
-        </div>
+        {% endif %}
         ',
       '#context' => [
         'ag_title' => t('My Affinity Groups'),
@@ -402,52 +405,55 @@ class CommunityPersonaController extends ControllerBase {
       $persona_page['#title'] = "$user_first_name $user_last_name";
       $persona_page['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="border border-secondary my-3">
-            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+        '#template' => '<div class="border border-secondary my-3 mb-6">
+            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ mi_title }}</span>
             </div>
-            <div class="d-flex flex-wrap p-3">
+            <div class="d-flex flex flex-wrap p-3">
               {{ my_interests|raw }}
             </div>
           </div>
-          <div class="border border-secondary my-3">
-            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+          <div class="border border-secondary my-3 mb-6">
+            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ me_title }}</span>
             </div>
-            <div class="d-flex flex-wrap p-3">
+            <div class="d-flex flex flex-wrap p-3">
               {{ my_skills|raw }}
             </div>
           </div>
-          <div class="border border-secondary my-3">
-            <div class="text-white h4 py-2 px-3 m-0 bg-dark">{{ ag_title }}</div>
+          <div class="border border-secondary my-3 mb-6">
+            <div class="text-white h4 py-2 px-3 m-0 bg-dark bg-md-teal text-2xl p-4">{{ ag_title }}</div>
               <div class="p-3">
                 {{ user_affinity_groups|raw }}
               </div>
           </div>
-          <div class="border border-secondary my-3">
-            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+          <div class="border border-secondary my-3 mb-6">
+            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 m-0 text-white">{{ ws_title }}</span>
             </div>
             <div class="p-3">
               {{ ws_links|raw }}
             </div>
           </div>
-          <div class="border border-secondary my-3">
-            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
+          <div class="border border-secondary my-3 mb-6">
+            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 m-0 text-white">{{ match_title }}</span>
             </div>
             <div class="p-3">
               {{ match_links|raw }}
             </div>
           </div>
-          <div class="border border-secondary my-3">
-            <div class="text-white py-2 px-3 bg-dark d-flex align-items-center justify-content-between">
-              <span class="h4 m-0 text-white">{{ project_title }}</span>
+
+          {% if projects != "na" %}
+            <div class="border border-secondary my-3 mb-6">
+              <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
+                <span class="h4 m-0 text-white">{{ project_title }}</span>
+              </div>
+              <div class="p-3">
+                {{ projects|raw }}
+              </div>
             </div>
-            <div class="p-3">
-              {{ projects|raw }}
-            </div>
-          </div>
+          {% endif %}
           ',
         '#context' => [
           'ag_title' => t('Affinity Groups'),
