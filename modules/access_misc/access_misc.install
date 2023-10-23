@@ -746,6 +746,5 @@ EOT;
  * Replace Knowledge Base page with new The Knowledge Base page.
  */
 function access_misc_update_10010(&$sandbox) {
-  // !! REMOVE COMMENT FOR MERGE
-  // node_replace(270, 6113);
+  node_replace(270, 6113);
 }
