@@ -928,3 +928,9 @@ function access_misc_update_10009(&$sandbox) {
   node_replace(466, 6114);
   // Also changing domain front page in config.
 }
+
+ * Replace Knowledge Base page with new The Knowledge Base page.
+ */
+function access_misc_update_10010(&$sandbox) {
+  node_replace(270, 6113);
+}
