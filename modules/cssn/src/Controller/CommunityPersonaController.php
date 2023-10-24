@@ -405,7 +405,7 @@ class CommunityPersonaController extends ControllerBase {
       $persona_page['#title'] = "$user_first_name $user_last_name";
       $persona_page['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="border border-secondary my-3 mb-6">
+        '#template' => '<div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ mi_title }}</span>
             </div>
@@ -413,7 +413,7 @@ class CommunityPersonaController extends ControllerBase {
               {{ my_interests|raw }}
             </div>
           </div>
-          <div class="border border-secondary my-3 mb-6">
+          <div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ me_title }}</span>
             </div>
@@ -421,13 +421,13 @@ class CommunityPersonaController extends ControllerBase {
               {{ my_skills|raw }}
             </div>
           </div>
-          <div class="border border-secondary my-3 mb-6">
+          <div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white h4 py-2 px-3 m-0 bg-dark bg-md-teal text-2xl p-4">{{ ag_title }}</div>
               <div class="p-3">
                 {{ user_affinity_groups|raw }}
               </div>
           </div>
-          <div class="border border-secondary my-3 mb-6">
+          <div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 m-0 text-white">{{ ws_title }}</span>
             </div>
@@ -435,7 +435,7 @@ class CommunityPersonaController extends ControllerBase {
               {{ ws_links|raw }}
             </div>
           </div>
-          <div class="border border-secondary my-3 mb-6">
+          <div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 m-0 text-white">{{ match_title }}</span>
             </div>
@@ -445,7 +445,7 @@ class CommunityPersonaController extends ControllerBase {
           </div>
 
           {% if projects != "na" %}
-            <div class="border border-secondary my-3 mb-6">
+            <div class="border border-secondary border-md-teal my-3 mb-6">
               <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
                 <span class="h4 m-0 text-white">{{ project_title }}</span>
               </div>
@@ -478,6 +478,29 @@ class CommunityPersonaController extends ControllerBase {
         '#title' => 'User not found',
         '#markup' => t('No user found at this URL.'),
       ];
+    }
+  }
+
+  /**
+   * Callback for setting the route title.
+   *
+   * Set the route title to the user's name if it is a public persona page.
+   *
+   * @return string
+   *   Title to use for the route.
+   */
+  public function titleCallback() {
+    // It's a public persona page if the url has the uid at the end.
+    $end_url = new EndUrl();
+    $user_id = $end_url->getUrlEnd();
+    if (is_numeric($user_id)) {
+      // Load the user using the user id.
+      $user = User::load($user_id);
+      if ($user !== NULL) {
+        $user_first_name = $user->get('field_user_first_name')->value;
+        $user_last_name = $user->get('field_user_last_name')->value;
+        return "$user_first_name $user_last_name";
+      }
     }
   }
 
