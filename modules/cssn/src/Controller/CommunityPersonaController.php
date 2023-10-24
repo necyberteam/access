@@ -49,7 +49,7 @@ class CommunityPersonaController extends ControllerBase {
           $url = Url::fromRoute('entity.node.canonical', ['node' => $affinity_group_loaded->id()]);
           $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
           $link = $project_link->toString()->__toString();
-          $user_affinity_groups .= "<li class='marker--text-md-teal'>$link</li>";
+          $user_affinity_groups .= "<li>$link</li>";
         }
       }
       $user_affinity_groups .= '</ul>';
@@ -94,7 +94,7 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = Term::load($flagged_skill)->get('name')->value;
-        $my_skills .= "<div class='border border-black m-1'>";
+        $my_skills .= "<div class='m-1'>";
         $my_skills .= "<a class='no-underline font-normal px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
         $my_skills .= "</div>";
       }
@@ -219,7 +219,7 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_interests == "") {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = Term::load($flagged_interest)->get('name')->value;
-        $my_interests .= "<div class='border border-black m-1'>";
+        $my_interests .= "<div class='m-1'>";
         $my_interests .= "<a class='no-underline font-normal px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
         $my_interests .= "</div>";
       }
@@ -283,7 +283,7 @@ class CommunityPersonaController extends ControllerBase {
           'cssn/cssn_library',
         ],
       ],
-      '#template' => '<div class="border border-secondary my-3 mb-6">
+      '#template' => '<div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ mi_title }}</span>
           </div>
@@ -292,7 +292,7 @@ class CommunityPersonaController extends ControllerBase {
           </div>
           <div class="p-3">{{ edit_interest_link }}</div>
         </div>
-        <div class="border border-secondary my-3 mb-6">
+        <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ me_title }}</span>
           </div>
@@ -301,7 +301,7 @@ class CommunityPersonaController extends ControllerBase {
           </div>
           <div class="p-3">{{ edit_skill_link }}</div>
         </div>
-        <div class="border border-secondary my-3 mb-6">
+        <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white h4 py-2 px-3 m-0 bg-dark bg-md-teal text-2xl p-4">{{ ag_title }}</div>
             <div class="p-3">
               <p>{{ ag_intro }}</p>
@@ -309,7 +309,7 @@ class CommunityPersonaController extends ControllerBase {
               {{ affinity_link }}
             </div>
         </div>
-        <div class="border border-secondary my-3 mb-6">
+        <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 m-0 text-white">{{ ws_title }}</span>
           </div>
@@ -318,7 +318,7 @@ class CommunityPersonaController extends ControllerBase {
             {{ request_webform_link }}
           </div>
         </div>
-        <div class="border border-secondary my-3 mb-6">
+        <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 m-0 text-white">{{ match_title }}</span>
           </div>
@@ -329,7 +329,7 @@ class CommunityPersonaController extends ControllerBase {
         </div>
 
         {% if projects != "na" %}
-          <div class="border border-secondary my-3 mb-6">
+          <div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 m-0 text-white">{{ project_title }}</span>
             </div>
