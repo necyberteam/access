@@ -74,13 +74,19 @@ class MatchLookup {
     if ($matches == NULL) {
       return;
     }
-    foreach ($matches as $match) {
+    foreach ($matches as $key => $match) {
       foreach ($match['nodes'] as $node) {
         $title = $node->getTitle();
         $nid = $node->id();
         $match_name = $match['name'];
         $field_status = $node->get('field_status')->getValue();
         $field_status = !empty($field_status) ? $field_status : '';
+        // Don't display engagement with a non-public status.
+        $non_public = ['draft', 'in_review', 'accepted', 'on_hold', 'halted'];
+        if (in_array($field_status[0]['value'], $non_public)) {
+          unset($matches[$key]);
+          break;
+        }
         $match_array[$nid] = [
           'status' => $field_status,
           'name' => $match_name,
