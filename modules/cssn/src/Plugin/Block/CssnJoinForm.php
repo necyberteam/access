@@ -4,6 +4,7 @@ namespace Drupal\cssn\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
+use Drupal\Core\Url;
 
 /**
  * Provides Join CSSN webform in block.
@@ -27,7 +28,7 @@ class CssnJoinForm extends BlockBase {
       $join_login = [
         '#type' => 'link',
         '#title' => 'Login to join CSSN',
-        '#url' => \Drupal\Core\Url::fromRoute('misc.login', [], ['query' => ['destination' => '/cssn#join-cssn']]),
+        '#url' => Url::fromRoute('misc.login', [], ['query' => ['destination' => '/cssn#join-cssn']]),
         '#attributes' => [
           'class' => ['md--mt-16', 'btn', 'btn-primary'],
         ],
@@ -60,7 +61,7 @@ class CssnJoinForm extends BlockBase {
         <div>
           {{ join_img }} {{ join_img_mobile }}
         </div>
-        <div class="[&>*]--text-white [&_.form-checkboxes]--flex-col">
+        <div class="px-10 [&>*]--text-white [&_.form-checkboxes]--flex-col">
           {{ join_login }} {{ join_webform }}
         </div>
       </div>',
