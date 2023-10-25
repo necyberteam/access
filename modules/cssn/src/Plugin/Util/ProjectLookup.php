@@ -133,7 +133,7 @@ class ProjectLookup {
       if (($project_status == 'Recruiting' && $project_name == 'Interested') || $project_name != 'Interested') {
         $lowercase = lcfirst($project_name);
         $first_letter = substr($lowercase, 0, 1);
-        $project_name = "<div data-bs-toggle='tooltip' data-bs-placement='left' title='$project_name'>
+        $project_name = "<div data-tippy-content='$project_name'>
           <i class='text-dark fa-solid fa-circle-$first_letter h2'></i>
         </div>";
         $project_link .= "<li class='py-2 $stripe_class'>
