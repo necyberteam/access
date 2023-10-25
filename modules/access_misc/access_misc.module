@@ -48,7 +48,7 @@ function access_misc_preprocess_views_view_field(&$variables) {
   $field = $variables['field'];
 
   // Display event instance date in the right format.
-  if ($view->id() == 'recurring_events_event_instances' && $view->current_display == 'block_1') {
+  if ($view->id() == 'recurring_events_event_instances' && ($view->current_display == 'block_1' || $view->current_display == 'block_2')) {
     if ($field->field == 'date__value') {
       // Default separator between start and end dates is ' - '.
       $output = explode(' - ', $variables['output']);
