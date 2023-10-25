@@ -240,14 +240,14 @@ class CommunityPersonaController extends ControllerBase {
     // My Interests.
     $my_interests = $this->buildInterests($current_user);
     // Edit interests link.
-    $edit_interest_url = Url::fromUri('internal:/add-interest');
+    $edit_interest_url = Url::fromUri('internal:/community-persona/add-interest');
     $edit_interest_link = Link::fromTextAndUrl('Update interests', $edit_interest_url);
     $edit_interest_renderable = $edit_interest_link->toRenderable();
     $edit_interest_renderable['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Expertise.
     $my_skills = $this->mySkills($current_user);
     // Link to add Skills/Expertise.
-    $edit_skill_url = Url::fromUri('internal:/add-skill');
+    $edit_skill_url = Url::fromUri('internal:/community-persona/add-skill');
     $edit_skill_link = Link::fromTextAndUrl('Update expertise', $edit_skill_url);
     $edit_skill_renderable = $edit_skill_link->toRenderable();
     $edit_skill_renderable['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
