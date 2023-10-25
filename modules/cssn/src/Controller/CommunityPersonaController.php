@@ -270,12 +270,7 @@ class CommunityPersonaController extends ControllerBase {
     $build_match_engage_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-md-teal', 'btn-sm', 'py-1', 'px-2', 'm-0'];
     // My Projects.
     $projects = $this->projectList($current_user);
-    // Link to see Projects.
-    $project_url = Url::fromUri('internal:/form/project');
-    $project_link = Link::fromTextAndUrl('Add CI Link', $project_url);
-    $project_renderable = $project_link->toRenderable();
-    $build_project_link = $project_renderable;
-    $build_project_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-md-teal', 'btn-sm', 'py-1', 'px-2', 'm-0'];
+
     $persona_page['string'] = [
       '#type' => 'inline_template',
       '#attached' => [
@@ -335,7 +330,6 @@ class CommunityPersonaController extends ControllerBase {
             </div>
             <div class="p-3">
               {{ projects|raw }}
-              {{ request_project }}
             </div>
           </div>
         {% endif %}
@@ -356,7 +350,6 @@ class CommunityPersonaController extends ControllerBase {
         'request_match_link' => $build_match_engage_link,
         'project_title' => t('My Projects'),
         'projects' => $projects,
-        'request_project' => $build_project_link,
         'ws_title' => t('My Knowledge Base Contributions'),
         'ws_links' => $ws_link,
         'request_webform_link' => $build_webform_link,
