@@ -236,14 +236,14 @@ function access_misc_update_10000(&$sandbox) {
 <div class="grid grid-cols-1 md--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 row-span-2">
     <section class="mb-10" id="about">
-      <p class="prose text-dark-teal text-2xl leading-9 mb-10">View information about allocations, usage data and usage efficiency as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">View information about allocations, usage data and usage  as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
       <div class="grid grid--cols-1 md--grid-cols-3">
         <div class="flex">
           <div class="not-prose shrink-0 me-3">
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <div>
-            <p class="font-extrabold mb-1">Optimize Job Efficiency</p><p>View information about active and expired allocations.</p>
+            <p class="font-extrabold mb-1">Optimize job efficiency</p><p>View information about active and expired allocations.</p>
           </div>
         </div>
         <div class="flex">
