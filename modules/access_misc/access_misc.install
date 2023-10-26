@@ -867,9 +867,9 @@ function access_misc_update_10007(&$sandbox) {
 
     	[accordion summary="What is the difference between ACCESS OnDemand and Open OnDemand?" text=" ACCESS OnDemand is a standardized instance of Open OnDemand that is being adopted by ACCESS resource providers. <a href='https://www.youtube.com/watch?v=4-w-4wjlnPk&ab_channel=OH-TECH'>Watch a video about Open OnDemand.</a>"][/accordion]
 
-    	[accordion summary="How can I learn to use ACCESS OnDemand?" text="Follow the links of the participating RPs (listed above) for  instructions on using their ACCESS OnDemand (AOD) service. You need to have an ACCESS allocation at the participating RP to use AOD."][/accordion]
+    	[accordion summary="How can I learn to use ACCESS OnDemand?" text="Participating RPs have instructions on using their ACCESS OnDemand (AOD) service. You need to have an ACCESS allocation at the participating RP to use AOD."][/accordion]
 
-    	[accordion summary="How do I get help using ACCESS OnDemand at a specific Resource Provider?" text="Each RP has support pages associated with their ACCESS OnDemand service. These are linked in the table above. If you don’t find the answer you need on these pages, or at the resource provider’s help desk, you can open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>. The Open OnDemand team also offers a variety of ways to get support for platform-related topics. "][/accordion]
+    	[accordion summary="How do I get help using ACCESS OnDemand at a specific Resource Provider?" text="Each RP has support pages associated with their ACCESS OnDemand service. If you don’t find the answer you need on these pages, or at the resource provider’s help desk, you can open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>. The Open OnDemand team also offers a variety of ways to get support for platform-related topics. "][/accordion]
 
     	[accordion summary=" How do I request to have an application installed on a resource I use?" text="Open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>."][/accordion]
 
