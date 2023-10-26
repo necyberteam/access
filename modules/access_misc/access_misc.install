@@ -261,7 +261,7 @@ function access_misc_update_10000(&$sandbox) {
         </div>
         <div>
           <p class="font-extrabold mb-1">View historical usage</p>
-          <p>View both personal usage and that of aggregated users. View information about active and expired allocations.</p>
+          <p>View both personal usage and that of aggregated users.</p>
         </div>
       </div>
     </div>
@@ -289,7 +289,7 @@ function access_misc_update_10000(&$sandbox) {
   <div class="container">
     <h2 class="colored-square colored-square-orange">XDMoD Support</h2>
     <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
-      [square icon="/themes/contrib/asp-theme/images/icons/ico-launch.svg" title="LAUNCH XDMoD" link="https://xdmod.access-cs.org"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-launch.svg"       [square icon="/themes/contrib/asp-theme/images/icons/video-orange.svg" color="orange" title="TUTORIAL VIDEO" link="https://www.youtube.com/watch?v=4wiyLFGwJg4" text="A step by step guide  to using ACCESS Pegasus"][/square]title="LAUNCH XDMoD" link="https://xdmod.access-ci.org"][/square]
       [square icon="/themes/contrib/asp-theme/images/icons/ico-documentation.svg" title="DOCUMENTATION" link="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/XDMoD.html"][/square]
       [square icon="/themes/contrib/asp-theme/images/icons/ico-contactus.svg" title="CONTACT US" link="https://support.access-ci.org/open-a-ticket"][/square]
     </div>
