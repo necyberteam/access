@@ -377,7 +377,7 @@ function access_misc_update_10002(&$sandbox) {
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <div>
-            <p class="font-extrabold">Advance access to resources</p>
+            <p class="font-extrabold mb-1">Advance access to resources</p>
            <p>By connecting science gateways to cutting-edge ACCESS resources and software, training and research workflows are streamlined through one interface.</p>
           </div>
         </div>
@@ -386,7 +386,7 @@ function access_misc_update_10002(&$sandbox) {
             <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
           <div>
-            <p class="font-extrabold">Collaborative space</p>
+            <p class="font-extrabold mb-1">Collaborative space</p>
            <p>Gateways provide an interactive community space for sharing knowledge of methods, code, data, results, and training materials.</p>
           </div>
       </div>
@@ -395,7 +395,7 @@ function access_misc_update_10002(&$sandbox) {
           <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
         </div>
         <div>
-          <p class="font-extrabold">Enhanced research products</p><p>Gateways provide a space to share research outcomes and supplementary products. They enable collaborators, peers, and future researchers to discover and learn.</p>
+          <p class="font-extrabold mb-1">Enhanced research products</p><p>Gateways provide a space to share research outcomes and supplementary products. They enable collaborators, peers, and future researchers to discover and learn.</p>
         </div>
       </div>
     </div>
