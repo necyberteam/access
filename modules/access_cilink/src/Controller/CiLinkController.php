@@ -302,6 +302,10 @@ class CiLinkController extends ControllerBase {
         'not_useful' => $flag_not_useful,
         'inaccurate' => $flag_inaccurate,
       ],
+      // add cache tags to invalidate cache when the webform submission changes
+      '#cache' => [
+        'tags' => ['webform_submission:' . $this->sid],
+      ],
     ];
     return $cilink_page;
   }
