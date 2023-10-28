@@ -9,6 +9,8 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\user\Entity\User;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\views\ViewExecutable;
 
 /**
@@ -17,6 +19,37 @@ use Drupal\views\ViewExecutable;
 function access_misc_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'infrastructure_news') {
     $view->element['#attached']['library'][] = 'access_misc/add_select';
+  }
+}
+
+/**
+ * Implements hook_views_pre_view().
+ */
+function access_misc_views_pre_view(ViewExecutable $view, $display_id, array &$args) {
+  if ($view->id() == 'match_engagement_view' && $display_id === 'block_6') {
+    // Get term id of page the current user is on.
+    $path = \Drupal::service('path.current')->getPath();
+    $path_args = explode('/', $path);
+    $tid = $path_args[3];
+    $options = array(
+      'query'      => ['field_tags_target_id' => $tid],
+      'attributes' => ['class' => ['btn', 'btn-md-teal', 'mt-4']],
+      'absolute'   => TRUE,
+    );
+    $link= Link::fromTextAndUrl(t('Engagements with tag'), Url::fromUri('internal:/engagements', $options))->toString();
+    $options = array(
+      'id' => 'area_text_custom',
+      'table' => 'views',
+      'field' => 'area_text_custom',
+      'relationship' => 'none',
+      'group_type' => 'none',
+      'admin_label' => '',
+      'empty' => TRUE,
+      'tokenize' => FALSE,
+      'content' => $link,
+      'plugin_id' => 'text_custom',
+    );
+    $view->setHandler('block_6', 'footer', 'area_text_custom', $options);
   }
 }
 
