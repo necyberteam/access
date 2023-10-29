@@ -36,9 +36,8 @@ class CiLinkController extends ControllerBase {
   public function __construct() {
     $url = \Drupal::request()->getRequestUri();
     $url_chunked = explode('/', $url);
-    $webform_submission = 0;
-    if (is_numeric($url_chunked[2])) {
-      $this->sid = $url_chunked[2];
+    if (is_numeric(end($url_chunked))) {
+      $this->sid = end($url_chunked);
       $this->webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($this->sid);
     }
     else {
@@ -60,7 +59,7 @@ class CiLinkController extends ControllerBase {
   public function cilinks() {
     if (!$this->webform_submission) {
       return [
-        '#markup' => $this->t('No Ci Link found.'),
+        '#markup' => $this->t('No CI Link found.'),
       ];
     }
     $data = $this->webform_submission->getData();
@@ -139,7 +138,7 @@ class CiLinkController extends ControllerBase {
     // Check if user is logged in.
     $user = \Drupal::currentUser();
     $options = [
-      'query' => ['destination' => '/ci-links/' . $this->sid],
+      'query' => ['destination' => \Drupal::request()->getRequestUri()],
       'attributes' => ['class' => ['text-dark-teal', 'no-underline', 'hover--underline']],
     ];
     $login = Link::fromTextAndUrl($this->t('Login to vote'), Url::fromUri('internal:/user/login', $options))->toString();
@@ -170,7 +169,7 @@ class CiLinkController extends ControllerBase {
       $template = '
         <div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5 mb-10">
           <div class="col-1 col-span-3 row-span-2">
-            <div class="my-2 [&>*]--border [&>*]--border-solid [&>*]--border-black [&>*]--px-1.5 [&>*]--py-0.5 [&>*]--no-underline hover--[&>*]--border-dark-teal">
+            <div class="my-2 [&>*]--me-2 [&>*]--mb-2 [&>*]--border [&>*]--border-solid [&>*]--border-black [&>*]--px-2 [&>*]--py-1 [&_a]--font-normal [&>*]--no-underline hover--[&>*]--border-dark-teal">
               {{ tags | raw }}
             </div>
             <ul class="ps-0">
@@ -302,7 +301,7 @@ class CiLinkController extends ControllerBase {
         'not_useful' => $flag_not_useful,
         'inaccurate' => $flag_inaccurate,
       ],
-      // add cache tags to invalidate cache when the webform submission changes
+      // Add cache tags to invalidate cache when the webform submission changes.
       '#cache' => [
         'tags' => ['webform_submission:' . $this->sid],
       ],

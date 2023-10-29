@@ -2,6 +2,7 @@
 
 namespace Drupal\access_affinitygroup\Plugin\Block;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Url;
@@ -71,10 +72,20 @@ class ResourcesForAffinityGroup extends BlockBase {
         $submission_data = $webform_submission->getData();
 
         // Ci link name and url.
+        // On ASP, use /knowledge-base/ci-links/{sid}.
+        // On other domains, use /ci-links/{sid}.
+        $token = \Drupal::token();
+        $domainName = Html::getClass($token->replace(t('[domain:name]')));
+        if ($domainName == 'access-support') {
+          $ci_link_path = '/knowledge-base/ci-links/';
+        }
+        else {
+          $ci_link_path = '/ci-links/';
+        }
         $ci_link = [
           '#type' => 'link',
           '#title' => $submission_data['title'],
-          '#url' => Url::fromUri('internal:/ci-link/' . $value['target_id']),
+          '#url' => Url::fromUri('internal:' . $ci_link_path . $value['target_id']),
         ];
         $ci_link_name = '<div>' . \Drupal::service('renderer')->render($ci_link)->__toString() . '</div>';
 
