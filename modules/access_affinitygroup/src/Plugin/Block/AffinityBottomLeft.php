@@ -79,9 +79,11 @@ class AffinityBottomLeft extends BlockBase {
             '#url' => Url::fromUri('internal:/events/' . $ei),
             '#attributes' => [
               'class' => [
+                'block',
                 'text-white-er',
                 'hover--text-light-teal',
-                'hover--no-underline',
+                'no-underline',
+                'hover--underline',
               ],
             ],
           ];
@@ -95,7 +97,7 @@ class AffinityBottomLeft extends BlockBase {
         usort($event_list, fn($a, $b) => $a['date'] <=> $b['date']);
       }
     }
-    $output = '<div class="bg-md-teal p-4 mb-10">';
+    $output = '<div class="bg-md-teal p-4 mb-10 not-prose">';
     $output .= '<h2 class="text-white-er text-xl font-semibold mt-0 mb-3">Upcoming Events</h2>';
     if ($node) {
       $affinity_group_tax = $node->get('field_affinity_group')->getValue()[0]['target_id'];
@@ -104,13 +106,13 @@ class AffinityBottomLeft extends BlockBase {
       foreach ($event_list as $e) {
         $start_date = date_create($e['date']);
         $edate = date_format($start_date, "n/d/Y g:i A T");
-        $output .= '<p class="text-white-er">[' . $edate . '] ' . $e['title'] . '</p>';
+        $output .= '<div class="mb-3 text-white-er font-medium leading-5">' . $edate . '<br/>' . $e['title'] . '</div>';
       }
     }
     else {
-      $output .= '<p class="text-white-er">No upcoming events.</p>';
+      $output .= '<div class="text-white-er my-2">No upcoming events.</div>';
     }
-    $output .= '<p><a class="text-sm uppercase text-white-er hover--text-light-teal no-underline hover--underline" href="/past-events?field_affinity_group_target_id=' . $affinity_group_tax . '">See past events</a></p>';
+    $output .= '<a class="text-sm uppercase text-white-er hover--text-light-teal no-underline hover--underline" href="/past-events?field_affinity_group_target_id=' . $affinity_group_tax . '">See past events</a>';
     $output .= '</div>';
 
     // Display Announcements that have been assigned to the Affinity Group
