@@ -104,7 +104,7 @@ class AffinityBottomLeft extends BlockBase {
       foreach ($event_list as $e) {
         $start_date = date_create($e['date']);
         $edate = date_format($start_date, "n/d/Y g:i A T");
-        $output .= '<p class="text-white-er">[' . $edate . '] ' . $e['title'] . '</p>';
+        $output .= '<p class="text-white-er">[' . $edate . '] <br />' . $e['title'] . '</p>';
       }
     }
     else {
