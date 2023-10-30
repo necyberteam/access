@@ -834,7 +834,7 @@ function access_misc_update_10007(&$sandbox) {
       	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
      	</div>
       <div>
-        <p class="font-extrabold mb-1">Zero Installation</p>
+        <p class="font-extrabold mb-1">Zero installation</p>
         <p>Run entirely in your browser. No software installation required.</p>
       </div>
       </div>
@@ -873,7 +873,7 @@ function access_misc_update_10007(&$sandbox) {
 
     	[accordion summary=" How do I request to have an application installed on a resource I use?" text="Open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>."][/accordion]
 
-    	[accordion summary="I’m an ACCESS resource provider and I want to make OnDemand available on my systems. How do I get started?" text="Please follow the steps outlined in the <a href='https://readthedocs.access-ci.org/projects/integration-roadmaps/en/latest/tasks/ACCESS_OnDemand_Portal_Integration_v1.html'>ACCESS OnDemand service integration roadmap</a>."][/accordion]
+    	[accordion summary="I’m an ACCESS Resource Provider and I want to make OnDemand available on my systems. How do I get started?" text="Please follow the steps outlined in the <a href='https://readthedocs.access-ci.org/projects/integration-roadmaps/en/latest/tasks/ACCESS_OnDemand_Portal_Integration_v1.html'>ACCESS OnDemand service integration roadmap</a>."][/accordion]
 
     	[accordion summary="Open OnDemand has made it really easy for me to use ACCESS resources. Where can I learn more about it or get engaged in the community?" text="<a href='https://openondemand.org/get-involved'>Read this page</a> to learn the many ways to join the Open OnDemand community and get involved. Join our <a href='https://support.access-ci.org/affinity-groups/open-ondemand'>Affinity Group</a> to get up to the minute announcements about our community-organized monthly Tips and Tricks Calls and other events."][/accordion]
 
