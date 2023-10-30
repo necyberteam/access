@@ -569,20 +569,20 @@ Try these cutting-edge tools designed to streamline your time to science. These 
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
-          	<span class="font-extrabold">Data Management</span>
+          	<span class="font-extrabold">Data management</span>
 	    </div>
 
 	    <div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
             	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           	</div>
-          	<span class="font-extrabold">Provenance Tracking</span>
+          	<span class="font-extrabold">Provenance tracking</span>
 	    </div>
 	    <div class="flex  mb-3">
           <div class="not-prose shrink-0 me-3">
           	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
           </div>
-          <span class="font-extrabold">Automatic Error Recovery</span>
+          <span class="font-extrabold">Automatic error recovery</span>
 	    </div>
 	    <div class="flex  mb-3">
         	<div class="not-prose shrink-0 me-3">
