@@ -8,6 +8,7 @@ use Drupal\access_misc\Plugin\Util\EventDateConvert;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
@@ -50,6 +51,27 @@ function access_misc_views_pre_view(ViewExecutable $view, $display_id, array &$a
       'plugin_id' => 'text_custom',
     );
     $view->setHandler('block_6', 'footer', 'area_text_custom', $options);
+  }
+}
+
+/**
+ * Implements hook_views_post_render().
+ */
+function access_misc_views_post_render(ViewExecutable $view) {
+  // Override view /admin/structure/views/view/people_with_interest_tags/edit/page_1 title.
+  if ( ($view->id() == 'people_with_interest_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') ||
+      ($view->id() == 'people_with_expertise_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1')) {
+    $path = \Drupal::service('path.current')->getPath();
+    $path_args = explode('/', $path);
+    $tid = is_numeric($path_args[4]) ? $path_args[4] : false;
+    if ($term = term::load($tid)) {
+      $title = 'People with interest in ' . $term->get('name')->value;
+      if ($view->id() == 'people_with_expertise_tags') {
+        $title = 'People with expertise in ' . $term->get('name')->value;
+      }
+      // Set the view title.
+      $view->setTitle($title);
+    }
   }
 }
 
