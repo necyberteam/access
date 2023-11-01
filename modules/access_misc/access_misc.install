@@ -276,7 +276,7 @@ function access_misc_update_10000(&$sandbox) {
     </p>
   </section>
 </div>
-<div class="col-2 sticky top-0">
+<div class="col-2 sticky top-10">
   <nav class="bg-md-teal mb-10 p-5">
     <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS XDMoD </a>
     <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
@@ -335,7 +335,7 @@ function access_misc_update_10001(&$sandbox) {
       <a class="btn btn-primary" href="https://forms.gle/u4d4kCtsYNQgzxjq5">Apply to CCEP</a>
     </section>
   </div>
-  <div class="col-2 sticky top-0">
+  <div class="col-2 sticky top-10">
       <nav class="bg-md-teal mb-10 p-5">
         <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">CCEP</a>
         <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#tier1">Tier 1</a>
@@ -348,8 +348,8 @@ function access_misc_update_10001(&$sandbox) {
 <div id="fine-print" class="py-10 bg-light-teal -mx-50% px-50%">
   <div class="container">
     <h2>Important Fine Print</h2>
-    <p>CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more! Submissions are reviewed once a month. Please submit two months prior to the conference that you desire to attend.</p>
-    <p><a href="/ccep-pilot-details">See all the details</a></p>
+    <p>CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more! Submissions are reviewed once a month. Please submit by October 1 for SC23 or two months prior to the conference that you desire to attend.</p>
+    <p><a href="/ccep/ccep-details">See all the details</a></p>
   </div>
 </div>
 EOT;
@@ -419,7 +419,7 @@ function access_misc_update_10002(&$sandbox) {
     </p>
   </section>
 </div>
-<div class="col-2 sticky top-0">
+<div class="col-2 sticky top-10">
   <nav class="bg-md-teal mb-10 p-5">
     <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">Science Gateways</a>
     <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
