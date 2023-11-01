@@ -509,7 +509,7 @@ function access_misc_update_10004(&$sandbox) {
 Try these cutting-edge tools designed to streamline your time to science. These tools drastically reduce development time, allowing researchers to swiftly unlock the full potential of HPC systems.
 </p>
 <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-10" >
-	<div class="border border-black border-solid md--col-span-3"></div>
+	<div class="border border-gray border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
 		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/access-ondemand.svg">
@@ -550,7 +550,7 @@ Try these cutting-edge tools designed to streamline your time to science. These 
 	    </div>
 	</div>
 
-	<div class="border border-black border-solid md--col-span-3"></div>
+	<div class="border border-gray border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
 		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/pegasus-stacked.svg">
@@ -598,7 +598,7 @@ Try these cutting-edge tools designed to streamline your time to science. These 
 	    </div>
 	</div>
 
-	<div class="border border-black border-solid md--col-span-3"></div>
+	<div class="border border-gray border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
 		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/science-gateways.svg">
@@ -645,7 +645,7 @@ Try these cutting-edge tools designed to streamline your time to science. These 
 	    </div>
 	</div>
 
-	<div class="border border-black border-solid md--col-span-3"></div>
+	<div class="border border-gray border-solid md--col-span-3"></div>
 
 	<div class="flex flex-col items-center">
 		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/xdmod-dk.png">
