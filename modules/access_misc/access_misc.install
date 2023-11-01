@@ -965,7 +965,7 @@ function access_misc_update_10013(&$sandbox) {
   $nid = 5950;
   $format = 'full_no_editor';
   $body = <<<EOT
-  <div class="grid grid-cols-1 md--grid-cols-3 ml--grid-cols-4 gap-5">
+    <div class="grid grid-cols-1 md--grid-cols-3 ml--grid-cols-4 gap-5">
   <div class="col-1 col-span-3 row-span-2">
 
     <p class="prose text-dark-teal text-2xl leading-9 mb-10">
@@ -973,14 +973,13 @@ function access_misc_update_10013(&$sandbox) {
       researchers and educators use national advanced computing systems and
       services. Each playlist contains a number of short videos explaining a
       component of the ACCESS ecosystem. You can watch the whole playlist or
-      find an
-      explanation of a single topic.
+      find an explanation of a single topic.
     </p>
 
     <section class="border-yellow border-b-8 mb-10">
       <h2 class="mb-3">NSF ACCESS for New Users</h2>
       <div class="md--w-9/12 border border-black mb-5">
-        <iframe width="100%" height="315"
+        <iframe width="100%" style="aspect-ratio: 16/9"
           src="https://www.youtube.com/embed/videoseries?si=mAcnLGcpuFV-RG0K&amp;list=PLKZ5k-XFFHU1HHjQvcA1pZYUTbPfBZ2fz"
           title="YouTube video player" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -997,14 +996,14 @@ function access_misc_update_10013(&$sandbox) {
     <section class="border-yellow border-b-8 mt-4 mb-10" id="video-intro">
       <h2 class="mb-3">Introduction to ACCESS</h2>
       <div class="md--w-9/12 border border-black mb-5">
-        <iframe width="100%" height="315"
+        <iframe width="100%" style="aspect-ratio: 16/9"
           src="https://www.youtube.com/embed/videoseries?si=RnwlRFkrwJ6M93SD&amp;list=PLKZ5k-XFFHU0yJAfdArHCIC1EBGtBWELp"
           title="YouTube video player" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen=""></iframe>
       </div>
       <div class="md--w-9/12 mb-10">
-        <h3 class="my-0">Watch the whole playlist or jump to topic in videos
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos
           below.</h3>
         "Introduction to ACCESS" describes the NSF ACCESS project, including its
         purpose as the interface to U.S. national computational infrastructure,
@@ -1014,7 +1013,7 @@ function access_misc_update_10013(&$sandbox) {
       <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/PzvN6BmtbzA?si=JXAE71xIzPvCfKgd"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1029,7 +1028,7 @@ function access_misc_update_10013(&$sandbox) {
         </div>
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/nfY48cjO2Fw?si=9VLx-vb6oPW3haVF"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1037,13 +1036,12 @@ function access_misc_update_10013(&$sandbox) {
           </p>
           <h4 class="mt-0">The User Portal</h4>
           <p>Watch an overview of the different services available from the
-            ACCESS portal: <a
-              href="https://access-ci.org">https://access-ci.org/</a>.
+            ACCESS portal: <a href="https://access-ci.org">https://access-ci.org/</a>.
           </p>
         </div>
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/k3KGzls4CA8?si=QRojdHg3jcegCvbz"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1052,8 +1050,7 @@ function access_misc_update_10013(&$sandbox) {
           </p>
           <h4 class="mt-0">Identity Management &amp; Acceptable Use</h4>
           <p>Find out about the tools available to manage an ACCESS user account
-            via <a
-              href="https://identity.access-ci.org/">https://identity.access-ci.org/</a>,
+            via <a href="https://identity.access-ci.org/">https://identity.access-ci.org/</a>,
             and the responsibilities of being an ACCESS user.
           </p>
         </div>
@@ -1064,21 +1061,20 @@ function access_misc_update_10013(&$sandbox) {
       <h2 class="mb-3">ACCESS Allocations</h2>
 
       <div class="md--w-9/12 border border-black mb-5">
-        <iframe width="100%" height="315"
+        <iframe width="100%" style="aspect-ratio: 16/9"
           src="https://www.youtube.com/embed/videoseries?si=R_sNMCqPMQ6_nfMW&amp;list=PLKZ5k-XFFHU0vvOEkvlFkCUJIUqiO653j"
           title="YouTube video player" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen=""></iframe>
       </div>
       <div class="md--w-9/12 mb-10">
-        <h3 class="my-0">Watch the whole playlist or jump to topic in videos
-          below.</h3>
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos below.</h3>
       </div>
 
       <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/lhjPw7ZJ7Ak?si=7xjjl-GvvFjaPGEo"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1093,7 +1089,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/vvj5nL1lFxA?si=AVSG2K_m4VxozdKJ"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1110,7 +1106,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/j3DbxS5f2Jc?si=ouT5cH0xLcA0j9lZ"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1126,7 +1122,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/z-NEEuQxx7g?si=Z_RnlFwS7oUbQhNh"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1142,7 +1138,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/w6eEHK067-I?si=tjCVeNj_w7xn72E9"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1159,7 +1155,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/6D7E39mB8oI?si=0LEe3KhK_kYkkeUO"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1178,7 +1174,7 @@ function access_misc_update_10013(&$sandbox) {
     <section class="border-yellow border-b-8  mt-4 mb-10" id="video-resources">
       <h2 class="mb-3">ACCESS Resources</h2>
       <div class="md--w-9/12 border border-black mb-5">
-        <iframe width="100%" height="315"
+        <iframe width="100%" style="aspect-ratio: 16/9"
           src="https://www.youtube.com/embed/videoseries?si=31dzRUM7O5AoWUQl&amp;list=PLKZ5k-XFFHU3UxS2YCaNQqt4UVcbQ4_bA"
           title="YouTube video player" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1186,15 +1182,14 @@ function access_misc_update_10013(&$sandbox) {
         </iframe>
       </div>
       <div class="md--w-9/12 mb-10">
-        <h3 class="my-0">Watch the whole playlist or jump to topic in videos
-          below.</h3>
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos below.</h3>
       </div>
 
 
       <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/KaGLD59659M?si=nycf4gVntUOAWKjR"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1211,7 +1206,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/J_J9YE9-2nM?si=LnnQ78GewfGz6Gwq"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1221,14 +1216,13 @@ function access_misc_update_10013(&$sandbox) {
           <h4 class="mt-0">A Support &amp; Documentation View</h4>
           <p>Find out how to access detailed technical descriptions of the
             ACCESS computing and storage systems via the ACCESS Support portal:
-            <a
-              href="https://support.access-ci.org/">https://support.access-ci.org/</a>.
+            <a href="https://support.access-ci.org/">https://support.access-ci.org/</a>.
           </p>
         </div>
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/R6GEwJ6IYu8?si=O96uVYORNHOpHALL"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1250,22 +1244,21 @@ function access_misc_update_10013(&$sandbox) {
 
     <section class="border-yellow border-b-8  mt-4 mb-10" id="video-support">
       <h2 class="mb-3">ACCESS Support</h2>
-      <div class="md--w-9/12 border border-black mb-5"> <iframe width="100%"
-          height="315"
+      <div class="md--w-9/12 border border-black mb-5">
+        <iframe width="100%" style="aspect-ratio: 16/9"
           src="https://www.youtube.com/embed/videoseries?si=HivFqkLr8pKW7Mfp&amp;list=PLKZ5k-XFFHU0g_Du-iiYJ8So_PPLIgjmh"
           title="YouTube video player" frameborder="0"
           allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
           allowfullscreen=""></iframe>
       </div>
       <div class="md--w-9/12 mb-10">
-        <h3 class="my-0">Watch the whole playlist or jump to topic in videos
-          below.</h3>
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos below.</h3>
       </div>
 
       <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/Ikkv8UsvGVY?si=CAojAFHVhLmwTAlc"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1279,7 +1272,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/VLLLtuaM2sk?si=QNcrcsWv6VX3YX7j"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1295,7 +1288,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/N8_Thsg4qkM?si=iveguNz8B84fQk59"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1313,7 +1306,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/wco-w2zP2Eg?si=ppZ2l3XUquuohaHA"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1328,7 +1321,7 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/qUvfyOt37A4?si=1ga5giu0wWaJPJte"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
@@ -1345,14 +1338,14 @@ function access_misc_update_10013(&$sandbox) {
 
         <div class="flex flex-col justify-start my-4 ">
           <p class="border border-black">
-            <iframe width="100%" height="315"
+            <iframe width="100%" style="aspect-ratio: 16/9"
               src="https://www.youtube.com/embed/tXrz5AgW7a8?si=ww9d4L-Bs5bFndyq"
               title="YouTube video player" frameborder="0"
               allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
               allowfullscreen="">
             </iframe>
           </p>
-          <h4 class="mt-0">Opening A Support Ticket</h4>
+          <h4 class="mt-0">Opening a Support Ticket</h4>
           <p>Find out how to use the ACCESS Support portal <a
               href="https://support.access-ci.org/">https://support.access-ci.org/</a>
             to request help when you have a problem that you are unable to
@@ -1363,7 +1356,7 @@ function access_misc_update_10013(&$sandbox) {
     </section>
   </div>
 
-  <div class="col-2 sticky top-0">
+  <div class="hidden md--block col-2 sticky top-10">
     <nav class="bg-md-teal mb-10 p-5">
       <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block"
         href="#">NFS ACCESS for New Users</a>
