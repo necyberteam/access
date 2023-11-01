@@ -8,10 +8,9 @@ use Drupal\access_misc\Plugin\Util\EventDateConvert;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
-use Drupal\Core\Link;
-use Drupal\Core\Url;
 use Drupal\views\ViewExecutable;
 
 /**
@@ -24,46 +23,15 @@ function access_misc_views_pre_render(ViewExecutable $view) {
 }
 
 /**
- * Implements hook_views_pre_view().
- */
-function access_misc_views_pre_view(ViewExecutable $view, $display_id, array &$args) {
-  if ($view->id() == 'match_engagement_view' && $display_id === 'block_6') {
-    // Get term id of page the current user is on.
-    $path = \Drupal::service('path.current')->getPath();
-    $path_args = explode('/', $path);
-    $tid = $path_args[3];
-    $options = array(
-      'query'      => ['field_tags_target_id' => $tid],
-      'attributes' => ['class' => ['btn', 'btn-md-teal', 'mt-4']],
-      'absolute'   => TRUE,
-    );
-    $link= Link::fromTextAndUrl(t('Engagements with tag'), Url::fromUri('internal:/engagements', $options))->toString();
-    $options = array(
-      'id' => 'area_text_custom',
-      'table' => 'views',
-      'field' => 'area_text_custom',
-      'relationship' => 'none',
-      'group_type' => 'none',
-      'admin_label' => '',
-      'empty' => TRUE,
-      'tokenize' => FALSE,
-      'content' => $link,
-      'plugin_id' => 'text_custom',
-    );
-    $view->setHandler('block_6', 'footer', 'area_text_custom', $options);
-  }
-}
-
-/**
  * Implements hook_views_post_render().
  */
 function access_misc_views_post_render(ViewExecutable $view) {
   // Override view /admin/structure/views/view/people_with_interest_tags/edit/page_1 title.
-  if ( ($view->id() == 'people_with_interest_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') ||
+  if (($view->id() == 'people_with_interest_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') ||
       ($view->id() == 'people_with_expertise_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1')) {
     $path = \Drupal::service('path.current')->getPath();
     $path_args = explode('/', $path);
-    $tid = is_numeric($path_args[4]) ? $path_args[4] : false;
+    $tid = is_numeric($path_args[4]) ? $path_args[4] : FALSE;
     if ($term = term::load($tid)) {
       $title = 'People with interest in ' . $term->get('name')->value;
       if ($view->id() == 'people_with_expertise_tags') {
@@ -111,7 +79,7 @@ function access_misc_preprocess_views_view_field(&$variables) {
         $start_date = $output[0];
         $end_date = $output[1];
         $date = new EventDateConvert($start_date, $end_date);
-        $variables['output'] = Drupal\Core\Render\Markup::create($date->getStart() . " - " . $date->getEnd());
+        $variables['output'] = Markup::create($date->getStart() . " - " . $date->getEnd());
       }
     }
   }
