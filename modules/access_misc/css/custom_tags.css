@@ -3,7 +3,8 @@
 }
 
 details.tags {
-  margin: 2em 0;
+  margin: 2rem 0;
+  padding: 0 1rem;
 }
 
 details.tags {
@@ -15,6 +16,7 @@ details.tags summary {
   position: sticky
   top: 0;
   background-color: #ddd;
+  margin: 0 -1rem;
 }
 
 .tags-select {
@@ -25,9 +27,20 @@ details.tags summary {
   margin: 5px;
 }
 
+.tags-select:hover {
+    border: 1px solid #1A5B6E;
+    color: #1A5B6E;
+}
+
 .selected {
   background-color: #1A5B6E;
-  color: #fff;
+  border-color: #1A5B6E;
+  color: #ffffff;
+}
+
+.selected:hover {
+  color: #ffffff;
+  opacity: 0.8;
 }
 
 .tags h2 {
