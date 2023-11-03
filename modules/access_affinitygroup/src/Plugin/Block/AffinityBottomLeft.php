@@ -97,6 +97,7 @@ class AffinityBottomLeft extends BlockBase {
     }
     $output = '<div class="bg-md-teal p-4 mb-10">';
     $output .= '<h2 class="text-white-er text-xl font-semibold mt-0 mb-3">Upcoming Events</h2>';
+    $affinity_group_tax = '';
     if ($node) {
       $affinity_group_tax = $node->get('field_affinity_group')->getValue()[0]['target_id'];
     }
