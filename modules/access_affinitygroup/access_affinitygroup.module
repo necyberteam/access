@@ -658,7 +658,7 @@ function access_affinitygroup_cron() {
 
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
-      \Drupal::logger('access_affinitygroup')->notice('Cron: token refresh ' . date("Y-m-d H:i:s", $currentTime . " on $host"));
+      \Drupal::logger('access_affinitygroup')->notice('Cron: token refresh ' .  date("Y-m-d H:i:s", $currentTime) . " on $host");
 
       $cca = new ConstantContactApi();
       $cca->newToken();

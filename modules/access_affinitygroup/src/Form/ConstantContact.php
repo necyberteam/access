@@ -162,6 +162,12 @@ class ConstantContact extends FormBase {
       '#description' => $this->t('Unchecked is the normal value.'),
       '#default_value' => $allocBatchNoUserDetSav,
     ];
+    $form['batch_param_verbose'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Verbose logging'),
+      '#default_value' => FALSE,
+      '#required' => FALSE,
+    ];
 
     $form['savebatchsettings'] = [
       '#type' => 'submit',
@@ -214,7 +220,12 @@ class ConstantContact extends FormBase {
       '#description' => $this->t("Stop count affinity groups."),
       '#required' => FALSE,
     ];
-
+    $form['maint_sync_param_verbose'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Verbose logging'),
+      '#default_value' => FALSE,
+      '#required' => FALSE,
+    ];
     $form['maint_sync_run'] = [
       '#type' => 'submit',
       '#value' => $this->t('Sync AG and CC'),
@@ -245,7 +256,12 @@ class ConstantContact extends FormBase {
       '#description' => $this->t("Stop count clean obsolete allocations."),
       '#required' => FALSE,
     ];
-
+    $form['maint_obsclean_param_verbose'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Verbose logging'),
+      '#default_value' => FALSE,
+      '#required' => FALSE,
+    ];
     $form['maint_obsclean_run'] = [
       '#type' => 'submit',
       '#value' => $this->t('Clean allocations'),
@@ -339,9 +355,11 @@ class ConstantContact extends FormBase {
   /**
    *
    */
-  public function doBatch() {
+  public function doBatch(array &$form, FormStateInterface $form_state) {
     $aui = new AllocationsUsersImport();
-    $aui->startBatch();
+    $aui->startBatch(
+      $form_state->getValue('batch_param_verbose')
+    );
   }
 
   /**
@@ -351,7 +369,8 @@ class ConstantContact extends FormBase {
     $aui = new AllocationsUsersImport();
     $aui->syncAGandCC(
       $form_state->getValue('maint_sync_param_start'),
-      $form_state->getValue('maint_sync_param_stop')
+      $form_state->getValue('maint_sync_param_stop'),
+      $form_state->getValue('maint_sync_param_verbose')
     );
   }
 
@@ -363,7 +382,8 @@ class ConstantContact extends FormBase {
     $aui = new AllocationsUsersImport();
     $aui->cleanObsoleteAllocations(
       $form_state->getValue('maint_obsclean_param_start'),
-      $form_state->getValue('maint_obsclean_param_stop')
+      $form_state->getValue('maint_obsclean_param_stop'),
+      $form_state->getValue('maint_obsclean_param_verbose')
     );
   }
 
