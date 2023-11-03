@@ -40,11 +40,13 @@ class AllocationsUsersImport {
    * Where to start processing in case we must restart a large operation.
    * These are set in the constant contact form.
    */
+  // todo pass in as parameters
   private $batchSize;
   private $batchImportLimit;
   private $batchNoCC;
-  private $batchNoUserDetSav;
+  private $batchNoUserDetSave;
   private $batchStartAt;
+  private $verboseLogging;
   /**
    * For devtest, put in front of emails and uname for dev; set to '' to use real names.
    */
@@ -58,7 +60,9 @@ class AllocationsUsersImport {
   /**
    * Can start from drush or from form, todo: cron.
    */
-  public function startBatch() {
+  public function startBatch($verbose=FALSE) {
+
+    $this->verboseLogging = $verbose;
     $this->batchSize = \Drupal::state()->get('access_affinitygroup.allocBatchBatchSize');
     if (empty($this->batchSize)) {
       $this->batchSize = self::DEFAULT_SIZE;
@@ -79,14 +83,14 @@ class AllocationsUsersImport {
     if (!isset($this->batchNoUserDetSave)) {
       $this->batchNoUserDetSave = self::DEFAULT_NOUSERDETSAVE;
     }
-    $msg1 = "Batch params size: $this->batchSize processing limit: $this->batchImportLimit noCC: $this->batchNoCC";
+    $msg1 = "Allocations import batch start: $this->batchStartAt size: $this->batchSize processing limit: $this->batchImportLimit noCC: $this->batchNoCC";
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i');
 
     // don't start imports if something is wrong with constant contact connection.
     $cca = new ConstantContactApi();
     if (!$cca->getConnectionStatus()) {
-      \Drupal::logger('cron_affinitygroup')->error('Contant Contact not connected.');
+      \Drupal::logger('cron_affinitygroup')->error('Allocations imports: Contant Contact not connected.');
       return;
     }
 
@@ -96,7 +100,7 @@ class AllocationsUsersImport {
     }
     $msg1 = "Initial import done: number to process: " . count($portalUserNames) . "; start processing at: $this->batchStartAt";
     \Drupal::messenger()->addMessage($msg1);
-    $this->collectCronLog($msg1, 'i');
+    $this->collectCronLog($msg1, 'd');
 
     // Get access support affinity group node for later.
     $nArray = \Drupal::entityQuery('node')
@@ -316,7 +320,6 @@ class AllocationsUsersImport {
 
           if ($needCCId && $userDetails) {
             // Either new user just created, or existing user missing constant contact id.
-            // @todo TAKE OUT
             $this->collectCronLog("...need CC id: $userName", 'd');
 
             if (!$this->batchNoCC) {
@@ -412,7 +415,7 @@ class AllocationsUsersImport {
       $this->collectCronLog("Exception while processing api results at $userCount " . $e->getMessage(), 'err');
     }
 
-    $this->collectCronLog("Batch " . $sandbox['batchNum'] . ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i');
+    $this->collectCronLog("Batch " . $sandbox['batchNum'] . ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'd');
 
     $context['results']['logCronErrors'] = array_merge($context['results']['logCronErrors'], $this->logCronErrors);
 
@@ -444,6 +447,7 @@ class AllocationsUsersImport {
    * email at end of the processing.
    *
    * $logType: err, i, d.  Determines logging category.
+   * Category d is not logged unless verboseLogging is true.
    */
   private function collectCronLog($msg, $logType = 'err') {
 
@@ -456,8 +460,9 @@ class AllocationsUsersImport {
       \Drupal::logger('cron_affinitygroup')->notice($msg);
     }
     else {
-      // @todo how to turn these off automatically in production after we do initial giant create
-      \Drupal::logger('cron_affinitygroup')->debug($msg);
+      if ($this->verboseLogging) {
+        \Drupal::logger('cron_affinitygroup')->debug($msg);
+      }
     }
   }
 
@@ -502,7 +507,7 @@ class AllocationsUsersImport {
 
       $u->save();
       $y = $u->id();
-      $this->collectCronLog("User created: $accessUserName - " . $aUser['email'] . " ($y)", 'i');
+      $this->collectCronLog("User created: $accessUserName - " . $aUser['email'] . " ($y)", 'd');
     }
     catch (\Exception $e) {
       $this->collectCronLog("Exception createUser $accessUserName: " . $e->getMessage());
@@ -583,10 +588,12 @@ class AllocationsUsersImport {
         if (!empty($ccIdField)) {
           $ccId = $ccIdField[0]['value'];
           if (!empty($ccId)) {
-            $cca = new ConstantContactApi();
-            $cca->setSupressErrDisplay(TRUE);
-            $cca->updateContact($ccId, $a['firstName'], $a['lastName'], $a['email']);
-            $this->collectCronLog('CC Account Update for ' . $a['username'] . ' ' . $a['email'] . ' ' . $ccId, 'i');
+            if (!$this->batchNoCC && !$this->batchNoUserDetSave) {
+              $cca = new ConstantContactApi();
+              $cca->setSupressErrDisplay(TRUE);
+              $cca->updateContact($ccId, $a['firstName'], $a['lastName'], $a['email']);
+            }
+            $this->collectCronLog('CC Account Update for ' . $a['username'] . ' ' . $a['email'] . ' ' . $ccId, 'd');
           }
         }
       }
@@ -594,8 +601,6 @@ class AllocationsUsersImport {
     catch (\Exception $e) {
       $this->collectCronLog('Exception in UserDetailUpdates for ' . $a['username'] . ': ' . $e->getMessage(), 'err');
     }
-    // If we have CC id, and email or name changed, update there, too.
-    // @todo .
     return;
   }
 
@@ -742,10 +747,11 @@ class AllocationsUsersImport {
    * If CC was not hooked up at the time the user joins the AG, they will
    * not be on the CC list. This function syncs the lists.
    */
-  public function syncAGandCC($agBegin = 0, $agEnd = 1000) {
+  public function syncAGandCC($agBegin = 0, $agEnd = 1000, $verbose=FALSE) {
     // Get all the Affinity Groups.
+    $this->verboseLogging = $verbose;
     $agCount = 0;
-    $this->collectCronLog("Sync affinity groups and Constant Contact: ag $agBegin to $agEnd ", 'i');
+    $this->collectCronLog("Sync affinity groups and Constant Contact: ag index $agBegin to $agEnd ", 'i');
     $nids = \Drupal::entityQuery('node')
       ->condition('status', 1)
       ->condition('type', 'affinity_group')
@@ -785,7 +791,14 @@ class AllocationsUsersImport {
           $field_val = $user->get('field_constant_contact_id')->getValue();
           if (!empty($field_val) && $field_val != 0) {
             $ccId = $field_val[0]['value'];
-            $agContacts[] = $ccId;
+            // Check to see of it's a good CC Id.
+            // preventing attempts to work with an obfuscated CC Id.
+            if (strlen($ccId) == 36) {
+              $agContacts[] = $ccId;
+            }
+            else {
+              $agContactsNoCCid[] = $uid;
+            }
           }
           else {
             // Users without cc id. might not do anything with this here, not sure yet.
@@ -828,11 +841,8 @@ class AllocationsUsersImport {
             $this->collectCronLog("Sync:error in links loop " . $e->getMessage(), 'err');
           }
         } while (!empty($nextHref));
-
-        $this->collectCronLog('Sync: cc: ' . count($ccContacts) . ' ag: ' . count($agContacts), 'd');
-
         $notInCC = array_diff($agContacts, $ccContacts);
-        $this->collectCronLog("Sync: to be added to list $agTitle count: " . count($notInCC), 'i');
+        $this->collectCronLog("Sync $agTitle: add " . count($notInCC) . '(' . count($ccContacts) . ' cc; ' . count($agContacts) . ' ag)', 'd');
 
         // To add users to cc lists, call cc api with chunks of 10.
         $chunkSize = 10;
@@ -851,6 +861,8 @@ class AllocationsUsersImport {
 
             $postData = json_encode($postData);
             $cca->apiCall('/activities/add_list_memberships', $postData, 'POST');
+            // Delay for api limit.
+            usleep(500);
           }
         }
       }
@@ -874,12 +886,13 @@ class AllocationsUsersImport {
    *
    * start/stop - integer index in list of users where to start and stop processing
    */
-  public function cleanObsoleteAllocations($indexStart, $indexStop) {
+  public function cleanObsoleteAllocations($indexStart, $indexStop, $verbose=FALSE) {
+    $this->verboseLogging = $verbose;
     $this->collectCronLog("Clean Obs: user count $indexStart, $indexStop ", 'i');
     $obsoleteCount = 0;
     try {
       $portalNames = $this->getApiPortalUserNames();
-      $this->collectCronLog("Clean Obs: portal count " . count($portalNames), 'i');
+      $this->collectCronLog("Clean Obs: portal count " . count($portalNames), 'd');
       if ($portalNames) {
 
         // Make destination list of emails of users with administrator role.
@@ -888,7 +901,7 @@ class AllocationsUsersImport {
           ->accessCheck(FALSE)
           ->execute();
         $userCount = count($userIds);
-        $this->collectCronLog("Clean Obs: user count $userCount ", 'i');
+        $this->collectCronLog("Clean Obs: user count $userCount ", 'd');
 
         $index = 0;
         foreach ($userIds as $userId) {
@@ -915,7 +928,7 @@ class AllocationsUsersImport {
               $found = array_search($accountSub, $portalNames);
               if (empty($found)) {
                 $this->updateUserCiderList($user, []);
-                $this->collectCronLog("Reset obsolete allocation list on " . $user->getAccountName() . " id $userId (at $index)", 'i');
+                $this->collectCronLog("Reset obsolete allocation list on " . $user->getAccountName() . " id $userId (at $index)", 'd');
                 $obsoleteCount++;
               }
             }

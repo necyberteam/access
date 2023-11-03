@@ -51,8 +51,7 @@ class ConstantContactApi {
       $this->configSettings = $config_factory->getEditable('access_affinitygroup.settings');
       $this->accessToken = $this->configSettings->get('access_token');
       $this->refreshToken = $this->configSettings->get('refresh_token');
-      \Drupal::logger('access_affinitygroup')->notice('cca constructor get R:' . $this->refreshToken);
-      \Drupal::logger('access_affinitygroup')->notice('cca constructor get A:' . $this->accessToken);
+
       $cc_key = \Drupal::service('key.repository')->getKey('constant_contact_client_id')->getKeyValue();
       if (empty($cc_key)) {
         \Drupal::logger('access_affinitygroup')->error('Constant Contact: client id not in repository.');
@@ -394,7 +393,7 @@ class ConstantContactApi {
       'update_source' => 'Account',
     ];
     $contact = json_encode($contact);
-    \Drupal::logger('cron_affinitygroup')->notice("Update $ccId, $firstname, $lastname, $mail");
+    \Drupal::logger('cron_affinitygroup')->notice("Update CC $ccId, $firstname, $lastname, $mail");
 
     $this->apiCall("/contacts/$ccId", $contact, 'PUT');
   }
