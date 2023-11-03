@@ -164,6 +164,7 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
         'summary',
         'label',
         'span',
+        'div',
         'h2',
       ],
     ];

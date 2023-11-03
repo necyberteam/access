@@ -43,13 +43,14 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
-    $form['oit_advanced'] = [
+    $form['node_add_tags'] = [
       '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
         'button',
         'details',
         'summary',
+        'div',
         'span',
         'h2',
       ],

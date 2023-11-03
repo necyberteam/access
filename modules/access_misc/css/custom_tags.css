@@ -3,6 +3,7 @@
 }
 
 details.tags {
+  position: relative;
   margin: 2rem 0;
   padding: 0 1rem;
 }
@@ -13,7 +14,7 @@ details.tags {
 }
 
 details.tags summary {
-  position: sticky
+  position: sticky;
   top: 0;
   background-color: #ddd;
   margin: 0 -1rem;
@@ -21,7 +22,7 @@ details.tags summary {
 
 .tags-select {
   display: inline-block;
-  border: 1px solid #000;
+  border: 1px solid #232323;
   cursor: pointer;
   padding: 5px;
   margin: 5px;
@@ -45,4 +46,9 @@ details.tags summary {
 
 .tags h2 {
   margin: 1em 0;
+}
+
+.view-display-id-block_4 .view-content {
+  display: flex;
+  flex-wrap: wrap;
 }
