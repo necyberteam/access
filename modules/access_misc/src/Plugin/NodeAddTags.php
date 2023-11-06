@@ -24,7 +24,7 @@ class NodeAddTags {
   protected $renderer;
 
   /**
-   * Constructs a WebformEntityElementsValidator object.
+   * Constructs a NodeAddTags object.
    *
    * @param \Drupal\Core\Render\RendererInterface $renderer
    *   The 'renderer' service.
@@ -36,7 +36,7 @@ class NodeAddTags {
   }
 
   /**
-   * Login user.
+   * Get the NodeAddTags view.
    */
   public function getView() {
     $view = Views::getView('node_add_tags');
