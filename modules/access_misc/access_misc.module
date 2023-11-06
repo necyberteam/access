@@ -58,7 +58,8 @@ function access_misc_entity_view(array &$build, EntityInterface $entity, EntityV
       break;
 
     case 'eventinstance':
-      $convert_date = new EventDateConvert($build['date'][0]['start_date']['#markup'], $build['date'][0]['end_date']['#markup']);
+      $date = $build['date'][0];
+      $convert_date = new EventDateConvert($date['start_date']['#markup'], $date['end_date']['#markup']);
       $build['date'][0]['start_date']['#markup'] = $convert_date->getStart();
       $build['date'][0]['end_date']['#markup'] = $convert_date->getEnd();
       break;

@@ -58,7 +58,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
   $field = $variables['field'];
   // Override view /admin/structure/views/view/resources/edit/page_1 sid_2.
   // Shows up as affinity group on /ci-links page.
-  if ($view->id() == 'resources' && $view->current_display == 'page_1' && $field->options['id'] == 'sid_2') {
+  if ($view->id() == 'resources' && ($view->current_display == 'page_1' || $view->current_display == 'page_3') && $field->options['id'] == 'sid_2') {
     $sid = $variables['output'];
     $query = \Drupal::entityQuery('node')
       ->condition('type', 'affinity_group')
@@ -78,7 +78,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
   }
   // Override view /admin/structure/views/view/resource/edit/page_1 sid_2.
   // Shows up as affinity group on /ci-links/%sid page.
-  if ($view->id() == 'resource' && $view->current_display == 'page_1') {
+  if ($view->id() == 'resource' && ($view->current_display == 'page_1' || $view->current_display == 'page_3')) {
     if ($field->options['id'] == 'webform_submission_value') {
       $html = $variables['output'];
 
