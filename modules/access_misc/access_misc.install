@@ -276,7 +276,7 @@ function access_misc_update_10000(&$sandbox) {
     </p>
   </section>
 </div>
-<div class="col-2 sticky top-10">
+<div class="hidden md--block col-2 sticky top-10">
   <nav class="bg-md-teal mb-10 p-5">
     <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS XDMoD </a>
     <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
@@ -335,7 +335,7 @@ function access_misc_update_10001(&$sandbox) {
       <a class="btn btn-primary" href="https://forms.gle/u4d4kCtsYNQgzxjq5">Apply to CCEP</a>
     </section>
   </div>
-  <div class="col-2 sticky top-10">
+  <div class="hidden md--block col-2 sticky top-10">
       <nav class="bg-md-teal mb-10 p-5">
         <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">CCEP</a>
         <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#tier1">Tier 1</a>
@@ -419,7 +419,7 @@ function access_misc_update_10002(&$sandbox) {
     </p>
   </section>
 </div>
-<div class="col-2 sticky top-10">
+<div class="hidden md--block col-2 sticky top-10">
   <nav class="bg-md-teal mb-10 p-5">
     <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">Science Gateways</a>
     <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
@@ -880,7 +880,7 @@ function access_misc_update_10007(&$sandbox) {
   </section>
 </div>
 
-<div class="col-2 sticky top-10">
+<div class="hidden md--block col-2 sticky top-10">
   <nav class="bg-md-teal mb-10 p-5">
     <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS OnDemand</a>
     <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
