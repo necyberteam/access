@@ -38,6 +38,17 @@ class CiLinkController extends ControllerBase {
     $url_chunked = explode('/', $url);
     if (is_numeric(end($url_chunked))) {
       $this->sid = end($url_chunked);
+    }
+    // Redirect any /ci-links to /knowledge-base/ci-links on ACCESS Support.
+    $token = \Drupal::token();
+    $domainName = Html::getClass($token->replace(t('[domain:name]')));
+    if ($domainName == 'access-support' && $url_chunked[1] == 'ci-links') {
+      $response = new RedirectResponse('/knowledge-base/ci-links/' . $this->sid);
+      $response->send();
+      return;
+    }
+
+    if ($this->sid) {
       $this->webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($this->sid);
     }
     else {
@@ -49,7 +60,7 @@ class CiLinkController extends ControllerBase {
       $this->title = $title['title'];
     }
     else {
-      $this->title = 'Ci Link';
+      $this->title = 'CI Link';
     }
   }
 
