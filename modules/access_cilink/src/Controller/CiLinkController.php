@@ -180,7 +180,7 @@ class CiLinkController extends ControllerBase {
       $template = '
         <div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5 mb-10">
           <div class="col-1 col-span-3 row-span-2">
-            <div class="my-2 [&>*]--me-2 [&>*]--mb-2 [&>*]--border [&>*]--border-solid [&>*]--border-black [&>*]--px-2 [&>*]--py-1 [&_a]--font-normal [&>*]--no-underline hover--[&>*]--border-dark-teal">
+            <div class="my-2 [&_a]--inline-block [&>*]--me-2 [&>*]--mb-2 [&>*]--border [&>*]--border-solid [&>*]--border-black [&>*]--px-2 [&>*]--py-1 [&_a]--font-normal [&>*]--no-underline hover--[&>*]--border-dark-teal">
               {{ tags | raw }}
             </div>
             <ul class="ps-0">
