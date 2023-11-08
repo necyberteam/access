@@ -103,7 +103,7 @@ class ResourcesForAffinityGroup extends BlockBase {
             $tags .= '<div class="mr-4 me-4 mb-2">' . \Drupal::service('renderer')->render($link)->__toString() . '</div>';
           }
         }
-        $tags = '<div class="square-tags">' . $tags . '</div>';
+        $tags = '<div class="square-tags flex flex-wrap">' . $tags . '</div>';
         // Lookup skills by id and make an array of names.
         $skills = '';
         $skill_list = [];
@@ -114,19 +114,19 @@ class ResourcesForAffinityGroup extends BlockBase {
           }
         }
         if (['Beginner'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner.png" alt="Beginner">';
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner.png" alt="Beginner">';
         }
         elseif (['Beginner', 'Intermediate'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner-medium.png" alt="Beginner, Intermediate">';
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner-medium.png" alt="Beginner, Intermediate">';
         }
         elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-all.png" alt="Beginner, Intermediate, Advanced">';
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-all.png" alt="Beginner, Intermediate, Advanced">';
         }
         elseif (['Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-medium-advanced.png" alt="Intermediate, Advanced">';
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-medium-advanced.png" alt="Intermediate, Advanced">';
         }
         elseif (['Advanced'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-advanced.png" alt="Advanced">';
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-advanced.png" alt="Advanced">';
         }
 
         $rows[] = [
@@ -177,72 +177,9 @@ class ResourcesForAffinityGroup extends BlockBase {
         '#sticky' => TRUE,
         '#header' => $header,
         '#rows' => $rows,
-        '#attributes' => ['id' => 'ci-links', 'class' => ['table-search']],
+        '#attributes' => ['id' => 'ci-links', 'class' => ['table-search border-spacing-0']],
       ];
       $rendered .= \Drupal::service('renderer')->render($html['ci-links']);
-    }
-
-    /**
-   * Grab node id.
-   */
-    $node = \Drupal::routeMatch()->getParameter('node');
-
-    /**
-   * Adding a default for layout page.
-   */
-    $nid = $node ? $node->id() : 291;
-    // Entity query to get access_news nodes that have a field_affinity_group_node field that references $nid.
-    $query = \Drupal::entityQuery('node')
-      ->condition('type', 'access_news')
-      ->condition('status', 1)
-      ->condition('field_affinity_group_node', $nid, '=')
-      ->sort('created', 'DESC')
-      ->accessCheck(TRUE);
-    $nids = $query->execute();
-    // Get the field_affinity_announcements field from $nid.
-    $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
-    $field_affinity_announcements = $node->get('field_affinity_announcements')->getValue();
-    foreach ($field_affinity_announcements as $ann_nid) {
-      $nids[] = $ann_nid['target_id'];
-    }
-
-    $announcements = [];
-    // Get titles and dates and place into an array.
-    foreach ($nids as $anid) {
-      $node = \Drupal::entityTypeManager()->getStorage('node')->load($anid);
-      $title = $node->getTitle();
-      $link = [
-        '#type' => 'link',
-        '#title' => $title,
-        '#url' => Url::fromUri('internal:/node/' . $anid),
-      ];
-      $link_name = \Drupal::service('renderer')->render($link)->__toString();
-      $published_date = $node->get('field_published_date')->getValue();
-      $published_date = $published_date[0]['value'];
-      $announcements[$anid] = [
-        'link' => $link_name,
-        'date' => $published_date,
-      ];
-    }
-
-    // Sort announcements by date.
-    usort($announcements, fn($b, $a) => $a['date'] <=> $b['date']);
-
-    // Set announcements title.
-    $rendered .= '<h3 class="border-bottom pb-2">Announcements</h3>';
-
-    if (empty($nids)) {
-      $rendered .= '<div class="alert alert-warning">
-        <p>There are no announcements at this time. Please check back later or visit the <a href="/announcements">Announcements</a> page.</p>
-      </div>';
-    }
-
-    foreach ($announcements as $announcement) {
-      // Format $date.
-      $title = $announcement['link'];
-      $create_date = date_create($announcement['date']);
-      $adate = date_format($create_date, "m/d/y");
-      $rendered .= '<div class="announcement mb-3"><span class="announcement-title">' . $title . '</span> <span class="announcement-date">[' . $adate . ']</span></div>';
     }
 
     return [
