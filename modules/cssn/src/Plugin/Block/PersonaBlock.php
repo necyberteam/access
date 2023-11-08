@@ -48,7 +48,7 @@ class PersonaBlock extends BlockBase {
         $user_image = '<img src="' . $user_image . '" class="img-fluid mb-3 border border-black" />';
       }
       else {
-        $user_image = '<svg version="1.1" class="mb-3 border border-black" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
+        $user_image = '<svg version="1.1" class="mb-3" xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink" x="0px" y="0px"
            viewBox="0 0 448 448" style="enable-background:new 0 0 448 448;" xml:space="preserve">
             <style type="text/css">
               .st0{fill:#ECF9F8;}
@@ -73,6 +73,7 @@ class PersonaBlock extends BlockBase {
           'btn-primary',
           'btn-sm',
           'w-100',
+          'w-full',
         ],
       ];
       $edit_link = $public ? "" : $edit_link;
@@ -139,7 +140,7 @@ class PersonaBlock extends BlockBase {
       // $ws_results = $ws_query->execute();
       $cssn_indicator = "";
       if ($cssn_member) {
-        $cssn_indicator = "<span class='text-primary'><i class='fa-solid fa-square'></i></span>";
+        $cssn_indicator = "<span class='text-primary'><i class='fa-solid fa-square text-orange'></i></span>";
         $cssn = "CSSN Member";
       }
       elseif ($public) {
@@ -153,11 +154,15 @@ class PersonaBlock extends BlockBase {
         $cssn = $cssn_renderable;
         $cssn['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
       }
-      $cssn_more_url = Url::fromUri('https://support.access-ci.org/cssn');
-      $cssn_more_link = Link::fromTextAndUrl('Find out More', $cssn_more_url);
+      $cssn_more_url = Url::fromUri('internal:/cssn');
+      $cssn_more_link = Link::fromTextAndUrl('info', $cssn_more_url);
       $cssn_more_renderable = $cssn_more_link->toRenderable();
       $cssn_more = $cssn_more_renderable;
-      $cssn_more['#attributes']['class'] = ['text-dark'];
+      $cssn_more['#attributes']['class'] = [
+        'text-dark',
+        'text-md-teal',
+        'no-underline',
+      ];
 
       // Get the user's email address.
       $user_id = $user->id();
@@ -166,18 +171,18 @@ class PersonaBlock extends BlockBase {
 
       $persona_block['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="persona p-3">
+        '#template' => '<div class="persona">
                           {{ user_image | raw }}
                           <h2>{{ first_name }} {{ last_name }}</h2>
-                          <h4 class="institution">{{ institution }}</h4>
+                          <h4 class="institution text-md-teal">{{ institution }}</h4>
                           {% if academic_status %}
                             <div class="academic-status">{{ academic_status }}</div>
                           {% endif %}
-                          <div class="d-flex justify-content-between">
+                          <div class="d-flex justify-content-between flex justify-between border-b border-black">
                             <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
-                            <div><i class="text-dark fa-regular fa-circle-info"></i> {{ cssn_more }}</div>
+                            <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
                           </div>
-                          <div class="d-flex justify-content-between border-top border-bottom mb-3 py-3 border-secondary">
+                          <div class="d-flex justify-content-between flex justify-between border-top border-bottom mb-3 py-3 border-secondary border-b border-black">
                             <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
                             {% if cssn_role %}
                               <div><i class="text-dark fa-solid fa-pen-to-square"></i> {{ cssn_role }}</div>

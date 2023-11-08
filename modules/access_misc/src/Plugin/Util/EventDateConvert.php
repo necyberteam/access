@@ -32,11 +32,11 @@ class EventDateConvert {
   public function __construct($set_start, $set_end) {
     $start_iso = strtotime($set_start);
     $start_day = date('d', $start_iso);
-    $start = date('m/d/Y - h:i A', $start_iso);
+    $start = date('m/d/y - h:i A', $start_iso);
     $end_iso = strtotime($set_end);
     $end_day = date('d', $end_iso);
     if ($start_day != $end_day) {
-      $end = date('m/d/Y - h:i A T', $end_iso);
+      $end = date('m/d/ - h:i A T', $end_iso);
     }
     else {
       $end = date('h:i A T', $end_iso);

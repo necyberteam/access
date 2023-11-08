@@ -125,7 +125,7 @@ class ProjectLookup {
       return;
     }
     foreach ($this->projects_sorted as $project) {
-      $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
+      $stripe_class = $n % 2 == 0 ? 'bg-light-teal bg-light' : '';
       $title = $project['title'];
       $sid = $project['sid'];
       $project_status = $project['status'];
@@ -133,17 +133,17 @@ class ProjectLookup {
       if (($project_status == 'Recruiting' && $project_name == 'Interested') || $project_name != 'Interested') {
         $lowercase = lcfirst($project_name);
         $first_letter = substr($lowercase, 0, 1);
-        $project_name = "<div data-bs-toggle='tooltip' data-bs-placement='left' title='$project_name'>
+        $project_name = "<div data-tippy-content='$project_name'>
           <i class='text-dark fa-solid fa-circle-$first_letter h2'></i>
         </div>";
-        $project_link .= "<li class='d-flex p-3 $stripe_class'>
+        $project_link .= "<li class='py-2 $stripe_class'>
           <div class='text-truncate' style='width: 400px;'>
             <a href='/admin/structure/webform/manage/project/submission/$sid'>$title</a>
           </div>
-          <div class='font-weight-bold ms-5'>
+          <div class='invisible hidden ms-5'>
             $project_name
           </div>
-          <div class='ms-2'>
+          <div class='ms-2 invisible hidden'>
             $project_status
           </div>
         </li>";

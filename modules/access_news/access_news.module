@@ -202,6 +202,9 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 
   $getFields = $node->getFields();
   $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
+  if (!count($broadcastArray)) {
+    return;
+  }
   $broadcastToAGs = $broadcastArray[0]['value'];
   $useCommunityTemplate = NULL;
 
