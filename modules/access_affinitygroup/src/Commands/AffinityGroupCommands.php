@@ -5,6 +5,7 @@ namespace Drupal\access_affinitygroup\Commands;
 use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\Core\Datetime\DrupalDateTime;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 use Drupal\node\Entity\Node;
 use Drupal\recurring_events\Entity\EventInstance;
@@ -141,7 +142,11 @@ class AffinityGroupCommands extends DrushCommands {
       $agCount += 1;
       $uCount = 0;
 
-      $this->io()->success($agCount . '. ' . $node->getTitle());
+      $this->output()->writeln('');
+      $this->output()->writeln('***********************************************');
+      $this->output()->writeln('');
+      $this->output()->writeln($agCount . '. ' . $node->getTitle());
+      $this->output()->writeln('');
 
       // If there isn't a Constant Contact list_id,
       // trigger save to generate Constant Contact list.
@@ -156,37 +161,32 @@ class AffinityGroupCommands extends DrushCommands {
 
       $agCat = $node->get('field_affinity_group_category')->value;
       if (empty($agCat)) {
-        $this->output()->writeln('NO category');
-      }
-      else {
-        $this->output()->writeln('category: ' . $agCat);
+        $agCat = 'NO category';
       }
 
       // Logo.
       if (!empty($node->get('field_image')->entity)) {
         $uri = $node->get('field_image')->entity->getFileUri();
-        $absUrl = \Drupal::service('file_url_generator')->generateAbsoluteString($uri);
-        $this->output()->writeln('image uri: ' . $uri);
       }
       else {
-        $this->output()->writeln('NO image uri');
+        $uri = 'NO image uri';
       }
+
+      $this->output()->writeln($agCat . ' /  ' . $uri);
 
       // Get the Users who have flagged the associated term.
       $term = $node->get('field_affinity_group');
-      $flag_service = \Drupal::service('flag');
-      $flags = $flag_service->getAllEntityFlaggings($term->entity);
+      $userIds = $this->getUserIdsFromFlags($term->entity);
+      $this->output()->writeln('Members count: ' . count($userIds));
 
-      $this->output()->writeln('Members count: ' . count($flags));
 
       if ($headOnly) {
         continue;
       }
 
-      foreach ($flags as $flag) {
+      foreach ($userIds as $uid) {
+
         $uCount += 1;
-        // $this->output()->writeln('-- '.$uCount.'.');
-        $uid = $flag->get('uid')->target_id;
         $this->output()->writeln('-- ' . $uCount . '. ' . $uid);
         if (!$uidOnly) {
           $user = User::load($uid);
@@ -210,6 +210,34 @@ class AffinityGroupCommands extends DrushCommands {
         }
       }
     }
+  }
+
+  /**
+   * Returns the user ids that have flagged an affinity group.
+   * Necessary to bypass the part of the flagging service
+   * $flag_service->getAllEntityFlaggings($term->entity)
+   * which loads all the flags at once. That function crashes when run to get
+   * the user flags on the ACCESS Support affinity group, with over 20k members.
+   * Here we do the same, except we don't load all the flags at once, and just
+   * assemble a list of the user ids which is the only part of the flag we need.
+   * term: taxonomy term entity for the affinity group.
+   */
+  public function getUserIdsFromFlags(EntityInterface $term) {
+
+    $entityTypeManager = \Drupal::service('entity_type.manager');
+    $query = $entityTypeManager->getStorage('flagging')->getQuery();
+    $query->accessCheck();
+
+    $query->condition('entity_type', $term->getEntityTypeId())
+      ->condition('entity_id', $term->id());
+
+    $ids = $query->execute();
+    $userIds = [];
+    foreach ($ids as $flagId) {
+      $flagging = $entityTypeManager->getStorage('flagging')->load($flagId);
+      $userIds[] = $flagging->get('uid')->first()->getValue()['target_id'];
+    }
+    return ($userIds);
   }
 
   /**
@@ -398,7 +426,6 @@ class AffinityGroupCommands extends DrushCommands {
    */
   public function importAllocations() {
     $aui = new AllocationsUsersImport();
-    // $retval = $aui->importUserAllocations();
     $retval = $aui->startBatch();
 
     $this->output()->writeln($retval);
