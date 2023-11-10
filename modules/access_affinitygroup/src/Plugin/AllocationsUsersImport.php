@@ -5,6 +5,7 @@ namespace Drupal\access_affinitygroup\Plugin;
 use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Batch\BatchBuilder;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\node\Entity\Node;
 use Drupal\user\Entity\User;
 use GuzzleHttp\Client;
@@ -782,10 +783,8 @@ class AllocationsUsersImport {
 
         // Assemble users belonging to this group (each stored on flag on the associated term),.
         $term = $node->get('field_affinity_group');
-        $flag_service = \Drupal::service('flag');
-        $flags = $flag_service->getAllEntityFlaggings($term->entity);
-        foreach ($flags as $flag) {
-          $uid = $flag->get('uid')->target_id;
+        $userIds = $this->getUserIdsFromFlags($term->entity);
+        foreach ($userIds as $uid) {
           $user = User::load($uid);
 
           $field_val = $user->get('field_constant_contact_id')->getValue();
@@ -870,6 +869,28 @@ class AllocationsUsersImport {
         $this->collectCronLog("Sync: " . $e->getMessage(), 'err');
       }
     } // end for each affinity group node
+  }
+
+  /**
+   * Returns the user ids that have flagged an affinity group.
+   * term: taxonomy term entity for the affinity group.
+   */
+  public function getUserIdsFromFlags(EntityInterface $term) {
+
+    $entityTypeManager = \Drupal::service('entity_type.manager');
+    $query = $entityTypeManager->getStorage('flagging')->getQuery();
+    $query->accessCheck();
+
+    $query->condition('entity_type', $term->getEntityTypeId())
+          ->condition('entity_id', $term->id());
+
+    $ids = $query->execute();
+    $userIds = [];
+    foreach ($ids as $flagId) {
+      $flagging = $entityTypeManager->getStorage('flagging')->load($flagId);
+      $userIds[] = $flagging->get('uid')->first()->getValue()['target_id'];
+    }
+    return ($userIds);
   }
 
   /**
