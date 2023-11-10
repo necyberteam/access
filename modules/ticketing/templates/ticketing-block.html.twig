@@ -5,20 +5,20 @@
   <form id="ticket-choice-form"  method="PUT" action="/open-a-ticket" class="w-fit py-10 my-10 mx-auto">
     <input type="hidden" name="customfield_10103" id="ticket-account-name" value="{{ data.account_name }}" />
     <input type="hidden" name="customfield_10108" id="ticket-display-name" value="{{ data.display_name }}" />
-    <h1 class="pb-4 mb-0">How can we help you?</h1>
-    <div class="form-check py-4 ">
+    <h1 class="my-2 pt-4">How can we help you?</h1>
+    <div class="form-check">
       <input class="form-check-input ticket-input-check" type="radio" name="ticketChoices" id="ticket-login-access">
       <label class="form-check-label px-1" for="ticket-login-access">
         I need help logging into ACCESS website
       </label>
     </div>
-    <div class="form-check py-4">
+    <div class="form-check">
       <input class="form-check-input ticket-input-check" type="radio" name="ticketChoices" id="ticket-login-other">
       <label class="form-check-label px-1" for="ticket-login-other">
         I need help logging into other affiliated infrastructure
       </label>
     </div>
-    <div class="form-check py-4">
+    <div class="form-check">
       <input class="form-check-input ticket-input-check" type="radio" name="ticketChoices" id="ticket-other-question" checked>
       <label class="form-check-label px-1" for="ticket-other-question">
         I have another question
