@@ -5,3 +5,19 @@
 .px46 {
   width: 46px;
 }
+.list-image-link::before {
+  display: inline-block;
+  content: '';
+  height: 32px;
+  width: 32px;
+  background-image: url('/modules/custom/access/modules/access_cilink/img/link.svg');
+  background-repeat: no-repeat;
+  background-position: center;
+}
+.list-image-link {
+  display: flex;
+  align-items: center;
+}
+.list-image-link a {
+  padding-left: 8px;
+}

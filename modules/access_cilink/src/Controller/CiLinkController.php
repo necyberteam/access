@@ -183,7 +183,7 @@ class CiLinkController extends ControllerBase {
             <div class="my-2 [&_a]--inline-block [&>*]--me-2 [&>*]--mb-2 [&>*]--border [&>*]--border-solid [&>*]--border-black [&>*]--px-2 [&>*]--py-1 [&_a]--font-normal [&>*]--no-underline hover--[&>*]--border-dark-teal">
               {{ tags | raw }}
             </div>
-            <ul class="ps-0">
+            <ul class="list-none ps-0">
               {{ links | raw }}
             </ul>
             <p>{{ description }}</p>

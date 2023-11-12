@@ -1,4 +1,4 @@
-resource_view:
+cilink_view:
   js:
     js/resource_view.js: {}
   css:
