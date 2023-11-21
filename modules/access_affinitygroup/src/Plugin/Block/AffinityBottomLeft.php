@@ -4,7 +4,6 @@ namespace Drupal\access_affinitygroup\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
- use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Url;
 use Drupal\views\Views;
 
