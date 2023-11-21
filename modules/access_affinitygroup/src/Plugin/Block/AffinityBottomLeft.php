@@ -4,6 +4,7 @@ namespace Drupal\access_affinitygroup\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
+ use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Url;
 use Drupal\views\Views;
 
@@ -105,7 +106,9 @@ class AffinityBottomLeft extends BlockBase {
     }
     if (!empty($event_list)) {
       foreach ($event_list as $e) {
-        $start_date = date_create($e['date']);
+        // Incoming time is UTC, so convert to local timezone.
+        $start_date = new \DateTime($e['date'], new \DateTimeZone("UTC"));
+        $start_date = $start_date->setTimeZone(new \DateTimeZone(date_default_timezone_get()));
         $edate = date_format($start_date, "n/d/Y g:i A T");
         $output .= '<div class="mb-3 text-white-er font-medium leading-5">' . $edate . '<br/>' . $e['title'] . '</div>';
       }
