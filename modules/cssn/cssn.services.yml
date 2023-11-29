@@ -1,0 +1,4 @@
+services:
+  cssn.flag:
+    class: Drupal\cssn\Plugin\Util\Flag
+    arguments: ['@flag']

@@ -35,3 +35,29 @@ function cssn_update_9001() {
   }
   node_access_rebuild();
 }
+
+/**
+ * Flag cssn affinity group for all users with 'Access CSSN' region set.
+ */
+function cssn_update_10000() {
+  // Entity query for all users with field_region set to 780.
+  $query = \Drupal::entityQuery('user');
+  $query->condition('field_region', 780);
+  $query->accessCheck(FALSE);
+  $uids = $query->execute();
+
+  $cssn_affinity_group = \Drupal::entityTypeManager()
+    ->getStorage('taxonomy_term')
+    ->loadByProperties(['tid' => 794]);
+  $cssn_affinity_group = reset($cssn_affinity_group);
+  $flag_id = 'affinity_group';
+  $flag = \Drupal::service('cssn.flag');
+
+  $i = 0;
+  foreach ($uids as $uid) {
+    $i++;
+    $user = \Drupal\user\Entity\User::load($uid);
+    $set_flag = $flag->setFlag($flag_id, $cssn_affinity_group, $user);
+    \Drupal::logger('cssn')->notice("Affinity CSSN group flagged for user: $uid with result: $set_flag iteration: $i");
+  }
+}
