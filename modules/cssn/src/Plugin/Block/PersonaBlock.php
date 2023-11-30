@@ -188,7 +188,9 @@ class PersonaBlock extends BlockBase {
                               <div><i class="text-dark fa-solid fa-pen-to-square"></i> {{ cssn_role }}</div>
                             {% endif %}
                           </div>
-                          <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
+                          {% if program %}
+                            <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
+                          {% endif %}
                           <div class="w-100">
                            {{ send_email | raw }}
                           {{ edit_link | raw }}

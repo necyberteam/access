@@ -70,13 +70,15 @@ class ProjectLookup {
     if ($result != NULL) {
       foreach ($result as $project_result) {
         $wf = WebformSubmission::load($project_result->sid);
-        $wf_lookup = $wf->getData();
-        $this->projects[] = [
-          'title' => $wf_lookup['project_title'],
-          'name' => $project_fields[$project_result->name],
-          'status' => $wf_lookup['status'],
-          'sid' => $project_result->sid,
-        ];
+        if ($wf != NULL) {
+          $wf_lookup = $wf->getData();
+          $this->projects[] = [
+            'title' => $wf_lookup['project_title'],
+            'name' => $project_fields[$project_result->name],
+            'status' => $wf_lookup['status'],
+            'sid' => $project_result->sid,
+          ];
+        }
       }
     }
   }
