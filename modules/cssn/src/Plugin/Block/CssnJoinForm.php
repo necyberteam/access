@@ -61,7 +61,7 @@ class CssnJoinForm extends BlockBase {
         <div>
           {{ join_img }} {{ join_img_mobile }}
         </div>
-        <div class="px-10 [&>*]--text-white [&_.form-checkboxes]--flex-col">
+        <div class="md--px-10 [&>*]--text-white [&_.form-checkboxes]--flex-col">
           {{ join_login }} {{ join_webform }}
         </div>
       </div>',
