@@ -183,7 +183,9 @@ class PersonaBlock extends BlockBase {
                             <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
                           </div>
                           <div class="d-flex justify-content-between flex justify-between border-top border-bottom mb-3 py-3 border-secondary border-b border-black">
-                            <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
+                            {% if roles %}
+                              <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
+                            {% endif %}
                             {% if cssn_role %}
                               <div><i class="text-dark fa-solid fa-pen-to-square"></i> {{ cssn_role }}</div>
                             {% endif %}
