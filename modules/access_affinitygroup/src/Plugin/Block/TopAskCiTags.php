@@ -120,7 +120,7 @@ class TopAskCiTags extends BlockBase implements
       $options = [
         'attributes' => [
           'class' => [
-            'me-4', 'mb-2', 'px-2', 'py-1', 'font-normal', 'no-underline', 'border', 'border-black', 'border-solid', 'hover--border-dark-teal', 'hover--text-dark-teal', 'w-fit', 'h-fit', 'leading-tight',
+            'me-2', 'md--me-4', 'mb-2', 'px-2', 'py-1', 'font-normal', 'no-underline', 'border', 'border-black', 'border-solid', 'hover--border-dark-teal', 'hover--text-dark-teal', 'w-fit', 'h-fit', 'leading-tight',
           ],
         ],
       ];
