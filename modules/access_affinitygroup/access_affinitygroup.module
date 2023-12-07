@@ -104,11 +104,12 @@ function access_affinitygroup_entity_view(array &$build, EntityInterface $entity
  *    Ensure every Affinity Group name has a corresponding taxonomy term.
  */
 function access_affinitygroup_entity_presave(EntityInterface $entity) {
+
   $type = $entity->bundle();
   // Email any infrastructure news with the 'Email only subscribers' box checked.
   if ($type == 'infrastructure_news') {
     $inf_title = $entity->get('title')->getValue()[0]['value'];
-    $inf_body = $entity->get('body') !== null ? $entity->get('body')->getValue()[0]['value'] : '';
+    $inf_body = $entity->get('body') !== NULL ? $entity->get('body')->getValue()[0]['value'] : '';
     $doEmailSubscribers = $entity->get('field_do_email_subscribers')->getValue();
     if ($doEmailSubscribers[0]['value']) {
       $affectedInfrastructure = $entity->get('field_affected_infrastructure')->getValue();
@@ -139,17 +140,20 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
-      // Case 1: User did Join the AG (using the Join button or link)
-      // Exit if CRON because this hook assumes there is a current user.
-      if (\Drupal::state()->get('access_affinitygroup.allocationsRun')) {
-        return;
-      }
 
+      // Case 1: User did Join the AG (using the Join button or link)
       // The flag sits on a taxonomy; the taxonomy id is used to find the AG node
       // which we need to build the JSON to send to api.
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
       $currentUser = \Drupal::currentUser();
       $userId = $currentUser->id();
+
+      // Need to exit if we are here during the allocations import processing,
+      // which can either be run via cron or from admin setting it off on the
+      // constant contact admin form.
+      if ($userId === 1 || $userId === 0) {
+        return;
+      }
       $userDetails = User::load($userId);
       subscribeToCCList($taxonomyId, $userDetails);
 
@@ -658,7 +662,7 @@ function access_affinitygroup_cron() {
 
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
-      \Drupal::logger('access_affinitygroup')->notice('Cron: token refresh ' .  date("Y-m-d H:i:s", $currentTime) . " on $host");
+      \Drupal::logger('access_affinitygroup')->notice('Cron: token refresh ' . date("Y-m-d H:i:s", $currentTime) . " on $host");
 
       $cca = new ConstantContactApi();
       $cca->newToken();
