@@ -214,7 +214,7 @@ class AllocationsUsersImport {
     $incomingCount = 0;
     $processedCount = 0;
 
-    $this->collectCronLog("Initial API import: total received: " . count($responseJson), 'i');
+    $this->collectCronLog("Initial API import: total received: " . count($responseJson), 'i', TRUE);
 
     try {
       foreach ($responseJson as $aUser) {
@@ -278,6 +278,8 @@ class AllocationsUsersImport {
       // Process each user in the chunk
       // call api to get resources, get user, (add user + add to cc if needed)
       // update user's resources if needed, check if they are members of associated ags.
+      $this->collectCronLog("Batch " . $sandbox['batchNum'] . " start", 'i', TRUE);
+
       foreach ($userNameArray as $userName) {
 
         $context['results']['totalExamined']++;
@@ -416,7 +418,7 @@ class AllocationsUsersImport {
       $this->collectCronLog("Exception while processing api results at $userCount " . $e->getMessage(), 'err');
     }
 
-    $this->collectCronLog("Batch " . $sandbox['batchNum'] . ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'd', TRUE);
+    $this->collectCronLog("Batch " . $sandbox['batchNum'] . ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i', TRUE);
 
     $context['results']['logCronErrors'] = array_merge($context['results']['logCronErrors'], $this->logCronErrors);
 
