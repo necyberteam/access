@@ -178,10 +178,12 @@ class PersonaBlock extends BlockBase {
                           {% if academic_status %}
                             <div class="academic-status">{{ academic_status }}</div>
                           {% endif %}
-                          <div class="d-flex justify-content-between flex justify-between border-b border-black">
-                            <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
-                            <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
-                          </div>
+                          {% if cssn != "Not a CSSN Member" %}
+                            <div class="d-flex justify-content-between flex justify-between border-b border-black">
+                              <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
+                              <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
+                            </div>
+                          {% endif %}
                           <div class="d-flex justify-content-between flex justify-between border-top border-bottom mb-3 py-3 border-secondary border-b border-black">
                             {% if roles %}
                               <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
