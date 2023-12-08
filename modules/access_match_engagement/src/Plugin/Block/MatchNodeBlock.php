@@ -197,18 +197,18 @@ class MatchNodeBlock extends BlockBase implements
         '#template' => '<div class="">
           <div class="pb-3">{{ image | raw }}</div>
           {% if ( type == "plus" ) %}
-            {% if ( student != "" ) %}
+            {% if ( student == "zz-removed" ) %}
               <div class="mb-5">
                 <span class="fw-bold font-bold">{{ student_label }}:</span> {{ student }}
               </div>
             {% endif %}
-            {% if ( mentor != "" ) %}
+            {% if ( mentor == "zz-removed" ) %}
               <div class="mb-5">
               <span class="fw-bold font-bold">{{ mentor_label }}:</span> {{ mentor }}
             </div>
             {% endif %}
           {% endif %}
-          {% if (consultant != "" and ( type == "premier" )) %}
+          {% if (consultant != "zz-removed" and ( type == "premier" )) %}
             <div class="mb-5">
               <span class="fw-bold font-bold">{{ consultant_label }}:</span> {{ consultant }}
             </div>
