@@ -216,12 +216,6 @@ class MatchNodeBlock extends BlockBase implements
           {% if ( tags == "zz-removed" ) %}
             <div>{{ tags | raw }}</div>
           {% endif %}
-          <div class="mb-5">
-            <span class="fw-bold font-bold">{{ skill_label }}</span> {{ skill_level | raw }}
-          </div>
-          <div class="mb-5">
-            <span class="fw-bold font-bold">{{ qualifications_label }}</span> {{ qualifications_value | raw }}
-          </div>
         </div>
         <div class="mb-5">
          {{ interested_button | raw }}
@@ -245,10 +239,6 @@ class MatchNodeBlock extends BlockBase implements
           'mentor' => $this->t($msc_loaded['field_mentor']),
           'tags' => $tag_list,
           'image' => $image_loaded,
-          'skill_label' => $skill_label,
-          'skill_level' => $skill_level,
-          'qualifications_label' => $qualifications_label,
-          'qualifications_value' => $qualifications_value,
           'type' => $type,
           'interested_button' => $interested_button,
           'interested_users' => $interested_users,
