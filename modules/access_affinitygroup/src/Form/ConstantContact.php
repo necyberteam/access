@@ -23,9 +23,8 @@ class ConstantContact extends FormBase {
     $allocCronDisable = \Drupal::state()->get('access_affinitygroup.allocCronDisable');
     $allocCronAllowOndemand = \Drupal::state()->get('access_affinitygroup.allocCronAllowOndemand');
 
-    $allocCronSliceSize = \Drupal::state()->get('access_affinitygroup.allocCronSliceSize'); /* def need */
-    $allocCronImportLimit = \Drupal::state()->get('access_affinitygroup.allocCronImportLimit'); /* might not need */
-    // This should be display only:
+    $allocCronSliceSize = \Drupal::state()->get('access_affinitygroup.allocCronSliceSize');
+    // This will soon be display only:
     $allocCronStartAt = \Drupal::state()->get('access_affinitygroup.allocCronStartAt');
     $allocCronNoCC = \Drupal::state()->get('access_affinitygroup.allocCronNoCC');
     $allocCronNoUserDetSave = \Drupal::state()->get('access_affinitygroup.allocCronNoUserDetSave');
@@ -116,7 +115,7 @@ class ConstantContact extends FormBase {
     /* MANUAL IMPORT ALLOCATIONS BATCH */
 
     $form['y3'] = [
-      '#markup' => '<br><br><h4>Administration Allocations Import Cron Settings</h4>',
+      '#markup' => '<br><br><h4>Allocations Import Cron Settings</h4>',
     ];
 
     $form['alloc_cron_disable'] = [
@@ -141,14 +140,7 @@ class ConstantContact extends FormBase {
       '#description' => $this->t("Number to process on on each cron run."),
       '#required' => FALSE,
     ];
-    /* We prob won't use this one: */
-    $form['alloc_cron_param_importlimit'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Process limit'),
-      '#default_value' => $allocCronImportLimit,
-      '#description' => $this->t("Limit number of users processed."),
-      '#required' => FALSE,
-    ];
+    /* set this to display-only for normal operations */
     $form['alloc_cron_param_startat'] = [
       '#type' => 'number',
       '#title' => $this->t('Process start at'),
@@ -183,8 +175,8 @@ class ConstantContact extends FormBase {
 
     $form['runCron'] = [
       '#type' => 'submit',
-      '#value' => $this->t('Run Cron Slice'),
-      '#description' => $this->t("Dev test: Run one cron slice "),
+      '#value' => $this->t('Run Cron Slice test'),
+      '#description' => $this->t("Dev test only: Run one cron slice "),
       '#submit' => [[$this, 'doCronSlice']],
     ];
 
@@ -192,6 +184,9 @@ class ConstantContact extends FormBase {
 
     $form['y4'] = [
       '#markup' => '<br><br><h4>Run an import allocations batch</h4>',
+    ];
+    $form['i4'] = [
+      '#markup' => 'For user id 1 only',
     ];
 
     $form['batch_param_batchsize'] = [
@@ -412,13 +407,15 @@ class ConstantContact extends FormBase {
       $form_state->getValue('batch_param_verbose')
     );
   }
+
   /**
-   * Dev - if run cron on demand needed, uncomment run cron button
+   * Dev - if run cron on demand needed, uncomment run cron button.
    */
   public function doCronSlice() {
     $aui = new AllocationsUsersImport();
     $aui->runCronSlice();
   }
+
   /**
    * Run the affinity group / constant contact membership list sync.
    */

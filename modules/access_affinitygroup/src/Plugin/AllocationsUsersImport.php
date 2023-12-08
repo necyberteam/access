@@ -18,9 +18,13 @@ use GuzzleHttp\Client;
  *  2) their email on constant contact
  *  3) get added to affinity groups: access-support and the one that is associated
  *    with the allocation.
+ *  4) user details such as citizenship are updated in our database's user profiles
  * This is done during a daily cron job.  We get all the active users from the
  * allocations api. Once we get all the usernames into arrays, we call the api for each
  * one to get the user's current list of resources (aka allocations aka ciders).
+ * The allocations import can also be run manually, referred to as "batch" in this file.
+ *
+ * This file also contains ancillary cleanup processes Sync and Remove Obsolete Allocations.
  */
 /**
  *
@@ -43,10 +47,7 @@ class AllocationsUsersImport {
    * Where to start processing in case we must restart a large operation.
    * These are set in the constant contact form.
    */
-  /**
-   * @todo pass in as parameters
-   */
-  private $batchSize;
+  private $sliceSize;
   private $batchImportLimit;
   private $batchNoCC;
   private $batchNoUserDetSave;
@@ -76,15 +77,9 @@ class AllocationsUsersImport {
     if (empty($this->batchStartAt)) {
       $this->batchStartAt = self::DEFAULT_STARTAT;
     }
-
-    $this->batchSize = \Drupal::state()->get('access_affinitygroup.allocCronSliceSize');
-    if (empty($this->batchSize)) {
-      $this->batchSize = self::DEFAULT_SIZE;
-    }
-
-    $this->batchImportLimit = \Drupal::state()->get('access_affinitygroup.allocCronImportLimit');
-    if (empty($this->batchImportLimit)) {
-      $this->batchImportLimit = self::DEFAULT_IMPORTLIMIT;
+    $this->sliceSize = \Drupal::state()->get('access_affinitygroup.allocCronSliceSize');
+    if (empty($this->sliceSize)) {
+      $this->sliceSize = self::DEFAULT_SIZE;
     }
     $this->batchNoCC = \Drupal::state()->get('access_affinitygroup.allocCronNoCC');
     if (!isset($this->batchNoCC)) {
@@ -100,12 +95,13 @@ class AllocationsUsersImport {
       $this->verboseLogging = self::DEFAULT_VERBOSE;
     }
 
-    $msg1 = "Allocations cron start:$this->batchStartAt size:$this->batchSize limit:$this->batchImportLimit noCC:$this->batchNoCC noUserDet:$this->batchNoUserDetSave verbose:$this->verboseLogging";
+    $msg1 = "Allocations cron start:$this->batchStartAt size:$this->sliceSize  noCC:$this->batchNoCC noUserDet:$this->batchNoUserDetSave verbose:$this->verboseLogging";
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i', TRUE);
 
     $portalUserNames = $this->setupForImports();
     if (empty($portalUserNames)) {
+      \Drupal::state()->set('access_affinitygroup.allocCronStartAt', 0);
       return;
     }
 
@@ -117,12 +113,17 @@ class AllocationsUsersImport {
     catch (\Exception $e) {
       $this->collectCronLog("Exception in allocations batch setup: " . $e->getMessage(), 'err');
       \Drupal::state()->set('access_affinitygroup.allocationsRun', FALSE);
-    }
-    $msg1 = "Allocations cron done at $this->currentNumber";
-    // @todo remove this for final
-    \Drupal::messenger()->addMessage($msg1);
-    $this->collectCronLog($msg1, 'i', TRUE);
+    } finally {
 
+      // Reset start to next slice, or 0 if we've reached the end.
+      $processedIndex = \Drupal::state()->get('access_affinitygroup.allocCronStartAt') + $this->currentNumber;
+      \Drupal::state()->set('access_affinitygroup.allocCronStartAt', $processedIndex);
+
+      $msg1 = "Allocations cron done at $this->currentNumber; next start is $processedIndex";
+      // @todo remove messsage  for final
+      \Drupal::messenger()->addMessage($msg1);
+      $this->collectCronLog($msg1, 'i', TRUE);
+    }
   }
 
   /**
@@ -138,9 +139,9 @@ class AllocationsUsersImport {
 
     $this->isCronJob = FALSE;
     $this->verboseLogging = $verbose;
-    $this->batchSize = $batchsize;
-    if (empty($this->batchSize)) {
-      $this->batchSize = self::DEFAULT_SIZE;
+    $this->sliceSize = $batchsize;
+    if (empty($this->sliceSize)) {
+      $this->sliceSize = self::DEFAULT_SIZE;
     }
     $this->batchImportLimit = $importlimit;
     if (empty($this->batchImportLimit)) {
@@ -158,7 +159,7 @@ class AllocationsUsersImport {
     if (!isset($this->batchNoUserDetSave)) {
       $this->batchNoUserDetSave = self::DEFAULT_NOUSERDETSAVE;
     }
-    $msg1 = "Allocations import batch start: $this->batchStartAt size: $this->batchSize limit: $this->batchImportLimit noCC: $this->batchNoCC verbose: $this->verboseLogging";
+    $msg1 = "Allocations import batch start: $this->batchStartAt size: $this->sliceSize limit: $this->batchImportLimit noCC: $this->batchNoCC verbose: $this->verboseLogging";
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i', TRUE);
     $portalUserNames = $this->setupForImports();
@@ -239,7 +240,7 @@ class AllocationsUsersImport {
       $this->accessSupportNodeId = empty($nArray) ? 0 : array_values($nArray)[0];
 
       if ($this->isCronJob) {
-        $portalUserNames = $this->getApiPortalUserNamesForCron($this->batchStartAt, $this->batchImportLimit);
+        $portalUserNames = $this->getApiPortalUserNamesForCron($this->batchStartAt, $this->sliceSize);
       }
       else {
         $portalUserNames = $this->getApiPortalUserNamesForBatch($this->batchStartAt, $this->batchImportLimit);
@@ -248,7 +249,7 @@ class AllocationsUsersImport {
         return NULL;
       }
 
-      $msg1 = "Initial import done: number to process: " . count($portalUserNames) . "; start processing at: $this->batchStartAt";
+      $msg1 = "Allocations fetch done: number to process: " . count($portalUserNames) . "; start processing at: $this->batchStartAt";
       \Drupal::messenger()->addMessage($msg1);
       $this->collectCronLog($msg1, 'd');
 
@@ -309,51 +310,40 @@ class AllocationsUsersImport {
   }
 
   /**
-   * Make array of portal names of number requested, sort first.
+   * For cron job only, make array of slice of portal names of number requested.
+   * Sort list returned from api becasue their list changes order.
+   * 0-based startIndex
    */
-  private function getApiPortalUserNamesForCron($startIndex = 0, $processLimit = NULL) {
+  private function getApiPortalUserNamesForCron($startIndex, $sliceSize) {
 
     $portalUserNames = [];
     $responseJson = $this->getApiPortalUserNamesJson();
-    /* todo
-    // Sort the array using a user defined function.
-    usort($responseJson, function ($a, $b) {
-    // Compare the scores.
-    return strcmp($a->username, $b->username);
-    });
-     */
-
     $incomingCount = 0;
     $processedCount = 0;
 
     try {
       foreach ($responseJson as $aUser) {
         $incomingCount++;
-        if ($incomingCount < $startIndex) {
-          continue;
-        }
-
         if ($aUser['isSuspended'] || $aUser['isArchived']) {
           continue;
         }
         $processedCount++;
-        if ($processLimit != NULL && $processedCount > $processLimit) {
-          break;
-        }
         $portalUserNames[] = $aUser['username'];
       }
+
+      sort($portalUserNames);
+      $this->collectCronLog("portal names incoming $incomingCount pr $processedCount puncount " . count($portalUserNames), 'd');
     }
     catch (\Exception $e) {
       $this->collectCronLog('Allocations portal names: ' . $e->getMessage(), 'err');
-      return FALSE;
+      return [];
     }
-    return $portalUserNames;
+
+    return array_slice($portalUserNames, $startIndex, $sliceSize);
   }
 
   /**
-   * Make array of portal names of number requested, don't sort .
-   *
-   * @todo (this might be almost the smae as cron one,; combine if so)
+   * For manual batch only, make array of portal names of number requested, don't sort .
    */
   private function getApiPortalUserNamesForBatch($startIndex = 0, $processLimit = NULL) {
 
@@ -413,7 +403,7 @@ class AllocationsUsersImport {
 
     $sandbox['batchNum']++;
     $context['message'] = "Processing in batch " . $sandbox['batchNum'];
-    $userNameArray = array_splice($sandbox['userNames'], 0, $this->batchSize);
+    $userNameArray = array_splice($sandbox['userNames'], 0, $this->sliceSize);
 
     $this->allocationsImportWork($userNameArray, $context, $sandbox);
 
@@ -446,9 +436,9 @@ class AllocationsUsersImport {
           $context['results']['totalExamined']++;
           $sandbox['progress']++;
         }
+
         $userCount++;
         $this->currentNumber = $userCount;
-
         try {
           $aUser = $this->allocApiGetResources($userName, $apiKey);
 
@@ -473,10 +463,8 @@ class AllocationsUsersImport {
           }
 
           // Did not have the user, so create it.
-          // ALERT TODO what if the have a new email in here and it's different than existing one....
           if ($userDetails === FALSE) {
             $userDetails = $this->createAllocUser($accessUserName, $aUser);
-            // @todo TAKE OUT
             $this->collectCronLog("...creating $userCount: $userName", 'd');
             if ($userDetails) {
               $newUsers++;
