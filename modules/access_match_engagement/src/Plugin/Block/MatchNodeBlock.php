@@ -149,7 +149,7 @@ class MatchNodeBlock extends BlockBase implements
           $term = $this->entityInterface->getStorage('taxonomy_term')->load($tag_id);
           if ($term) {
             $tag_load = $term->get('name')->value;
-            $tag_list .= "<a class='tag' href='/taxonomy/term/$tag_id'>$tag_load</a>";
+            $tag_list .= "<a class='tag font-normal no-underline px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/$tag_id'>$tag_load</a>";
           }
         }
       }
@@ -192,30 +192,42 @@ class MatchNodeBlock extends BlockBase implements
           $interested_button = $is_recruiting ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
         }
       }
-      return [
+      $match_node_block['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="p-3">
+        '#template' => '<div class="">
           <div class="pb-3">{{ image | raw }}</div>
           {% if ( type == "plus" ) %}
-            {% if ( student ) %}
-              <div><span class="fw-bold">{{ student_label }}:</span> {{ student }}</div>
+            {% if ( student != "" ) %}
+              <div class="mb-5">
+                <span class="fw-bold font-bold">{{ student_label }}:</span> {{ student }}
+              </div>
             {% endif %}
-            {% if ( mentor ) %}
-              <div><span class="fw-bold">{{ mentor_label }}:</span> {{ mentor }}</div>
+            {% if ( mentor != "" ) %}
+              <div class="mb-5">
+              <span class="fw-bold font-bold">{{ mentor_label }}:</span> {{ mentor }}
+            </div>
             {% endif %}
           {% endif %}
-          {% if (consultant and ( type == "premier" )) %}
-            <div><span class="fw-bold">{{ consultant_label }}:</span> {{ consultant }}</div>
+          {% if (consultant != "" and ( type == "premier" )) %}
+            <div class="mb-5">
+              <span class="fw-bold font-bold">{{ consultant_label }}:</span> {{ consultant }}
+            </div>
           {% endif %}
-          {% if tags %}
+          {% if ( tags == "zz-removed" ) %}
             <div>{{ tags | raw }}</div>
           {% endif %}
-          <div><span class="fw-bold">{{ skill_label }}</span> {{ skill_level | raw }}</div>
-          <div><span class="fw-bold">{{ qualifications_label }}</span> {{ qualifications_value | raw }}</div>
+          <div class="mb-5">
+            <span class="fw-bold font-bold">{{ skill_label }}</span> {{ skill_level | raw }}
+          </div>
+          <div class="mb-5">
+            <span class="fw-bold font-bold">{{ qualifications_label }}</span> {{ qualifications_value | raw }}
+          </div>
         </div>
-       {{ interested_button | raw }}
+        <div class="mb-5">
+         {{ interested_button | raw }}
+        </div>
         {% if interested_users %}
-          <div class="p-3">
+          <div>
             <h3>Interested People</h3>
               <ul>
               {% for interested_user in interested_users %}
@@ -242,6 +254,13 @@ class MatchNodeBlock extends BlockBase implements
           'interested_users' => $interested_users,
         ],
       ];
+      return $match_node_block;
+    }
+    else {
+      return [
+        '#markup' => $this->t('Match Node Block - not a match node')
+      ];
+
     }
   }
 
