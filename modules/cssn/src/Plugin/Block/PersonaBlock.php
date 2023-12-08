@@ -148,7 +148,7 @@ class PersonaBlock extends BlockBase {
         $cssn = "Not a CSSN Member";
       }
       else {
-        $cssn_url = Url::fromUri('internal:/form/join-the-cssn-network');
+        $cssn_url = Url::fromUri('internal:/community/cssn#join-cssn');
         $cssn_link = Link::fromTextAndUrl('Join the CSSN', $cssn_url);
         $cssn_renderable = $cssn_link->toRenderable();
         $cssn = $cssn_renderable;
@@ -178,17 +178,23 @@ class PersonaBlock extends BlockBase {
                           {% if academic_status %}
                             <div class="academic-status">{{ academic_status }}</div>
                           {% endif %}
-                          <div class="d-flex justify-content-between flex justify-between border-b border-black">
-                            <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
-                            <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
-                          </div>
+                          {% if cssn != "Not a CSSN Member" %}
+                            <div class="d-flex justify-content-between flex justify-between border-b border-black">
+                              <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
+                              <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
+                            </div>
+                          {% endif %}
                           <div class="d-flex justify-content-between flex justify-between border-top border-bottom mb-3 py-3 border-secondary border-b border-black">
-                            <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
+                            {% if roles %}
+                              <div><b>{{ role_text }}:</b><br />{{ roles | raw }}</div>
+                            {% endif %}
                             {% if cssn_role %}
                               <div><i class="text-dark fa-solid fa-pen-to-square"></i> {{ cssn_role }}</div>
                             {% endif %}
                           </div>
-                          <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
+                          {% if program %}
+                            <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
+                          {% endif %}
                           <div class="w-100">
                            {{ send_email | raw }}
                           {{ edit_link | raw }}
