@@ -127,7 +127,7 @@ class ConstantContactApi {
       $returned_token = json_decode($returned_token);
 
       if (isset($returned_token->error)) {
-        \Drupal::logger('access_affinitygroup')->notice("cc init token err set, error, desc: " . $returned_token->error_description);
+        \Drupal::logger('access_affinitygroup')->notice("cc init token err set: " . $returned_token->error_description);
       }
 
       if ($returned_token && !isset($returned_token->error)) {
@@ -152,7 +152,6 @@ class ConstantContactApi {
     try {
       $refreshToken = $this->refreshToken;
 
-      \Drupal::logger('access_affinitygroup')->notice('New token prev R: ' . $refreshToken);
       $clientId = $this->clientId;
       $clientSecret = $this->clientSecret;
       // Use cURL to get a new access token and refresh token.
@@ -184,7 +183,6 @@ class ConstantContactApi {
       $result = json_decode($result);
 
       $httpCode = curl_getinfo($ch, CURLINFO_RESPONSE_CODE);
-      \Drupal::logger('access_affinitygroup')->notice('New token httpCode: ' . $httpCode);
       curl_close($ch);
 
       $host = \Drupal::request()->getSchemeAndHttpHost();
@@ -192,12 +190,11 @@ class ConstantContactApi {
       if (!isset($result->error)) {
         $this->setAccessToken($result->access_token);
         $this->setRefreshToken($result->refresh_token);
-        \Drupal::logger('access_affinitygroup')->notice('New token N: ' . $result->refresh_token);
         \Drupal::logger('access_affinitygroup')->notice("Constant Contact: new access_token and refresh_token stored $host");
         \Drupal::messenger()->addMessage("Constant Contact: new access_token and refresh_token stored");
       }
       else {
-
+        \Drupal::logger('access_affinitygroup')->notice("New token httpCode: $httpCode");
         \Drupal::logger('access_affinitygroup')->error("New token error; host $host");
         $this->apiError($result->error, $result->error_description);
         $nr = new NotifyRoles();
@@ -307,23 +304,23 @@ class ConstantContactApi {
         $errkey = $result->error_key;
       }
       else {
-       foreach ($result as $error) {
-        if (empty($error)) {
-          $errmsg = "Unknown ConstantContact Error.";
-          $errkey = '-';
-        }
-        elseif (is_string($error)) {
-          $errmsg = $error;
-          $errkey = '-';
-        }
-        else {
-          // Normal CC error structure.
-          $errmsg = (!property_exists($error, 'error_message') || !isset($error->error_message)) ?
+        foreach ($result as $error) {
+          if (empty($error)) {
+            $errmsg = "Unknown ConstantContact Error.";
+            $errkey = '-';
+          }
+          elseif (is_string($error)) {
+            $errmsg = $error;
+            $errkey = '-';
+          }
+          else {
+            // Normal CC error structure.
+            $errmsg = (!property_exists($error, 'error_message') || !isset($error->error_message)) ?
               'ConstantContact Error' : $error->error_message;
-          $errkey = (!property_exists($error, 'error_key') ||  !isset($error->error_key)) ?
+            $errkey = (!property_exists($error, 'error_key') ||  !isset($error->error_key)) ?
               '-' : $error->error_key;
+          }
         }
-      }
       }
       $this->errorMessage = $errmsg;
       $this->apiError($errkey, $errmsg);
