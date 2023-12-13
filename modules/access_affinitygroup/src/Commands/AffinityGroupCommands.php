@@ -179,7 +179,6 @@ class AffinityGroupCommands extends DrushCommands {
       $userIds = $this->getUserIdsFromFlags($term->entity);
       $this->output()->writeln('Members count: ' . count($userIds));
 
-
       if ($headOnly) {
         continue;
       }
@@ -423,12 +422,12 @@ class AffinityGroupCommands extends DrushCommands {
    *
    * @aliases importAllocations
    * @usage   access_affinitygroup:importAllocations
+   * Runs the function the cron would run, using settings
+   * set at the constant contact admin form.
    */
   public function importAllocations() {
     $aui = new AllocationsUsersImport();
-    $retval = $aui->startBatch();
-
-    $this->output()->writeln($retval);
+    $aui->runCronSlice();
   }
 
   /**

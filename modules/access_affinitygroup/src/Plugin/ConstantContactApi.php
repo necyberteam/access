@@ -303,21 +303,30 @@ class ConstantContactApi {
     if (preg_match('/error_key/', $returned_result, $matches, PREG_OFFSET_CAPTURE)) {
 
       if (![] === $result) {
-        $this->errorMessage = $result->error_message;
-        $this->apiError($result->error_key, $result->error_message);
-        $result = NULL;
+        $errmsg = $result->error_message;
+        $errkey = $result->error_key;
       }
       else {
-        foreach ($result as $error) {
+       foreach ($result as $error) {
+        if (empty($error)) {
+          $errmsg = "Unknown ConstantContact Error.";
+          $errkey = '-';
+        }
+        elseif (is_string($error)) {
+          $errmsg = $error;
+          $errkey = '-';
+        }
+        else {
+          // Normal CC error structure.
           $errmsg = (!property_exists($error, 'error_message') || !isset($error->error_message)) ?
-            'ConstantContact Error' : $error->error_message;
+              'ConstantContact Error' : $error->error_message;
           $errkey = (!property_exists($error, 'error_key') ||  !isset($error->error_key)) ?
-            '-' : $error->error_key;
-
-          $this->errorMessage = $errmsg;
-          $this->apiError($errkey, $errmsg);
+              '-' : $error->error_key;
         }
       }
+      }
+      $this->errorMessage = $errmsg;
+      $this->apiError($errkey, $errmsg);
 
       $result = NULL;
     }

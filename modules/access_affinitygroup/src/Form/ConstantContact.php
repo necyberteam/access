@@ -2,12 +2,12 @@
 
 namespace Drupal\access_affinitygroup\Form;
 
-use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
-use Drupal\Core\Form\FormStateInterface;
+use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\Core\Form\FormBase;
-use Drupal\Core\Url;
+use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
@@ -20,14 +20,15 @@ class ConstantContact extends FormBase {
    */
   public function buildForm(array $form, FormStateInterface $form_state) {
 
-    $alloc_cron_disable = \Drupal::state()->get('access_affinitygroup.alloc_cron_disable');
-    $alloc_cron_allow_ondemand = \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand');
+    $allocCronDisable = \Drupal::state()->get('access_affinitygroup.allocCronDisable');
+    $allocCronAllowOndemand = \Drupal::state()->get('access_affinitygroup.allocCronAllowOndemand');
 
-    $allocBatchBatchSize = \Drupal::state()->get('access_affinitygroup.allocBatchBatchSize');
-    $allocBatchImportLimit = \Drupal::state()->get('access_affinitygroup.allocBatchImportLimit');
-    $allocBatchStartAt = \Drupal::state()->get('access_affinitygroup.allocBatchStartAt');
-    $allocBatchNoCC = \Drupal::state()->get('access_affinitygroup.allocBatchNoCC');
-    $allocBatchNoUserDetSav = \Drupal::state()->get('access_affinitygroup.allocBatchNoUserDetSave');
+    $allocCronSliceSize = \Drupal::state()->get('access_affinitygroup.allocCronSliceSize');
+    // This will soon be display only:
+    $allocCronStartAt = \Drupal::state()->get('access_affinitygroup.allocCronStartAt');
+    $allocCronNoCC = \Drupal::state()->get('access_affinitygroup.allocCronNoCC');
+    $allocCronNoUserDetSave = \Drupal::state()->get('access_affinitygroup.allocCronNoUserDetSave');
+    $allocCronVerbose = \Drupal::state()->get('access_affinitygroup.allocCronVerbose');
 
     $noConstantContactCalls = \Drupal::configFactory()->getEditable('access_affinitygroup.settings')->get('noConstantContactCalls');
 
@@ -97,91 +98,6 @@ class ConstantContact extends FormBase {
       '#value' => $this->t('Save Disable Setting'),
       '#submit' => [[$this, 'doSaveDisableCC']],
     ];
-
-    $form['y3'] = [
-      '#markup' => '<br><br><h4>Administration Allocations Import Cron Settings</h4>',
-    ];
-
-    $form['alloc_cron_disable'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Disable Allocations Import Cron'),
-      '#description' => $this->t('Unchecked is the normal value.'),
-      '#default_value' => $alloc_cron_disable,
-    ];
-
-    $form['alloc_cron_allow_ondemand'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Allow Allocation Import Cron On-Demand'),
-      '#description' => $this->t('Unchecked is the normal value.'),
-      '#default_value' => $alloc_cron_allow_ondemand,
-    ];
-
-    $form['savecronsettings'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Save Cron Settings'),
-      '#submit' => [[$this, 'doSaveCronSettings']],
-    ];
-
-    $form['y4'] = [
-      '#markup' => '<br><br><h4>Import allocations manual batch</h4>',
-    ];
-
-    $form['batch_param_batchsize'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Batch Size'),
-      '#min' => 5,
-      '#max' => 1000,
-      '#default_value' => $allocBatchBatchSize,
-      '#description' => $this->t("Size of each batch slice."),
-      '#required' => FALSE,
-    ];
-
-    $form['batch_param_importlimit'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Process limit'),
-      '#default_value' => $allocBatchImportLimit,
-      '#description' => $this->t("Limit number of users processed."),
-      '#required' => FALSE,
-    ];
-    $form['batch_param_startat'] = [
-      '#type' => 'number',
-      '#title' => $this->t('Process start at'),
-      '#default_value' => $allocBatchStartAt,
-      '#description' => $this->t("Start procssing nth user (default: 0)"),
-      '#required' => FALSE,
-    ];
-    $form['batch_param_nocc'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Do not add users to Constant Contact.'),
-      '#description' => $this->t('Unchecked is the normal value.'),
-      '#default_value' => $allocBatchNoCC,
-    ];
-    $form['batch_param_nouserdetsave'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Do not save user detail changes.'),
-      '#description' => $this->t('Unchecked is the normal value.'),
-      '#default_value' => $allocBatchNoUserDetSav,
-    ];
-    $form['batch_param_verbose'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Verbose logging'),
-      '#default_value' => FALSE,
-      '#required' => FALSE,
-    ];
-
-    $form['savebatchsettings'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Save Batch Settings'),
-      '#submit' => [[$this, 'doSaveBatchSettings']],
-    ];
-
-    $form['runBatch'] = [
-      '#type' => 'submit',
-      '#value' => $this->t('Start Batch'),
-      '#description' => $this->t("Start allocations import batch processing"),
-      '#submit' => [[$this, 'doBatch']],
-    ];
-
     $form['y5'] = [
       '#markup' => '<br><br><h4>Generate Weekly Digest</h4>',
     ];
@@ -195,6 +111,135 @@ class ConstantContact extends FormBase {
       '#value' => $this->t('Generate Digest'),
       '#submit' => [[$this, 'doGenerateDigest']],
     ];
+
+    /* MANUAL IMPORT ALLOCATIONS BATCH */
+
+    $form['y3'] = [
+      '#markup' => '<br><br><h4>Allocations Import Cron Settings</h4>',
+    ];
+
+    $form['alloc_cron_disable'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Disable Allocations Import Cron'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => $allocCronDisable,
+    ];
+
+    /* prob don't need this one */
+    $form['alloc_cron_allow_ondemand'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Allow Allocation Import Cron On-Demand'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => $allocCronAllowOndemand,
+    ];
+
+    $form['alloc_cron_param_slicesize'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Slice Size'),
+      '#default_value' => $allocCronSliceSize,
+      '#description' => $this->t("Number to process on on each cron run."),
+      '#required' => FALSE,
+    ];
+    /* set this to display-only for normal operations */
+    $form['alloc_cron_param_startat'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Process start at'),
+      '#default_value' => $allocCronStartAt,
+      '#description' => $this->t("Start procssing nth user (default: 0)"),
+      '#required' => FALSE,
+    ];
+    $form['alloc_cron_param_nocc'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Do not add users to Constant Contact.'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => $allocCronNoCC,
+    ];
+    $form['alloc_cron_param_nouserdetsave'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Do not save user detail changes.'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => $allocCronNoUserDetSave,
+    ];
+    $form['alloc_cron_param_verbose'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Verbose logging'),
+      '#default_value' => $allocCronVerbose,
+      '#required' => FALSE,
+    ];
+
+    $form['savecronsettings'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Save Cron Settings'),
+      '#submit' => [[$this, 'doSaveCronSettings']],
+    ];
+
+    $form['runCron'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Run Cron Slice test'),
+      '#description' => $this->t("Dev test only: Run one cron slice "),
+      '#submit' => [[$this, 'doCronSlice']],
+    ];
+
+    /* MANUAL IMPORT ALLOCATIONS BATCH */
+
+    $form['y4'] = [
+      '#markup' => '<br><br><h4>Run an import allocations batch</h4>',
+    ];
+    $form['i4'] = [
+      '#markup' => 'For user id 1 only',
+    ];
+
+    $form['batch_param_batchsize'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Batch Size'),
+      '#min' => 5,
+      '#max' => 1000,
+      '#default_value' => 100,
+      '#description' => $this->t("Size of each batch slice."),
+      '#required' => FALSE,
+    ];
+
+    $form['batch_param_importlimit'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Process limit'),
+      '#default_value' => 5000,
+      '#description' => $this->t("Limit number of users processed."),
+      '#required' => FALSE,
+    ];
+    $form['batch_param_startat'] = [
+      '#type' => 'number',
+      '#title' => $this->t('Process start at'),
+      '#default_value' => 0,
+      '#description' => $this->t("Start procssing nth user (default: 0)"),
+      '#required' => FALSE,
+    ];
+    $form['batch_param_nocc'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Do not add users to Constant Contact.'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => TRUE,
+    ];
+    $form['batch_param_nouserdetsave'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Do not save user detail changes.'),
+      '#description' => $this->t('Unchecked is the normal value.'),
+      '#default_value' => TRUE,
+    ];
+    $form['batch_param_verbose'] = [
+      '#type' => 'checkbox',
+      '#title' => $this->t('Verbose logging'),
+      '#default_value' => FALSE,
+      '#required' => FALSE,
+    ];
+
+    $form['runBatch'] = [
+      '#type' => 'submit',
+      '#value' => $this->t('Start Batch'),
+      '#description' => $this->t("Start allocations import batch processing"),
+      '#submit' => [[$this, 'doBatch']],
+    ];
+
+    /* SYNC */
 
     $form['y6'] = [
       '#markup' => '<br><br><h4>Sync Constant Constact Lists</h4>',
@@ -327,22 +372,18 @@ class ConstantContact extends FormBase {
   }
 
   /**
-   * Save state variables for running and testing the allocations import batching according to checkbox  values.
-   */
-  public function doSaveBatchSettings(array &$form, FormStateInterface $form_state) {
-    \Drupal::state()->set('access_affinitygroup.allocBatchBatchSize', $form_state->getValue('batch_param_batchsize'));
-    \Drupal::state()->set('access_affinitygroup.allocBatchImportLimit', $form_state->getValue('batch_param_importlimit'));
-    \Drupal::state()->set('access_affinitygroup.allocBatchNoCC', $form_state->getValue('batch_param_nocc'));
-    \Drupal::state()->set('access_affinitygroup.allocBatchNoUserDetSave', $form_state->getValue('batch_param_nouserdetsave'));
-    \Drupal::state()->set('access_affinitygroup.allocBatchStartAt', $form_state->getValue('batch_param_startat'));
-  }
-
-  /**
-   * *  save state variables for running and testing the allocations import cron according to checkbox  values.
+   * Save state variables for running and testing the allocations import cron job according to checkbox values.
    */
   public function doSaveCronSettings(array &$form, FormStateInterface $form_state) {
-    \Drupal::state()->set('access_affinitygroup.alloc_cron_disable', $form_state->getValue('alloc_cron_disable'));
-    \Drupal::state()->set('access_affinitygroup.alloc_cron_allow_ondemand', $form_state->getValue('alloc_cron_allow_ondemand'));
+    \Drupal::state()->set('access_affinitygroup.allocCronDisable', $form_state->getValue('alloc_cron_disable'));
+    \Drupal::state()->set('access_affinitygroup.allocCronAllowOndemand', $form_state->getValue('alloc_cron_allow_ondemand'));
+
+    \Drupal::state()->set('access_affinitygroup.allocCronSliceSize', $form_state->getValue('alloc_cron_param_slicesize'));
+    \Drupal::state()->set('access_affinitygroup.allocCronImportLimit', $form_state->getValue('alloc_cron_param_importlimit'));
+    \Drupal::state()->set('access_affinitygroup.allocCronNoCC', $form_state->getValue('alloc_cron_param_nocc'));
+    \Drupal::state()->set('access_affinitygroup.allocCronNoUserDetSave', $form_state->getValue('alloc_cron_param_nouserdetsave'));
+    \Drupal::state()->set('access_affinitygroup.allocCronStartAt', $form_state->getValue('alloc_cron_param_startat'));
+    \Drupal::state()->set('access_affinitygroup.allocCronVerbose', $form_state->getValue('alloc_cron_param_verbose'));
   }
 
   /**
@@ -353,13 +394,26 @@ class ConstantContact extends FormBase {
   }
 
   /**
-   *
+   * Set off the allocations import with the batch api.
    */
   public function doBatch(array &$form, FormStateInterface $form_state) {
     $aui = new AllocationsUsersImport();
     $aui->startBatch(
+      $form_state->getValue('batch_param_batchsize'),
+      $form_state->getValue('batch_param_importlimit'),
+      $form_state->getValue('batch_param_nocc'),
+      $form_state->getValue('batch_param_nouserdetsave'),
+      $form_state->getValue('batch_param_startat'),
       $form_state->getValue('batch_param_verbose')
     );
+  }
+
+  /**
+   * Dev - if run cron on demand needed, uncomment run cron button.
+   */
+  public function doCronSlice() {
+    $aui = new AllocationsUsersImport();
+    $aui->runCronSlice();
   }
 
   /**
