@@ -21,7 +21,6 @@ class ConstantContact extends FormBase {
   public function buildForm(array $form, FormStateInterface $form_state) {
 
     $allocCronDisable = \Drupal::state()->get('access_affinitygroup.allocCronDisable');
-    $allocCronAllowOndemand = \Drupal::state()->get('access_affinitygroup.allocCronAllowOndemand');
 
     $allocCronSliceSize = \Drupal::state()->get('access_affinitygroup.allocCronSliceSize');
     // This will soon be display only:
@@ -123,14 +122,6 @@ class ConstantContact extends FormBase {
       '#title' => $this->t('Disable Allocations Import Cron'),
       '#description' => $this->t('Unchecked is the normal value.'),
       '#default_value' => $allocCronDisable,
-    ];
-
-    /* prob don't need this one */
-    $form['alloc_cron_allow_ondemand'] = [
-      '#type' => 'checkbox',
-      '#title' => $this->t('Allow Allocation Import Cron On-Demand'),
-      '#description' => $this->t('Unchecked is the normal value.'),
-      '#default_value' => $allocCronAllowOndemand,
     ];
 
     $form['alloc_cron_param_slicesize'] = [
@@ -376,8 +367,6 @@ class ConstantContact extends FormBase {
    */
   public function doSaveCronSettings(array &$form, FormStateInterface $form_state) {
     \Drupal::state()->set('access_affinitygroup.allocCronDisable', $form_state->getValue('alloc_cron_disable'));
-    \Drupal::state()->set('access_affinitygroup.allocCronAllowOndemand', $form_state->getValue('alloc_cron_allow_ondemand'));
-
     \Drupal::state()->set('access_affinitygroup.allocCronSliceSize', $form_state->getValue('alloc_cron_param_slicesize'));
     \Drupal::state()->set('access_affinitygroup.allocCronImportLimit', $form_state->getValue('alloc_cron_param_importlimit'));
     \Drupal::state()->set('access_affinitygroup.allocCronNoCC', $form_state->getValue('alloc_cron_param_nocc'));

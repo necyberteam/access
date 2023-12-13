@@ -89,17 +89,18 @@ class AllocationsUsersImport {
     if (!isset($this->batchNoUserDetSave)) {
       $this->batchNoUserDetSave = self::DEFAULT_NOUSERDETSAVE;
     }
-
     $this->verboseLogging = \Drupal::state()->get('access_affinitygroup.allocCronVerbose');
     if (!isset($this->verboseLogging)) {
       $this->verboseLogging = self::DEFAULT_VERBOSE;
     }
 
-    $msg1 = "Allocations cron start:$this->batchStartAt size:$this->sliceSize  noCC:$this->batchNoCC noUserDet:$this->batchNoUserDetSave verbose:$this->verboseLogging";
-    \Drupal::messenger()->addMessage($msg1);
+    $msg1 = "Alloc start:$this->batchStartAt size:$this->sliceSize  noCC:$this->batchNoCC noUserDet:$this->batchNoUserDetSave verbose:$this->verboseLogging";
     $this->collectCronLog($msg1, 'i', TRUE);
 
+    // Get ready to process imports, and retrieve initial list of portal user names.
     $portalUserNames = $this->setupForImports();
+
+    // If we don't get any more names , reset start to 0 for the next round of alloc cron runs.
     if (empty($portalUserNames)) {
       \Drupal::state()->set('access_affinitygroup.allocCronStartAt', 0);
       return;
@@ -109,33 +110,32 @@ class AllocationsUsersImport {
       $nameCount = count($portalUserNames);
       $this->collectCronLog("Start to process $nameCount portal names.", 'd', TRUE);
       $this->allocationsImportWork($portalUserNames);
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog("Exception in allocations batch setup: " . $e->getMessage(), 'err');
       \Drupal::state()->set('access_affinitygroup.allocationsRun', FALSE);
     } finally {
-
-      // Reset start to next slice, or 0 if we've reached the end.
+      // Reset start to next slice.
       $processedIndex = \Drupal::state()->get('access_affinitygroup.allocCronStartAt') + $this->currentNumber;
       \Drupal::state()->set('access_affinitygroup.allocCronStartAt', $processedIndex);
 
-      $msg1 = "Allocations cron done at $this->currentNumber; next start is $processedIndex";
-      // @todo remove messsage  for final
-      \Drupal::messenger()->addMessage($msg1);
+      $msg1 = "Allocations cron done with $this->currentNumber; next start is $processedIndex";
       $this->collectCronLog($msg1, 'i', TRUE);
+
+      $this->emailDevCronLog($this->logCronErrors);
     }
   }
 
   /**
-   * IMPORT ALLOCATIONS using batch api.
+   * IMPORT ALLOCATIONS using batch api. Meant to run manually from UI.
    * Parameters are set for this one run the constant contact admin form.
    * Must run as user 1.
    */
-
-  /**
-   * @todo Enforce User=1
-   */
   public function startBatch($batchsize, $importlimit, $nocc, $nouserdetsave, $startat, $verbose = FALSE) {
+
+    if (\Drupal::currentUser()->id() !== '1') {
+      \Drupal::messenger()->addMessage("Allocations manual batch can only be run as User 1.");
+      return;
+    }
 
     $this->isCronJob = FALSE;
     $this->verboseLogging = $verbose;
@@ -159,7 +159,7 @@ class AllocationsUsersImport {
     if (!isset($this->batchNoUserDetSave)) {
       $this->batchNoUserDetSave = self::DEFAULT_NOUSERDETSAVE;
     }
-    $msg1 = "Allocations import batch start: $this->batchStartAt size: $this->sliceSize limit: $this->batchImportLimit noCC: $this->batchNoCC verbose: $this->verboseLogging";
+    $msg1 = "Import batch start: $this->batchStartAt size: $this->sliceSize limit: $this->batchImportLimit noCC: $this->batchNoCC verbose: $this->verboseLogging";
     \Drupal::messenger()->addMessage($msg1);
     $this->collectCronLog($msg1, 'i', TRUE);
     $portalUserNames = $this->setupForImports();
@@ -181,8 +181,7 @@ class AllocationsUsersImport {
       if (PHP_SAPI == 'cli') {
         drush_backend_batch_process();
       }
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog("Exception in allocations batch setup: " . $e->getMessage(), 'err');
       \Drupal::state()->set('access_affinitygroup.allocationsRun', FALSE);
     }
@@ -199,8 +198,7 @@ class AllocationsUsersImport {
       $msg1 = "Import finished irregularly; results empty.";
       \Drupal::messenger()->addMessage($msg1);
       $this->collectCronLog("Batch: " . $msg1, 'err', TRUE);
-    }
-    else {
+    } else {
       $msg1 = 'Processed ' . $results['totalProcessed'] . ' out of ' . $results['totalExamined'] . ' examined.';
       $msg2 = "New users: " . $results['newUsers'] . " New Constant Contact: " . $results['newCCIds'];
 
@@ -241,22 +239,19 @@ class AllocationsUsersImport {
 
       if ($this->isCronJob) {
         $portalUserNames = $this->getApiPortalUserNamesForCron($this->batchStartAt, $this->sliceSize);
-      }
-      else {
+      } else {
         $portalUserNames = $this->getApiPortalUserNamesForBatch($this->batchStartAt, $this->batchImportLimit);
       }
       if (empty($portalUserNames)) {
         return NULL;
       }
 
-      $msg1 = "Allocations fetch done: number to process: " . count($portalUserNames) . "; start processing at: $this->batchStartAt";
-      \Drupal::messenger()->addMessage($msg1);
+      $msg1 = "Alloc fetch done: number to process: " . count($portalUserNames) . "; start processing at: $this->batchStartAt";
       $this->collectCronLog($msg1, 'd');
 
       \Drupal::state()->set('access_affinitygroup.allocationsRun', TRUE);
       return $portalUserNames;
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog("Exception in allocations batch setup: " . $e->getMessage(), 'err');
       \Drupal::state()->set('access_affinitygroup.allocationsRun', FALSE);
       return NULL;
@@ -299,8 +294,7 @@ class AllocationsUsersImport {
       $client = new Client();
       $response = $client->request('GET', $requestUrl, $requestOpts);
       $responseJson = Json::decode((string) $response->getBody());
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog('Allocations api import: ' . $e->getMessage(), 'err');
       return FALSE;
     }
@@ -332,9 +326,8 @@ class AllocationsUsersImport {
       }
 
       sort($portalUserNames);
-      $this->collectCronLog("portal names incoming $incomingCount pr $processedCount puncount " . count($portalUserNames), 'd');
-    }
-    catch (\Exception $e) {
+      $this->collectCronLog("Portal names incoming $incomingCount pr $processedCount puncount " . count($portalUserNames), 'd');
+    } catch (\Exception $e) {
       $this->collectCronLog('Allocations portal names: ' . $e->getMessage(), 'err');
       return [];
     }
@@ -368,8 +361,7 @@ class AllocationsUsersImport {
         }
         $portalUserNames[] = $aUser['username'];
       }
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog('Allocations portal names: ' . $e->getMessage(), 'err');
       return FALSE;
     }
@@ -428,7 +420,7 @@ class AllocationsUsersImport {
       // Process each user in the chunk
       // call api to get resources, get user, (add user + add to cc if needed)
       // update user's resources if needed, check if they are members of associated ags.
-      $this->collectCronLog("Batch " . $bnum . " start", 'i', TRUE);
+      $this->collectCronLog("Slice " . $bnum . " start", 'i', TRUE);
 
       foreach ($userNameArray as $userName) {
 
@@ -504,8 +496,7 @@ class AllocationsUsersImport {
 
             if (empty($refnum)) {
               $this->collectCronLog("Not found in CiDeR active res:  " . $cider['cider_resource_id'], 'd');
-            }
-            else {
+            } else {
               $newCiderRefnums[] = reset($refnum);
             }
           }
@@ -558,19 +549,16 @@ class AllocationsUsersImport {
           foreach ($agNodes as $agNid) {
             $this->setUserMembership($agNid, $userDetails, $userBlockedAgTids, TRUE);
           }
-        }
-        catch (\Exception $e) {
+        } catch (\Exception $e) {
           $this->collectCronLog("Exception for incoming user $userName  " . $e->getMessage(), 'err');
         }
       } // end foreach userName
 
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog("Exception while processing api results at $userCount " . $e->getMessage(), 'err');
     }
 
-    $this->collectCronLog("Batch " . $sandbox['batchNum'] . ". New users: $newUsers, CC Ids added: $newCCIds / $userCount", 'i', TRUE);
-
+    $this->collectCronLog($sandbox['batchNum'] . ". $newUsers new users;  $newCCIds CC added; $userCount processed.", 'i', TRUE);
   }
 
   /**
@@ -582,8 +570,7 @@ class AllocationsUsersImport {
     if (empty($ccId)) {
       $this->collectCronLog("Could not add user to Constant Contact:  $uEmail");
       return FALSE;
-    }
-    else {
+    } else {
       $u->set('field_constant_contact_id', $ccId);
       $u->save();
       $this->collectCronLog("Id from Constant Contact:  $uEmail", 'd');
@@ -611,11 +598,9 @@ class AllocationsUsersImport {
     if ($logType === 'err') {
       $this->logCronErrors[] = $msg;
       \Drupal::logger('cron_affinitygroup')->error($msg);
-    }
-    elseif ($logType === 'i') {
+    } elseif ($logType === 'i') {
       \Drupal::logger('cron_affinitygroup')->notice($msg);
-    }
-    else {
+    } else {
       if ($this->verboseLogging) {
         \Drupal::logger('cron_affinitygroup')->debug($msg);
       }
@@ -664,8 +649,7 @@ class AllocationsUsersImport {
       $u->save();
       $y = $u->id();
       $this->collectCronLog("User created: $accessUserName - " . $aUser['email'] . " ($y)", 'd');
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog("Exception createUser $accessUserName: " . $e->getMessage());
       $u = FALSE;
     }
@@ -754,8 +738,7 @@ class AllocationsUsersImport {
           }
         }
       }
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog('Exception in UserDetailUpdates for ' . $a['username'] . ': ' . $e->getMessage(), 'err');
     }
     return;
@@ -777,8 +760,7 @@ class AllocationsUsersImport {
         $citizenships .= $x['countryName'];
         $initial = FALSE;
       }
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
     }
     return $citizenships;
   }
@@ -838,8 +820,7 @@ class AllocationsUsersImport {
         $this->allocSubscribeToCCList($agTax->id(), $userDetails);
       }
       $this->collectCronLog("...add member: " . $ag->get('title')->value . ': ' . $userDetails->get('field_user_last_name')->getString(), 'd');
-    }
-    else {
+    } else {
       // $this->collectCronLog("...already  member: ".$ag->get('title')->value, 'd');
     }
   }
@@ -851,8 +832,7 @@ class AllocationsUsersImport {
     $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
     if (empty($postJSON)) {
       $this->collectCronLog("...error in subscribe; possible missing CC ID", 'err');
-    }
-    else {
+    } else {
       $cca = new ConstantContactApi();
       $cca->setSupressErrDisplay(TRUE);
       $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
@@ -889,8 +869,7 @@ class AllocationsUsersImport {
       $client = new Client();
       $response = $client->request('GET', $reqUrl, $requestOpts);
       $responseJson = Json::decode((string) $response->getBody());
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog("Alloc get resources exeception at $userName:" . $e->getMessage(), 'err');
     }
     return $responseJson;
@@ -953,12 +932,10 @@ class AllocationsUsersImport {
             // preventing attempts to work with an obfuscated CC Id.
             if (strlen($ccId) == 36) {
               $agContacts[] = $ccId;
-            }
-            else {
+            } else {
               $agContactsNoCCid[] = $uid;
             }
-          }
-          else {
+          } else {
             // Users without cc id. might not do anything with this here, not sure yet.
             $agContactsNoCCid[] = $uid;
           }
@@ -994,8 +971,7 @@ class AllocationsUsersImport {
                 $ccContacts[] = $contact->contact_id;
               }
             }
-          }
-          catch (\Exception $e) {
+          } catch (\Exception $e) {
             $this->collectCronLog("Sync $agCount: error in links loop " . $e->getMessage(), 'err', TRUE);
           }
         } while (!empty($nextHref));
@@ -1026,8 +1002,7 @@ class AllocationsUsersImport {
             usleep(500);
           }
         }
-      }
-      catch (\Exception $e) {
+      } catch (\Exception $e) {
         $this->collectCronLog("Sync $agCount: at $usersAddedAmt while attempting $addAttemptAmt" . $e->getMessage(), 'err', TRUE);
       }
       $this->collectCronLog("Sync $agCount: Completed at $usersAddedAmt", 'd', TRUE);
@@ -1119,11 +1094,9 @@ class AllocationsUsersImport {
           }
         }
       }
-    }
-    catch (\Exception $e) {
+    } catch (\Exception $e) {
       $this->collectCronLog("Clean Obs: " . $e->getMessage(), 'err');
     }
     $this->collectCronLog("Finished Cleaning Obsolete: reset allocations on $obsoleteCount users", 'i');
   }
-
 }

@@ -25,6 +25,7 @@
  * title changes.
  */
 
+use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
@@ -645,14 +646,10 @@ function showStatus($logmsg) {
  */
 function access_affinitygroup_cron() {
   try {
-    // Cronrunning true means allocations cron Todo, rename.
-    \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
-
-    // Make sure we are not somehow on the support domain, This is crucial for
+    // Make sure we are on the support domain, This is crucial for
     // the constant contact connection.
     $host = \Drupal::request()->getHttpHost();
     if ($host !== 'support.access-ci.org') {
-      // Temp logging.
       \Drupal::logger('cron_affinitygroup')->debug("On $host: blocked Constant Contact cron");
       return;
     }
@@ -671,21 +668,17 @@ function access_affinitygroup_cron() {
     // 2. call xdusage api to get users and create/update their
     // allocations and associated affinity groups.
     if (shouldRun('users')) {
-      \Drupal::state()->set('access_affinitygroup.cronrunning', TRUE);
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
-      \Drupal::logger('cron_affinitygroup')->notice('Running cron: user' . date("Y-m-d H:i:s", $currentTime));
+      \Drupal::logger('cron_affinitygroup')->notice('Running cron: alloc imports' . date("Y-m-d H:i:s", $currentTime));
 
-      // @todo this will probably be $aui->startBatch();
-      // $aui = new AllocationsUsersImport();
-      // $aui->updateUserAllocations();
-      // emailDevCronLog(); // this function needs to be fixed.
+      // Run one slice of the imports; parameters are state variables.
+      $aui = new AllocationsUsersImport();
+      $aui->runCronSlice();
     }
   }
   catch (Exception $e) {
-    \Drupal::logger('cron_affinitygroup')->notice('exception in cron test: ' . $e->getMessage());
-  } finally {
-    \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
+    \Drupal::logger('cron_affinitygroup')->notice('exception in cron: ' . $e->getMessage());
   }
 }
 
@@ -699,7 +692,7 @@ function shouldRun($function) {
   if ($function == 'token') {
 
     if (!isCCEnabled()) {
-      return;
+      return FALSE;
     }
 
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-t', 0);
@@ -712,24 +705,22 @@ function shouldRun($function) {
   }
   elseif ($function == 'users') {
 
-    // TEMP TEMP JUST DON'T RUN IMPORT CRON FOR NOW.
-    return FALSE;
-    // showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
-    // showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
-    // These 2 environment booleans are off by default but can be set in the
-    // Constant Contact admin page.
-    if (\Drupal::state()->get('access_affinitygroup.alloc_cron_disable', FALSE)) {
+    if (\Drupal::state()->get('access_affinitygroup.allocCronDisable', FALSE)) {
       return FALSE;
-    }
-    if (\Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', FALSE)) {
-      return TRUE;
     }
 
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
+    $hour = date('H', $currentTime);
 
-    // Run if it's been more than 24 hours since the last run.
-    if ($hoursDiff > 24) {
+    $startAt = \Drupal::state()->get('access_affinitygroup.allocCronStartAt', 0);
+
+    // If the start is 0 but we alaready started running alloctions today, we are done.
+    if (date('Ymd') === date('Ymd', $lastRun) && $startAt === 0) {
+      return FALSE;
+    }
+    // Only run if the hour is inclusively between 1 and 5 am.
+    if ($hour >= 1 && $hour <= 5) {
       return TRUE;
     }
   }
