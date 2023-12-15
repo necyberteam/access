@@ -41,10 +41,21 @@ function access_match_engagement_block_build_views_block_alter(array &$build, Bl
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
+    foreach ($form as $key => $value) {
+      if (is_array($value) && array_key_exists('#attributes', $value)) {
+        $form[$key]['#attributes']['class'][] = '[&_label]--font-bold';
+      }
+    }
+
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
+    $tag_label = t('Add Tags');
+    $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
+    $tag_summary = t('Select Tags');
     $form['node_add_tags'] = [
-      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+      '#markup' => "<div class='font-bold'>$tag_label</div>
+        <div>$tag_description</div>
+        <details class='tags'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
         'button',
