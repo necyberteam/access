@@ -165,12 +165,14 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     }
 
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
+      $form['moderation_state']['#access'] = FALSE;
       $form['field_email_user']['#access'] = FALSE;
       $form['field_notes_to_author']['#access'] = FALSE;
       $form['field_match_interested_users']['#access'] = FALSE;
       $form['field_match_steering_committee_m']['#disabled'] = TRUE;
       $form['field_node_type']['#access'] = FALSE;
       $form['field_email_user']['#access'] = FALSE;
+      $form['revision_log']['#access'] = FALSE;
     }
     if (in_array('match_sc', $roles)) {
       // Show author, status, and last saved date to SC.
