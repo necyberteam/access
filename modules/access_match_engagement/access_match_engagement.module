@@ -41,9 +41,13 @@ function access_match_engagement_block_build_views_block_alter(array &$build, Bl
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
+    // Make text boxes stretch full width and give labels bold/width.
     foreach ($form as $key => $value) {
       if (is_array($value) && array_key_exists('#attributes', $value)) {
         $form[$key]['#attributes']['class'][] = '[&_label]--font-bold';
+        $form[$key]['#attributes']['class'][] = '[&_label]--w-32';
+        $form[$key]['#attributes']['class'][] = '[&_.form-type-textfield]--flex';
+        $form[$key]['#attributes']['class'][] = '[&_.form-text]--grow';
       }
     }
 
@@ -173,6 +177,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_match_steering_committee_m']['#access'] = FALSE;
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
+      $form['actions']['submit']['#value'] = t('Submit for Review');
     }
 
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
