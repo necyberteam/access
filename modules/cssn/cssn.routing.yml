@@ -1,0 +1,14 @@
+cssn.page:
+  path: '/community-persona'
+  defaults:
+    _controller: '\Drupal\cssn\Controller\CommunityPersonaController::communityPersona'
+    _title: 'Community Persona'
+  requirements:
+    _role: 'authenticated'
+cssn.public_page:
+  path: '/community-persona/{uid}'
+  defaults:
+    _controller: '\Drupal\cssn\Controller\CommunityPersonaController::communityPersonaPublic'
+    _title_callback: '\Drupal\cssn\Controller\CommunityPersonaController::titleCallback'
+  requirements:
+    _permission: 'access content'

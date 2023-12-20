@@ -1,0 +1,10 @@
+name: Access Misc
+description: 'Snippets for small changes or re-usable code'
+type: module
+core_version_requirement: ^9.3 || ^10
+package: Custom
+dependencies:
+  - access
+
+libraries:
+  - access_misc/misc_library

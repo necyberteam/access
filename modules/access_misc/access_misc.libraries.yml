@@ -1,0 +1,22 @@
+misc_library:
+  version: 1.x
+  js:
+    js/create_ticket_links.js: {}
+add_select:
+  version: 1.x
+  js:
+    js/add_select2.js: {}
+  dependencies:
+    - webform/webform.element.select2
+custom_tags:
+  css:
+    theme:
+      css/custom_tags.css: {}
+  js:
+    js/custom_tags.js: {}
+node_add_tags:
+  css:
+    theme:
+      css/node_add_tags.css: {}
+  js:
+    js/node_add_tags.js: {}

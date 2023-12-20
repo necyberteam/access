@@ -1,0 +1,100 @@
+<?php
+
+/**
+ * @file
+ * Module updates.
+ */
+
+use Drupal\field\Entity\FieldConfig;
+use Drupal\field\Entity\FieldStorageConfig;
+
+/**
+ * Hook_update.
+ */
+function access_match_engagement_update_8001() {
+  $config = \Drupal::configFactory()->getEditable('access_match_engagement.settings');
+  $config->set('interested', 0);
+  $config->save();
+}
+
+/**
+ *
+ */
+function access_match_engagement_update_9001() {
+  // Change status field values to match moderation_state values.
+  $new_status_values = [
+    'Draft' => 'draft',
+    'In Review' => 'in_review',
+    'Accepted' => 'accepted',
+    'Recruiting' => 'recruiting',
+    'Reviewing Applicants' => 'reviewing_applicants',
+    'In Progress' => 'in_progress',
+    'Finishing Up' => 'finishing_up',
+    'Complete' => 'complete',
+    'On Hold' => 'on_hold',
+    'Halted' => 'halted',
+  ];
+
+  $database = \Drupal::database();
+  $entity_type = 'node';
+  $field_name = 'field_status';
+  $table = 'node__field_status';
+  $revision_table = 'node_revision__field_status';
+
+  // Store existing data in field_status & revision tables.
+  $query = $database->select($table, 't');
+  $query->fields('t', []);
+  $rows = $query->execute()->fetchAll();
+  $query = $database->select($revision_table, 't');
+  $query->fields('t', []);
+  $revision_rows = $query->execute()->fetchAll();
+
+  // Make a copy of field_status field and delete the original.
+  $field_storage = FieldStorageConfig::loadByName($entity_type, $field_name);
+  $new_fields = [];
+  foreach ($field_storage->getBundles() as $bundle => $label) {
+    $field = FieldConfig::loadByName($entity_type, $bundle, $field_name);
+    $new_field = $field->toArray();
+    // Add new allowed values.
+    $new_field['allowed_values'] = array_flip($new_status_values);
+    $new_fields[] = $new_field;
+    // Delete field.
+    $field->delete();
+  }
+  field_purge_batch(250);
+
+  // Create new field_status field.
+  FieldStorageConfig::create($field_storage->toArray())->save();
+  foreach ($new_fields as $new_field) {
+    $new_field = FieldConfig::create($new_field);
+    $new_field->save();
+  }
+
+  // Restore existing data in fields & revision tables.
+  if (!is_null($rows)) {
+    foreach ($rows as $row) {
+      $row = (array) $row;
+      $row['field_status_value'] = $new_status_values[$row['field_status_value']];
+      $database->insert($table)->fields($row)->execute();
+    }
+  }
+  if (!is_null($revision_rows)) {
+    foreach ($revision_rows as $row) {
+      $row = (array) $row;
+      $row['field_status_value'] = $new_status_values[$row['field_status_value']];
+      $database->insert($revision_table)->fields($row)->execute();
+    }
+  }
+
+}
+
+/**
+ * Change the match_engagement field_status values of 'accepted' to 'prelaunch'.
+ */
+function access_match_engagement_update_9002() {
+  $database = \Drupal::database();
+  $query = $database->update('node__field_status')
+    ->fields(['field_status_value' => 'prelaunch'])
+    ->condition('field_status_value', 'accepted')
+    ->execute();
+}

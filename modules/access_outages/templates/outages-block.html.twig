@@ -1,0 +1,242 @@
+{{ attach_library('access_outages/outages_library') }}
+
+<div id="single-outage" class="section container" style="display: none;">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>Outage</h2>
+      <p id="loading-outage">Loading outage...</p>
+      <div class="table-responsive">
+        <table id="outage" class="display text-start w-100 table" style="display: none;">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Resource</th>
+              <th>Summary</th>
+              <th>Type</th>
+              <th>Start</th>
+              <th>End</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="outage-list section container">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>Current Outages</h2>
+      <p id="no-current-outages">There are no current outages.</p>
+      <div class="table-responsive">
+        <table id="outages-current" class="display text-start table" style="display: none;">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Resource</th>
+                    <th>Summary</th>
+                    <th>Type</th>
+                    <th>Start</th>
+                    <th>End</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="outage-list section container">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>Planned Downtimes</h2>
+      <p id="no-planned-outages">There are no planned outages scheduled.</p>
+      <div class="table-responsive">
+        <table id="outages-planned" class="display text-start table" style="display:none;">
+          <thead>
+            <tr>
+              <th>Event</th>
+              <th>Resource</th>
+              <th>Summary</th>
+              <th>Type</th>
+              <th>Start</th>
+              <th>End</th>
+            </tr>
+          </thead>
+          <tbody>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="outage-list section container">
+  <div class="row">
+    <div class="col text-start text-md-center">
+      <h2>All Outages</h2>
+      <p id="no-all-outages">Loading all outages...</p>
+      <div class="table-responsive">
+        <table id="outages-all" class="display text-start table" style="display:none;">
+            <thead>
+                <tr>
+                    <th>Event</th>
+                    <th>Resource</th>
+                    <th>Summary</th>
+                    <th>Type</th>
+                    <th>Start</th>
+                    <th>End</th>
+                </tr>
+            </thead>
+            <tbody>
+            </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  const showOutages = async function showOutages(outageName, endpointUrl) {
+    const response = await fetch(endpointUrl)
+    var outages = await response.json()
+    if (outages.results.length > 0) {
+      const noOutages = document.getElementById(`no-${outageName}-outages`)
+      noOutages.style.display = 'none'
+      const outagesTable = document.getElementById('outages-' + outageName)
+      const options = {
+        timeZoneName: 'short'
+      }
+
+      jQuery(outagesTable).DataTable({
+        data: outages.results,
+        columns: [
+          { data: 'Subject',
+            render: function ( data, type, row, meta ) {
+              return type === 'display' ? `<a href="/outages?outageID=${row['URN']}">${data}</a>` : data;
+            }
+          },
+          { data: 'AffectedResources',
+            render: function ( data, type, row, meta ) {
+              if (type === 'display') {
+                const copyItems = [];
+                data.forEach(function(item){
+                  copyItems.push(item.ResourceID);
+                })
+                return copyItems.length == 1 ? copyItems[0]
+                  : '&#8231;&nbsp;' + copyItems.join('<br>&#8231;&nbsp;')
+              }
+              return data;
+            }
+          },
+          { data: 'Content',
+            render: function ( data, type, row, meta ) {
+              return type === 'display'
+                ? `<div style="word-wrap:anywhere">${data}</div>` : data;
+            }
+          },
+          { data: 'OutageType' },
+          { data: 'OutageStart',
+            render: function ( data, type, row, meta ) {
+              return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
+            }
+          },
+          { data: 'OutageEnd',
+            render: function ( data, type, row, meta ) {
+              return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
+            }
+          }
+        ],
+        order: [[4, 'desc']],
+        bAutoWidth: false
+      })
+      outagesTable.style.display = 'block'
+    }
+  }
+
+  const showOutage = async function showOutage(outageID) {
+    const singleOutage = document.getElementById('single-outage')
+    singleOutage.style.display = 'block'
+    const outageLists = document.querySelectorAll('.outage-list')
+    outageLists.forEach(
+      list => {
+        list.style.display = 'none'
+      }
+    )
+
+    const url = `https://operations-api.access-ci.org/wh2/news/v1/id/${outageID}`
+    const response = await fetch(url)
+    const outage = await response.json()
+    const loadingOutage = document.getElementById('loading-outage')
+    loadingOutage.style.display = 'none'
+    const outageTable = document.getElementById('outage')
+    const options = {
+      timeZoneName: 'short'
+    }
+    jQuery(outageTable).DataTable({
+      data: [outage.results],
+      columns: [
+        { data: 'Subject' },
+        { data: 'Associations',
+          render: function ( data, type, row, meta ) {
+            if (type === 'display') {
+              const copyItems = [];
+              data.forEach(function(item){
+                copyItems.push(item.AssociatedID);
+              })
+              return copyItems.length == 1 ? copyItems[0]
+                : '&#8231;&nbsp;' + copyItems.join('<br>&#8231;&nbsp;')
+            }
+            return data;
+          }
+        },
+        { data: 'Content',
+          render: function ( data, type, row, meta ) {
+            return type === 'display'
+              ? `<div style="word-wrap:anywhere">${data}</div>` : data;
+          }
+        },
+        { data: 'NewsType' },
+        { data: 'NewsStart',
+          render: function ( data, type, row, meta ) {
+            return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
+          }
+        },
+        { data: 'NewsEnd',
+          render: function ( data, type, row, meta ) {
+            return type === 'display'
+                ? (data ? new Date(data).toLocaleString(navigator.language, options) : '')
+                : data;
+          }
+        }
+      ],
+      'paging': false,
+      'searching': false,
+      'info': false,
+      'bAutoWidth': false
+    })
+    outageTable.style.display = 'block'
+  }
+
+  const url = new URL(window.location.href)
+  const outageID = url.searchParams.get("outageID")
+
+  if (!outageID) {
+    showOutages('current', 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/current_outages/')
+    showOutages('planned', 'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/future_outages/')
+    showOutages('all',     'https://operations-api.access-ci.org/wh2/news/v1/affiliation/access-ci.org/all_outages/')
+  } else {
+    showOutage(outageID)
+  }
+
+</script>

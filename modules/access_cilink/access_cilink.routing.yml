@@ -1,0 +1,23 @@
+access_cilink.cilinks:
+  path: '/ci-links/{sid}'
+  defaults:
+    _controller: '\Drupal\access_cilink\Controller\CiLinkController::cilinks'
+    _title: 'CI Link'
+    _title_callback: '\Drupal\access_cilink\Controller\CiLinkController::getTitle'
+  requirements:
+    _permission: 'access content'
+access_cilink.cilink:
+  path: '/ci-link/{sid}'
+  defaults:
+    _controller: '\Drupal\access_cilink\Controller\CiLinkController::cilink'
+  requirements:
+    _permission: 'access content'
+access_cilink.kb_cilinks:
+  path: '/knowledge-base/ci-links/{sid}'
+  defaults:
+    _controller: '\Drupal\access_cilink\Controller\CiLinkController::cilinks'
+    _title: 'CI Link'
+    _title_callback: '\Drupal\access_cilink\Controller\CiLinkController::getTitle'
+  requirements:
+    _permission: 'access content'
+

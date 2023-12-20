@@ -1,0 +1,18 @@
+.square-tags>div {
+  display: flex;
+  flex-wrap: wrap;
+  margin: 0 5px 5px 5px;
+}
+
+.square-tags div:first-child {
+  margin-left: 0;
+}
+
+#ask-ci th,
+#ci-links th {
+  border-top: 0;
+}
+
+#ci-links th:first-of-type {
+  width: 33%;
+}

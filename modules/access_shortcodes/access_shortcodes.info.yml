@@ -1,0 +1,8 @@
+name: ACCESS Shortcodes
+description: 'Shortcodes for the ACCESS theme'
+type: module
+core_version_requirement: ^9 || ^10
+package: Custom
+dependencies:
+  - access
+  - fontawesome

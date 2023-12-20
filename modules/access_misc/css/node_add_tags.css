@@ -1,0 +1,53 @@
+#edit-field-tags-wrapper {
+  display: none;
+}
+
+details.tags {
+  position: relative;
+  padding: 0 1rem;
+  max-height: 300px;
+  overflow: auto;
+}
+
+details.tags summary {
+  position: sticky;
+  top: 0;
+  padding: 0.5rem 0;
+  background-color: #ffffff;
+  cursor: pointer;
+  font-weight: 800;
+}
+
+.tags-select {
+  display: inline-block;
+  border: 1px solid #232323;
+  cursor: pointer;
+  padding: 5px;
+  margin: 5px;
+}
+
+.tags-select:hover {
+    border: 1px solid #1A5B6E;
+    color: #1A5B6E;
+}
+
+.selected {
+  background-color: #1A5B6E;
+  border-color: #1A5B6E;
+  color: #ffffff;
+}
+
+.selected:hover {
+  color: #ffffff;
+  opacity: 0.8;
+}
+
+.tags h2 {
+  margin: 1em 0;
+}
+
+.view-node-add-tags .view-content {
+  display: flex;
+  flex-wrap: wrap;
+}
+

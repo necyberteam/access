@@ -1,0 +1,11 @@
+outages_library:
+  version: 1.x
+  css:
+    theme:
+      //cdn.datatables.net/1.12.1/css/jquery.dataTables.min.css: {type: external}
+      css/access_outages.css: {}
+  js:
+    //cdn.datatables.net/1.12.1/js/jquery.dataTables.min.js: {}
+    js/affinity_group_outages.js: {}
+  dependencies:
+    - core/jquery

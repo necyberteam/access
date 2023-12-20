@@ -1,0 +1,16 @@
+filter_people_by_tags_form.form:
+  path: 'admin/people/filter-by-tags'
+  defaults:
+    _form: '\Drupal\access_misc\Form\FilterPeopleByTags'
+    _title: 'Filter users by flagged interest or skill'
+  requirements:
+    _role: 'administrator+match_sc+match_pm'
+misc.login:
+  path: '/login'
+  defaults:
+    _controller: '\Drupal\access_misc\Controller\LoginController::login'
+    _title: ''
+  requirements:
+    _permission: 'access content'
+  options:
+    no_cache: 'TRUE'

@@ -1,0 +1,36 @@
+<style>
+	.news-and-events .view {
+		margin-top: 0;
+	}
+	.news-and-events .views-row {
+		padding: 10px 0;
+		border-width: 0 0 1px 0;
+		border-style: solid;
+		border-color: var(--black);
+	}
+	.news-and-events h4 {
+		color: var(--black);
+		margin-bottom: 0;
+	}
+		.news-and-events a {
+		text-decoration: none;
+	}
+	.news-and-events a:hover {
+		color: var(--bs-dark);
+		text-decoration: underline;
+	}
+</style>
+<div class="news-and-events container my-4">
+	<div class="row g-3">
+		<div class="news col bg-light md-full-width p-4 me-md-4">
+			<h3>Latest Announcements</h3>
+			{{ latest_news_block }}
+			<a class="d-block mt-3" href="/announcements">All Announcements</a>
+		</div>
+		<div class="col-12 col-md-6 bg-light md-full-width p-4">
+			<h3>Upcoming Events</h3>
+			{{ latest_events_block }}
+			<a class="d-block mt-3" href="/events">All Events</a>
+		</div>
+	</div>
+</div>

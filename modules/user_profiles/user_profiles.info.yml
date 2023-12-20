@@ -1,0 +1,9 @@
+name: User Profiles
+description: User Profiles Module
+package: Custom
+type: module
+core_version_requirement: ^9 || ^10
+version: 1.0
+dependencies:
+  - cilogon_auth
+  - access

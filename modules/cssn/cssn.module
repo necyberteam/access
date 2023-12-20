@@ -1,0 +1,248 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Session\AccountInterface;
+use Drupal\block\Entity\Block;
+use Drupal\cssn\Plugin\Util\RoleProgramSorter;
+use Drupal\user\Entity\User;
+
+/**
+ * @file
+ * Module for CSSN.
+ */
+
+/**
+ * Implements hook_block_access().
+ *
+ * Show welcometothecssn block to people in the ACCESS CSSN program/region.
+ * Show jointhecssn block to other people.
+ */
+function cssn_block_access(Block $block, $operation, AccountInterface $account) {
+  if ($block->getPluginId() == 'block_content:58e0d082-2224-43c2-a911-c41e5afc47b9') {
+    // if the User is part of the ACCESS CSSN program, show the welcome block.
+    $current_user = \Drupal::currentUser();
+    if ($current_user->isAnonymous()) {
+      return AccessResult::forbidden();
+    }
+    $user = User::load($current_user->id());
+    $regions = $user->get('field_region')->getValue();
+    foreach ($regions as $region) {
+      // ACCESS CSSN term id = 780.
+      if ($region['target_id'] == '780') {
+        return AccessResult::allowed();
+      }
+    }
+    return AccessResult::forbidden();
+  }
+  // Show jointhecssn block to other people.
+  if ($block->getPluginId() == 'block_content:eedf2b47-d6e0-40d9-9a83-1de706df2843') {
+    $current_user = \Drupal::currentUser();
+    if ($current_user->isAnonymous()) {
+      return AccessResult::allowed();
+    }
+    $user = User::load($current_user->id());
+    $regions = $user->get('field_region')->getValue();
+    foreach ($regions as $region) {
+      // ACCESS CSSN term id = 780.
+      if ($region['target_id'] == '780') {
+        return AccessResult::forbidden();
+      }
+    }
+    return AccessResult::allowed();
+  }
+}
+
+/**
+ * Return a list of selectable roles for CSSN form.
+ */
+function cssn_get_roles_array() {
+  return [
+    "mentor",
+    "student",
+    "research_computing_facilitator",
+    "research_software_engineer",
+    "ci_systems_engineer",
+    "researcher",
+  ];
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Handle role forms.
+  if (
+    $form_id == 'webform_submission_edit_your_cssn_roles_add_form' ||
+    $form_id == 'webform_submission_edit_your_cssn_roles_edit_form'
+  ) {
+    // Set submit action.
+    $form['actions']['submit']['#submit'][] = 'cssn_role_form_submit';
+
+    // Update form's check marks for roles in user's profile.
+    $user = \Drupal::currentUser();
+    $user_roles = array_intersect($user->getRoles(), cssn_get_roles_array());
+    $form['elements']['roles_']['#default_value'] = $user_roles;
+
+    // Update form's academic status.
+    cssn_form_update_academic_status($form);
+  }
+
+  // Handle join cssn forms.
+  if (
+    $form_id == 'webform_submission_join_the_cssn_network_node_6111_add_form' ||
+    $form_id == 'webform_submission_join_the_cssn_network_node_6111_edit_form'
+  ) {
+    // Update form's check marks for roles in user's profile.
+    $fields_to_roles = [
+      'cssn' => 'General Member',
+      'mentor' => 'MATCHPlus Mentor',
+      'student' => 'Student-Facilitator',
+      'consultant' => 'Premier Consultant',
+      'cip' => 'NSF-funded CIP',
+    ];
+    $user = \Drupal::currentUser();
+    $roles = $user->getRoles();
+    $roles_set = [];
+    foreach ($fields_to_roles as $field => $role) {
+      if (in_array($field, $roles)) {
+        $roles_set[] = $role;
+      }
+    }
+    $form['elements']['i_am_joining_as_a_']['#default_value'] = $roles_set;
+
+    /*
+     * Handle case where user has roles but no "ACCESS CSSN" region.
+     * This could happen if the user selects a CSSN role through
+     * the edit_cssn_roles form.
+     */
+    // Lookup taxonomy term id by name 'ACCESS CSSN'.
+    $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'ACCESS CSSN']);
+    $term = reset($term);
+    $term_id = $term->id();
+    $role_program_sorter = new RoleProgramSorter($user);
+    $region_set = $role_program_sorter->lookupRegion($term_id);
+    if ($form_id == 'webform_submission_join_the_cssn_network_add_form' && $roles_set && !$region_set) {
+      \Drupal::messenger()->addMessage(t('The boxes checked below reflect your current roles, please select \'General Member\' and submit this form to participate in the CSSN.'), 'warning');
+    }
+
+    // Set submit action.
+    $form['actions']['submit']['#submit'][] = 'cssn_form_submit';
+
+    // Update form's academic status.
+    cssn_form_update_academic_status($form);
+  }
+}
+
+/**
+ * Initialize form element academic status.
+ */
+function cssn_form_update_academic_status(&$form) {
+  $user = \Drupal::currentUser();
+  $account = User::load($user->id());
+  $academic_status = $account->field_academic_status->getValue();
+  $academic_status = count($academic_status) ? $academic_status[0]['value'] : NULL;
+  $form['elements']['academic_status_select2']['#default_value'] = $academic_status;
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function cssn_role_form_submit(&$form, FormStateInterface $form_state) {
+
+  $form_roles = cssn_get_roles_array();
+  $user = \Drupal::currentUser();
+  $role_program_sorter = new RoleProgramSorter($user);
+  foreach ($form_roles as $role) {
+    $set_role = in_array($role, $form['elements']['roles_']['#value']);
+    if ($set_role) {
+      $role_program_sorter->addRole($role);
+    }
+    else {
+      $role_program_sorter->removeRole($role);
+    }
+  }
+
+  // If 'student' is selected, update academic status.
+  if (in_array("student", $form['elements']['roles_']['#value'])) {
+    cssn_update_academic_status($user, $form);
+  }
+}
+
+/**
+ * Implements hook_form_submit().
+ */
+function cssn_form_submit(&$form, FormStateInterface $form_state) {
+  $elements = $form['elements']['i_am_joining_as_a_'];
+  $general = $elements['General Member']['#checked'];
+  $match_mentor = $elements['MATCHPlus Mentor']['#checked'];
+  $student_facilitator = $elements['Student-Facilitator']['#checked'];
+  $premier_consultant = $elements['Premier Consultant']['#checked'];
+  $cip = $elements['NSF-funded CIP']['#checked'];
+  // Lookup taxonomy term id by name 'ACCESS CSSN'.
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'ACCESS CSSN']);
+  $term = reset($term);
+  $term_id = $term->id();
+  $enroll_program = FALSE;
+  if ($general || $match_mentor || $student_facilitator || $premier_consultant || $cip) {
+    $enroll_program = TRUE;
+  }
+  $user = \Drupal::currentUser();
+  cssn_role_region('cssn', $general, $term_id, $enroll_program, $user);
+  cssn_role_region('mentor', $match_mentor, $term_id, $enroll_program, $user);
+  cssn_role_region('student', $student_facilitator, $term_id, $enroll_program, $user);
+  cssn_role_region('consultant', $premier_consultant, $term_id, $enroll_program, $user);
+  cssn_role_region('cip', $cip, $term_id, $enroll_program, $user);
+
+  if ($student_facilitator) {
+    cssn_update_academic_status($user, $form);
+  }
+}
+
+/**
+ * Update user's academic status.
+ */
+function cssn_update_academic_status($user, $form) {
+  $academic_status = $form['elements']['academic_status_select2']['#value'];
+  $account = User::load($user->id());
+  $account->field_academic_status->setValue($academic_status);
+  $account->save();
+}
+
+/**
+ * Set or remove role and region.
+ */
+function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
+  $role_program_sorter = new RoleProgramSorter($user);
+  if ($checked) {
+    if (!empty($role)) {
+      $role_program_sorter->addRole($role);
+      // Flag user as part of the CSSN Affinity Group.
+      $cssn_affinity_group = \Drupal::entityTypeManager()
+        ->getStorage('taxonomy_term')
+        ->loadByProperties(['tid' => 794]);
+      $cssn_affinity_group = reset($cssn_affinity_group);
+      $flag_id = 'affinity_group';
+      $flag = \Drupal::service('cssn.flag');
+      $set_flag = $flag->setFlag($flag_id, $cssn_affinity_group, $user);
+      if ($set_flag) {
+        \Drupal::messenger()->addMessage(t('You have been added to the CSSN Affinity Group.'));
+      }
+    }
+    if ($enroll_program) {
+      $role_program_sorter->addFieldRegion($term_id);
+    }
+  }
+  else {
+    if (!empty($role)) {
+      $role_program_sorter->removeRole($role);
+    }
+    if ($enroll_program === FALSE) {
+      $role_program_sorter->removeFieldRegion($term_id);
+    }
+  }
+}

@@ -1,0 +1,63 @@
+<?php
+
+/**
+ * @file
+ * Post update functions for CSSN.
+ */
+
+/**
+ * Add 'ACCESS CSSN' to the region taxonomy.
+ */
+function cssn_update_9000() {
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->create([
+    'vid' => 'region',
+    'name' => 'ACCESS CSSN',
+  ]);
+  $term->save();
+}
+
+/**
+ * Rebuild role permissions.
+ */
+function cssn_update_9001() {
+  $nids = [267, 224];
+  foreach ($nids as $nid) {
+    \Drupal::database()->insert('nodeaccess')
+      ->fields([
+        'nid' => $nid,
+        'gid' => 6,
+        'realm' => 'nodeaccess_rid',
+        'grant_view' => 1,
+        'grant_update' => 0,
+        'grant_delete' => 0,
+      ])
+      ->execute();
+  }
+  node_access_rebuild();
+}
+
+/**
+ * Flag cssn affinity group for all users with 'Access CSSN' region set.
+ */
+function cssn_update_10000() {
+  // Entity query for all users with field_region set to 780.
+  $query = \Drupal::entityQuery('user');
+  $query->condition('field_region', 780);
+  $query->accessCheck(FALSE);
+  $uids = $query->execute();
+
+  $cssn_affinity_group = \Drupal::entityTypeManager()
+    ->getStorage('taxonomy_term')
+    ->loadByProperties(['tid' => 794]);
+  $cssn_affinity_group = reset($cssn_affinity_group);
+  $flag_id = 'affinity_group';
+  $flag = \Drupal::service('cssn.flag');
+
+  $i = 0;
+  foreach ($uids as $uid) {
+    $i++;
+    $user = \Drupal\user\Entity\User::load($uid);
+    $set_flag = $flag->setFlag($flag_id, $cssn_affinity_group, $user);
+    \Drupal::logger('cssn')->notice("Affinity CSSN group flagged for user: $uid with result: $set_flag iteration: $i");
+  }
+}

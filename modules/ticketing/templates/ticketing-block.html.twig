@@ -1,0 +1,60 @@
+<!-- User ticketing choices in a set of radio buttons -->
+<div class="mx-auto flex flex-col justify-center relative py-10 pt-24">
+  <img src="/themes/contrib/asp-theme/images/misc/shapes-top.svg" alt="" class="absolute top-0 right-0 w-2/5 md--w-1/5"/>
+  <img src="/themes/contrib/asp-theme/images/misc/shapes-bottom.svg" alt="" class="absolute bottom-0 right-0 md--w-1/2"/>
+  <form id="ticket-choice-form"  method="PUT" action="/open-a-ticket" class="w-fit py-10 my-10 mx-auto">
+    <input type="hidden" name="customfield_10103" id="ticket-account-name" value="{{ data.account_name }}" />
+    <input type="hidden" name="customfield_10108" id="ticket-display-name" value="{{ data.display_name }}" />
+    <h1 class="my-2 pt-4">How can we help you?</h1>
+    <div class="form-check">
+      <input class="form-check-input ticket-input-check" type="radio" name="ticketChoices" id="ticket-login-access">
+      <label class="form-check-label px-1" for="ticket-login-access">
+        I need help logging into ACCESS website
+      </label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input ticket-input-check" type="radio" name="ticketChoices" id="ticket-login-other">
+      <label class="form-check-label px-1" for="ticket-login-other">
+        I need help logging into other affiliated infrastructure
+      </label>
+    </div>
+    <div class="form-check">
+      <input class="form-check-input ticket-input-check" type="radio" name="ticketChoices" id="ticket-other-question" checked>
+      <label class="form-check-label px-1" for="ticket-other-question">
+        I have another question
+      </label>
+    </div>
+    <div class="py-4">
+      <button type="submit" class="btn btn-primary">OPEN A TICKET</button>
+    </div>
+  </form>
+</div>
+<SCRIPT>
+/*
+ * Script for ticketing-block.html.twig, used on ticketing choices page.
+ * Set up the url corresponding to user's choice of type.
+ */
+matches = document.querySelectorAll("input.ticket-input-check");
+for (match in matches) {
+  if (matches[match].name == "ticketChoices") {
+    matches[match].onchange = ticketChoiceChange;
+  }
+}
+// this is used as parameter for the ticketing form; if anonymous we
+// want to send blank so they will fill in their name
+if (document.getElementById("ticket-display-name").value == "anonymous") {
+   document.getElementById("ticket-display-name").value = "";
+}
+
+function ticketChoiceChange(e) {
+  url = null;
+  if (e.target.id == 'ticket-other-question') {
+    url = '/open-a-ticket';
+  }
+  else {
+    base = 'https://access-ci.atlassian.net/servicedesk/customer/portal/2/group/3/create/';
+    url = (e.target.id == 'ticket-login-access') ? base + '30' : base + '31';
+  }
+  document.getElementById('ticket-choice-form').action = url;
+}
+</SCRIPT>

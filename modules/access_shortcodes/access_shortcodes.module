@@ -1,0 +1,53 @@
+<?php
+
+/**
+ * @file
+ */
+
+/**
+ * Define our variables (parameters) for each shortcode.
+ */
+function access_shortcodes_theme() {
+  return [
+    'shortcode_icon_block' => [
+      'variables' => [
+        'icon' => '',
+        'img' => '',
+        'alt' => '',
+        'title' => '',
+        'text' => '',
+        'link' => '',
+        'boxed' => '',
+        'btnlink' => '',
+        'btntext' => '',
+      ],
+    ],
+    'shortcode_cta_block' => [
+      'variables' => [
+        'bg' => '',
+        'img' => '',
+        'alt' => '',
+        'title' => '',
+        'btnlink' => '',
+        'btntext' => '',
+      ],
+    ],
+    'shortcode_accordion' => [
+      'variables' => [
+        'summary' => '',
+        'text' => '',
+      ],
+    ],
+    'shortcode_square' => [
+      'variables' => [
+        'icon' => '',
+        'title' => '',
+        'text' => '',
+        'link' => '',
+        'color' => '',
+        'flipText' => '',
+        'flipBtnText' => '',
+      ],
+    ],
+  ];
+}

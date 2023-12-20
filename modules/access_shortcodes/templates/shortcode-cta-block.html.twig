@@ -1,0 +1,25 @@
+{#
+/**
+ * @file
+ * Default theme implementation for the cta_block shortcode.
+ *
+ * Available variables:
+ * - bg: url to background image.
+ * - img: optional url for image to display.
+ * - alt: alt text for optional image.
+ * - title: The heading text.
+ * - btnLink: optional href for button
+ * - btnText: optional text for button
+ */
+#}
+<div id="cta" class="flex items-center justify-center item-center bg-cover h-[350px]" style="background-image: url({{ bg }})">
+	<div class="flex flex-row items-center px-10 py-5 bg-dark-teal/90 text-white w-[494px] max-w-100">
+		<div class="prose flex flex-col">
+			{% if img %}
+				<img class="w-60 mb-2" src="{{ img }}" alt="{{ alt }}"/>
+			{% endif %}
+			<h2 class="text-white">{{ title }}</h2>
+			<a class="btn btn-primary ms-0" href="{{ btnlink }}">{{ btntext }}</a>
+		</div>
+	</div>
+</div>

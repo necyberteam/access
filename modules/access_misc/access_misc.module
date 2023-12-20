@@ -1,0 +1,186 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\access_misc\Plugin\Util\EventDateConvert;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Render\Markup;
+use Drupal\taxonomy\Entity\Term;
+use Drupal\user\Entity\User;
+use Drupal\views\ViewExecutable;
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function access_misc_views_pre_render(ViewExecutable $view) {
+  if ($view->id() == 'infrastructure_news') {
+    $view->element['#attached']['library'][] = 'access_misc/add_select';
+  }
+}
+
+/**
+ * Implements hook_views_post_render().
+ *
+ * Override page title for views of people with interest/expertise tags.
+ */
+function access_misc_views_post_render(ViewExecutable $view) {
+  // Override view /admin/structure/views/view/people_with_interest_tags/edit/page_1 title.
+  if (($view->id() == 'people_with_interest_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') ||
+      ($view->id() == 'people_with_expertise_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1')) {
+    $path = \Drupal::service('path.current')->getPath();
+    $path_args = explode('/', $path);
+    $tid = is_numeric($path_args[2]) ? $path_args[2] : FALSE;
+    if ($term = term::load($tid)) {
+      $title = 'People with interest in ' . $term->get('name')->value;
+      if ($view->id() == 'people_with_expertise_tags') {
+        $title = 'People with expertise in ' . $term->get('name')->value;
+      }
+      // Set the view title.
+      $view->setTitle($title);
+    }
+  }
+}
+
+/**
+ * Implements hook_entity_view_alter().
+ */
+function access_misc_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display) {
+  switch ($entity->getEntityTypeId()) {
+    case 'eventseries':
+      $date = $build['event_instances'][0]['#title'];
+      $dates = explode(' - ', $date);
+      $convert_date = new EventDateConvert($dates[0], $dates[1]);
+      $build['event_instances'][0]['#title'] = $convert_date->getStart() . " - " . $convert_date->getEnd();
+      break;
+
+    case 'eventinstance':
+      $date = $build['date'][0];
+      $convert_date = new EventDateConvert($date['start_date']['#markup'], $date['end_date']['#markup']);
+      $build['date'][0]['start_date']['#markup'] = $convert_date->getStart();
+      $build['date'][0]['end_date']['#markup'] = $convert_date->getEnd();
+      break;
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_field for views-view-field.html.twig.
+ */
+function access_misc_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+
+  // Display event instance date in the right format.
+  if ($view->id() == 'recurring_events_event_instances' && ($view->current_display == 'block_1' || $view->current_display == 'block_2')) {
+    if ($field->field == 'date__value') {
+      // Default separator between start and end dates is ' - '.
+      $output = explode(' - ', $variables['output']);
+      if (count($output) == 2) {
+        $start_date = $output[0];
+        $end_date = $output[1];
+        $date = new EventDateConvert($start_date, $end_date);
+        $variables['output'] = Markup::create($date->getStart() . " - " . $date->getEnd());
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_datalayer_alter()
+ *
+ * If the user is not anonymous, add hashed user id and account creation
+ * date to dataLayer.
+ */
+function access_misc_datalayer_alter(&$data_layer) {
+
+  if (!\Drupal::currentUser()->isAnonymous()) {
+
+    // Hide the uid field in data layer.
+    if (isset($data_layer['userUid'])) {
+      unset($data_layer['userUid']);
+    }
+
+    // Add hashed user id to data layer for logged in users.
+    $userId = \Drupal::currentUser()->id();
+    $data_layer['hashedUserId'] = hash('md4', $userId);
+
+    // Add account creation date to data layer for logged in users.
+    $account = User::load($userId);
+
+    // Calculate a time-bucket for the age of the user's creation date as follows:
+    // 1: under 1 week
+    // 2: under 1 month
+    // 3: under 3 month
+    // 4: under 6 months
+    // 5: under 12 months
+    // 6: under 24 months
+    // 7: over 24 months.
+    $created_time = $account->getCreatedTime();
+    $current_time = time();
+    $delta_time = $current_time - $created_time;
+    $delta_weeks = $delta_time / 60 / 60 / 24 / 7;
+    if ($delta_weeks < 1) {
+      $time_bucket = 1;
+    }
+    elseif ($delta_weeks < 4) {
+      $time_bucket = 2;
+    }
+    elseif ($delta_weeks < 12) {
+      $time_bucket = 3;
+    }
+    elseif ($delta_weeks < 24) {
+      $time_bucket = 4;
+    }
+    elseif ($delta_weeks < 52) {
+      $time_bucket = 5;
+    }
+    elseif ($delta_weeks < 104) {
+      $time_bucket = 6;
+    }
+    else {
+      $time_bucket = 7;
+    }
+    $data_layer['user_created_within'] = $time_bucket;
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  // Custom tags on /form/ci-link webform.
+  if ($form_id == 'webform_submission_resource_add_form' || $form_id == 'webform_submission_resource_edit_form') {
+    $form['#attached']['library'][] = 'access_misc/custom_tags';
+    $add_tags = \Drupal::service('access_misc.addtags');
+    $output = $add_tags->getView();
+    $form['custom_tags'] = [
+      '#markup' => "<details open class='tags'><summary><label class='js-form-required form-required'>Select relevant tags</label></summary>$output</details>",
+      '#weight' => 3,
+      '#allowed_tags' => [
+        'button',
+        'details',
+        'summary',
+        'label',
+        'span',
+        'div',
+        'h2',
+      ],
+    ];
+  }
+}
+
+/**
+ * Implements hook_mail().
+ */
+function access_misc_mail($key, &$message, $params) {
+  switch ($key) {
+    case 'notify_role':
+      $message['from'] = \Drupal::config('system.site')->get('mail');
+      $message['subject'] = $params['subject'];
+      $message['body'][] = $params['body'];
+      break;
+  }
+}
