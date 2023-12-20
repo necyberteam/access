@@ -20,6 +20,11 @@ function access_misc_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'infrastructure_news') {
     $view->element['#attached']['library'][] = 'access_misc/add_select';
   }
+  if ($view->id() == 'recurring_events_event_series' && $view->getDisplay()->view->element['#display_id'] == 'block_1') {
+    if (empty($view->result) && empty($view->getExposedInput())) {
+      $view->exposed_widgets = NULL;
+    }
+  }
 }
 
 /**
