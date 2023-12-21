@@ -6,12 +6,12 @@
 
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Url;
 use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
+use Drupal\user_profiles\Commands\UserProfilesCommands;
 use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\RedirectResponse;
-use Drupal\user_profiles\Commands\UserProfilesCommands;
-use Drupal\Core\Url;
 
 $debug = FALSE;
 
@@ -107,11 +107,13 @@ function user_profiles_entity_presave(Object $entity) {
     return;
   }
 
-  if (\Drupal::state()->get('access_affinitygroup.allocationsRun')) {
+  // Need to exit if we are here during the allocations import processing,
+  // which can either be run via cron or from user 1 setting it off on the
+  // constant contact admin form.
+  $current_user = \Drupal::currentUser();
+  if ($current_user->id() === 1 || $current_user->id() === 0) {
     return;
   }
-
-  $current_user = \Drupal::currentUser();
   $account_name = $current_user->getAccountName();
   $userinfo = get_account_data_from_api($account_name);
   $is_suspended = $userinfo && array_key_exists('isSuspended', $userinfo) && $userinfo['isSuspended'];
@@ -369,7 +371,7 @@ function user_profiles_user_login(UserInterface $account) {
       // Delete duplicate user.
       $dup_user->delete();
     }
-    else if($name_check == TRUE && $account_name_check == TRUE) {
+    elseif ($name_check == TRUE && $account_name_check == TRUE) {
       // Do nothing if both accounts are @access-ci.org.
     }
     else {

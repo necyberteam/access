@@ -74,13 +74,19 @@ class MatchLookup {
     if ($matches == NULL) {
       return;
     }
-    foreach ($matches as $match) {
+    foreach ($matches as $key => $match) {
       foreach ($match['nodes'] as $node) {
         $title = $node->getTitle();
         $nid = $node->id();
         $match_name = $match['name'];
         $field_status = $node->get('field_status')->getValue();
         $field_status = !empty($field_status) ? $field_status : '';
+        // Don't display engagement with a non-public status.
+        $non_public = ['draft', 'in_review', 'accepted', 'on_hold', 'halted'];
+        if (in_array($field_status[0]['value'], $non_public)) {
+          unset($matches[$key]);
+          break;
+        }
         $match_array[$nid] = [
           'status' => $field_status,
           'name' => $match_name,
@@ -141,21 +147,34 @@ class MatchLookup {
       return;
     }
     foreach ($this->matches_sorted as $match) {
-      $stripe_class = $n % 2 == 0 ? 'bg-light' : '';
+      $stripe_class = $n % 2 == 0 ? 'bg-light bg-light-teal' : '';
       $title = $match['title'];
       $nid = $match['nid'];
       $match_status = $match['status'];
+      $match_translated_status = [
+        'draft' => 'Draft',
+        'in_review' => 'In Review',
+        'accepted' => 'Accepted',
+        'recruiting' => 'Recruiting',
+        'reviewing_applicants' => 'Reviewing Applicants',
+        'in_progress' => 'In-Progress',
+        'finishing_up' => 'Finishing Up',
+        'complete' => 'Complete',
+        'on_hold' => 'On Hold',
+        'halted' => 'Halted',
+      ];
       if ($match_status) {
-        $match_status = $match_status[0]['value'];
+        $set_status = $match_status[0]['value'];
+        $match_status = $match_translated_status[$set_status];
       }
       $match_name = $match['name'];
       if (($match_status == 'Recruiting' && $match_name == 'Interested') || $match_name != 'Interested') {
         $lowercase = lcfirst($match_name);
         $first_letter = substr($lowercase, 0, 1);
-        $match_name = "<div data-bs-toggle='tooltip' data-bs-placement='left' title='$match_name'>
-          <i class='text-dark fa-solid fa-circle-$first_letter h2'></i>
+        $match_name = "<div data-tippy-content='$match_name'>
+          <i class='text-dark text-dark-teal text-2xl fa-solid fa-circle-$first_letter h2'></i>
         </div>";
-        $match_link .= "<li class='d-flex p-3 $stripe_class'>
+        $match_link .= "<li class='d-flex flex p-3 $stripe_class'>
           <div class='text-truncate' style='width: 400px;'>
             <a href='/node/$nid'>$title</a>
           </div>

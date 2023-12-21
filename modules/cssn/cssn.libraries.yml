@@ -1,4 +1,0 @@
-cssn_library:
-  version: 1.x
-  js:
-    js/tooltips.js: {}

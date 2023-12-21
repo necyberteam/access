@@ -4,8 +4,12 @@
  * @file
  */
 
-use Drupal\webform\Entity\WebformSubmission;
+use Drupal\block_content\Entity\BlockContent;
+use Drupal\menu_link_content\Entity\MenuLinkContent;
+use Drupal\node\Entity\Node;
+use Drupal\path_alias\Entity\PathAlias;
 use Drupal\webform\Entity\Webform;
+use Drupal\webform\Entity\WebformSubmission;
 
 /**
  * Update Resource webform submissions.
@@ -158,10 +162,1321 @@ function access_misc_update_9008() {
   $node->save();
 }
 
-/**k
+/**
  * Set resource flag state.
  */
 function access_misc_update_9010() {
   $flag = [];
   \Drupal::state()->set('resource_flags', $flag);
+}
+
+/**
+ * Helper function to update node body text.
+ */
+function update_node_body($nid, $body, $format) {
+  $query = \Drupal::entityQuery('node')
+    ->condition('nid', $nid)
+    ->accessCheck(FALSE);
+
+  $nids = $query->execute();
+  foreach ($nids as $nid) {
+    $node = Node::load($nid);
+    $node->set('body', [
+      'format' => $format,
+      'value' => $body,
+    ]);
+    $node->save();
+  }
+}
+
+/**
+ * Helper function to update block body text.
+ */
+function update_block_body($bid, $body, $format) {
+  $block = BlockContent::load($bid);
+  $block->set('body', [
+    'format' => $format,
+    'value' => $body,
+  ]);
+  $block->save();
+}
+
+/**
+ * Helper function to Remove a node and replace it with another node.
+ */
+function node_replace($old_node, $new_node) {
+  $prev_node = \Drupal::entityTypeManager()->getStorage('node')->load($old_node);
+  $url_alias = \Drupal::service('path_alias.manager')->getAliasByPath('/node/' . $old_node);
+  $prev_node->delete();
+
+  $next_node = \Drupal::entityTypeManager()->getStorage('node')->load($new_node);
+  $path_alias = PathAlias::create([
+    'path' => "/node/$new_node",
+    'alias' => $url_alias,
+  ]);
+  $path_alias->save();
+  $next_node->save();
+  // Create redirect from old node to new node.
+  // Redirect::create([
+  //   'redirect_source' => "node/$old_node",
+  //   'redirect_redirect' => $url_alias,
+  //   'language' => 'und',
+  //   'status_code' => '301',
+  // ])->save();
+}
+
+/**
+ * Update XDMoD page content.
+ */
+function access_misc_update_10000(&$sandbox) {
+  // XDMoD page.
+  $nid = 269;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+    <section class="mb-10" id="about">
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">View information about allocations, usage data, and usage, as well as specific information about your usage and general historic usage of the ACCESS allocated resources.</p>
+      <div class="grid grid--cols-1 md--grid-cols-3">
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Optimize job efficiency</p><p>View information about active and expired allocations.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Monitor allocation usage</p>
+            <p>View information about active and expired allocations.</p>
+          </div>
+      </div>
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold mb-1">View historical usage</p>
+          <p>View both personal usage and that of aggregated users.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+  <section class="mb-10" id="using-xdmod">
+    <h2 class="colored-square colored-square-orange">Using XDMoD</h2>
+    <p>
+      [accordion summary="What do I need to do to start using XDMoD?" text="Anyone with an ACCESS Identity can login to XDMoD. Information about your ACCESS allocations and historical usage of ACCESS resources is automatically populated."][/accordion]
+      [accordion summary="How can I find information about my ACCESS allocation usage?" text="Just log on to XDMoD and click on the “Allocations” tab. It will display information about your allocations."][/accordion]
+      [accordion summary="How can I use XDMoD to improve my job efficiency and allocation usage efficiency?" text="Many jobs do not use all of the resources asked for so they effectively use the allocation inefficiently. Your recent jobs show in the “ Jobs” window on the DashBoard tab that is displayed when you login to XDMoD. Click on a job to view detailed information. For older jobs, you can use the “Search” button in the Job Viewer tab. If you know the Job Identifier and the compute resource then you can use the Quick Job Lookup. Alternatively, you can search for your jobs by entering “User” in the filter of the Advanced Search, finding your user name in the Select a Value box, then selecting the job you want to view in the viewer from the list of jobs displayed. Use the output of the Job Viewer to check for how many cores and nodes are actually used as opposed to how many you may have requested."][/accordion]
+      [accordion summary="How can I view historical usage in XDMoD?" text="You can view your own historical usage or the historical aggregated usage by logging in to XDMoD and using the Usage tab to make simple plots of data or the Metric Explorer tab to make more complex plots. A great variety of information is available from XDMoD. "][/accordion]
+    </p>
+  </section>
+</div>
+<div class="hidden md--block col-2 sticky top-10">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS XDMoD </a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#using-xdmod">Using XDMoD</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#xdmod-support">XDMoD Support</a>
+  </nav>
+</div>
+</div>
+<section class="bg-light-teal -mx-50% px-50% py-10" id="xdmod-support">
+  <div class="container">
+    <h2 class="colored-square colored-square-orange">XDMoD Support</h2>
+    <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-launch.svg" title="LAUNCH XDMoD" link="https://xdmod.access-ci.org"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-documentation.svg" title="DOCUMENTATION" link="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/XDMoD.html"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-contactus.svg" title="CONTACT US" link="https://support.access-ci.org/open-a-ticket"][/square]
+    </div>
+  </div>
+</section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Update CCEP page content.
+ */
+function access_misc_update_10001(&$sandbox) {
+  // CCEP page.
+  $nid = 365;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 md--grid-cols-2 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+    <section class="mb-10" id="about">
+       <p class="prose text-dark-teal text-2xl leading-9 mb-10">CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more!</p>
+        <p>Submissions are reviewed once a month. Please submit two months prior to the conference that you desire to attend.</p>
+    </section>
+    <section class="mb-10" id="tier1">
+      <h2>Tier 1: $1,000</h2>
+      [accordion summary="Intro to ACCESS lecture" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for Basic, Intermediate, or Advanced User. This ideally should be a review of multiple ACCESS resources (e.g. how to get an allocation, how to get started, tips and tricks, software and hardware overview) or a general review of offerings that Support/Allocations provides to the community."][/accordion]
+      [accordion summary="Intro to ACCESS lecture for domain specific conference" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for a domain specific conference (e.g. AGU, ODSC, IPSA, etc) or community (biology department, chemistry honor society, political science affinity group, media studies lecture series, etc.)"][/accordion]
+      [accordion summary="Documentation OR tutorial/lecture on requested topic" text="Expand the knowledge base by contributing in one of these areas of expertise.<ul><li>LLM</li><li>Intro to Linux</li><li>Python</li><li>Job Scheduling</li><li>Data Transfer, Software Installations</li><li>Parallel Programming</li><li>GPU Acceleration</li><li>Rust</li></ul>"][/accordion]
+      [accordion summary="Expand the community knowledge base by adding CI Links" text='Share your expertise by contributing 10 of your &ldquo;go-to&rdquo; research computing-related websites, training modules, tutorials and/or documentation pages to the <a href="/ci-links">CI Links</a> page. Please contribute first, then apply for your reward. Submissions will be reviewed once a month by the CCEP committee.'][/accordion]
+      [accordion summary="ACCESS Support User Stories*" text="<em>* Currently unavailable.</em> Provide detailed information about your experience with ACCESS— the resources and software you used, and how it affected your research. Your feedback could be used to improve ACCESS Support services and/or featured as a case study on the website."][/accordion]
+    </section>
+    <section class="mb-10" id="tier2">
+      <h2>Tier 2: $2,500</h2>
+      [accordion summary="Intro to ACCESS lecture AND event" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for Basic, Intermediate, or Advanced User. This ideally should be a review of multiple ACCESS resources (e.g. how to get an allocation, how to get started, tips and tricks, software and hardware overview) or a general review of offerings that Support/Allocations provides to the community AND host a live community event such as a workshop or tutorial, a DEI meeting, or a gathering of students/faculty/staff to promote awareness and use of ACCESS resources."][/accordion]
+      [accordion summary="Intro to ACCESS lecture for domain specific conference AND a written document" text="Prepare an Intro to ACCESS lecture, tutorial, or slide deck for a domain specific conference (e.g. AGU, ODSC, IPSA, etc) or community (biology department, chemistry honor society, political science affinity group, media studies lecture series, etc.) AND a written document that can be shared and reused for training in the future."][/accordion]
+      [accordion summary="Documentation AND tutorial/lecture/event on requested topic" text="Expand the knowledge base by contributing in one of these areas of expertise.<ul><li>LLM</li><li>Intro to Linux</li><li>Python</li><li>Job Scheduling</li><li>Data Transfer, Software Installations</li><li>Parallel Programming</li><li>GPU Acceleration</li><li>Rust</li></ul>"][/accordion]
+      [accordion summary="Share your expertise on Ask.CI, the Q&A platform for the research computing community" text='Expand the community knowledge base by contributing 10 posts (new topics or answers to existing topics, with a maximum of 5 new topics) on ask.CI. Submissions will be reviewed once a month by the CCEP committee. Please post first, then apply for your reward.'][/accordion]
+      [accordion summary="Tag Taxonomy Curation*" text="<em>* Currently unavailable.</em> Assess current tag taxonomy structure and suggest modifications to better serve the ACCESS computer researcher ecosystem."][/accordion]
+      [accordion summary="Serve as a MATCH Plus Mentor*" text="<em>* This opportunity will reopen Spring 2024</em>"][/accordion]
+      [accordion summary="Serve on the CCEP Review Committee*" text="<em>* This opportunity will reopen Spring 2024</em>"][/accordion]
+    </section>
+    <section class="mb-10">
+      <a class="btn btn-primary" href="https://forms.gle/u4d4kCtsYNQgzxjq5">Apply to CCEP</a>
+    </section>
+  </div>
+  <div class="hidden md--block col-2 sticky top-10">
+      <nav class="bg-md-teal mb-10 p-5">
+        <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">CCEP</a>
+        <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#tier1">Tier 1</a>
+        <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#tier2">Tier 2</a>
+        <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#fine-print">Fine Print</a>
+      </nav>
+    </div>
+  </div>
+</div>
+<div id="fine-print" class="py-10 bg-light-teal -mx-50% px-50%">
+  <div class="container">
+    <h2>Important Fine Print</h2>
+    <p>CCEP (CSSN Community Engagement Program) gives travel rewards to ANYONE for community engagement, feedback forums, documentation and much more! Submissions are reviewed once a month. Please submit by October 1 for SC23 or two months prior to the conference that you desire to attend.</p>
+    <p><a href="/ccep/ccep-details">See all the details</a></p>
+  </div>
+</div>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Update Science Gateways page content.
+ */
+function access_misc_update_10002(&$sandbox) {
+  // Science Gateways page.
+  $nid = 278;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+  <div class="grid grid-cols-1 md--grid-cols-4  gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+
+	<section class="mb-10" id="about">
+      	<p class="prose text-dark-teal text-2xl leading-9 mb-10">A science portal or science gateway is a community-developed set of tools, applications, and data integrated through a web-based portal or a suite of applications. They provide access to tools used in cutting-edge research – telescopes, seismic shake tables, supercomputers, sky surveys, undersea sensors, and more. These gateways often connect diverse resources and make them easily accessible, lowering the barriers traditionally required to access these resources.
+       </p>
+
+	<div class="grid grid-cols-1 md--grid-cols-3">
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Advance access to resources</p>
+           <p>By connecting science gateways to cutting-edge ACCESS resources and software, training and research workflows are streamlined through one interface.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Collaborative space</p>
+           <p>Gateways provide an interactive community space for sharing knowledge of methods, code, data, results, and training materials.</p>
+          </div>
+      </div>
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold mb-1">Enhanced research products</p><p>Gateways provide a space to share research outcomes and supplementary products. They enable collaborators, peers, and future researchers to discover and learn.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="mb-10" id="using-science-gateways">
+ 	<h2 class="colored-square colored-square-orange">Using Science Gateways</h2>
+	<p>	Through user-friendly online interfaces, Science Gateways combine cyberinfrastructure components and support a community-specific set of tools, applications, and data collections.
+	</p>
+	<p> Search existing science gateways in our <a href=https://catalog.sciencegateways.org/#/home>gateways catalog</a> or talk to <a href=https://sciencegateways.org/work-with-us>SGX3 for support</a>  in choosing a science gateway. You can join an existing science gateway by creating an account or communicating to the team hosting the science gateway with an inquiry to join. Many science gateway teams hope you will join them and look to grow their communities.
+	</p>
+<p>
+    	[accordion summary="How do I use a Gateway?" text="You can use most science gateways like a typical website. Many science gateways provide open access to research products which you can find from the home page of the science gateway or search engines on the science gateway. To access HPC resources, run software, or add your own research products, most science gateways will ask that you authenticate. Depending on the science gateway, you may either create a local account on gateway or authenticate through another known entity like your university's login portal, Google, or other service."][/accordion]
+
+[accordion summary="What are some examples of Science Gateways?" text="There are over 630 science gateways and related software in our <a href=https://catalog.sciencegateways.org/#/home>gateways catalog</a>. Some of the most popular science gateways include: <ul><li><a href=https://www.phylo.org/>CIPRES</a> - a public resource for phylogenetics and population biology.</li><li><a href=https://nanohub.org/>nanoHUB</a> - a diverse community of nanotechnology researchers and educators.</li><li><a href=https://genapp.rocks/>GenApp</a> - a framework for rapidly building and deploying graphical front ends for command line applications to an extensible variety of targets.</li><li><a href=https://opentopography.org/>OpenTopography</a> - a science gateway that facilitates community access to high-resolution, Earth science-oriented, topography data, and related tools and resources.</li><li><a href=https://nemar.org/>NEMAR</a> - an open access data, tools, and compute resource for finding, assessing and processing human NeuroElectroMagnetic data (EEG, MEG, iEEG) shared by its authors through OpenNeuro.org.</li><li><a href=https://www.designsafe-ci.org/>DesignSafe</a> - a natural hazards research science gateway where researchers store, analyze, curate, publish, and discover data within their community.</li><li><a href=https://ebird.org/home>eBird</a> - a science gateway where birdwatching data is collected and shared to power new data-driven approaches to science, conservation and education.</li><li><a href=https://gateway.delta.ncsa.illinois.edu/>Delta Science Gateway</a> - a gateway for researchers who want to enable others in the community to use their applications and run them on the GPU-centric NCSA Delta computational resource.</li></ul>"][/accordion]
+
+[accordion summary="What's involved with adapting a Science Gateway?" text="<p>You can join an existing science gateway by creating an account or communicating to the team hosting the science gateway with an inquiry to join. Many science gateway teams hope you will join them and look to grow their communities.</p><p>If you would like to establish your own science gateway, you can work with these science gateway providers to request a new science gateway for your project. When you do create your own science gateway, you have the opportunity to design it to fit your project’s needs. Some of the below projects are open source and some offer full support in managing and hosting your science gateway. The benefit of working with a fully hosted team is you can outsource the management, development, and security to these experienced and fully staffed teams.</p><ul><li><a href=https://hubzero.org/>Hubzero®</a> - a software platform for building powerful websites that host analytical tools, publish data, share resources, collaborate and build communities in a single web-based ecosystem.</li><li><a href=https://tacc-cloud.readthedocs.io/en/latest/>Tapis</a> - an open source, science-as-a-service API platform for powering your digital lab.</li><li><a href=https://openondemand.org/>Open OnDemand </a> - a platform that empowers students, researchers, and industry professionals with remote web access to supercomputers.</li><li><a href=https://airavata.apache.org/>Apache Airavata</a> - a software framework that enables you to compose, manage, execute, and monitor large scale applications and workflows.</li><li><a href=https://usegalaxy.org/ >Galaxy</a> -  is an open source, web-based platform for data intensive biomedical research.</li><li><a href=https://www.globus.org/>Globus</a> - a secure, reliable research data management service.</li><li><a href=https://pegasus.isi.edu/>Pegasus</a> - a project that encompasses a set of technologies that help workflow-based applications execute in a number of different environments including desktops, campus clusters, grids, and clouds.</li></ul>"][/accordion]
+
+      	[accordion summary="Why should I use a Gateway?" text="Science gateways elevate your research. They provide an actively supported space to streamline all your research workflow processes in one interface. They also break down barriers to research outcomes and educational training."][/accordion]
+
+    </p>
+  </section>
+</div>
+<div class="hidden md--block col-2 sticky top-10">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">Science Gateways</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#using-science-gateways">Using Science Gateways</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#science-gateways-support">Science Gateways Support</a>
+  </nav>
+</div>
+</div>
+
+<section class="bg-light-teal -mx-50% px-50% py-10" id="science-gateways-support">
+<container>
+<h2 class="colored-square colored-square-orange">Science Gateways Support</h2>
+    <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-consult.svg" title="Technical Consultancy" link="https://sciencegateways.org/work-with-us" text="Advice on the best platform for your project or on integrating HPC resources into your science gateway pipeline."][/square]
+
+ [square icon="/themes/contrib/asp-theme/images/icons/ico-training.svg" title="Workforce Development" link="https://sciencegateways.org/education-training" text="Mentoring, career development, internships, workshops & hackathons." ][/square]
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-workforce.svg" title="Sustainability Training" link="https://sciencegateways.org/education-training/sustainability-training" text="Learn to articulate your project’s value, define stakeholder interactions, and explore funding models." ][/square]
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-ui.svg" title="Usability Consultancy" link="https://sciencegateways.org/work-with-us" text="The SGX3 Usability Team can help create a new user interface or improve an existing design."][/square]
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-blueprint.svg" title="Blueprint Factory" link="https://sciencegateways.org/our-services/blueprint-factories" text="CIPs, scientists, and resource operators explore future domain needs and create plans for the next generation of science gateways." ][/square]
+
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-contactus.svg" title="Contact Us" link="https://sciencegateways.org/work-with-us" text="Want to work with us? Request a consult, share a letter of collaboration, or ask a question." ][/square]
+    </div>
+</container>
+  </section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Update Match Engagement Guide page content.
+ */
+function access_misc_update_10003(&$sandbox) {
+  // Match Engagement Guide page id.
+  $nid = 6108;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 ">
+    <section class="mb-5" id="about">
+      <p class="text-dark-teal text-2xl prose leading-9 mb-2">
+        Steering Committee members review engagement request and decide whether it should be a MATCH Plus or MATCH Premier Engagement. Committee members then match CSSN members to the researcher needs and help the project move along to completion. 
+      </p>
+    </section>
+    <img class="block w-40 not-prose ms-auto mb-2" src="/themes/contrib/asp-theme/images/logos/match.svg" alt="match team" >
+    <section class="bg-light-teal  px-5 py-10 mb-5" >
+      <h2 class="colored-square colored-square-orange">MATCH Plus Guide</h2>
+      <p>MATCH Plus supports researchers through short-term engagements that pair a student with an experienced mentor to address an immediate research need. Mentors are ACCESS Computational Science and Support Network (CSSN) members with subject matter expertise and professional facilitation skills relevant to the engagement.</p>
+      <p class="text-dark-teal font-extrabold mb-4">Researchers work with a Steering Committee member:</p>
+      [accordion summary="Request an engagement" color="white"  text="Researcher submits an engagement request. SC member helps craft a viable submission to bring to committee for approval.<ol><li>Researcher logs in with an ACCESS Support Portal account.</li><li>Researcher fills in a request <a href=/node/add/match_engagement?type=plus>form</a>.</li><li>Any SC member reviews submission, and changes status to “Received” if it seems viable. This will send an email to the researcher informing them that their request is being considered, and telling them that additional fields are now shown on the submission form.</li><li>Received engagements are shared at the next SC meeting and each is assigned an SC member as point of contact/concierge.</li><h4>Publishing an engagement</h4><ol><li>When engagements are “Received”, additional engagement information fields are revealed.</li><li>POC/Concierge works with researcher to identify:  <ul><li>Engagement image</li><li>Appropriate tags</li><li>2 or more engagement milestones</li><li>“Student profile” for student recruitment</li></ul></li><li>Check for completion:<ul><li>Are necessary fields filled in?</li><li>Is the engagement well conceived and described?</li><li>Are the milestones SMART (Specific, Measurable, Achievable, Relevant and Timed) and does the overall timeline look reasonable?</li><li>Evaluate whether the engagement is MATCH Plus or MATCH Premier.</li></ul></li><li>After the fields are filled in, the author changes the status to “In Review” and the engagement link is sent to the SC for review with a week deadline for comments.</li><li>After one week, if there are no comments, the engagement is moved into the “Recruiting” state by a MATCH PM. This makes the summary card for the engagement visible on the MATCH Engagement page, with a visible recruiting flag, and an “I’m interested” button shows up on the detail page for the engagement.</li></ol>"][/accordion]
+      [accordion summary="Recruit team members" color="white" text="<p>SC member matches a mentor and student to an accepted engagement.</p><h4>Recruiting students</h4><p>Approved engagements need student-facilitators paired with mentors. If the researcher has chosen a student, the process can move to step 5 below.</p><ol><li>Students express interest by using the “I'm interested”  button. POC/Concierge receives daily summary of interest. POC/Concierge contacts individuals that express interest.</li><li>Potential students are interviewed.</li><li>Suitable candidates are connected to researchers for approval. Student-facilitators report on their visa status (such as F-1) to leave time for relevant hurdles.</li><li>Researchers are informed of selected students.</li><li>Compensation terms are confirmed with the student.</li><li>After confirmation, the engagement letter is sent to the student.</li><li>Once the signed engagement letter is received, the payment process can proceed.</li></ol><h4>Recruiting mentors</h4><ol><li>Mentors express interest by clicking “I'm interested”  button. POC/Concierge receives daily summary of interest and contacts mentors that express interest.</li><li>Potential mentors are interviewed.</li><li>Suitable candidates are connected to researchers for approval.</li></ol>"][/accordion]
+      [accordion summary="Implement an engagement" color="white" text="<p>The student carries out the engagement with the team and participates in regular meetings.</p><h4>Engagement updates</h4><p>The POC/Concierge keeps up with engagement status through communication with the researcher, mentor, and student.</p><ol><li>A schedule is established for checking in with the engagement team.</li><li>As milestones are completed, the POC fills in the appropriate fields of the engagement in the portal.</li><li>If a completed milestone is tied to payment, the POC will make sure payment is made.</li></ol><h4>Wrap Presentation</h4><p>After an engagement is complete the student gives a wrap presentation.</p><ol><li>The student uses this <a href=https://docs.google.com/presentation/d/1-xQLfHpfO03uYlJMQguIIvdkYjt0YTQhWWN6ALzbwz4/edit#slide=id.p1>template</a> provided as a guide.</li><li>When the wrap presentation is complete, upload it to the portal (PDF) and fill in the “Wrap Presentation Date”.</li><li>Change engagement status to “Finishing Up”.</li></ol>" ][/accordion]
+      [accordion summary="Finish an engagement" color="white" text="<div><p>Final Reports, Knowledge Base Contributions, and Exit Interviews.</p><h4>Final Report</h4><p>Final Reports are essential to our NSF reporting.</p><ol><li>We recommend sending questions to the researcher in an email or Google Doc and then entering their responses into the engagement page on the Portal.</li><li>Only relevant questions need to be filled out.</li><li>The report can be augmented with additional insights and knowledge.</li><li>Once these materials are collected and entered into the portal, the status of the engagement is changed to “Complete”.</li></ol><h4>Knowledge Base contributions</h4><p>Students should provide helpful engagement materials back to the community to help the next researcher facing similar topics.</p><ol><li>Share “Nuggets of information” on <a href=http://ask.ci/>Ask.CI</a>—post a question you were trying to answer and the answer you found.</li><li>Add links on the <a href=/ci-links>CI Links page</a>  of the Support portal to the material that you found most useful in doing your engagement.</li></ol><h4>Exit interviews</h4>SC member conducts exit interviews in a Zoom conversation with team members. The final payment is tied to the completion of the student exit interview. Example questions: <ol><li>All participants:<br>What went well? Could anything have gone better?</li><li>For student-facilitators:<br>After your experience with this engagement, are you interested in pursuing a career as a Research Computing Facilitator?</li></ol></div>" ][/accordion]
+    </section>
+    <img class="block w-40 not-prose ms-auto mb-2" src="/themes/contrib/asp-theme/images/logos/match.svg" alt="match team" >
+    <section class="bg-light-teal px-5 py-10 mb-5" >
+      <h2 class="colored-square colored-square-orange">MATCH Premier Guide</h2>
+      <p>
+        Researchers are matched with consultants who have the expertise to help with massive allocations or using ACCESS resources in novel ways. MATCH Premier Consultants are selected from the Computational Science and Support Network (CSSN) depending on the researcher's needs - they may be facilitators, research software engineers, or other types of appropriate support personnel.
+      </p>
+      <p class="text-dark-teal font-extrabold mb-4">
+        Researchers work closely with a SC member to bring an engagement through the following steps.
+      </p>
+      [accordion summary="Request an engagement" color="white" text="<div><p>Researcher submits a project and secures funding.</p><ol><li>Researcher creates a Support Portal account, if they don’t have one.</li><li>Researcher fills a request <a href=#>form</a> with assistance from a SC member.</li><li>SC member reviews submission, and clicks “Accept engagement” if it seems viable.</li><li>Accepted engagements are shared at the next SC meeting.</li></ol><h4>Publishing an engagement</h4><ol><li>When engagements are “Accepted”, additional engagement information fields are revealed.</li><li>SC members work with researcher to identify: <ul><li>Engagement image</li><li>Appropriate tags</li><li>3 or more engagement milestones</li></ul></li><li>Check for completion:<ul><li>Are necessary fields filled in?</li><li>Is the engagement well conceived and described?</li><li>Do the milestones and timeline look reasonable?</li><li>Confirm how the engagement is being funded. <em>Funding for the MATCH Premier consultants are arranged directly between the researcher's institution and the consultant. We anticipate that personnel participating in the MATCH Premier program will be deployed at institutions across the country, and partially funded for other work at their home institutions.</em></li></ul></li><li>After the necessary fields are filled in, the engagement link is sent to the SC for review prior to their next meeting.</li><li>The engagement is reviewed by the SC at their next meeting.</li></ol></div>" ][/accordion]
+      [accordion summary="Recruit team members" color="white"  text="<div><p>SC member matches a consultant to an accepted engagement.</p><h4>Recruiting consultants</h4><p>Consultants are usually identified by SC member associated with engagement but occasionally, all consultants  are notified when engagements are recruiting. In this case, the following steps are followed.</p><ol><li>Consultants express interest by clicking “I’m interested” button. Engagement manager contacts consultants that express interest.</li><li>Potential consultants are interviewed.</li><li>Suitable candidates are connected to researchers for approval.</li></ol></div>"][/accordion]
+      [accordion summary="Implement an engagement" color="white" text="<p>Consultant carries out project with PI.</p><h4>Engagement updates</h4><p>The associated SC member keeps up with engagement status through communication with the researcher, mentor, and consultant.<p><ol><li>A schedule is established for checking in with Engagement teams.</li><li>As milestones are completed, the SC member fills in the appropriate fields of the engagement in the portal.</li><li>If a completed milestone is tied to payment, the SC member will make sure payment is made.</li></ol><h4>Wrap Presentation</h4><p>After an Engagement is complete the consultant gives a wrap presentation.</p><ol><li>This <a href=https://docs.google.com/presentation/d/119CYhJopQyP_kSZX3Qd1JXUPzdWLsqGMXsUtX72GxmQ/edit#slide=id.p1>template</a> is provided as a guide for wrap presentations.</li><li>When the wrap presentation is complete, upload it to the portal (PDF) and fill in the “Wrap Presentation Date”.</li><li>Change engagement status to “Finishing Up”</li></ol>"][/accordion]
+      [accordion summary="Finish an engagement" color="white" text="<div><p>Final reports, Knowledge Base contributions, and exit interviews.</p><h4>Final report</h4><p>Final Reports are essential to our NSF reporting.</p><ol><li>We recommend sending questions to the researcher in an email or Google Doc and then entering their responses into the engagement page on the Portal.<li>Only relevant questions need to be filled out.</li><li>The report can be augmented with additional insights and knowledge.</li><li>Once these materials are collected and entered into the portal, the status of the Engagement is changed to “Complete”.</li></ol><h4>Knowledge Base contributions</h4><p>The team should provide helpful engagement materials back to the community to help the next researcher facing similar topics.</p><ol><li>Share “Nuggets of information” on <a href=http://ask.ci/>Ask.CI</a>—post a question you were trying to answer and the answer you found.</li><li>Add links on the <a href=/ci-links>CI Links page</a> of the Support portal to the material that you found most useful in doing your engagement.</li></ol><h4>Exit Interviews</h4><p>SC member conducts exit interviews in a Zoom conversation with team members. The final payment is tied to the completion of the exit interview.</p><p>Example questions:<ul><li>What went well?</li><li>Could anything have gone better?</li></ul></p></div>"][/accordion]
+    </section>
+  </div>
+</div>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Tools page content (if node is 6109)
+ */
+function access_misc_update_10004(&$sandbox) {
+  // Tools page.
+  $nid = 6109;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<p class="prose text-dark-teal text-2xl leading-9 mb-10">
+Try these cutting-edge tools designed to streamline your time to science. These tools drastically reduce development time, allowing researchers to swiftly unlock the full potential of HPC systems.
+</p>
+<div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-10" >
+	<div class="border border-gray border-solid md--col-span-3"></div>
+
+	<div class="flex flex-col items-center">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/access-ondemand.svg">
+		<p class="font-black text-center">Improving the ACCESS experience</p>
+	</div>
+
+	<div class="flex flex-col">
+		<p>Utilize remote computing resources easily from any device. The simplified interface makes it easy to use  your favorite apps for data visualization, simulations, modeling, and more. 		</p>
+       	<div>
+			<a  class="btn btn-primary" href="/tools/ondemand">FIND OUT MORE</a>
+		</div>
+	</div>
+
+	<div>
+		<div class="flex mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">Remote access web portal</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">Zero installation</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">Easy to use</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">Available on many resources</span>
+	    </div>
+	</div>
+
+	<div class="border border-gray border-solid md--col-span-3"></div>
+
+	<div class="flex flex-col items-center">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/pegasus-stacked.svg">
+		<p class="font-black text-center">Easy to use hosted workflow system</p>
+	</div>
+
+	<div class="flex flex-col ">
+		<p>Orchestrate jobs and data movements across ACCESS resource providers. Workflow can be a single task, or contain 1,000s of tasks with interdependencies.</p>
+       <div>
+			<a  class="btn btn-primary" href="/tools/pegasus">FIND OUT MORE</a>
+		</div>
+	</div>
+
+	<div>
+		<div class="flex  mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">Data management</span>
+	    </div>
+
+	    <div class="flex  mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">Provenance tracking</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+          	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">Automatic error recovery</span>
+	    </div>
+	    <div class="flex  mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">Reproducibility</span>
+	    </div>
+		<div class="flex  mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">Reusability</span>
+	    </div>
+	</div>
+
+	<div class="border border-gray border-solid md--col-span-3"></div>
+
+	<div class="flex flex-col items-center">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/science-gateways.svg">
+		<p class="font-black text-center">Web platforms for research and education</p>
+	</div>
+
+	<div class="flex flex-col">
+		<p>Grow and broaden participation for communities of scientists and educators through simple web interfaces connected to software, data, and HPC resources.</p>
+       <div>
+			<a  class="btn btn-primary" href="/tools/science-gateways">FIND OUT MORE</a>
+		</div>
+	</div>
+
+	<div>
+		<div class="flex  mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">630+ science gateways</span>
+	    </div>
+	    <div class="flex  mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">Education and technical advice</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">Project sustainability training</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">User interface design consulting</span>
+	    </div>
+		<div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">Community knowledge sharing</span>
+	    </div>
+	</div>
+
+	<div class="border border-gray border-solid md--col-span-3"></div>
+
+	<div class="flex flex-col items-center">
+		<img class="w-56 mb-2 mx-auto not-prose" src="/themes/contrib/asp-theme/images/logos/xdmod-dk.png">
+		<p class="font-black text-center">Data to analyze and optimize your work</p>
+	</div>
+
+	<div class="flex flex-col">
+		<p>XDMoD collects usage data from all ACCESS allocated resources and provides a user interface to display the data.</p>
+    	<div>
+			<a  class="btn btn-primary" href="/tools/xdmod">FIND OUT MORE</a>
+		</div>
+	</div>
+
+	<div>
+		<div class="flex  mb-3">
+        	<div class="not-prose shrink-0 me-3">
+            	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          	</div>
+          	<span class="font-extrabold">Monitor allocation usage</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">Optimize job efficiency and allocation usage</span>
+	    </div>
+	    <div class="flex  mb-3">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <span class="font-extrabold">View historical usage</span>
+	    </div>
+	</div>
+</div>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Update Pegasus page content and formatting for new theme.
+ */
+function access_misc_update_10005(&$sandbox) {
+  // Pegasus.
+  $nid = 268;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+    <section class="mb-5" id="about">
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">Construct, run, and debug workflows from a Jupyter Notebook. Perform simple interactions on the command line. Work across environments and get started quickly with sample workflows using a Python API.</p>
+      <div class="grid grid-cols-1 md--grid-cols-3">
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Data management</p><p>Data transfer, input selection, and output registration as auxiliary jobs to the workflow.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Error recovery</p>
+            <p>Retried tasks, workflow checkpoints, remapping, and alternative data sources for staging.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Provenance tracking</p><p>Trace a workflow and its outputs, including information about data sources and software used.</p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-5 mb-0">
+        <a class="btn btn-primary mb-5" href="https://access.pegasus.isi.edu">TRY PEGASUS</a>
+        <a class="btn btn-md-teal mb-5" href="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html">SEE DOCUMENTATION</a>
+      </div>
+    </section>
+
+    <section class="pt-10 mb-10" id="pegasus-workflows">
+
+      <div class="flex items-center">
+        <div>
+          <h2 class="colored-square colored-square-orange">Workflows</h2>
+          <div><p>We have Jupyter based training notebooks available that walk you through creating simple diamond workflow (and more complex ones) using the Pegasus Python API and executing them on ACCESS resources.</p>
+        </div>
+      </div>
+      <div>
+        <img class='not-prose' src='/themes/contrib/asp-theme/images/misc/pegasus-workflow.jpg' >
+      </div>
+    </div>
+
+    [accordion summary="Why use workflows" text="<div><p>Scientific Workflow Management Systems (WMS) such as Pegasus are vital tools for scientists and researchers in a wide range of fields. They provide a structured environment for the design, execution, and monitoring of complex computational tasks, enabling researchers to manage and process large amounts of data efficiently.<br><span class='font-semibold'>Some reasons you should consider using a system like Pegasus WMS:</span></p><div class='grid grid-cols-6 gap-5'><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/agreement.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REPRODUCIBILITY</p>Document and reproduce your analyses, ensuring their validity, with scientific workflows.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/cycle.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>AUTOMATION</p>Automate repetitive and time-consuming tasks and reduce your workload.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/decision.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>SCALABILITY</p>Handle large data sets and complex analyses and take on bigger research problems.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/growth.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REUSABILITY</p>Build libraries of reusable code and tools that can be adapted by other researchers.</div></div></div>"][/accordion]
+
+    [accordion summary="See workflow examples" text="<div class='grid  grid-cols-1 md--grid-cols-10 gap-5 mb-10'><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal font-extrabold'>SINGLE JOB</p><img class='not-prose mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step1.jpg' alt='workflow step 1'><div class='text center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Single-Job.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal  font-extrabold'>SET OF JOBS</p><img class='not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step2.jpg' alt='workflow step 2'><div class='text=center'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Set-of-Independent-Jobs.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-4'><p class='text-center text-dark-teal font-extrabold'>SPLIT/MERGE WORKFLOW</p><img class='not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step3.jpg' alt='workflow step 3'><div><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Merge-Workflow.html'>SEE EXAMPLE</a></div></div></div>"][/accordion]
+  </section>
+
+  <section class="pt-10 mb-10" id="using-pegasus">
+    <h2 class="colored-square colored-square-orange">Getting Started with Pegasus</h2>
+    <p>To start you need some Python/Jupyter Notebook knowledge, familiarity with a terminal window, and an ACCESS allocation. <a href="https://allocations.access-ci.org/">How to get an ACCESS Allocation</a>.</p>
+
+    [accordion summary="Get setup" text="<p>Logon with your ACCESS ID and use Open OnDemand. You specify which allocations you have the first time you logon.</p><div class='grid grid-cols-2 gap-5'><div><img class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/ci-logon.jpg' alt='C I logon screen'><p class='text-dark-teal font-extrabold mb-2'>SINGLE SIGN ON WITH YOUR ACCESS ID</p><p>All registered users with an active allocation automatically have an ACCESS Pegasus account.</div><div><img  class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/sdsc.jpg' alt='sdsc'><p class='text-dark-teal font-extrabold mb-2'>CONFIGURE RESOURCES ONCE</p><p>Use Open OnDemand instance at resource providers to install SSH keys and determine location allocation ID.</p></div></div>"][/accordion]
+
+    [accordion summary="Run workflows on ACCESS" text="<p>To get started you only need some Python/Jupyter Notebook knowledge, some experience using a terminal window, and an ACCESS allocation.</p><div class='grid grid-cols-1 md--grid-cols-2 gap-y-5 gap-x-10'><div><img class='border  border-black border-solid not-prose' src='/themes/contrib/asp-theme/images/misc/create-the-workflow.jpg'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-medium'>1</p><div class='mb-0 text-dark-teal font-extrabold'>CREATE THE WORKFLOW</div><ul class='my-0'><li>Use Pegasus API in Jupyter Notebook or use our examples</li><li>Submit your workflow for execution,</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/commandline.gif'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-medium'>2</p><p class='mb-0 text-dark-teal font-extrabold'>PROVISION COMPUTE RESOURCES</p><ul class='my-0'><li>Use HTCondor Annex tool to provision pilot jobs on your allocated ACCESS resources</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/monitor-execution.jpg'></div><div class='flex-col items-center'><p class='mb-0 text-5xl text-orange font-medium'>3</p><p class='mb-0 text-dark-teal font-extrabold'>MONITOR THE EXECUTION</p><ul class='my-0'><li>Follow the workflow execution within the notebook or in the terminal</li><li>You can see what resources you brought in using the terminal</li></ul></div></div>"][/accordion]
+  </section>
+</div>
+
+<div class="hidden md--block col-2 sticky top-10">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS Pegasus</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-workflows">Workflows</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#using-pegasus">Getting Started with Pegasus</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-support">Pegasus Support</a>
+  </nav>
+</div>
+</div>
+<section class="bg-light-teal -mx-50% px-50% py-10" id="pegasus-support">
+  <div class="container">
+    <h2 class="colored-square colored-square-orange">ACCESS Pegasus Support</h2>
+    <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+      [square icon="/themes/contrib/asp-theme/images/icons/video-orange.svg" color="orange" title="TUTORIAL VIDEO" link="https://www.youtube.com/watch?v=4wiyLFGwJg4" text="A step by step guide  to using ACCESS Pegasus"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-documentation.svg" title="DOCUMENTATION" link="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html" text="Detailed information about setup and use"][/square]
+      [square icon="/themes/contrib/asp-theme/images/logos/pegasus-b.svg" title="AFFINITY GROUP" link="https://support.access-ci.org/affinity-groups/pegasus" text="Announcements, Slack, email list and Github"][/square]
+    </div>
+  </div>
+</section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Block update for Announcements block.
+ */
+function access_misc_update_10006(&$sandbox) {
+  $bid = 63;
+  $format = 'full_html';
+  $body = <<<EOT
+<div class="card">
+    <div class="card-body">
+        <h3 class="card-title mt-0">
+            Posting Announcements
+        </h3>
+        <p>
+            Do you have an announcement to share with the ACCESS community?
+        </p>
+        <p>
+            <a class="btn btn-outline-secondary bg-white text-sm" href="/news-request">Add Announcement</a>
+        </p>
+    </div>
+</div>
+EOT;
+  update_block_body($bid, $body, $format);
+  node_replace(458, 6110);
+  MenuLinkContent::create([
+    'title' => 'Announcements',
+    'link' => ['uri' => 'internal:/announcements'],
+    'menu_name' => 'footer',
+    'parent' => 'menu_link_content:2ad3b81e-a9f5-4139-9085-3c1c9772be87',
+    'weight' => -49,
+  ])->save();
+}
+
+/**
+ * Update ACCESS OnDemand page for new theme.
+ */
+function access_misc_update_10007(&$sandbox) {
+  // ACCESS OnDemand node.
+  $nid = 267;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+  	<div class="grid grid-cols-1 md--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+
+	<section class="mb-10" id="about">
+      	<p class="prose text-dark-teal text-2xl leading-9 mb-10"> Open OnDemand is an easy-to-use web portal that is being deployed on ACCESS resources to allow researchers to compute from anywhere without client software or command-line interface, and significantly speed up the time to science.</p>
+
+	<div class="grid grid-cols-1 md--grid-cols-3">
+
+  	<div class="flex">
+    	<div class="not-prose shrink-0 me-3">
+      	<img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+     	</div>
+      <div>
+        <p class="font-extrabold mb-1">Zero installation</p>
+        <p>Run entirely in your browser. No software installation required.</p>
+      </div>
+      </div>
+
+     	<div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Easy to use</p>
+            <p>A simple interface so you can start computing immediately.</p>
+          </div>
+      </div>
+
+      <div class="flex">
+        <div class="not-prose shrink-0 me-3">
+          <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+        </div>
+        <div>
+          <p class="font-extrabold mb-1">Compatible with any device</p>
+	  <p>Launch on any device with a browser—even a mobile phone or tablet.</p>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <section class="mb-10" id="ondemand-faq">
+ 	<h2 class="colored-square colored-square-orange">ACCESS OnDemand FAQ</h2>
+
+    	[accordion summary="What is the difference between ACCESS OnDemand and Open OnDemand?" text=" ACCESS OnDemand is a standardized instance of Open OnDemand that is being adopted by ACCESS resource providers. <a href='https://www.youtube.com/watch?v=4-w-4wjlnPk&ab_channel=OH-TECH'>Watch a video about Open OnDemand.</a>"][/accordion]
+
+    	[accordion summary="How can I learn to use ACCESS OnDemand?" text="Participating RPs have instructions on using their ACCESS OnDemand (AOD) service. You need to have an ACCESS allocation at the participating RP to use AOD."][/accordion]
+
+    	[accordion summary="How do I get help using ACCESS OnDemand at a specific Resource Provider?" text="Each RP has support pages associated with their ACCESS OnDemand service. If you don’t find the answer you need on these pages, or at the resource provider’s help desk, you can open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>. The Open OnDemand team also offers a variety of ways to get support for platform-related topics. "][/accordion]
+
+    	[accordion summary=" How do I request to have an application installed on a resource I use?" text="Open a <a href='https://support.access-ci.org/help-ticket'>support help ticket</a>."][/accordion]
+
+    	[accordion summary="I’m an ACCESS Resource Provider and I want to make OnDemand available on my systems. How do I get started?" text="Please follow the steps outlined in the <a href='https://readthedocs.access-ci.org/projects/integration-roadmaps/en/latest/tasks/ACCESS_OnDemand_Portal_Integration_v1.html'>ACCESS OnDemand service integration roadmap</a>."][/accordion]
+
+    	[accordion summary="Open OnDemand has made it really easy for me to use ACCESS resources. Where can I learn more about it or get engaged in the community?" text="<a href='https://openondemand.org/get-involved'>Read this page</a> to learn the many ways to join the Open OnDemand community and get involved. Join our <a href='https://support.access-ci.org/affinity-groups/open-ondemand'>Affinity Group</a> to get up to the minute announcements about our community-organized monthly Tips and Tricks Calls and other events."][/accordion]
+
+  </section>
+</div>
+
+<div class="hidden md--block col-2 sticky top-10">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS OnDemand</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#ondemand-faq">ACCESS OnDemand FAQ</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#ondemand-support">ACCESS OnDemand Support</a>
+  </nav>
+</div>
+</div>
+
+<section class="bg-light-teal -mx-50% px-50% py-10" id="ondemand-support">
+  <h2 class="colored-square colored-square-orange">ACCESS OnDemand Support</h2>
+
+  <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+
+  [square icon="/themes/contrib/asp-theme/images/logos/ood.jpg" title="Affinity Group" link="https://support.access-ci.org/affinity-groups/open-ondemand" text="Announcements, links to Slack, Discourse, email and Github."][/square]
+
+	[square icon="/themes/contrib/asp-theme/images/icons/documentation.svg" title="Documentation" link="https://osc.github.io/ood-documentation/latest" text="Search for a specific topic or browse for general info." ][/square]
+
+	[square icon="/themes/contrib/asp-theme/images/icons/discourse.svg" title="Discourse" link="https://discourse.openondemand.org" text="Browse recent questions on the Get Help thread or leave one of your own." ][/square]
+
+	</div>
+</section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Update CSSN page content.
+ */
+function access_misc_update_10008(&$sandbox) {
+  MenuLinkContent::create([
+    'title' => 'CSSN',
+    'link' => ['uri' => 'internal:/cssn'],
+    'menu_name' => 'access-secondary-menu',
+    'parent' => 'menu_link_content:9415c0c5-3008-4bac-9605-165fc246e376',
+    'weight' => -49,
+  ])->save();
+  node_replace(273, 6111);
+}
+
+/**
+ * Update front page.
+ */
+function access_misc_update_10009(&$sandbox) {
+  node_replace(466, 6114);
+  // Also changing domain front page in config.
+}
+
+/**
+ * Replace Knowledge Base page with new The Knowledge Base page.
+ */
+function access_misc_update_10010(&$sandbox) {
+  node_replace(270, 6113);
+}
+
+/**
+ * Update Events page content.
+ */
+function access_misc_update_10011(&$sandbox) {
+  node_replace(364, 6117);
+  MenuLinkContent::create([
+    'title' => 'Events & Trainings',
+    'link' => ['uri' => 'internal:/events'],
+    'menu_name' => 'access-additional-universal-menu',
+    'parent' => 'menu_link_content:c11952c3-0fdb-48d2-b25e-9e6226f1234b',
+    'weight' => -47,
+  ])->save();
+}
+
+/**
+ * Update Past Events page content.
+ */
+function access_misc_update_10012(&$sandbox) {
+  node_replace(447, 6120);
+}
+
+/**
+ * Update Video Learning page for new theme.
+ */
+function access_misc_update_10013(&$sandbox) {
+  // ACCESS Video Learning page node.
+  $nid = 5950;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+    <div class="grid grid-cols-1 md--grid-cols-3 ml--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+
+    <p class="prose text-dark-teal text-2xl leading-9 mb-10">
+      These videos are designed to introduce the ACCESS program which helps
+      researchers and educators use national advanced computing systems and
+      services. Each playlist contains a number of short videos explaining a
+      component of the ACCESS ecosystem. You can watch the whole playlist or
+      find an explanation of a single topic.
+    </p>
+
+    <section class="border-yellow border-b-8 mb-10">
+      <h2 class="mb-3">NSF ACCESS for New Users</h2>
+      <div class="md--w-9/12 border border-black mb-5">
+        <iframe width="100%" style="aspect-ratio: 16/9"
+          src="https://www.youtube.com/embed/videoseries?si=mAcnLGcpuFV-RG0K&amp;list=PLKZ5k-XFFHU1HHjQvcA1pZYUTbPfBZ2fz"
+          title="YouTube video player" frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen=""></iframe>
+      </div>
+      <div class="md--w-9/12 mb-5">
+        Learn about the NSF ACCESS project, including its purpose as the
+        interface to U.S. national computational
+        infrastructure, commonly used terms, and how to access its portal:
+        <a href="https://access-ci.org/">https://access-ci.org/</a>.
+      </div>
+    </section>
+
+    <section class="border-yellow border-b-8 mt-4 mb-10" id="video-intro">
+      <h2 class="mb-3">Introduction to ACCESS</h2>
+      <div class="md--w-9/12 border border-black mb-5">
+        <iframe width="100%" style="aspect-ratio: 16/9"
+          src="https://www.youtube.com/embed/videoseries?si=RnwlRFkrwJ6M93SD&amp;list=PLKZ5k-XFFHU0yJAfdArHCIC1EBGtBWELp"
+          title="YouTube video player" frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen=""></iframe>
+      </div>
+      <div class="md--w-9/12 mb-10">
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos
+          below.</h3>
+        "Introduction to ACCESS" describes the NSF ACCESS project, including its
+        purpose as the interface to U.S. national computational infrastructure,
+        commonly used terms, and how to access its portal.
+      </div>
+
+      <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/PzvN6BmtbzA?si=JXAE71xIzPvCfKgd"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen=""></iframe>
+          </p>
+          <h4 class="mt-0">Introduction to ACCESS</h4>
+          <p>Learn about the NSF ACCESS project, including its purpose as the
+            interface to U.S. national computational infrastructure, commonly
+            used terms, and how to access its portal: <a
+              href="https://access-ci.org/">https://access-ci.org/</a>.
+          </p>
+        </div>
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/nfY48cjO2Fw?si=9VLx-vb6oPW3haVF"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen=""></iframe>
+          </p>
+          <h4 class="mt-0">The User Portal</h4>
+          <p>Watch an overview of the different services available from the
+            ACCESS portal: <a href="https://access-ci.org">https://access-ci.org/</a>.
+          </p>
+        </div>
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/k3KGzls4CA8?si=QRojdHg3jcegCvbz"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Identity Management &amp; Acceptable Use</h4>
+          <p>Find out about the tools available to manage an ACCESS user account
+            via <a href="https://identity.access-ci.org/">https://identity.access-ci.org/</a>,
+            and the responsibilities of being an ACCESS user.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-yellow border-b-8 mt-4 mb-10" id="video-allocations">
+      <h2 class="mb-3">ACCESS Allocations</h2>
+
+      <div class="md--w-9/12 border border-black mb-5">
+        <iframe width="100%" style="aspect-ratio: 16/9"
+          src="https://www.youtube.com/embed/videoseries?si=R_sNMCqPMQ6_nfMW&amp;list=PLKZ5k-XFFHU0vvOEkvlFkCUJIUqiO653j"
+          title="YouTube video player" frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen=""></iframe>
+      </div>
+      <div class="md--w-9/12 mb-10">
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos below.</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/lhjPw7ZJ7Ak?si=7xjjl-GvvFjaPGEo"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">The Allocations Portal</h4>
+          <p>Watch a brief overview of the ACCESS Allocations portal: <a
+              href="https://allocations.access-ci.org/">https://allocations.access-ci.org/</a>.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/vvj5nL1lFxA?si=AVSG2K_m4VxozdKJ"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Preparing Allocation Requests</h4>
+          <p>Find out about the different kinds of projects listed under the
+            Prepare Requests menu on the ACCESS Allocations portal: <a
+              href="https://allocations.access-ci.org/">https://allocations.access-ci.org/</a>,
+            including Explore, Discover, Accelerate, and Maximize projects.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/j3DbxS5f2Jc?si=ouT5cH0xLcA0j9lZ"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Allocation Request Demo</h4>
+          <p>Watch a walk-through of the process of preparing and submitting an
+            Allocation Request via the ACCESS Allocations portal: <a
+              href="https://allocations.access-ci.org/">https://allocations.access-ci.org/</a>.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/z-NEEuQxx7g?si=Z_RnlFwS7oUbQhNh"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Managing Allocations</h4>
+          <p>Learn about the different services available from the Manage
+            Allocations menu on the ACCESS Allocations portal: <a
+              href="https://allocations.access-ci.org/">https://allocations.access-ci.org/</a>.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/w6eEHK067-I?si=tjCVeNj_w7xn72E9"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Exchanging Credits Demo</h4>
+          <p>Watch a walk-through of the process of exchanging ACCESS Credits
+            for the use of a particular ACCESS Resource, via the ACCESS
+            Allocations portal: <a
+              href="https://allocations.access-ci.org/">https://allocations.access-ci.org/</a>.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/6D7E39mB8oI?si=0LEe3KhK_kYkkeUO"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Miscellaneous Allocations Topics</h4>
+          <p>Explores the Updates, Policies, and FAQs menus on the ACCESS
+            Allocations portal: <a
+              href="https://allocations.access-ci.org/">https://allocations.access-ci.org/</a>.
+          </p>
+        </div>
+      </div>
+    </section>
+
+    <section class="border-yellow border-b-8  mt-4 mb-10" id="video-resources">
+      <h2 class="mb-3">ACCESS Resources</h2>
+      <div class="md--w-9/12 border border-black mb-5">
+        <iframe width="100%" style="aspect-ratio: 16/9"
+          src="https://www.youtube.com/embed/videoseries?si=31dzRUM7O5AoWUQl&amp;list=PLKZ5k-XFFHU3UxS2YCaNQqt4UVcbQ4_bA"
+          title="YouTube video player" frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen="">
+        </iframe>
+      </div>
+      <div class="md--w-9/12 mb-10">
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos below.</h3>
+      </div>
+
+
+      <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/KaGLD59659M?si=nycf4gVntUOAWKjR"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">An Allocations View</h4>
+          <p>Watch an introduction to the computing and storage systems
+            available to ACCESS users as described on the ACCESS Allocations
+            portal: <a
+              href="https://allocations.access-ci.org/">https://allocations.access-ci.org/</a>.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/J_J9YE9-2nM?si=LnnQ78GewfGz6Gwq"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">A Support &amp; Documentation View</h4>
+          <p>Find out how to access detailed technical descriptions of the
+            ACCESS computing and storage systems via the ACCESS Support portal:
+            <a href="https://support.access-ci.org/">https://support.access-ci.org/</a>.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/R6GEwJ6IYu8?si=O96uVYORNHOpHALL"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">General Support Resources</h4>
+          <p>Find out how to access other support resources available via the
+            ACCESS Support portal <a
+              href="https://support.access-ci.org/">https://support.access-ci.org/</a>,
+            including useful training materials for filling knowledge gaps about
+            high performance computing.
+          </p>
+        </div>
+
+      </div>
+    </section>
+
+
+    <section class="border-yellow border-b-8  mt-4 mb-10" id="video-support">
+      <h2 class="mb-3">ACCESS Support</h2>
+      <div class="md--w-9/12 border border-black mb-5">
+        <iframe width="100%" style="aspect-ratio: 16/9"
+          src="https://www.youtube.com/embed/videoseries?si=HivFqkLr8pKW7Mfp&amp;list=PLKZ5k-XFFHU0g_Du-iiYJ8So_PPLIgjmh"
+          title="YouTube video player" frameborder="0"
+          allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+          allowfullscreen=""></iframe>
+      </div>
+      <div class="md--w-9/12 mb-10">
+        <h3 class="my-0">Watch the whole playlist or jump to a topic in the videos below.</h3>
+      </div>
+
+      <div class="grid grid-cols-1 md--grid-cols-3 gap-10 mb-5">
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/Ikkv8UsvGVY?si=CAojAFHVhLmwTAlc"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen=""></iframe>
+          </p>
+          <h4 class="mt-0">The Support Portal</h4>
+          <p>Watch a brief overview of the ACCESS Support portal: <a
+              href="https://support.access-ci.org/">https://support.access-ci.org/</a>.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/VLLLtuaM2sk?si=QNcrcsWv6VX3YX7j"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Support Tools</h4>
+          <p>Explore different tools available from the ACCESS Support portal <a
+              href="https://support.access-ci.org/">https://support.access-ci.org/</a>
+            including Open OnDemand, Pegasus, the Science Gateways, and XDMoD.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/N8_Thsg4qkM?si=iveguNz8B84fQk59"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Support Knowledge Base</h4>
+          <p>Explores the information available from the ACCESS Support portal
+            <a
+              href="https://support.access-ci.org/">https://support.access-ci.org/</a>
+            including the Knowledge Base, Documentation, Q&amp;A Forum, and
+            Computational Infrastructure links.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/wco-w2zP2Eg?si=ppZ2l3XUquuohaHA"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Programs Supporting Researchers</h4>
+          <p>Examine the programs ACCESS offers to help researchers with their
+            projects, including the MATCH Plus and MATCH Premier programs.
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/qUvfyOt37A4?si=1ga5giu0wWaJPJte"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">The Community</h4>
+          <p>Explores the communities of support available via ACCESS, including
+            Affinity Groups, the Computational Science and Support Network
+            (CSSN), the CSSN Community Engagement Program (CCEP), and the
+            Community of Communities (CoCo).
+          </p>
+        </div>
+
+        <div class="flex flex-col justify-start my-4 ">
+          <p class="border border-black">
+            <iframe width="100%" style="aspect-ratio: 16/9"
+              src="https://www.youtube.com/embed/73WeUwEWYX0?si=RKhKJrW3QketWjt7"
+              title="YouTube video player" frameborder="0"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen="">
+            </iframe>
+          </p>
+          <h4 class="mt-0">Opening a Support Ticket</h4>
+          <p>Find out how to use the ACCESS Support portal <a
+              href="https://support.access-ci.org/">https://support.access-ci.org/</a>
+            to request help when you have a problem that you are unable to
+            resolve using the other ACCESS Support services.
+          </p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <div class="hidden md--block col-2 sticky top-10">
+    <nav class="bg-md-teal mb-10 p-5">
+      <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block"
+        href="#">NFS ACCESS for New Users</a>
+      <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4"
+        href="#video-intro">Introduction to ACCESS</a>
+      <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4"
+        href="#video-allocations">ACCESS Allocations</a>
+      <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4"
+        href="#video-resources">ACCESS Resources</a>
+      <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4"
+        href="#video-support">ACCESS Support</a>
+    </nav>
+  </div>
+</div>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Update Pegasus page for new theme.
+ */
+function access_misc_update_10014(&$sandbox) {
+  // ACCESS Video Learning page node.
+  $nid = 5950;
+  $format = 'full_no_editor';
+  $body = <<<EOT
+<div class="grid grid-cols-1 md--grid-cols-4 gap-5">
+  <div class="col-1 col-span-3 row-span-2">
+    <section class="mb-5" id="about">
+      <p class="prose text-dark-teal text-2xl leading-9 mb-10">Construct, run, and debug workflows from a Jupyter Notebook. Perform simple interactions on the command line. Work across environments and get started quickly with sample workflows using a Python API.</p>
+      <div class="grid grid-cols-1 md--grid-cols-3">
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Data management</p><p>Data transfer, input selection, and output registration as auxiliary jobs to the workflow.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Error recovery</p>
+            <p>Retried tasks, workflow checkpoints, remapping, and alternative data sources for staging.</p>
+          </div>
+        </div>
+        <div class="flex">
+          <div class="not-prose shrink-0 me-3">
+            <img class="mt-[3px]" src="/themes/contrib/asp-theme/images/icons/check-bullet.png" alt="">
+          </div>
+          <div>
+            <p class="font-extrabold mb-1">Provenance tracking</p><p>Trace a workflow and its outputs, including information about data sources and software used.</p>
+          </div>
+        </div>
+      </div>
+      <div class="mt-5 mb-0">
+        <a class="btn btn-primary mb-5" href="https://access.pegasus.isi.edu">TRY PEGASUS</a>
+        <a class="btn btn-md-teal mb-5" href="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html">SEE DOCUMENTATION</a>
+      </div>
+    </section>
+
+    <section class="pt-10 mb-10" id="pegasus-workflows">
+
+      <div class="flex items-center">
+        <div>
+          <h2 class="colored-square colored-square-orange">Workflows</h2>
+          <div><p>We have Jupyter based training notebooks available that walk you through creating simple diamond workflow (and more complex ones) using the Pegasus Python API and executing them on ACCESS resources.</p>
+        </div>
+      </div>
+      <div>
+        <img class='not-prose' src='/themes/contrib/asp-theme/images/misc/pegasus-workflow.jpg' >
+      </div>
+    </div>
+
+    [accordion summary="Why use workflows" text="<div><p>Scientific Workflow Management Systems (WMS) such as Pegasus are vital tools for scientists and researchers in a wide range of fields. They provide a structured environment for the design, execution, and monitoring of complex computational tasks, enabling researchers to manage and process large amounts of data efficiently.<br><span class='font-semibold'>Some reasons you should consider using a system like Pegasus WMS:</span></p><div class='grid grid-cols-6 gap-5'><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/agreement.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REPRODUCIBILITY</p>Document and reproduce your analyses, ensuring their validity, with scientific workflows.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/cycle.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>AUTOMATION</p>Automate repetitive and time-consuming tasks and reduce your workload.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/decision.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>SCALABILITY</p>Handle large data sets and complex analyses and take on bigger research problems.</div><div><img class='my-0' src='/themes/contrib/asp-theme/images/icons/growth.png'></div><div class='col-span-5'><p class='mb-0 text-dark-teal font-extrabold'>REUSABILITY</p>Build libraries of reusable code and tools that can be adapted by other researchers.</div></div></div>"][/accordion]
+
+    [accordion summary="See workflow examples" text="<div class='grid  grid-cols-1 md--grid-cols-10 gap-5 mb-10'><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal font-extrabold'>SINGLE JOB</p><img class='not-prose mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step1.jpg' alt='workflow step 1'><div class='text center mb-6 mt-auto'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Single-Job.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-3'><p class='text-center text-dark-teal  font-extrabold'>SET OF JOBS</p><img class='not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step2.jpg' alt='workflow step 2'><div class='text=center mb-6 mt-auto'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Set-of-Independent-Jobs.html'>SEE EXAMPLE</a></div></div><div class='flex flex-col items-center md--col-span-4'><p class='text-center text-dark-teal font-extrabold'>SPLIT/MERGE WORKFLOW</p><img class='not-prose  mb-2' src='/themes/contrib/asp-theme/images/misc/workflow-step3.jpg' alt='workflow step 3'><div class='my-6'><a class='btn btn-secondary' href='https://xsedetoaccess.ccs.uky.edu/confluence/redirect/Merge-Workflow.html'>SEE EXAMPLE</a></div></div></div>"][/accordion]
+  </section>
+
+  <section class="pt-10 mb-10" id="using-pegasus">
+    <h2 class="colored-square colored-square-orange">Getting Started with Pegasus</h2>
+    <p>To start you need some Python/Jupyter Notebook knowledge, familiarity with a terminal window, and an ACCESS allocation. <a href="https://allocations.access-ci.org/">How to get an ACCESS Allocation</a>.</p>
+
+    [accordion summary="Get setup" text="<p>Logon with your ACCESS ID and use Open OnDemand. You specify which allocations you have the first time you logon.</p><div class='grid grid-cols-2 gap-5'><div><img class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/ci-logon.jpg' alt='C I logon screen'><p class='text-dark-teal font-extrabold mb-2'>SINGLE SIGN ON WITH YOUR ACCESS ID</p><p>All registered users with an active allocation automatically have an ACCESS Pegasus account.</div><div><img  class='border border-solid border-black not-prose mb-5' src='/themes/contrib/asp-theme/images/misc/sdsc.jpg' alt='sdsc'><p class='text-dark-teal font-extrabold mb-2'>CONFIGURE RESOURCES ONCE</p><p>Use Open OnDemand instance at resource providers to install SSH keys and determine location allocation ID.</p></div></div>"][/accordion]
+
+    [accordion summary="Run workflows on ACCESS" text="<p>To get started you only need some Python/Jupyter Notebook knowledge, some experience using a terminal window, and an ACCESS allocation.</p><div class='grid grid-cols-1 md--grid-cols-2 gap-y-5 gap-x-10'><div><img class='border  border-black border-solid not-prose' src='/themes/contrib/asp-theme/images/misc/create-the-workflow.jpg'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-medium'>1</p><div class='mb-0 text-dark-teal font-extrabold'>CREATE THE WORKFLOW</div><ul class='my-0'><li>Use Pegasus API in Jupyter Notebook or use our examples</li><li>Submit your workflow for execution,</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/commandline.gif'></div><div class='flex flex-col justify-center'><p class='mb-0 text-5xl text-orange font-medium'>2</p><p class='mb-0 text-dark-teal font-extrabold'>PROVISION COMPUTE RESOURCES</p><ul class='my-0'><li>Use HTCondor Annex tool to provision pilot jobs on your allocated ACCESS resources</li></ul></div><div><img class='border border-solid border-black not-prose' src='/themes/contrib/asp-theme/images/misc/monitor-execution.jpg'></div><div class='flex-col items-center'><p class='mb-0 text-5xl text-orange font-medium'>3</p><p class='mb-0 text-dark-teal font-extrabold'>MONITOR THE EXECUTION</p><ul class='my-0'><li>Follow the workflow execution within the notebook or in the terminal</li><li>You can see what resources you brought in using the terminal</li></ul></div></div>"][/accordion]
+  </section>
+</div>
+
+<div class="hidden md--block col-2 sticky top-10">
+  <nav class="bg-md-teal mb-10 p-5">
+    <a class="font-extrabold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block" href="#">ACCESS Pegasus</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#about">About</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-workflows">Workflows</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#using-pegasus">Getting Started with Pegasus</a>
+    <a class="font-semibold text-white leading-5 py-2 no-underline hover--underline hover--text-light-teal block ms-4" href="#pegasus-support">Pegasus Support</a>
+  </nav>
+</div>
+</div>
+<section class="bg-light-teal -mx-50% px-50% py-10" id="pegasus-support">
+  <div class="container">
+    <h2 class="colored-square colored-square-orange">ACCESS Pegasus Support</h2>
+    <div class="grid grid-cols-1 sm--grid-cols-2 md--grid-cols-3 gap-5">
+      [square icon="/themes/contrib/asp-theme/images/icons/video-orange.svg" color="orange" title="TUTORIAL VIDEO" link="https://www.youtube.com/watch?v=4wiyLFGwJg4" text="A step by step guide  to using ACCESS Pegasus"][/square]
+      [square icon="/themes/contrib/asp-theme/images/icons/ico-documentation.svg" title="DOCUMENTATION" link="https://xsedetoaccess.ccs.uky.edu/confluence/redirect/ACCESS+Pegasus.html" text="Detailed information about setup and use"][/square]
+      [square icon="/themes/contrib/asp-theme/images/logos/pegasus-b.svg" title="AFFINITY GROUP" link="https://support.access-ci.org/affinity-groups/pegasus" text="Announcements, Slack, email list and Github"][/square]
+    </div>
+  </div>
+</section>
+EOT;
+  update_node_body($nid, $body, $format);
+}
+
+/**
+ * Clear out cc_rollout roles.
+ */
+function access_misc_update_10015() {
+  $query = \Drupal::database()->delete('user__roles');
+  $query->condition('roles_target_id', 'cc_rollout');
+  $query->execute();
 }

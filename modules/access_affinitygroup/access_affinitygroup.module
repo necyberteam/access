@@ -25,6 +25,7 @@
  * title changes.
  */
 
+use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
 use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
@@ -104,21 +105,56 @@ function access_affinitygroup_entity_view(array &$build, EntityInterface $entity
  *    Ensure every Affinity Group name has a corresponding taxonomy term.
  */
 function access_affinitygroup_entity_presave(EntityInterface $entity) {
+
   $type = $entity->bundle();
+  // Email any infrastructure news with the 'Email only subscribers' box checked.
+  if ($type == 'infrastructure_news') {
+    $inf_title = $entity->get('title')->getValue()[0]['value'];
+    $inf_body = $entity->get('body') !== NULL ? $entity->get('body')->getValue()[0]['value'] : '';
+    $doEmailSubscribers = $entity->get('field_do_email_subscribers')->getValue();
+    if ($doEmailSubscribers[0]['value']) {
+      $affectedInfrastructure = $entity->get('field_affected_infrastructure')->getValue();
+      $entity_id = $entity->id();
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+      $email_link = $host . '/node/' . $entity_id;
+      $ag_nodes = [];
+      foreach ($affectedInfrastructure as $ais) {
+        $query = \Drupal::entityQuery('node');
+        $node_ids = $query
+          ->condition('type', 'affinity_group')
+          ->condition('field_cider_resources', $ais['target_id'])
+          ->accessCheck(FALSE)
+          ->execute();
+        foreach ($node_ids as $nid) {
+          $ag_nodes[$nid] = $nid;
+        }
+      }
+      foreach ($ag_nodes as $ag_node) {
+        $node = \Drupal::entityTypeManager()->getStorage('node')->load($ag_node);
+        $ccListIds = [$node->get('field_list_id')->getValue()[0]['value']];
+        $agNames = [$node->getTitle()];
+        $pubDate = date('m/d/Y');
+        emailToAffinityGroups($inf_body, "$inf_title", $pubDate, $agNames, $email_link, $ccListIds, 1, NULL);
+      }
+    }
+  }
   if ($type == 'affinity_group') {
 
     if (method_exists($entity, 'getFlaggableType')) {
-      // Case 1: User did Join the AG (using the Join button or link)
-      // Exit if CRON because this hook assumes there is a current user.
-      if (\Drupal::state()->get('access_affinitygroup.allocationsRun')) {
-        return;
-      }
 
+      // Case 1: User did Join the AG (using the Join button or link)
       // The flag sits on a taxonomy; the taxonomy id is used to find the AG node
       // which we need to build the JSON to send to api.
       $taxonomyId = $entity->get('entity_id')->getValue()[0]['value'];
       $currentUser = \Drupal::currentUser();
       $userId = $currentUser->id();
+
+      // Need to exit if we are here during the allocations import processing,
+      // which can either be run via cron or from admin setting it off on the
+      // constant contact admin form.
+      if ($userId === 1 || $userId === 0) {
+        return;
+      }
       $userDetails = User::load($userId);
       subscribeToCCList($taxonomyId, $userDetails);
 
@@ -610,14 +646,10 @@ function showStatus($logmsg) {
  */
 function access_affinitygroup_cron() {
   try {
-    // Cronrunning true means allocations cron Todo, rename.
-    \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
-
-    // Make sure we are not somehow on the support domain, This is crucial for
+    // Make sure we are on the support domain, This is crucial for
     // the constant contact connection.
     $host = \Drupal::request()->getHttpHost();
     if ($host !== 'support.access-ci.org') {
-      // Temp logging.
       \Drupal::logger('cron_affinitygroup')->debug("On $host: blocked Constant Contact cron");
       return;
     }
@@ -627,7 +659,7 @@ function access_affinitygroup_cron() {
 
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-t', $currentTime);
-      \Drupal::logger('access_affinitygroup')->notice('Cron: token refresh ' . date("Y-m-d H:i:s", $currentTime . " on $host"));
+      \Drupal::logger('access_affinitygroup')->notice('Cron: token refresh ' . date("Y-m-d H:i:s", $currentTime) . " on $host");
 
       $cca = new ConstantContactApi();
       $cca->newToken();
@@ -636,21 +668,17 @@ function access_affinitygroup_cron() {
     // 2. call xdusage api to get users and create/update their
     // allocations and associated affinity groups.
     if (shouldRun('users')) {
-      \Drupal::state()->set('access_affinitygroup.cronrunning', TRUE);
       $currentTime = \Drupal::time()->getCurrentTime();
       \Drupal::state()->set('access_affinitygroup.crontime-u', $currentTime);
-      \Drupal::logger('cron_affinitygroup')->notice('Running cron: user' . date("Y-m-d H:i:s", $currentTime));
+      \Drupal::logger('cron_affinitygroup')->notice('Running cron: alloc imports' . date("Y-m-d H:i:s", $currentTime));
 
-      // @todo this will probably be $aui->startBatch();
-      // $aui = new AllocationsUsersImport();
-      // $aui->updateUserAllocations();
-      // emailDevCronLog(); // this function needs to be fixed.
+      // Run one slice of the imports; parameters are state variables.
+      $aui = new AllocationsUsersImport();
+      $aui->runCronSlice();
     }
   }
   catch (Exception $e) {
-    \Drupal::logger('cron_affinitygroup')->notice('exception in cron test: ' . $e->getMessage());
-  } finally {
-    \Drupal::state()->set('access_affinitygroup.cronrunning', FALSE);
+    \Drupal::logger('cron_affinitygroup')->notice('exception in cron: ' . $e->getMessage());
   }
 }
 
@@ -664,7 +692,7 @@ function shouldRun($function) {
   if ($function == 'token') {
 
     if (!isCCEnabled()) {
-      return;
+      return FALSE;
     }
 
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-t', 0);
@@ -677,24 +705,22 @@ function shouldRun($function) {
   }
   elseif ($function == 'users') {
 
-    // TEMP TEMP JUST DON'T RUN IMPORT CRON FOR NOW.
-    return FALSE;
-    // showStatus("disable: ". \Drupal::state()->get('access_affinitygroup.alloc_cron_disable', false) );
-    // showStatus("allw_ond: ".  \Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', false) );
-    // These 2 environment booleans are off by default but can be set in the
-    // Constant Contact admin page.
-    if (\Drupal::state()->get('access_affinitygroup.alloc_cron_disable', FALSE)) {
+    if (\Drupal::state()->get('access_affinitygroup.allocCronDisable', FALSE)) {
       return FALSE;
-    }
-    if (\Drupal::state()->get('access_affinitygroup.alloc_cron_allow_ondemand', FALSE)) {
-      return TRUE;
     }
 
     $lastRun = \Drupal::state()->get('access_affinitygroup.crontime-u', 0);
     $hoursDiff = round(($currentTime - $lastRun) / 3600, 1);
+    $hour = date('H', $currentTime);
 
-    // Run if it's been more than 24 hours since the last run.
-    if ($hoursDiff > 24) {
+    $startAt = \Drupal::state()->get('access_affinitygroup.allocCronStartAt', 0);
+
+    // If the start is 0 but we alaready started running alloctions today, we are done.
+    if (date('Ymd') === date('Ymd', $lastRun) && $startAt === 0) {
+      return FALSE;
+    }
+    // Only run if the hour is inclusively between 1 and 5 am.
+    if ($hour >= 1 && $hour <= 5) {
       return TRUE;
     }
   }

@@ -3,7 +3,9 @@
 }
 
 details.tags {
-  margin: 2em 0;
+  position: relative;
+  margin: 2rem 0;
+  padding: 0 1rem;
 }
 
 details.tags {
@@ -12,24 +14,41 @@ details.tags {
 }
 
 details.tags summary {
-  position: sticky
+  position: sticky;
   top: 0;
   background-color: #ddd;
+  margin: 0 -1rem;
 }
 
 .tags-select {
   display: inline-block;
-  border: 1px solid #000;
+  border: 1px solid #232323;
   cursor: pointer;
   padding: 5px;
   margin: 5px;
 }
 
+.tags-select:hover {
+    border: 1px solid #1A5B6E;
+    color: #1A5B6E;
+}
+
 .selected {
   background-color: #1A5B6E;
-  color: #fff;
+  border-color: #1A5B6E;
+  color: #ffffff;
+}
+
+.selected:hover {
+  color: #ffffff;
+  opacity: 0.8;
 }
 
 .tags h2 {
   margin: 1em 0;
+}
+
+.view-display-id-block_4 .view-content {
+  display: flex;
+  flex-wrap: wrap;
 }

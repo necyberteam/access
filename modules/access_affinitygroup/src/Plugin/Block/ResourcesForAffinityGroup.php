@@ -2,10 +2,10 @@
 
 namespace Drupal\access_affinitygroup\Plugin\Block;
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Url;
-use Drupal\views\Views;
 use Drupal\webform\Entity\WebformSubmission;
 
 /**
@@ -29,11 +29,38 @@ class ResourcesForAffinityGroup extends BlockBase {
     // Create empty string in case the following if statement is not true.
     $rendered = '';
     if (!empty($field_resources_entity_reference)) {
-      $rendered = '<h3 class="border-bottom pb-2">CI Links</h3>';
+      $rendered = '<h2 class="text-white-er text-xl font-semibold border-bottom pb-2 bg-dark-teal py-2 px-4">CI Links</h2>';
       $header = [
-        'title' => 'Title',
-        'description' => 'Skill Level',
-        'link' => 'Tags',
+        [
+          'data' => 'Title',
+          'class' => [
+            'border-x-0',
+            'border-b',
+            'border-t-0',
+            'border-gray',
+            'border-solid',
+          ],
+        ],
+        [
+          'data' => 'Tags',
+          'class' => [
+            'border-x-0',
+            'border-b',
+            'border-t-0',
+            'border-gray',
+            'border-solid',
+          ],
+        ],
+        [
+          'data' => 'Skill Level',
+          'class' => [
+            'border-x-0',
+            'border-b',
+            'border-t-0',
+            'border-gray',
+            'border-solid',
+          ],
+        ],
       ];
       $rows = [];
       foreach ($field_resources_entity_reference as $value) {
@@ -45,12 +72,22 @@ class ResourcesForAffinityGroup extends BlockBase {
         $submission_data = $webform_submission->getData();
 
         // Ci link name and url.
+        // On ASP, use /knowledge-base/ci-links/{sid}.
+        // On other domains, use /ci-links/{sid}.
+        $token = \Drupal::token();
+        $domainName = Html::getClass($token->replace(t('[domain:name]')));
+        if ($domainName == 'access-support') {
+          $ci_link_path = '/knowledge-base/ci-links/';
+        }
+        else {
+          $ci_link_path = '/ci-links/';
+        }
         $ci_link = [
           '#type' => 'link',
           '#title' => $submission_data['title'],
-          '#url' => Url::fromUri('internal:/ci-link/' . $value['target_id']),
+          '#url' => Url::fromUri('internal:' . $ci_link_path . $value['target_id']),
         ];
-        $ci_link_name = \Drupal::service('renderer')->render($ci_link)->__toString();
+        $ci_link_name = '<div>' . \Drupal::service('renderer')->render($ci_link)->__toString() . '</div>';
 
         $tags = '';
         foreach ($submission_data['tags'] as $tag) {
@@ -61,11 +98,12 @@ class ResourcesForAffinityGroup extends BlockBase {
               '#type' => 'link',
               '#title' => $term->getName(),
               '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $tag]),
+              '#attributes' => ['class' => ['px-2', 'py-1', 'font-normal', 'no-underline', 'border', 'border-black', 'border-solid', 'hover--border-dark-teal', 'hover--text-dark-teal', 'w-fit']],
             ];
-            $tags .= \Drupal::service('renderer')->render($link)->__toString();
+            $tags .= '<div class="mr-4 me-4 mb-2">' . \Drupal::service('renderer')->render($link)->__toString() . '</div>';
           }
         }
-        $tags = '<div class="square-tags">' . $tags . '</div>';
+        $tags = '<div class="square-tags flex flex-wrap">' . $tags . '</div>';
         // Lookup skills by id and make an array of names.
         $skills = '';
         $skill_list = [];
@@ -76,15 +114,19 @@ class ResourcesForAffinityGroup extends BlockBase {
           }
         }
         if (['Beginner'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner.png" alt="Beginner">';
-        } elseif (['Beginner', 'Intermediate'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-beginner-medium.png" alt="Beginner, Intermediate">';
-        } elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-all.png" alt="Beginner, Intermediate, Advanced">';
-        } elseif (['Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-medium-advanced.png" alt="Intermediate, Advanced">';
-        } elseif (['Advanced'] == $skill_list) {
-          $skills = '<img src="/themes/custom/accesstheme/assets/SL-advanced.png" alt="Advanced">';
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner.png" alt="Beginner">';
+        }
+        elseif (['Beginner', 'Intermediate'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner-medium.png" alt="Beginner, Intermediate">';
+        }
+        elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-all.png" alt="Beginner, Intermediate, Advanced">';
+        }
+        elseif (['Intermediate', 'Advanced'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-medium-advanced.png" alt="Intermediate, Advanced">';
+        }
+        elseif (['Advanced'] == $skill_list) {
+          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-advanced.png" alt="Advanced">';
         }
 
         $rows[] = [
@@ -92,15 +134,39 @@ class ResourcesForAffinityGroup extends BlockBase {
             'data' => [
               '#markup' => $ci_link_name,
             ],
-          ],
-          'skill' => [
-            'data' => [
-              '#markup' => $skills,
+            'class' => [
+              'border-x-0',
+              'border-b',
+              'border-t-0',
+              'border-gray',
+              'border-solid',
+              'pb-4',
             ],
           ],
           'tags' => [
             'data' => [
               '#markup' => $tags,
+            ],
+            'class' => [
+              'border-x-0',
+              'border-b',
+              'border-t-0',
+              'border-gray',
+              'border-solid',
+              'pb-4',
+            ],
+          ],
+          'skill' => [
+            'data' => [
+              '#markup' => $skills,
+            ],
+            'class' => [
+              'border-x-0',
+              'border-b',
+              'border-t-0',
+              'border-gray',
+              'border-solid',
+              'pb-4',
             ],
           ],
         ];
@@ -111,29 +177,10 @@ class ResourcesForAffinityGroup extends BlockBase {
         '#sticky' => TRUE,
         '#header' => $header,
         '#rows' => $rows,
-        '#attributes' => ['id' => 'ci-links', 'class' => ['table-search']],
+        '#attributes' => ['id' => 'ci-links', 'class' => ['table-search border-spacing-0']],
       ];
       $rendered .= \Drupal::service('renderer')->render($html['ci-links']);
     }
-
-    /**
-   * Grab node id.
-   */
-    $node = \Drupal::routeMatch()->getParameter('node');
-
-    /**
-   * Adding a default for layout page.
-   */
-    $nid = $node ? $node->id() : 291;
-    /**
-   * Load Announcement view.
-   */
-    $announcement_view = Views::getView('access_news');
-    $announcement_view->setDisplay('block_2');
-    $announcement_view->setArguments([$nid]);
-    $announcement_view->execute();
-    $announcement_list = $announcement_view->render();
-    $rendered .= \Drupal::service('renderer')->render($announcement_list);
 
     return [
       ['#markup' => $rendered],

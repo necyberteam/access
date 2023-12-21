@@ -3,7 +3,7 @@
 namespace Drupal\access_misc\Plugin\Util;
 
 /**
- * Convert Date for events.
+ * Get role label from role machine name.
  *
  * @RolesLabelLookup(
  *   id = "roles_label_lookup",

@@ -4,13 +4,13 @@
  * @file
  */
 
+use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Datetime\DrupalDateTime;
-use Drupal\node\Entity\Node;
-use Drupal\user\Entity\User;
-use Drupal\recurring_events\Entity\EventInstance;
 use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
+use Drupal\node\Entity\Node;
+use Drupal\recurring_events\Entity\EventInstance;
+use Drupal\user\Entity\User;
 
 define('ACCESS_SUPPPORT_URL', "https://support.access-ci.org");
 
@@ -202,6 +202,9 @@ function affinityGroupBroadcast(EntityInterface $node, $newsType) {
 
   $getFields = $node->getFields();
   $broadcastArray = $getFields['field_broadcast_affinity_groups']->getValue();
+  if (!count($broadcastArray)) {
+    return;
+  }
   $broadcastToAGs = $broadcastArray[0]['value'];
   $useCommunityTemplate = NULL;
 
@@ -444,6 +447,7 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
       ->condition('date.value', $fromDate, '>=')
       ->condition('date.value', $toDate, '<')
       ->sort('date.value', 'ASC')
+      ->accessCheck(TRUE)
       ->execute();
 
     $eventNodes = EventInstance::loadMultiple($eids);

@@ -2,6 +2,8 @@
 
 namespace Drupal\access_misc\EventSubscriber;
 
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Xss;
 use Symfony\Component\EventDispatcher\EventSubscriberInterface;
 use Symfony\Component\HttpKernel\Event\RequestEvent;
 use Symfony\Component\HttpKernel\KernelEvents;
@@ -19,8 +21,22 @@ class Subscriber implements EventSubscriberInterface {
     $user_is_authenticated = \Drupal::currentUser()->isAuthenticated();
     $route_name = \Drupal::routeMatch()->getRouteName();
 
+    // Return if we are not on ACCESS Support domain.
+    $token = \Drupal::token();
+    $domainName = t("[domain:name]");
+    $current_domain_name = Html::getClass($token->replace($domainName));
+    $domain_verified = $current_domain_name === 'access-support';
+
+    if (!$domain_verified) {
+      return TRUE;
+    }
+
     // Log user in on the /login page.
     if ($route_name == 'misc.login' && !$user_is_authenticated) {
+      $this->doRedirectToCilogon($event);
+    }
+    // Redirect user.login to Cilogon.
+    if ($route_name == 'user.login' && !$user_is_authenticated) {
       $this->doRedirectToCilogon($event);
     }
   }

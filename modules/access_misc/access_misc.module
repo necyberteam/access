@@ -9,10 +9,46 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
-use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function access_misc_views_pre_render(ViewExecutable $view) {
+  if ($view->id() == 'infrastructure_news') {
+    $view->element['#attached']['library'][] = 'access_misc/add_select';
+  }
+  if ($view->id() == 'recurring_events_event_series' && $view->getDisplay()->view->element['#display_id'] == 'block_1') {
+    if (empty($view->result) && empty($view->getExposedInput())) {
+      $view->exposed_widgets = NULL;
+    }
+  }
+}
+
+/**
+ * Implements hook_views_post_render().
+ *
+ * Override page title for views of people with interest/expertise tags.
+ */
+function access_misc_views_post_render(ViewExecutable $view) {
+  // Override view /admin/structure/views/view/people_with_interest_tags/edit/page_1 title.
+  if (($view->id() == 'people_with_interest_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') ||
+      ($view->id() == 'people_with_expertise_tags' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1')) {
+    $path = \Drupal::service('path.current')->getPath();
+    $path_args = explode('/', $path);
+    $tid = is_numeric($path_args[2]) ? $path_args[2] : FALSE;
+    if ($term = term::load($tid)) {
+      $title = 'People with interest in ' . $term->get('name')->value;
+      if ($view->id() == 'people_with_expertise_tags') {
+        $title = 'People with expertise in ' . $term->get('name')->value;
+      }
+      // Set the view title.
+      $view->setTitle($title);
+    }
+  }
+}
 
 /**
  * Implements hook_entity_view_alter().
@@ -27,10 +63,33 @@ function access_misc_entity_view(array &$build, EntityInterface $entity, EntityV
       break;
 
     case 'eventinstance':
-      $convert_date = new EventDateConvert($build['date'][0]['start_date']['#markup'], $build['date'][0]['end_date']['#markup']);
+      $date = $build['date'][0];
+      $convert_date = new EventDateConvert($date['start_date']['#markup'], $date['end_date']['#markup']);
       $build['date'][0]['start_date']['#markup'] = $convert_date->getStart();
       $build['date'][0]['end_date']['#markup'] = $convert_date->getEnd();
       break;
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_field for views-view-field.html.twig.
+ */
+function access_misc_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+
+  // Display event instance date in the right format.
+  if ($view->id() == 'recurring_events_event_instances' && ($view->current_display == 'block_1' || $view->current_display == 'block_2')) {
+    if ($field->field == 'date__value') {
+      // Default separator between start and end dates is ' - '.
+      $output = explode(' - ', $variables['output']);
+      if (count($output) == 2) {
+        $start_date = $output[0];
+        $end_date = $output[1];
+        $date = new EventDateConvert($start_date, $end_date);
+        $variables['output'] = Markup::create($date->getStart() . " - " . $date->getEnd());
+      }
+    }
   }
 }
 
@@ -111,15 +170,16 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
         'summary',
         'label',
         'span',
+        'div',
         'h2',
       ],
     ];
   }
 }
 
-/*
-  * Implements hook_mail().
-  */
+/**
+ * Implements hook_mail().
+ */
 function access_misc_mail($key, &$message, $params) {
   switch ($key) {
     case 'notify_role':
@@ -127,5 +187,5 @@ function access_misc_mail($key, &$message, $params) {
       $message['subject'] = $params['subject'];
       $message['body'][] = $params['body'];
       break;
-    }
+  }
 }

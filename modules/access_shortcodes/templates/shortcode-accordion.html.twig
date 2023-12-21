@@ -1,0 +1,16 @@
+{#
+/**
+ * @file
+ * Default theme implementation for the accordion shortcode.
+ *
+ * Available variables:
+ * - summary: Summary of the accordion.
+ * - text: Main text of the accordion.
+ */
+#}
+<details class="border-0 bg-light-teal open:bg-white duration-300 relative">
+	<summary class="bg-light-teal ps-5 pe-10 py-4 text-lg text-dark-teal font-extrabold leading-5 cursor-pointer">{{ summary }}</summary>
+	<div class="bg-white px-5 py-3">
+		{{ text | raw }}
+	</div>
+</details>
