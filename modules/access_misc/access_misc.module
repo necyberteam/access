@@ -17,6 +17,7 @@ use Drupal\views\ViewExecutable;
  * Implements hook_page_attachments().
  */
 function access_misc_page_attachments(&$variables) {
+  // Adding global library to all pages.
   $variables['#attached']['library'][] = 'access_misc/global';
 }
 
