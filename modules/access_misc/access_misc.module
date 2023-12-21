@@ -14,6 +14,13 @@ use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
 
 /**
+ * Implements hook_page_attachments().
+ */
+function access_misc_page_attachments(&$variables) {
+  $variables['#attached']['library'][] = 'access_misc/global';
+}
+
+/**
  * Implements hook_views_pre_render().
  */
 function access_misc_views_pre_render(ViewExecutable $view) {

@@ -20,3 +20,8 @@ node_add_tags:
       css/node_add_tags.css: {}
   js:
     js/node_add_tags.js: {}
+global:
+  version: 1.x
+  css:
+    theme:
+      css/global.css: {}
