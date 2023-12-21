@@ -27,6 +27,7 @@
 
 use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
+use Drupal\access_affinitygroup\Plugin\MailgunApi;
 use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Access\AccessResult;
@@ -139,7 +140,6 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
     }
   }
   if ($type == 'affinity_group') {
-
     if (method_exists($entity, 'getFlaggableType')) {
 
       // Case 1: User did Join the AG (using the Join button or link)
@@ -156,6 +156,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
         return;
       }
       $userDetails = User::load($userId);
+      subscribeToMailgunList($taxonomyId, $userDetails, TRUE);
       subscribeToCCList($taxonomyId, $userDetails);
 
       // If present, remove this AG from this user's block list.
@@ -165,6 +166,8 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
       // Case 2: Affinity group edit was saved by admin user.
       update_ag_leader_roles($entity);
       add_ag_taxonomy_term($entity);
+
+      check_mailgun_list($entity);
 
       // Add list to Constant Contact if this has not already been done.
       // The list_id field will be set with Constant Contact's Id for this list.
@@ -379,6 +382,149 @@ function add_ag_taxonomy_term($entity) {
 }
 
 /**
+ * SubscribeToMailgunList.
+ * Add or remove one user to Mailgun emaillist associated with the Affinity Group
+ * for which this taxonomyId is flaged by the user. (the user hit the Join button
+ * on the AG page.)
+ *
+ * @param affinitygroup
+ * @param loaded user
+ * @param isSubscribe - true to subscribe, false to leave
+ *
+ * @return status
+ */
+function subscribeToMailgunList($flagEntityId, $user, $isSubscribe) {
+  // Get the ag for this flag (that the user joined)
+  // in order to get the list email address.
+  $query = \Drupal::entityQuery('node');
+  $node_ids = $query
+    ->condition('field_affinity_group', $flagEntityId)
+    ->accessCheck(FALSE)
+    ->execute();
+  $aval = array_values($node_ids);
+  $nid = $aval[0];
+  $ag = Node::load($nid);
+  $mailgunList = "";
+  $mailgunListA = $ag->get('field_mailgun_list')->getValue();
+  if (!empty($mailgunListA)) {
+    $mailgunList = $mailgunListA[0]['value'];
+  }
+  if (!empty($mailgunList)) {
+    $msg = "";
+    $mailgunApi = new MailgunApi();
+
+    if ($isSubscribe) {
+      // Add a user to the list.
+      $addedCount = 0;
+      $userA[] = $user;
+      $status = $mailgunApi->addUsers($mailgunList, $userA, $msg, $addedCount);
+      if (!$status) {
+        $s = "Mailgun list: error while adding to $mailgunList " . $msg;
+        \Drupal::logger('access_affinitygroup')->error($s);
+        showStatus($s);
+      }
+      else {
+        showStatus("User added to email list " . $mailgunList);
+      }
+    }
+    else {
+      // Remove a user from the list.
+      $status = $mailgunApi->removeUser($mailgunList, $user->getEmail(), $msg);
+      if (!$status) {
+        $s = "Mailgun list: error while removing from $mailgunList " . $msg;
+        \Drupal::logger('access_affinitygroup')->error($s);
+        showStatus($s);
+      }
+    }
+  }
+}
+
+/**
+ * See if we need to add a mailgun list.
+ * If adding a list, add the members of the affinity group to the list.
+ * Assume that field_mailgun_list is empty means no list.
+ */
+function check_mailgun_list($entity) {
+
+  $mailgunList = "";
+  $mailgunListA = $entity->get('field_mailgun_list')->getValue();
+  if (!empty($mailgunListA)) {
+    $mailgunList = $mailgunListA[0]['value'];
+  }
+
+  $isMailgunAllowed = $entity->get('field_use_mailgun_list')->getValue()[0]['value'];
+  if ($isMailgunAllowed) {
+    // Create the list. If exists, assume we previously created the list.
+    // Use the slug field, if it's there, to name the list.
+    // If not there, title is used.
+    if ($mailgunList === "") {
+      try {
+        $mailgunApi = new MailgunApi();
+
+        $slugA = $entity->get('field_group_slug')->getValue();
+        if (!empty($slugA)) {
+          $slug = $slugA[0]['value'];
+        }
+        if (empty($slug)) {
+          showStatus("Integrated mailing list not created. Please add a Short Name that can be used in an email address.");
+          return;
+        }
+        $listAddress = $mailgunApi->makeListAddress($slug);
+
+        // @todo check for unique mailing list, and display error. (fix slug to make list)
+        // Msg + status returned.
+        $status = $mailgunApi->createList($listAddress, $entity->getTitle() . ' Affinity Group', $msg);
+        showStatus($msg . ' ' . $listAddress);
+
+        if ($status) {
+          $entity->set('field_mailgun_list', $listAddress);
+
+          // Take the list of flagged members and add to the new Mailgun list in chunks of X.
+          $chunkSize = 50;
+          $term = $entity->get('field_affinity_group');
+          $agMembers = \Drupal::service('flag')->getFlaggingUsers($term->entity);
+          if (count($agMembers) > 0) {
+
+            $chunked = array_chunk($agMembers, $chunkSize);
+            $chunked = array_values($chunked);
+
+            $addedTotal = 0;
+            foreach ($chunked as $oneChunk) {
+              $status = $mailgunApi->addUsers($listAddress, $oneChunk, $msg, $addedCount);
+              $addedTotal += $addedCount;
+              if (!$status) {
+                \Drupal::logger('access_affinitygroup')->error("Mailgun list: error while adding at $addedTotal to $listAddress " . $msg);
+              }
+            }
+
+            \Drupal::logger('access_affinitygroup')->notice("Mailgun list: added $addedTotal to $listAddress " . $msg);
+          }
+        }
+      }
+      catch (Exception $e) {
+        \Drupal::logger('access_affinitygroup')->error("Mailgun list: Error while creating $listAddress " . $e->getMessage());
+      }
+    }
+  }
+  else {
+    // Delete the mailgun list if exists.
+    if ($mailgunList !== "") {
+      try {
+        $mailgunApi = new MailgunApi();
+        $response = $mailgunApi->deleteList($mailgunList, $msg);
+        if ($response) {
+          $entity->set('field_mailgun_list', '');
+        }
+        showStatus($msg);
+      }
+      catch (Exception $e) {
+        \Drupal::logger('access_affinitygroup')->error("Mailgun list: Error while deleting $mailgunList " . $e->getMessage());
+      }
+    }
+  }
+}
+
+/**
  *
  */
 function ag_taxonomy_lookup($ag_title) {
@@ -445,6 +591,8 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       $userId = $currentUser->id();
       $userDetails = User::load($userId);
 
+      subscribeToMailgunList($taxonomyId, $userDetails, FALSE);
+
       $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
       if (!empty($postJSON) && isCCEnabled()) {
         $cca = new ConstantContactApi();
@@ -454,7 +602,17 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       addBlockedAG($taxonomyId, $userDetails);
     }
     else {
-      // Case 2: AG getting deleted.
+      // Case 2: AG getting deleted. Remove mailgun & constant contact lists.
+      $mailgunList = "";
+      $mailgunListA = $entity->get('field_mailgun_list')->getValue();
+      if (!empty($mailgunListA)) {
+        $mailgunList = $mailgunListA[0]['value'];
+      }
+      if ($mailgunList !== "") {
+        $mailgunApi = new MailgunApi();
+        $mailgunApi->deleteList($mailgunList, $msg);
+      }
+
       if (!isCCEnabled()) {
         return;
       }
@@ -603,10 +761,6 @@ function access_affinitygroup_user_login(UserInterface $account) {
       $user_detail->set('field_constant_contact_id', $cca_user_id);
       $user_detail->save();
     }
-  }
-  else {
-    // This else just for debugging in early stages
-    // showStatus("Login and NOT attempting add of new constant contact id.");.
   }
 }
 
@@ -981,7 +1135,6 @@ function access_affinitygroup_node_presave(NodeInterface $node) {
   if ($type == 'recommended_cider') {
     $node->setTitle('');
   }
-
 }
 
 /**
