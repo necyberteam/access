@@ -42,12 +42,11 @@ function access_match_engagement_block_build_views_block_alter(array &$build, Bl
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     // Make text boxes stretch full width and give labels bold/width.
+    $form['#attributes']['class'][] = 'prose';
     foreach ($form as $key => $value) {
       if (is_array($value) && array_key_exists('#attributes', $value)) {
         $form[$key]['#attributes']['class'][] = '[&_label]--font-bold';
-        $form[$key]['#attributes']['class'][] = '[&_label]--w-32';
-        $form[$key]['#attributes']['class'][] = '[&_.form-type-textfield]--flex';
-        $form[$key]['#attributes']['class'][] = '[&_.form-text]--grow';
+        $form[$key]['#attributes']['class'][] = '[&_.form-text]--w-full';
       }
     }
 
@@ -57,9 +56,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
     $tag_summary = t('Select Tags');
     $form['node_add_tags'] = [
-      '#markup' => "<div class='font-bold'>$tag_label</div>
+      '#markup' => "<div class='font-bold form-required'>$tag_label</div>
         <div>$tag_description</div>
-        <details class='tags'><summary class='font-bold'>$tag_summary</summary>$output</details>",
+        <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
         'button',
@@ -177,7 +176,14 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_match_steering_committee_m']['#access'] = FALSE;
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
-      $form['actions']['submit']['#value'] = t('Submit for Review');
+      $form['actions']['submit']['#value'] = t('Send for Review');
+      $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_button_check_function';
+      $form['actions']['save_as_draft'] = [
+        '#type' => 'submit',
+        '#value' => t('Save as Draft'),
+        '#submit' => $form['actions']['submit']['#submit'],
+        '#weight' => 100,
+      ];
     }
 
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
@@ -188,7 +194,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_match_steering_committee_m']['#disabled'] = TRUE;
       $form['field_node_type']['#access'] = FALSE;
       $form['field_email_user']['#access'] = FALSE;
+      $form['revision']['#access'] = FALSE;
       $form['revision_log']['#access'] = FALSE;
+      $form['revision_information']['#access'] = FALSE;
     }
     if (in_array('match_sc', $roles)) {
       // Show author, status, and last saved date to SC.
@@ -263,6 +271,24 @@ function access_match_engagement_node_view(array &$build, EntityInterface $entit
 function access_match_engagement_submit_function(&$form, FormStateInterface $form_state) {
   $moderation_state = $form_state->getValues()['moderation_state'][0]['value'];
   update_drupal_message($moderation_state);
+}
+
+/**
+ *
+ */
+function access_match_engagement_submit_button_check_function(&$form, FormStateInterface $form_state) {
+  // Check which button was clicked.
+  $clicked_button = $form_state->getTriggeringElement()['#id'];
+  if ($clicked_button == 'edit-submit') {
+    $entity = $form_state->getFormObject()->getEntity();
+    $entity->set('moderation_state', 'in_review');
+    $entity->save();
+  }
+  if ($clicked_button == 'edit-save-as-draft') {
+    $entity = $form_state->getFormObject()->getEntity();
+    $entity->set('moderation_state', 'draft');
+    $entity->save();
+  }
 }
 
 /**
