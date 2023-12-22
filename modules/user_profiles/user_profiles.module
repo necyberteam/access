@@ -359,27 +359,17 @@ function user_profiles_user_login(UserInterface $account) {
   if (!empty($dup_uid)) {
     // User load.
     $dup_user = User::load($dup_uid[0]);
-    $last_access = $dup_user->getLastAccessedTime();
     $name = $dup_user->getAccountName();
     // Check if $name contains '@access-ci.org'.
     $name_check = strpos($name, '@access-ci.org');
-    // If ($last_access === "0" && $name_check == FALSE) {.
-    $url = Url::fromUri('internal:/community-persona');
-    \Drupal::messenger()->addMessage(t('Another account was found with the same email address and automatically merged with this account. Please make sure your information is correct. <a href="@url">Click here</a> to verify your information.', ['@url' => $url->toString()]));
-    // Merge user.
-    $user_profile_commands = new UserProfilesCommands();
-    $user_profile_commands->mergeUser($dup_uid[0], $account_uid);
-    // Delete duplicate user.
-    $dup_user->delete();
-    // }
-    // elseif ($name_check == TRUE && $account_name_check == TRUE) {
-    // // Do nothing if both accounts are @access-ci.org.
-    // }
-    // else {
-    // // Display user error message, you have a duplicate account.
-    // $url = Url::fromUri('internal:/user/resolve_duplicate');
-    // $url->setOption('query', ['destination' => \Drupal::destination()->get()]);
-    // \Drupal::messenger()->addError(t('You have a duplicate account. Please use this <a href="@url">form</a> to resolve the conflict.', ['@url' => $url->toString()]));
-    // }
+    if ($name_check == FALSE) {
+      $url = Url::fromUri('internal:/community-persona');
+      \Drupal::messenger()->addMessage(t('Another account was found with the same email address and automatically merged with this account. Please make sure your information is correct. <a href="@url">Click here</a> to verify your information.', ['@url' => $url->toString()]));
+      // Merge user.
+      $user_profile_commands = new UserProfilesCommands();
+      $user_profile_commands->mergeUser($dup_uid[0], $account_uid);
+      // Delete duplicate user.
+      $dup_user->delete();
+    }
   }
 }
