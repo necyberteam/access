@@ -422,10 +422,14 @@ function access_match_engagement_mail($key, &$message, $params) {
 function update_drupal_message($moderation_state) {
   $message = '';
   if ($moderation_state == 'draft') {
-    $message = t('Thank you for submitting your project. Please change the status to "Submitted" when you are ready to submit for review.');
+    $message = t('Your project has been saved. Please send for review when you’re ready and we’ll get back to you as soon as possible.');
   }
   elseif ($moderation_state == 'in_review') {
-    $message = t('Thank you for submitting your project. We will be in touch soon.');
+    $message = t('Thank you for sending your project for review. We will be in touch soon.');
+  }
+  else {
+    $moderation_state = str_replace('_', ' ', $moderation_state);
+    $message = t('Your project has been saved. The current status is: @status.', ['@status' => $moderation_state]);
   }
   // If $message is not empty, add it to the drupal message queue.
   if ($message) {
