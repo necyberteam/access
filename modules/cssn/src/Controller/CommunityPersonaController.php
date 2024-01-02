@@ -94,9 +94,7 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_skills == "") {
       foreach ($flagged_skills as $flagged_skill) {
         $term_title = Term::load($flagged_skill)->get('name')->value;
-        $my_skills .= "<div class='m-1'>";
-        $my_skills .= "<a class='no-underline font-normal px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
-        $my_skills .= "</div>";
+        $my_skills .= "<a class='no-underline font-normal mb-1 me-1 mr-1 px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_skill . "'>" . $term_title . "</a>";
       }
     }
     return $my_skills;
@@ -219,9 +217,7 @@ class CommunityPersonaController extends ControllerBase {
     if ($my_interests == "") {
       foreach ($flagged_interests as $flagged_interest) {
         $term_title = Term::load($flagged_interest)->get('name')->value;
-        $my_interests .= "<div class='m-1'>";
-        $my_interests .= "<a class='no-underline font-normal px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
-        $my_interests .= "</div>";
+        $my_interests .= "<a class='no-underline font-normal mb-1 me-1 mr-1 px-2 py-1 hover--border-dark-teal border' href='/taxonomy/term/" . $flagged_interest . "'>" . $term_title . "</a>";
       }
     }
     return $my_interests;
