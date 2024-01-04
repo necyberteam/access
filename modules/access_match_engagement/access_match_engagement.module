@@ -42,7 +42,7 @@ function access_match_engagement_block_build_views_block_alter(array &$build, Bl
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
     $form['description'] = [
-      '#markup' => t('Description of the process'),
+      '#markup' => t('Tell us about your project and the support you need. After we review your request we will ask for more details, and then make the engagement public to find a team to help you.'),
       '#weight' => -10,
       '#allowed_tags' => [
         'details',
@@ -237,6 +237,18 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
   }
+  $link = Link::createFromRoute('Engagement Guide', 'entity.node.canonical', ['node' => 6108]);
+  $form['save_description'] = [
+    '#markup' => t("Save as Submitted when you’re ready for an initial review,
+                    or Draft if you need more time. Once the engagement has been
+                    Received you can fill in more details about your needs and
+                    save as In Review. After a second review it will be
+                    published and displayed as Recruiting so that people can use
+                    the “I’m interested” button to be considered for
+                    participation. You can find more details in the @link.",
+                    ['@link' => $link->toString()]),
+    '#weight' => 99,
+  ];
 }
 
 /**
