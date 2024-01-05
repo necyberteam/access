@@ -14,7 +14,7 @@ if (checkBoxEmail) {
 // hide the milestones fieldset header if nothing is inside, which should
 // be the case for forms in a non-accepted state
 var fieldset = document.getElementById("milestones-fieldset");
-var wrapper = fieldset.getElementsByClassName("details__wrapper")[0];
+var wrapper = fieldset.getElementsByClassName("details-wrapper")[0];
 if (wrapper && wrapper.children.length == 0) {
   fieldset.classList.add("hide");
 }
