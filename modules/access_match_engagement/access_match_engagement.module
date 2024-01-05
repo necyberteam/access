@@ -41,10 +41,39 @@ function access_match_engagement_block_build_views_block_alter(array &$build, Bl
  */
 function access_match_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_match_engagement_edit_form' || $form_id == 'node_match_engagement_form') {
+    $form['description'] = [
+      '#markup' => t('Tell us about your project and the support you need. After we review your request we will ask for more details, and then make the engagement public to find a team to help you.'),
+      '#weight' => -10,
+      '#allowed_tags' => [
+        'details',
+        'summary',
+        'div',
+        'span',
+        'h2',
+      ],
+    ];
+
+    // Make text boxes stretch full width and give labels bold/width.
+    $form['#attributes']['class'][] = 'prose';
+    // Make details top summary text bold.
+    $form['#attributes']['class'][] = '[&_summary]--font-bold';
+    $form['#attributes']['class'][] = '[&_legend]--font-bold';
+    foreach ($form as $key => $value) {
+      if (is_array($value) && array_key_exists('#attributes', $value)) {
+        $form[$key]['#attributes']['class'][] = '[&_label]--font-bold';
+        $form[$key]['#attributes']['class'][] = '[&_.form-text]--w-full';
+      }
+    }
+
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
+    $tag_label = t('Add Tags');
+    $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
+    $tag_summary = t('Select Tags');
     $form['node_add_tags'] = [
-      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+      '#markup' => "<div class='font-bold form-required'>$tag_label</div>
+        <div>$tag_description</div>
+        <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
         'button',
@@ -163,6 +192,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
     }
+    // kint($form['moderation_state']);
 
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
@@ -171,6 +201,9 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_match_steering_committee_m']['#disabled'] = TRUE;
       $form['field_node_type']['#access'] = FALSE;
       $form['field_email_user']['#access'] = FALSE;
+      $form['revision']['#access'] = FALSE;
+      $form['revision_log']['#access'] = FALSE;
+      $form['revision_information']['#access'] = FALSE;
     }
     if (in_array('match_sc', $roles)) {
       // Show author, status, and last saved date to SC.
@@ -201,6 +234,31 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       }
     }
     $form['#validate'][] = 'access_match_engagement_form_validate';
+    $link = Link::createFromRoute('Engagement Guide', 'entity.node.canonical', ['node' => 6108]);
+    $form['save_description'] = [
+      '#markup' => '<div>' .
+                    t("Save as <span class=\"font-bold\">Submitted</span> when you’re ready for an initial review,
+                    or <span class=\"font-bold\">Draft</span> if you need more time. Once the engagement has been
+                    <span class=\"font-bold\">Received</span> you can fill in more details about your needs and
+                    save as <span class=\"font-bold\">In Review</span>. After a second review it will be
+                    published and displayed as <span class=\"font-bold\">Recruiting</span> so that people can use
+                    the “I’m interested” button to be considered for
+                    participation. You can find more details in the @link.",
+                    ['@link' => $link->toString()]) .
+                    '</div>',
+      '#weight' => 99,
+      '#allowed_tags' => [
+        'a',
+        'div',
+        'span'
+      ],
+    ];
+    $form['moderation_state']['widget'][0]['state']['#title'] = t('Save as');
+    $form['field_researcher']['#attributes']['class'][] = '[&_div.label-description]--font-normal';
+    $form['field_researcher']['widget']['add_more']['#value'] = 'Add another researcher';
+    $form['field_preferred_semester']['#attributes']['class'][] = '[&_select]--pr-8';
+    $form['field_mentor']['widget']['add_more']['#value'] = 'Add another person';
+    $form['field_students']['widget']['add_more']['#value'] = 'Add another person';
   }
 
   if ($form_id == 'node_match_engagement_form') {
@@ -378,10 +436,14 @@ function access_match_engagement_mail($key, &$message, $params) {
 function update_drupal_message($moderation_state) {
   $message = '';
   if ($moderation_state == 'draft') {
-    $message = t('Thank you for submitting your project. Please change the status to "Submitted" when you are ready to submit for review.');
+    $message = t('Your project has been saved. Please send for review when you’re ready and we’ll get back to you as soon as possible.');
   }
   elseif ($moderation_state == 'in_review') {
-    $message = t('Thank you for submitting your project. We will be in touch soon.');
+    $message = t('Thank you for sending your project for review. We will be in touch soon.');
+  }
+  else {
+    $moderation_state = str_replace('_', ' ', $moderation_state);
+    $message = t('Your project has been saved. The current status is: @status.', ['@status' => $moderation_state]);
   }
   // If $message is not empty, add it to the drupal message queue.
   if ($message) {
