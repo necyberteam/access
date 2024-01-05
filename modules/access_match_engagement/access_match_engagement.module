@@ -236,12 +236,12 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $form['#validate'][] = 'access_match_engagement_form_validate';
     $link = Link::createFromRoute('Engagement Guide', 'entity.node.canonical', ['node' => 6108]);
     $form['save_description'] = [
-      '#markup' => '<div class="font-bold">' .
-                    t("Save as Submitted when you’re ready for an initial review,
-                    or Draft if you need more time. Once the engagement has been
-                    Received you can fill in more details about your needs and
-                    save as In Review. After a second review it will be
-                    published and displayed as Recruiting so that people can use
+      '#markup' => '<div>' .
+                    t("Save as <span class=\"font-bold\">Submitted</span> when you’re ready for an initial review,
+                    or <span class=\"font-bold\">Draft</span> if you need more time. Once the engagement has been
+                    <span class=\"font-bold\">Received</span> you can fill in more details about your needs and
+                    save as <span class=\"font-bold\">In Review</span>. After a second review it will be
+                    published and displayed as <span class=\"font-bold\">Recruiting</span> so that people can use
                     the “I’m interested” button to be considered for
                     participation. You can find more details in the @link.",
                     ['@link' => $link->toString()]) .
@@ -250,6 +250,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       '#allowed_tags' => [
         'a',
         'div',
+        'span'
       ],
     ];
     $form['moderation_state']['widget'][0]['state']['#title'] = t('Save as');
