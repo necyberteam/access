@@ -45,7 +45,7 @@ class MatchLookup {
     foreach ($match_fields as $match_field_key => $match_field) {
       $this->runQuery($match_field, $match_field_key, $match_user_id);
     }
-    $this->gatherMatches();
+    $this->gatherMatches($public);
   }
 
   /**
@@ -68,7 +68,7 @@ class MatchLookup {
   /**
    * Function to lookup nodes and sort array.
    */
-  public function gatherMatches() {
+  public function gatherMatches($public) {
     $matches = $this->matches;
     $match_array = [];
     if ($matches == NULL) {
@@ -81,11 +81,13 @@ class MatchLookup {
         $match_name = $match['name'];
         $field_status = $node->get('field_status')->getValue();
         $field_status = !empty($field_status) ? $field_status : '';
-        // Don't display engagement with a non-public status.
-        $non_public = ['draft', 'in_review', 'accepted', 'on_hold', 'halted'];
-        if (in_array($field_status[0]['value'], $non_public)) {
-          unset($matches[$key]);
-          break;
+        // Don't display engagement with a non-public status on public profile.
+        if ($public == TRUE) {
+          $non_public = ['draft', 'in_review', 'accepted', 'on_hold', 'halted'];
+          if (in_array($field_status[0]['value'], $non_public)) {
+            unset($matches[$key]);
+            break;
+          }
         }
         $match_array[$nid] = [
           'status' => $field_status,
