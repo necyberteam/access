@@ -37,8 +37,8 @@ class CommunityPersonaController extends ControllerBase {
     if ($affinity_groups == NULL && $public === TRUE) {
       $user_affinity_groups = '<p>' . t('Not connected to any Affinity groups.') . "</p>";
     }
-    if ($user_affinity_groups == "<ul>") {
-      $user_affinity_groups = "<ul class='grid grid-cols-2'>";
+    if ($user_affinity_groups == '<ul>') {
+      $user_affinity_groups = '<ul class="grid grid-cols-2 my-3">';
       foreach ($affinity_groups as $affinity_group) {
         $query = \Drupal::database()->select('taxonomy_index', 'ti');
         $query->condition('ti.tid', $affinity_group);
@@ -47,8 +47,10 @@ class CommunityPersonaController extends ControllerBase {
         if (isset($affinity_group_nid[0])) {
           $affinity_group_loaded = \Drupal::entityTypeManager()->getStorage('node')->load($affinity_group_nid[0]);
           $url = Url::fromRoute('entity.node.canonical', ['node' => $affinity_group_loaded->id()]);
-          $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url);
-          $link = $project_link->toString()->__toString();
+          $class = ['font-bold', 'underline', 'hover--no-underline', 'hover--text-dark-teal'];
+          $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url)->toRenderable();
+          $project_link['#attributes'] = ['class' => $class];
+          $link = \Drupal::service('renderer')->render($project_link);
           $user_affinity_groups .= "<li>$link</li>";
         }
       }
@@ -127,7 +129,7 @@ class CommunityPersonaController extends ControllerBase {
         $ws = WebformSubmission::load($ws_result);
         $url = $ws->toUrl()->toString();
         $ws_data = $ws->getData();
-        $ws_link .= '<li class="p-3 ' . $stripe_class . '"><a href=' . $url . '>' . $ws_data['title'] . '</a></li>';
+        $ws_link .= '<li class="p-3 ' . $stripe_class . '"><a href=' . $url . ' class="font-bold underline hover--no-underline hover--text-dark-teal">' . $ws_data['title'] . '</a></li>';
         $n++;
       }
       $ws_link .= '</ul>';

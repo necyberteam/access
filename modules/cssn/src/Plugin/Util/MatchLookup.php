@@ -177,8 +177,8 @@ class MatchLookup {
           <i class='text-dark text-dark-teal text-2xl fa-solid fa-circle-$first_letter h2'></i>
         </div>";
         $match_link .= "<li class='d-flex flex p-3 $stripe_class'>
-          <div class='text-truncate prose' style='width: 400px;'>
-            <a href='/node/$nid'>$title</a>
+          <div class='text-truncate' style='width: 400px;'>
+            <a href='/node/$nid' class='font-bold underline hover--no-underline hover--text-dark-teal'>$title</a>
           </div>
           <div class='font-weight-bold ms-5'>
             $match_name

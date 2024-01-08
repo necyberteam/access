@@ -140,7 +140,7 @@ class ProjectLookup {
         </div>";
         $project_link .= "<li class='py-2 $stripe_class'>
           <div class='text-truncate' style='width: 400px;'>
-            <a href='/admin/structure/webform/manage/project/submission/$sid'>$title</a>
+            <a href='/admin/structure/webform/manage/project/submission/$sid' class='font-bold underline hover--no-underline hover--text-dark-teal'>$title</a>
           </div>
           <div class='invisible hidden ms-5'>
             $project_name
