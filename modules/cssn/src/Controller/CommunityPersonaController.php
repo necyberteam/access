@@ -32,10 +32,10 @@ class CommunityPersonaController extends ControllerBase {
     $affinity_groups = array_unique($affinity_groups);
     $user_affinity_groups = "<ul>";
     if ($affinity_groups == NULL && $public === FALSE) {
-      $user_affinity_groups = '<p>' . t('You currently are not connected to any Affinity groups. Click below to explore.') . "</p>";
+      $user_affinity_groups = '<p class="mb-3">' . t('You currently are not connected to any Affinity groups. Click below to explore.') . "</p>";
     }
     if ($affinity_groups == NULL && $public === TRUE) {
-      $user_affinity_groups = '<p>' . t('Not connected to any Affinity groups.') . "</p>";
+      $user_affinity_groups = '<p class="mb-3">' . t('Not connected to any Affinity groups.') . "</p>";
     }
     if ($user_affinity_groups == '<ul>') {
       $user_affinity_groups = '<ul class="grid grid-cols-2 my-3">';
@@ -88,7 +88,7 @@ class CommunityPersonaController extends ControllerBase {
     $flagged_skills = $term->execute()->fetchCol();
     $my_skills = "";
     if ($flagged_skills == NULL && $public === FALSE) {
-      $my_skills = '<p>' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>";
+      $my_skills = '<p class="mb-3">' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>";
     }
     if ($flagged_skills == NULL && $public === TRUE) {
       $my_skills = '<p>' . t('No skills added.') . "</p>";
@@ -116,13 +116,13 @@ class CommunityPersonaController extends ControllerBase {
     $ws_results = $ws_query->execute();
     $ws_link = "<ul>";
     if ($ws_results == NULL && $public === FALSE) {
-      $ws_link = '<p>' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>";
+      $ws_link = '<p class="mb-3">' . t('You currently have not contributed to the Knowledge Base. Click below to contribute.') . "</p>";
     }
     if ($ws_results == NULL && $public === TRUE) {
       $ws_link = '<p>' . t('No contributions to the Knowledge Base.') . "</p>";
     }
     if ($ws_link == "<ul>") {
-      $ws_link = "<ul class='list-unstyled list-none m-0 p-0'>";
+      $ws_link = "<ul class='list-unstyled list-none mx-0 my-3 p-0'>";
       $n = 1;
       foreach ($ws_results as $ws_result) {
         $stripe_class = $n % 2 == 0 ? 'bg-light bg-light-teal' : '';
@@ -155,14 +155,14 @@ class CommunityPersonaController extends ControllerBase {
     // Sort by status.
     $matches->sortStatusMatches();
     $match_list = $matches->getMatchList();
-    $match_link = "<ul class='list-unstyled m-0 p-0'>";
+    $match_link = "<ul class='list-unstyled mx-0 my-3 p-0'>";
     if ($match_list == NULL && $public === FALSE) {
-      $match_link = '<p>' . t('You currently have not been matched with any Engagements. Click below to find an Engagement.') . "</p>";
+      $match_link = '<p class="mb-3">' . t('You currently have not been matched with any Engagements. Click below to find an Engagement.') . "</p>";
     }
     if ($match_list == NULL && $public === TRUE) {
       $match_link = '<p>' . t('No matched Engagements.') . "</p>";
     }
-    if ($match_link == "<ul class='list-unstyled m-0 p-0'>") {
+    if ($match_link == "<ul class='list-unstyled mx-0 my-3 p-0'>") {
       $match_link .= $match_list . '</ul>';
     }
     return $match_link;
@@ -187,11 +187,11 @@ class CommunityPersonaController extends ControllerBase {
     $projects = new ProjectLookup($fields, $user->id(), $user->getEmail());
     $projects->sortStatusProjects();
     $project_list = $projects->getProjectList();
-    $project_link = "<ul class='list-unstyled list-none m-0 p-0'>";
+    $project_link = "<ul class='list-unstyled list-none mx-0 my-3 p-0'>";
     if ($project_list == NULL) {
       $project_link = 'na';
     }
-    if ($project_link == "<ul class='list-unstyled list-none m-0 p-0'>") {
+    if ($project_link == "<ul class='list-unstyled list-none mx-0 my-3 p-0'>") {
       $project_link .= $project_list . '</ul>';
     }
     return $project_link;
@@ -283,7 +283,7 @@ class CommunityPersonaController extends ControllerBase {
           <div class="d-flex flex flex-wrap p-3">
             {{ my_interests|raw }}
           </div>
-          <div class="p-3">{{ edit_interest_link }}</div>
+          <div class="p-3 pt-0">{{ edit_interest_link }}</div>
         </div>
         <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
@@ -292,7 +292,7 @@ class CommunityPersonaController extends ControllerBase {
           <div class="d-flex flex flex-wrap p-3">
             {{ my_skills|raw }}
           </div>
-          <div class="p-3">{{ edit_skill_link }}</div>
+          <div class="p-3 pt-0">{{ edit_skill_link }}</div>
         </div>
         <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white h4 py-2 px-3 m-0 bg-dark bg-md-teal text-2xl p-4">{{ ag_title }}</div>
