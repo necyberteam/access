@@ -1,4 +1,0 @@
-duplicate:
-  version: 1.x
-  js:
-    js/duplicate.js: {}
