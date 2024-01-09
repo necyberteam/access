@@ -364,7 +364,7 @@ function user_profiles_user_login(UserInterface $account) {
     $name_check = strpos($name, '@access-ci.org');
     if ($name_check == FALSE) {
       $url = Url::fromUri('internal:/community-persona');
-      \Drupal::messenger()->addMessage(t('Another account was found with the same email address and automatically merged with this account. Please make sure your information is correct. <a href="@url">Click here</a> to verify your information.', ['@url' => $url->toString()]));
+      \Drupal::messenger()->addMessage(t('Another account was found with the same email address and automatically merged with this account. <a href="@url">Click here</a> to verify your information is correct. Please contact us or open a ticket if any information is not correct or if you have questions.', ['@url' => $url->toString()]));
       // Merge user.
       $user_profile_commands = new UserProfilesCommands();
       $user_profile_commands->mergeUser($dup_uid[0], $account_uid);
