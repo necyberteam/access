@@ -6,7 +6,10 @@
 
 use Drupal\Component\Serialization\Json;
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Url;
+use Drupal\user\Entity\User;
 use Drupal\user\UserInterface;
+use Drupal\user_profiles\Commands\UserProfilesCommands;
 use GuzzleHttp\Client;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 
@@ -46,6 +49,11 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
       break;
 
     case 'user_form':
+      $user_roles = \Drupal::currentUser()->getRoles();
+      $is_admin = in_array('administrator', $user_roles);
+      if (!$is_admin) {
+        $form['actions']['delete']['#access'] = FALSE;
+      }
       if ($is_asp) {
         $user_roles = \Drupal::currentUser()->getRoles();
         $is_admin = in_array('administrator', $user_roles);
@@ -331,4 +339,37 @@ function get_account_data_from_api($username) {
   }
 
   return FALSE;
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function user_profiles_user_login(UserInterface $account) {
+  // Get user email.
+  $account_uid = $account->id();
+  $account_email = $account->getEmail();
+  $account_name = $account->getAccountName();
+  $account_name_check = strpos($account_name, '@access-ci.org');
+  // Mysql query to check for duplicate email.
+  $query = \Drupal::database()->select('users_field_data', 'ufd');
+  $query->fields('ufd', ['uid']);
+  $query->condition('ufd.mail', $account_email);
+  $query->condition('ufd.uid', $account->id(), '<>');
+  $dup_uid = $query->execute()->fetchCol();
+  if (!empty($dup_uid)) {
+    // User load.
+    $dup_user = User::load($dup_uid[0]);
+    $name = $dup_user->getAccountName();
+    // Check if $name contains '@access-ci.org'.
+    $name_check = strpos($name, '@access-ci.org');
+    if ($name_check == FALSE) {
+      $url = Url::fromUri('internal:/community-persona');
+      \Drupal::messenger()->addMessage(t('Another account was found with the same email address and automatically merged with this account. <a href="@url">Click here</a> to verify your information is correct. Please contact us or open a ticket if any information is not correct or if you have questions.', ['@url' => $url->toString()]));
+      // Merge user.
+      $user_profile_commands = new UserProfilesCommands();
+      $user_profile_commands->mergeUser($dup_uid[0], $account_uid);
+      // Delete duplicate user.
+      $dup_user->delete();
+    }
+  }
 }
