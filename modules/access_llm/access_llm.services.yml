@@ -1,0 +1,4 @@
+services:
+  access_llm.ai_references_generator:
+    class: Drupal\access_llm\AiReferenceGenerator
+    arguments: ['@key.repository', '@entity_type.manager', '@renderer', '@config.factory', '@current_user', '@logger.factory', '@theme.initialization', '@theme.manager']
