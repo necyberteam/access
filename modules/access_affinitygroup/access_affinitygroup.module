@@ -15,6 +15,10 @@
  * Note: The list in Constant Contact is stored by the AG name, so relationship
  * to CC list is broken if AG name changes.
  *
+ * Optional Discussion Group Email list:
+ * We create a Simplelists group list and add AG members to that list after
+ * creating a Simplelists contact; same when user joins an AG.
+ *
  * Code in this module also implements the following:
  *  - Coordinators for Affinity Groups have their
  *    "Affinity Group Leader" role updated
@@ -390,9 +394,11 @@ function add_ag_taxonomy_term($entity) {
 
 /**
  * SubscribeToSimpleLists.
- * If "external email" is in use, Add user to SimpleLists email list associated
+ * If "external email" (discussion email list) is in use,
+ * Add user to SimpleLists email list associated
  * with the Affinity Group for which this taxonomyId is flaged by the user.
  * (the user hit the Join button on  the AG page.)
+ * Audeience for errors is end user; errors also logged.
  *
  * @param affinitygroup
  * @param loaded user
@@ -421,22 +427,24 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
     $simpleListsName = $simpleListsNameA[0]['value'];
   }
   if (!empty($simpleListsName)) {
-
     $msg = "";
     $simpleListsApi = new SimpleListsApi();
 
     // Subscribe user to simplist list, creating simplist contact first if needed.
     if ($isSubscribe) {
-
       $msg = "";
       // Check if contact exists in simplelist account, if not, then create. If so, add to list if needed.
       $simpleListsId = $simpleListsApi->getUserListNames($user->getEmail(), $listMemberships, $msg);
-
       if (empty($simpleListsId)) {
         // New contact, including list membership.
-        $simpleListsId = $simpleListsApi->addUser($user->id(), $user->getEmail(), 'fn', $user->getDisplayName(), strtok($simpleListsName, '@'), $msg);
+        $userDet = User::load($user->id());
+        $simpleListsId = $simpleListsApi->addUser($user->id(),
+                                                  $user->getEmail(),
+                                                  $userDet->get('field_user_first_name')->getString(),
+                                                  $userDet->get('field_user_last_name')->getString(),
+                                                  strtok($simpleListsName, '@'),
+                                                  $msg);
         $listMemberships = '';
-
         if (empty($simpleListsId)) {
           $s = "SimpleLists email list: error while adding user to SimpleLists account. " . $msg;
           \Drupal::logger('access_affinitygroup')->error($s);
@@ -447,7 +455,6 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
       else {
         // We had an existing contact.
         if (in_array($simpleListsName, $listMemberships)) {
-          // showStatus("TEMP Info: user already on the list  $simpleListsName");.
           return;
         }
         else {
@@ -476,10 +483,13 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
 }
 
 /**
+ * When an Affinity Group admin checks the Discussion emails list box.
  * See if we need to add a simplelists list.
  * If adding a list, add the members of the affinity group to the list.
  * Assume that an empty field_ext_email_list means no list of this name in
  * the simplelists account.
+ * Assume this is a website admin that would be seering these messages when
+ * they check on the group discussion email box.
  */
 function check_ext_email_list($entity) {
   $simpleListsName = "";
@@ -505,70 +515,89 @@ function check_ext_email_list($entity) {
         }
         $listAddress = $simpleListsApi->makeListAddress($slug);
 
-        // Msg + status returned.
-        // @todo might want to set longer title for description of this list.
+        // Msg + status returned. Here, slug is set to normalized name.
         $status = $simpleListsApi->createList($slug, $msg);
-        showStatus('SimpleLists email list: ' . $msg . ' ' . $listAddress);
+        showStatus('New simpleLists email list: ' . $msg . ' ' . $listAddress);
 
         if ($status) {
           $entity->set('field_ext_email_list', $listAddress);
 
-          // Take the list of flagged members and add to the new simplelists list one by one.
-          // @todo needed error handling, repetition.
+          // Take the list of flagged members and add to the new simplelists
           $term = $entity->get('field_affinity_group');
           $agMembers = \Drupal::service('flag')->getFlaggingUsers($term->entity);
-          // @todo
-          return;
 
           if (count($agMembers) > 0) {
-            $addedTotal = 0;
+            $listAddCount = 0;
+            $newCount = 0;
+            $index = 0;
             foreach ($agMembers as $oneMember) {
               try {
+                $index++;
                 $msg = '';
                 // Check if contact exists in simplelist account, if not, then create. If so, add to list if needed.
                 $simpleListsId = $simpleListsApi->getUserListNames($oneMember->getEmail(), $listMemberships, $msg);
                 if (empty($simpleListsId)) {
                   // Need new contact; add with list membership.
-                  $simpleListsId = $simpleListsApi->addUser($user->id(), $user->getEmail(), 'fn', $user->getDisplayName(), strtok($simpleListsName, '@'), $msg);
+                  $userDet = User::load($oneMember->id());
+                  $simpleListsId = $simpleListsApi->addUser($oneMember->id(),
+                                                            $oneMember->getEmail(),
+                                                            $userDet->get('field_user_first_name')->getString(),
+                                                            $userDet->get('field_user_last_name')->getString(),
+                                                            $slug,
+                                                            $msg);
                   $listMemberships = '';
                   if (empty($simpleListsId)) {
-                    $s = "SimpleLists email list: error while adding user to SimpleLists account. " . $msg;
-                    \Drupal::logger('access_affinitygroup')->error($s);
+                    showStatus("SimpleLists error adding contact at $index; uid: " . $oneMember->id() . " " . $msg);
+                  }
+                  else {
+                    $newCount++;
+                    $listAddCount++;
                   }
                 }
                 else {
                   // Add the existing contact to list.
-                  $status = $simpleListsApi->updateUserToList($simpleListsId, strtok($simpleListsName, '@'), $msg);
+                  $status = $simpleListsApi->updateUserToList($simpleListsId, $slug, $msg);
                   if (!$status) {
-                    \Drupal::logger('access_affinitygroup')->error("SimpleLists external email list: error while adding to $simpleListsName " . $msg);
+                    showStatus("SimpleLists: error adding contact to $slug " . $msg);
+                  }
+                  else {
+                    $listAddCount++;
                   }
                 }
               }
-              catch  (Exception $e) {
+              catch (Exception $e) {
+                showstatus("SimpleLists: exception for $slug at index $index uid " . $oneMember->id() . $msg);
+                break;
               }
             } // foreach
           }
-          \Drupal::logger('access_affinitygroup')->notice("Simplelists: added $addedTotal to $listAddress " . $msg);
+          // everything ok after list create and contact adds.
+          showStatus("Simplelists: $newCount new contacts;  $listAddCount added to $listAddress.");
         }
       }
       catch (Exception $e) {
-        \Drupal::logger('access_affinitygroup')->error("Simplelists list: Error while creating $listAddress " . $e->getMessage());
+        showStatus("Simplelists: Exception creating $listAddress " . $e->getMessage());
       }
     }
   }
   else {
     // Unchecked box: Delete the simplelists external email list if exists.
+    $error = TRUE;
     if ($simpleListsName !== "") {
       try {
         $simpleListsApi = new SimpleListsApi();
-        // $response = $simpleListsApi->deleteList(strtok($simpleListsName, '@'), $msg);
-        // if ($response) {
-        // $entity->set('field_ext_email_list', '');
-        // }
-        // showStatus($msg);
+        $status = $simpleListsApi->deleteList(strtok($simpleListsName, '@'), $msg);
+        if ($status) {
+          $entity->set('field_ext_email_list', '');
+          $error = FALSE;
+          showStatus("Simplelists email list $simpleListsName deleted.");
+        }
       }
       catch (Exception $e) {
-        \Drupal::logger('access_affinitygroup')->error("Simplelists email list: Error while deleting $simpleListsName " . $e->getMessage());
+        $msg = $e->getMessage();
+      }
+      if ($error) {
+        showStatus("Simplelists email list: Error while deleting $simpleListsName " . $msg);
       }
     }
   }
@@ -660,7 +689,8 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       }
       if ($simpleListsName !== "") {
         $simpleListsApi = new SimpleListsApi();
-        $simpleListsApi->deleteList($simpleListsName, $msg);
+        $simpleListsApi->deleteList(strtok($simpleListsName, '@'), $msg);
+        showStatus("Deleted Simplelists: " . $simpleListsName);
       }
 
       if (!isCCEnabled()) {

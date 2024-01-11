@@ -37,16 +37,20 @@ class SimpleListsApi {
       \Drupal::messenger()->addMessage($errmsg);
     }
   }
- public function getDomain() {
+
+  /**
+   *
+   */
+  public function getDomain() {
     return $this->domain;
- }
+  }
+
   /**
    * Returns curl obj
    *  $op: POST/GET/PUT/DELETE
    */
   private function makeCurl($op, $urlsub, $params = '') {
     $ch = curl_init();
-    // @todo func start of this repetitive
     curl_setopt($ch, CURLOPT_URL, 'https://www.simplelists.com/api/2/' . $urlsub);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, TRUE);
     curl_setopt($ch, CURLOPT_CUSTOMREQUEST, $op);
@@ -84,48 +88,15 @@ class SimpleListsApi {
   }
 
   /**
-   *
-   */
-  public function addUsers($listAddress, $users, &$msg, &$addedCount) {
-
-    // @todo
-    return;
-    $userId = 0;
-    $addedCount = 0;
-    try {
-      $newMembers = [];
-      foreach ($users as $uu) {
-        $userId = $uu->id();
-
-        $newMembers[] = [
-          'address' => $uu->getEmail(),
-          'name' => $uu->getDisplayName(),
-          'vars' => ['uid' => $userId, 'uname' => $uu->getAccountName()],
-        ];
-        $addedCount++;
-      }
-
-      // $result = $this->mgClient->mailingList()->member()->createMultiple($listAddress, $newMembers);
-      //     $msg = $result->getMessage();
-      return TRUE;
-    }
-    catch (\Exception $e) {
-      $msg = $e->getMessage() . " at " . $addedCount;
-      return FALSE;
-    }
-  }
-
-  // Add user, and add to listName if not null. returns new id or null.
-
-  /**
+   * Add user, and add to listName if not null. returns new id or null.
    * $listName is slug.
    */
   public function addUser($uid, $userEmail, $firstName, $lastName, $listName, &$msg) {
 
     try {
       $userEmail = urlencode($userEmail);
-      $firstName = urlencode($firstName);
-      $lastName = urlencode($lastName);
+      $firstName = urlencode(substr($firstName, 0, 30));
+      $lastName = urlencode(substr($lastName, 0, 30));
 
       $params = "emails=$userEmail&firstname=$firstName&surname=$lastName&notes=uid$uid";
       if (!empty($listName)) {
@@ -283,6 +254,15 @@ class SimpleListsApi {
    */
   public function deleteList($listName, &$msg) {
     $msg = '';
+    $urlEnd = "lists/$listName/";
+    $ch = $this->makeCurl('DELETE', $urlEnd);
+    $response = curl_exec($ch);
+    curl_close($ch);
+    $deResponse = json_decode($response, TRUE);
+    if (isset($deResponse['is_error']) && $deResponse['is_error']) {
+      $msg = $deResponse['message'];
+      return FALSE;
+    }
     return TRUE;
   }
 
