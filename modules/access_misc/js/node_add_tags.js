@@ -5,6 +5,51 @@ if (checkBoxEmail) {
   };
 }
 
+
+
+// Re-enable form elements that are disabled for non-ajax situations.
+Drupal.behaviors.nodeAddTags = {
+  attach: function () {
+
+
+
+
+
+
+
+
+
+
+    // If ajax is enabled, we want to hide items that are marked as hidden in
+    // our example.
+    if (Drupal.ajax) {
+
+        var tagWrapper = document.getElementById("field-tags-replace");
+        var suggested_tids = tagWrapper.getAttribute('data-suggest').split(', ');
+        var selectElementTags = document.getElementById("edit-field-tags");
+
+        if (suggested_tids != 0) {
+
+          Array.from(suggested_tids).forEach(function (suggested_tid) {
+            if (selectElementTags.querySelector('option[value="' + suggested_tid + '"]').selected != true) {
+              selectElementTags.querySelector('option[value="' + suggested_tid + '"]').selected = true;
+            }
+
+          });
+
+          // selectElement('edit-field-tags');
+        }
+
+    }
+
+
+var options = document.getElementById('edit-field-tags').selectedOptions;
+var set_tid = Array.from(options).map(({ value }) => value);
+const buttons = document.getElementsByClassName('tags-select');
+const selected = [];
+
+
+
 /* Handle tag selection using the node_add_tags view */
 function selectElement(id) {
   let element = document.getElementById(id);
@@ -22,11 +67,10 @@ function selectElement(id) {
   });
 }
 
-const buttons = document.getElementsByClassName('tags-select');
-const selected = [];
 
-var options = document.getElementById('edit-field-tags').selectedOptions;
-set_tid = Array.from(options).map(({ value }) => value);
+
+
+
 if (set_tid.length > 0 && set_tid[0] != "_none") {
   selected.push(...set_tid);
   for (let tid of set_tid) {
@@ -51,6 +95,7 @@ const buttonPressed = e => {
     e.target.classList.add("selected");
     selected.push(e.target.dataset.tid);
   }
+  console.log(selected);
   selectElement('edit-field-tags')
 }
 
@@ -59,31 +104,7 @@ for (let button of buttons) {
 }
 
 
-// Re-enable form elements that are disabled for non-ajax situations.
-Drupal.behaviors.nodeAddTags = {
-  attach: function () {
-    // If ajax is enabled, we want to hide items that are marked as hidden in
-    // our example.
-    if (Drupal.ajax) {
-      if (set_tid.length > 0 && set_tid[0] == "_none") {
-        var tagWrapper = document.getElementById("field-tags-replace");
-        var suggested_tids = tagWrapper.getAttribute('data-suggest').split(', ');
 
-        if (suggested_tids != 0) {
-          var selectElement = document.getElementById("edit-field-tags");
-          var option684 = selectElement.querySelector('option[value="684"]');
-          option684.selected = true;
-
-          Array.from(suggested_tids).forEach(function (suggested_tid) {
-            if (selectElement.querySelector('option[value="' + suggested_tid + '"]').selected != true) {
-              selectElement.querySelector('option[value="' + suggested_tid + '"]').selected = true;
-              console.log(suggested_tid);
-            }
-          });
-        }
-
-      }
-    }
   }
 };
 
