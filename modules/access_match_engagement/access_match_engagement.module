@@ -10,6 +10,7 @@ use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
@@ -52,6 +53,36 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
         'h2',
       ],
     ];
+
+
+    $form['replace_button'] = [
+      '#type' => 'button',
+      '#value' => t('Replace Section'),
+      '#ajax' => [
+        'callback' => 'access_match_engagement_replace_section_callback',
+        'wrapper' => 'field-tags-replace',
+      ],
+    ];
+
+    $form['field_tags']['#prefix'] = '<div id="field-tags-replace">';
+    $form['field_tags']['#suffix'] = '</div>';
+
+
+    // Add the section with '#markup'.
+
+    // $form['field_tags']['#attributes']['data-body'] = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis eu elit lobortis, tincidunt ex id, sagittis tortor. Proin mollis, tortor aliquam porttitor faucibus, lorem arcu pellentesque augue, convallis rhoncus urna arcu at arcu. Integer vestibulum placerat accumsan. Curabitur fringilla tincidunt mauris quis ultricies. Morbi elit risus, tincidunt in elit non, tempus ornare turpis. Nullam orci augue, molestie et velit non, mattis porta massa.';
+
+
+
+
+
+
+
+    // $llm = \Drupal::service('access_llm.ai_references_generator');
+    // $contents = "I am new to ACCESS. I have a little bit of past experience running code on NCSA's Blue Waters. As a self-taught programmer, it would be interesting to learn from an experienced mentor. Here's an overview of my project: Anxiety detection is topic that is actively studied but struggles to generalize and perform outside of controlled lab environments. I propose to critically analyze state of the art detection methods to quantitatively quantify failure modes of existing applied machine learning models and introduce methods to robustify real-world challenges. The aim is to start the study by performing sensitivity analysis of existing best-performing models, then testing existing hypothesis of real-world failure of these models. We predict that this will lead us to understand more deeply why models fail and use explainability to design better in-lab experimental protocols and machine learning models that can perform better in real-world scenarios. Findings will dictate future directions that may include improving personalized health detection, careful design of experimental protocols that empower transfer learning to expand on existing reach of anxiety detection models, use explainability techniques to inform better sensing methods and hardware, and other interesting future directions.";
+    // $llm->generateTaxonomyPrompt('tags', 1, $contents);
+    // kint($llm->aiApiCall());
+    // die();
 
     // Make text boxes stretch full width and give labels bold/width.
     $form['#attributes']['class'][] = 'prose';
@@ -192,7 +223,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
     }
-    // kint($form['moderation_state']);
 
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
@@ -265,6 +295,25 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
   }
+}
+
+/**
+ * Ajax callback function to replace the section with '#markup'.
+ */
+function access_match_engagement_replace_section_callback(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  $raw_data = $form_state->getUserInput();
+  $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  if ($body_filter) {
+    $messenger = \Drupal::messenger();
+    $messenger->addStatus($body_filter);
+  }
+  $form['field_tags'] = $form['field_tags'];
+  $form['field_tags']['widget']['#default_value'][1] = "733";
+  $form['field_tags']['#suffix'] = 'Boop</div>';
+  $form['field_tags']['#attributes']['data-suggest'] = '733';
+
+  // Return the updated section.
+  return $form['field_tags'];
 }
 
 /**

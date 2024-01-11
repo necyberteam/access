@@ -9,6 +9,11 @@
             "email": "Miles.France@protitude.com"
         }
     ],
+  "require": {
+    "openai-php/client": "^0.4.1",
+    "gioni06/gpt3-tokenizer": "^1.2"
+
+  },
     "support": {
         "issues": "https://github.com/necyberteam/access/issues",
         "source": "https://github.com/necyberteam/access"
