@@ -57,32 +57,36 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
 
     $form['replace_button'] = [
       '#type' => 'button',
-      '#value' => t('Replace Section'),
+      '#value' => t('Suggest Tags'),
+      '#weight' => 15,
       '#ajax' => [
         'callback' => 'access_match_engagement_replace_section_callback',
         'wrapper' => 'field-tags-replace',
       ],
     ];
 
-    $form['field_tags']['#prefix'] = '<div id="field-tags-replace">';
-    $form['field_tags']['#suffix'] = '</div>';
+    // $form['field_tags']['#prefix'] = '<div id="field-tags-replace">';
+    // $form['field_tags']['#suffix'] = '</div>';
 
 
     // Add the section with '#markup'.
 
     // $form['field_tags']['#attributes']['data-body'] = 'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Duis eu elit lobortis, tincidunt ex id, sagittis tortor. Proin mollis, tortor aliquam porttitor faucibus, lorem arcu pellentesque augue, convallis rhoncus urna arcu at arcu. Integer vestibulum placerat accumsan. Curabitur fringilla tincidunt mauris quis ultricies. Morbi elit risus, tincidunt in elit non, tempus ornare turpis. Nullam orci augue, molestie et velit non, mattis porta massa.';
-
-
-
-
-
-
-
     // $llm = \Drupal::service('access_llm.ai_references_generator');
-    // $contents = "I am new to ACCESS. I have a little bit of past experience running code on NCSA's Blue Waters. As a self-taught programmer, it would be interesting to learn from an experienced mentor. Here's an overview of my project: Anxiety detection is topic that is actively studied but struggles to generalize and perform outside of controlled lab environments. I propose to critically analyze state of the art detection methods to quantitatively quantify failure modes of existing applied machine learning models and introduce methods to robustify real-world challenges. The aim is to start the study by performing sensitivity analysis of existing best-performing models, then testing existing hypothesis of real-world failure of these models. We predict that this will lead us to understand more deeply why models fail and use explainability to design better in-lab experimental protocols and machine learning models that can perform better in real-world scenarios. Findings will dictate future directions that may include improving personalized health detection, careful design of experimental protocols that empower transfer learning to expand on existing reach of anxiety detection models, use explainability techniques to inform better sensing methods and hardware, and other interesting future directions.";
-    // $llm->generateTaxonomyPrompt('tags', 1, $contents);
-    // kint($llm->aiApiCall());
+    // $body_filter = "I am new to ACCESS. I have a little bit of past experience running code on NCSA's Blue Waters. As a self-taught programmer, it would be interesting to learn from an experienced mentor. Here's an overview of my project: Anxiety detection is topic that is actively studied but struggles to generalize and perform outside of controlled lab environments. I propose to critically analyze state of the art detection methods to quantitatively quantify failure modes of existing applied machine learning models and introduce methods to robustify real-world challenges. The aim is to start the study by performing sensitivity analysis of existing best-performing models, then testing existing hypothesis of real-world failure of these models. We predict that this will lead us to understand more deeply why models fail and use explainability to design better in-lab experimental protocols and machine learning models that can perform better in real-world scenarios. Findings will dictate future directions that may include improving personalized health detection, careful design of experimental protocols that empower transfer learning to expand on existing reach of anxiety detection models, use explainability techniques to inform better sensing methods and hardware, and other interesting future directions.";
+    // $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
+    // $llm->taxonomyIdSuggested();
+    // $suggestions = $llm->aiApiCall();
+    // $suggestions = json_decode($suggestions);
+    // kint();
     // die();
+
+
+
+
+
+
+
 
     // Make text boxes stretch full width and give labels bold/width.
     $form['#attributes']['class'][] = 'prose';
@@ -101,11 +105,24 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $tag_label = t('Add Tags');
     $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
     $tag_summary = t('Select Tags');
-    $form['node_add_tags'] = [
+    $form['field_tags_replace'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => 'field-tags-replace',
+        'data-suggest' => '0',
+      ],
+      '#weight' => 15,
+    ];
+
+    $add_tags = \Drupal::service('access_misc.addtags');
+    $output = $add_tags->getView();
+    $tag_label = t('Add Tags');
+    $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
+    $tag_summary = t('Select Tags');
+    $form['field_tags_replace']['node_add_tags'] = [
       '#markup' => "<div class='font-bold form-required'>$tag_label</div>
         <div>$tag_description</div>
-        <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
-      '#weight' => 15,
+        <details open class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#allowed_tags' => [
         'button',
         'details',
@@ -303,17 +320,19 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
 function access_match_engagement_replace_section_callback(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
   $raw_data = $form_state->getUserInput();
   $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  $suggested_tag_ids = '0';
   if ($body_filter) {
-    $messenger = \Drupal::messenger();
-    $messenger->addStatus($body_filter);
+    $llm = \Drupal::service('access_llm.ai_references_generator');
+    $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
+    $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
+    // $messenger = \Drupal::messenger();
+    // $messenger->addStatus($suggestions);
   }
-  $form['field_tags'] = $form['field_tags'];
-  $form['field_tags']['widget']['#default_value'][1] = "733";
-  $form['field_tags']['#suffix'] = 'Boop</div>';
-  $form['field_tags']['#attributes']['data-suggest'] = '733';
+  // $form['field_tags']['#suffix'] = 'Boop</div>';
+  $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;
 
   // Return the updated section.
-  return $form['field_tags'];
+  return $form['field_tags_replace'];
 }
 
 /**
