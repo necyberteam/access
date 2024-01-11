@@ -398,11 +398,10 @@ function add_ag_taxonomy_term($entity) {
  * @param loaded user
  * @param isSubscribe - true to subscribe, false to leave
  *
- * @return status
+ * @return nothing. Error display handled within.
  */
 function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
   // Get the ag for this flag (that the user joined)
-  // in order to get the list email address.
   $query = \Drupal::entityQuery('node');
   $node_ids = $query
     ->condition('field_affinity_group', $flagEntityId)
@@ -411,55 +410,62 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
   $aval = array_values($node_ids);
   $nid = $aval[0];
   $ag = Node::load($nid);
+
+  if (!$ag->get('field_use_ext_email_list')->getValue()[0]['value']) {
+    return;
+  }
+
   $simpleListsName = "";
   $simpleListsNameA = $ag->get('field_ext_email_list')->getValue();
   if (!empty($simpleListsNameA)) {
     $simpleListsName = $simpleListsNameA[0]['value'];
   }
-  showStatus("IN SUBSCRIBE, list name is :$simpleListsName:");
   if (!empty($simpleListsName)) {
 
     $msg = "";
-    $mailgunApi = new SimpleListsApi();
+    $simpleListsApi = new SimpleListsApi();
 
+    // Subscribe user to simplist list, creating simplist contact first if needed.
     if ($isSubscribe) {
-      // Add a user to the list.
+
       $msg = "";
+      // Check if contact exists in simplelist account, if not, then create. If so, add to list if needed.
+      $simpleListsId = $simpleListsApi->getUserListNames($user->getEmail(), $listMemberships, $msg);
 
-      // Check if user exists, if not, then create. If so, add to list if needed.
-      $status = FALSE;
-      $simpleListsId = $mailgunApi->getUserListNames($user->getEmail(), $listMemberships, $msg);
       if (empty($simpleListsId)) {
-        $simpleListsId = $mailgunApi->addUser($user->id(), $user->getEmail(), 'fn', $user->getDisplayName(), $simpleListsName, $msg);
+        // New contact, including list membership.
+        $simpleListsId = $simpleListsApi->addUser($user->id(), $user->getEmail(), 'fn', $user->getDisplayName(), strtok($simpleListsName, '@'), $msg);
         $listMemberships = '';
-      }
 
-      if (empty($simpleListId)) {
-        $s = "SimpleLists external email list: error while adding user to SimpleLists account. " . $msg;
-        \Drupal::logger('access_affinitygroup')->error($s);
-        showStatus($s);
+        if (empty($simpleListsId)) {
+          $s = "SimpleLists email list: error while adding user to SimpleLists account. " . $msg;
+          \Drupal::logger('access_affinitygroup')->error($s);
+          showStatus($s);
+          return;
+        }
       }
       else {
+        // We had an existing contact.
         if (in_array($simpleListsName, $listMemberships)) {
-          $status = TRUE;
-          showStatus("User already on the list  :$simpleListsName:");
+          // showStatus("TEMP Info: user already on the list  $simpleListsName");.
+          return;
         }
         else {
-          $status = $mailgunApi->updateUserToList($simpleListsId, strtok($simpleListsName, '@'), $msg);
+          // Add the existing contact to list.
+          $status = $simpleListsApi->updateUserToList($simpleListsId, strtok($simpleListsName, '@'), $msg);
           if (!$status) {
             $s = "SimpleLists external email list: error while adding to $simpleListsName " . $msg;
             \Drupal::logger('access_affinitygroup')->error($s);
             showStatus($s);
-          }
-          else {
-            showStatus("User added to discussion email list: " . $simpleListsName);
+            return;
           }
         }
       }
+      showStatus("You have been added to discussion email list: " . $simpleListsName);
     }
     else {
-      // Remove a user from the list.
-      $status = $mailgunApi->removeUserFromList($user->getEmail(), strtok($simpleListsName, '@'), $msg);
+      // Remove contact from the list.
+      $status = $simpleListsApi->removeUserFromList($user->getEmail(), strtok($simpleListsName, '@'), $msg);
       if (!$status) {
         $s = "Simplelists external email: error while removing from $simpleListsName (" . $user->getEmail() . ")" . $msg;
         \Drupal::logger('access_affinitygroup')->error($s);
@@ -470,9 +476,10 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
 }
 
 /**
- * See if we need to add a mailgun list.
+ * See if we need to add a simplelists list.
  * If adding a list, add the members of the affinity group to the list.
- * Assume that field_mailgun_list is empty means no list.
+ * Assume that an empty field_ext_email_list means no list of this name in
+ * the simplelists account.
  */
 function check_ext_email_list($entity) {
   $simpleListsName = "";
@@ -480,76 +487,88 @@ function check_ext_email_list($entity) {
   if (!empty($simpleListsNameA)) {
     $simpleListsName = $simpleListsNameA[0]['value'];
   }
-  $isMailgunAllowed = $entity->get('field_use_ext_email_list')->getValue()[0]['value'];
-  if ($isMailgunAllowed) {
+
+  if ($entity->get('field_use_ext_email_list')->getValue()[0]['value']) {
     // Create the list if not already there. Nonempty field signifies list created.
     // Use the slug field to name the list.
     if ($simpleListsName === "") {
       try {
-        $mailgunApi = new SimpleListsApi();
+        $simpleListsApi = new SimpleListsApi();
 
         $slugA = $entity->get('field_group_slug')->getValue();
         if (!empty($slugA)) {
           $slug = $slugA[0]['value'];
         }
         if (empty($slug)) {
-          showStatus("Integrated mailing list not created. Please add a Short Name that can be used in an email address.");
+          showStatus("Simplelists email list not created. Please add a Short Name that can be used in an email address.");
           return;
         }
-        $listAddress = $mailgunApi->makeListAddress($slug);
+        $listAddress = $simpleListsApi->makeListAddress($slug);
 
         // Msg + status returned.
         // @todo might want to set longer title for description of this list.
-        $status = $mailgunApi->createList($slug, $msg);
-        showStatus("TMP status:" . $status . ": msg: " . $msg . ' ' . $listAddress);
+        $status = $simpleListsApi->createList($slug, $msg);
         showStatus('SimpleLists email list: ' . $msg . ' ' . $listAddress);
 
         if ($status) {
           $entity->set('field_ext_email_list', $listAddress);
 
-          // @todo @todo
-          return;
-
-          // Take the list of flagged members and add to the new Mailgun list in chunks of X.
-          $chunkSize = 50;
+          // Take the list of flagged members and add to the new simplelists list one by one.
+          // @todo needed error handling, repetition.
           $term = $entity->get('field_affinity_group');
           $agMembers = \Drupal::service('flag')->getFlaggingUsers($term->entity);
+          // @todo
+          return;
+
           if (count($agMembers) > 0) {
-            $chunked = array_chunk($agMembers, $chunkSize);
-            $chunked = array_values($chunked);
-            kint($chunked);
-
             $addedTotal = 0;
-            foreach ($chunked as $oneChunk) {
-              $status = $mailgunApi->addUsers($listAddress, $oneChunk, $msg, $addedCount);
-              $addedTotal += $addedCount;
-              if (!$status) {
-                \Drupal::logger('access_affinitygroup')->error("Mailgun list: error while adding at $addedTotal to $listAddress " . $msg);
+            foreach ($agMembers as $oneMember) {
+              try {
+                $msg = '';
+                // Check if contact exists in simplelist account, if not, then create. If so, add to list if needed.
+                $simpleListsId = $simpleListsApi->getUserListNames($oneMember->getEmail(), $listMemberships, $msg);
+                if (empty($simpleListsId)) {
+                  // Need new contact; add with list membership.
+                  $simpleListsId = $simpleListsApi->addUser($user->id(), $user->getEmail(), 'fn', $user->getDisplayName(), strtok($simpleListsName, '@'), $msg);
+                  $listMemberships = '';
+                  if (empty($simpleListsId)) {
+                    $s = "SimpleLists email list: error while adding user to SimpleLists account. " . $msg;
+                    \Drupal::logger('access_affinitygroup')->error($s);
+                  }
+                }
+                else {
+                  // Add the existing contact to list.
+                  $status = $simpleListsApi->updateUserToList($simpleListsId, strtok($simpleListsName, '@'), $msg);
+                  if (!$status) {
+                    \Drupal::logger('access_affinitygroup')->error("SimpleLists external email list: error while adding to $simpleListsName " . $msg);
+                  }
+                }
               }
-            }
-
-            \Drupal::logger('access_affinitygroup')->notice("Mailgun list: added $addedTotal to $listAddress " . $msg);
+              catch  (Exception $e) {
+              }
+            } // foreach
           }
+          \Drupal::logger('access_affinitygroup')->notice("Simplelists: added $addedTotal to $listAddress " . $msg);
         }
       }
       catch (Exception $e) {
-        \Drupal::logger('access_affinitygroup')->error("Mailgun list: Error while creating $listAddress " . $e->getMessage());
+        \Drupal::logger('access_affinitygroup')->error("Simplelists list: Error while creating $listAddress " . $e->getMessage());
       }
     }
   }
   else {
-    // Delete the mailgun list if exists.
+    // Unchecked box: Delete the simplelists external email list if exists.
     if ($simpleListsName !== "") {
       try {
-        $mailgunApi = new SimpleListsApi();
-        $response = $mailgunApi->deleteList($simpleListsName, $msg);
-        if ($response) {
-          $entity->set('field_mailgun_list', '');
-        }
-        showStatus($msg);
+        $simpleListsApi = new SimpleListsApi();
+        // $response = $simpleListsApi->deleteList(strtok($simpleListsName, '@'), $msg);
+        // if ($response) {
+        // $entity->set('field_ext_email_list', '');
+        // }
+        // showStatus($msg);
       }
       catch (Exception $e) {
-        \Drupal::logger('access_affinitygroup')->error("Mailgun list: Error while deleting $simpleListsName " . $e->getMessage());
+        \Drupal::logger('access_affinitygroup')->error("Simplelists email list: Error while deleting $simpleListsName " . $e->getMessage());
       }
     }
   }
@@ -633,15 +652,15 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       addBlockedAG($taxonomyId, $userDetails);
     }
     else {
-      // Case 2: AG getting deleted. Remove mailgun & constant contact lists.
+      // Case 2: AG getting deleted. Remove simplelists & constant contact lists.
       $simpleListsName = "";
-      $simpleListsNameA = $entity->get('field_mailgun_list')->getValue();
+      $simpleListsNameA = $entity->get('field_ext_email_list')->getValue();
       if (!empty($simpleListsNameA)) {
         $simpleListsName = $simpleListsNameA[0]['value'];
       }
       if ($simpleListsName !== "") {
-        $mailgunApi = new SimpleListsApi();
-        $mailgunApi->deleteList($simpleListsName, $msg);
+        $simpleListsApi = new SimpleListsApi();
+        $simpleListsApi->deleteList($simpleListsName, $msg);
       }
 
       if (!isCCEnabled()) {
