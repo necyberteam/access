@@ -16,6 +16,7 @@ use Drupal\key\KeyRepository;
 use Drupal\node\NodeInterface;
 use Gioni06\Gpt3Tokenizer\Gpt3Tokenizer;
 use Gioni06\Gpt3Tokenizer\Gpt3TokenizerConfig;
+use PhpParser\Node\Stmt\Foreach_;
 
 /**
  * Class AiReferencesGenerator.
@@ -75,6 +76,11 @@ class AiReferenceGenerator {
    * The prompt.
    */
   protected $prompt;
+
+  /**
+   * The Taxonomy array.
+   */
+  protected $termData;
 
   /**
    * Constructs a new AiReferencesGenerator object.
@@ -246,14 +252,15 @@ class AiReferenceGenerator {
     $terms = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadTree($vid);
     foreach ($terms as $term) {
       if ($depth === 0) {
-        $term_data[] = $term->name;
+        $term_data[$term->tid] = $term->name;
       }
       elseif ($depth > 0) {
         if ($term->depth == $depth) {
-          $term_data[] = $term->name;
+          $term_data[$term->tid] = $term->name;
         }
       }
     }
+    $this->termData = $term_data;
     $imploded_keywords = implode(' | ', $term_data);
 
     $prompt = 'For the contents within brackets: ({CONTENTS}) ';
@@ -265,6 +272,22 @@ class AiReferenceGenerator {
     $prompt = str_replace('{CONTENTS}', $contents, $prompt);
 
     $this->prompt = $prompt;
+  }
+
+  /**
+   *
+   */
+  public function taxonomyIdSuggested() {
+    $suggestion = $this->aiApiCall();
+    $suggestions = json_decode($suggestion);
+    $tag_suggestions = [];
+    foreach ($suggestions->highly as $item) {
+      $search = array_search($item, $this->termData);
+      if ($search) {
+        $tag_suggestions[] = $search;
+      }
+    }
+    return $tag_suggestions;
   }
 
   /**

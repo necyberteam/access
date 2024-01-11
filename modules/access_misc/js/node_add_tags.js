@@ -57,3 +57,33 @@ const buttonPressed = e => {
 for (let button of buttons) {
   button.addEventListener("click", buttonPressed);
 }
+
+
+// Re-enable form elements that are disabled for non-ajax situations.
+Drupal.behaviors.nodeAddTags = {
+  attach: function () {
+    // If ajax is enabled, we want to hide items that are marked as hidden in
+    // our example.
+    if (Drupal.ajax) {
+      if (set_tid.length > 0 && set_tid[0] == "_none") {
+        var tagWrapper = document.getElementById("field-tags-replace");
+        var suggested_tids = tagWrapper.getAttribute('data-suggest').split(', ');
+
+        if (suggested_tids != 0) {
+          var selectElement = document.getElementById("edit-field-tags");
+          var option684 = selectElement.querySelector('option[value="684"]');
+          option684.selected = true;
+
+          Array.from(suggested_tids).forEach(function (suggested_tid) {
+            if (selectElement.querySelector('option[value="' + suggested_tid + '"]').selected != true) {
+              selectElement.querySelector('option[value="' + suggested_tid + '"]').selected = true;
+              console.log(suggested_tid);
+            }
+          });
+        }
+
+      }
+    }
+  }
+};
+
