@@ -11,21 +11,21 @@ class SimpleListsApi {
   private $apiKey;
   const  MAX_ADDRESS_LEN = 60;
 
+  /**
+   *
+   */
   public function __construct() {
     try {
-      kint("in construct");
       $errmsg = NULL;
       $this->apiKey = '';
 
       $this->domain = 'list.connectci.org';
       $this->apiKey = \Drupal::service('key.repository')->getKey('simplelists')->getKeyValue();
-      kint("got key:".$this->apiKey.":");
 
       if (empty($this->apiKey)) {
         $errmsg = 'Simplelists key missing.';
       }
       $this->apiKey .= ':';
-      kint("done key:".$this->apiKey.":");
     }
     catch (\Exception $e) {
       $errmsg = 'Simplelists error: ' . $e->getMessage();
@@ -37,9 +37,9 @@ class SimpleListsApi {
       \Drupal::messenger()->addMessage($errmsg);
     }
   }
-
-  // Op is POST, GET, PUT.
-
+ public function getDomain() {
+    return $this->domain;
+ }
   /**
    * Returns curl obj
    *  $op: POST/GET/PUT/DELETE
@@ -149,10 +149,8 @@ class SimpleListsApi {
     }
   }
 
-  // Look for user and their list membership.
-
   /**
-   * Return id string or else NULL if not found.
+   * Return simplelists contact id string or else NULL if not found.
    */
   public function getUserIdFromEmail($userEmail, &$msg) {
     try {
@@ -176,6 +174,7 @@ class SimpleListsApi {
   }
 
   /**
+   * With a user email, get listnames for that user.
    * Set listNames if user found, and return simplelist user contact id.
    */
   public function getUserListNames($userEmail, &$listNames, &$msg) {
@@ -277,6 +276,14 @@ class SimpleListsApi {
       $msg = $e->getMessage();
       return TRUE;
     }
+  }
+
+  /**
+   *
+   */
+  public function deleteList($listName, &$msg) {
+    $msg = '';
+    return TRUE;
   }
 
   /**
