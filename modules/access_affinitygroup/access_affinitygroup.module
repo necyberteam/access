@@ -27,6 +27,7 @@
 
 use Drupal\access_affinitygroup\Plugin\AllocationsUsersImport;
 use Drupal\access_affinitygroup\Plugin\ConstantContactApi;
+use Drupal\access_affinitygroup\Plugin\SimpleListsApi;
 use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Access\AccessResult;
@@ -90,7 +91,9 @@ function access_affinitygroup_entity_view(array &$build, EntityInterface $entity
 
 /**
  * Implements hook_entity_presave().
- * Handles either
+ * Handles type=infrastructure_news or affinity_group.
+ * For affinity_group:
+ *  Handles either
  *  case 1) User clicked Join flag on Affinity Group:
  *    We call api to add user to corresponding email list.
  *
@@ -156,6 +159,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
         return;
       }
       $userDetails = User::load($userId);
+      subscribeToSimpleLists($taxonomyId, $userDetails, TRUE);
       subscribeToCCList($taxonomyId, $userDetails);
 
       // If present, remove this AG from this user's block list.
@@ -163,8 +167,14 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
     }
     else {
       // Case 2: Affinity group edit was saved by admin user.
+      // slug is a required field.
+      $x = $entity->get('field_group_slug')->getValue()[0]['value'];
+      $entity->set('field_group_slug', strtolower(trim($x)));
+
       update_ag_leader_roles($entity);
       add_ag_taxonomy_term($entity);
+
+      check_ext_email_list($entity);
 
       // Add list to Constant Contact if this has not already been done.
       // The list_id field will be set with Constant Contact's Id for this list.
@@ -379,6 +389,173 @@ function add_ag_taxonomy_term($entity) {
 }
 
 /**
+ * SubscribeToSimpleLists.
+ * If "external email" is in use, Add user to SimpleLists email list associated
+ * with the Affinity Group for which this taxonomyId is flaged by the user.
+ * (the user hit the Join button on  the AG page.)
+ *
+ * @param affinitygroup
+ * @param loaded user
+ * @param isSubscribe - true to subscribe, false to leave
+ *
+ * @return status
+ */
+function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
+  // Get the ag for this flag (that the user joined)
+  // in order to get the list email address.
+  $query = \Drupal::entityQuery('node');
+  $node_ids = $query
+    ->condition('field_affinity_group', $flagEntityId)
+    ->accessCheck(FALSE)
+    ->execute();
+  $aval = array_values($node_ids);
+  $nid = $aval[0];
+  $ag = Node::load($nid);
+  $simpleListsName = "";
+  $simpleListsNameA = $ag->get('field_ext_email_list')->getValue();
+  if (!empty($simpleListsNameA)) {
+    $simpleListsName = $simpleListsNameA[0]['value'];
+  }
+  showStatus("IN SUBSCRIBE, list name is :$simpleListsName:");
+  if (!empty($simpleListsName)) {
+
+    $msg = "";
+    $mailgunApi = new SimpleListsApi();
+
+    if ($isSubscribe) {
+      // Add a user to the list.
+      $msg = "";
+
+      // Check if user exists, if not, then create. If so, add to list if needed.
+      $status = FALSE;
+      $simpleListsId = $mailgunApi->getUserListNames($user->getEmail(), $listMemberships, $msg);
+      if (empty($simpleListsId)) {
+        $simpleListsId = $mailgunApi->addUser($user->id(), $user->getEmail(), 'fn', $user->getDisplayName(), $simpleListsName, $msg);
+        $listMemberships = '';
+      }
+
+      if (empty($simpleListId)) {
+        $s = "SimpleLists external email list: error while adding user to SimpleLists account. " . $msg;
+        \Drupal::logger('access_affinitygroup')->error($s);
+        showStatus($s);
+      }
+      else {
+        if (in_array($simpleListsName, $listMemberships)) {
+          $status = TRUE;
+          showStatus("User already on the list  :$simpleListsName:");
+        }
+        else {
+          $status = $mailgunApi->updateUserToList($simpleListsId, strtok($simpleListsName, '@'), $msg);
+          if (!$status) {
+            $s = "SimpleLists external email list: error while adding to $simpleListsName " . $msg;
+            \Drupal::logger('access_affinitygroup')->error($s);
+            showStatus($s);
+          }
+          else {
+            showStatus("User added to discussion email list: " . $simpleListsName);
+          }
+        }
+      }
+    }
+    else {
+      // Remove a user from the list.
+      $status = $mailgunApi->removeUserFromList($user->getEmail(), strtok($simpleListsName, '@'), $msg);
+      if (!$status) {
+        $s = "Simplelists external email: error while removing from $simpleListsName (" . $user->getEmail() . ")" . $msg;
+        \Drupal::logger('access_affinitygroup')->error($s);
+        // Removal fail silently, but do log.
+      }
+    }
+  }
+}
+
+/**
+ * See if we need to add a mailgun list.
+ * If adding a list, add the members of the affinity group to the list.
+ * Assume that field_mailgun_list is empty means no list.
+ */
+function check_ext_email_list($entity) {
+  $simpleListsName = "";
+  $simpleListsNameA = $entity->get('field_ext_email_list')->getValue();
+  if (!empty($simpleListsNameA)) {
+    $simpleListsName = $simpleListsNameA[0]['value'];
+  }
+  $isMailgunAllowed = $entity->get('field_use_ext_email_list')->getValue()[0]['value'];
+  if ($isMailgunAllowed) {
+    // Create the list if not already there. Nonempty field signifies list created.
+    // Use the slug field to name the list.
+    if ($simpleListsName === "") {
+      try {
+        $mailgunApi = new SimpleListsApi();
+
+        $slugA = $entity->get('field_group_slug')->getValue();
+        if (!empty($slugA)) {
+          $slug = $slugA[0]['value'];
+        }
+        if (empty($slug)) {
+          showStatus("Integrated mailing list not created. Please add a Short Name that can be used in an email address.");
+          return;
+        }
+        $listAddress = $mailgunApi->makeListAddress($slug);
+
+        // Msg + status returned.
+        // @todo might want to set longer title for description of this list.
+        $status = $mailgunApi->createList($slug, $msg);
+        showStatus("TMP status:" . $status . ": msg: " . $msg . ' ' . $listAddress);
+        showStatus('SimpleLists email list: ' . $msg . ' ' . $listAddress);
+
+        if ($status) {
+          $entity->set('field_ext_email_list', $listAddress);
+
+          // @todo @todo
+          return;
+
+          // Take the list of flagged members and add to the new Mailgun list in chunks of X.
+          $chunkSize = 50;
+          $term = $entity->get('field_affinity_group');
+          $agMembers = \Drupal::service('flag')->getFlaggingUsers($term->entity);
+          if (count($agMembers) > 0) {
+            $chunked = array_chunk($agMembers, $chunkSize);
+            $chunked = array_values($chunked);
+            kint($chunked);
+
+            $addedTotal = 0;
+            foreach ($chunked as $oneChunk) {
+              $status = $mailgunApi->addUsers($listAddress, $oneChunk, $msg, $addedCount);
+              $addedTotal += $addedCount;
+              if (!$status) {
+                \Drupal::logger('access_affinitygroup')->error("Mailgun list: error while adding at $addedTotal to $listAddress " . $msg);
+              }
+            }
+
+            \Drupal::logger('access_affinitygroup')->notice("Mailgun list: added $addedTotal to $listAddress " . $msg);
+          }
+        }
+      }
+      catch (Exception $e) {
+        \Drupal::logger('access_affinitygroup')->error("Mailgun list: Error while creating $listAddress " . $e->getMessage());
+      }
+    }
+  }
+  else {
+    // Delete the mailgun list if exists.
+    if ($simpleListsName !== "") {
+      try {
+        $mailgunApi = new SimpleListsApi();
+        $response = $mailgunApi->deleteList($simpleListsName, $msg);
+        if ($response) {
+          $entity->set('field_mailgun_list', '');
+        }
+        showStatus($msg);
+      }
+      catch (Exception $e) {
+        \Drupal::logger('access_affinitygroup')->error("Mailgun list: Error while deleting $simpleListsName " . $e->getMessage());
+      }
+    }
+  }
+}
+
+/**
  *
  */
 function ag_taxonomy_lookup($ag_title) {
@@ -445,6 +622,8 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       $userId = $currentUser->id();
       $userDetails = User::load($userId);
 
+      subscribeTosimpleLists($taxonomyId, $userDetails, FALSE);
+
       $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
       if (!empty($postJSON) && isCCEnabled()) {
         $cca = new ConstantContactApi();
@@ -454,7 +633,17 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       addBlockedAG($taxonomyId, $userDetails);
     }
     else {
-      // Case 2: AG getting deleted.
+      // Case 2: AG getting deleted. Remove mailgun & constant contact lists.
+      $simpleListsName = "";
+      $simpleListsNameA = $entity->get('field_mailgun_list')->getValue();
+      if (!empty($simpleListsNameA)) {
+        $simpleListsName = $simpleListsNameA[0]['value'];
+      }
+      if ($simpleListsName !== "") {
+        $mailgunApi = new SimpleListsApi();
+        $mailgunApi->deleteList($simpleListsName, $msg);
+      }
+
       if (!isCCEnabled()) {
         return;
       }
@@ -904,6 +1093,7 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
 
     // Attach javascript.
     $form['#attached']['library'][] = 'access_misc/node_add_tags';
+    $form['#validate'][] = 'access_affinitygroup_edit_validate';
   }
 
   if ($form_id == 'node_affinity_group_edit_form') {
@@ -1048,6 +1238,27 @@ function webform_submission_affinity_group_affinity_contact(&$form, FormStateInt
   $message .= '<p>Sent by ' . $form['elements']['name']['#value'] . '</p>';
   $pubDate = date('m/d/Y');
   emailToAffinityGroups($message, "$affinity_group", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
+}
+
+/**
+ * Validate fields before saving an affinity group.
+ * Slug (Short Name) field must be unique among affinity groups.
+ */
+function access_affinitygroup_edit_validate(&$form, FormStateInterface $form_state) {
+  $slug = $form_state->getValue('field_group_slug')[0]['value'];
+  $slug = strtolower(trim($slug));
+  $thisNid = $form_state->getformObject()->getEntity()->id();
+  $nidArray = \Drupal::entityQuery('node')
+    ->condition('field_group_slug', $slug)
+    ->condition('nid', $thisNid, '<>')
+    ->accessCheck(FALSE)
+    ->execute();
+
+  if (!empty($nidArray)) {
+    $nidArray = array_values($nidArray);
+    $ag = Node::load($nidArray[0]);
+    $form_state->setErrorByName('field_group_slug', "The Short Name must be unique, but $slug is already in use by " . $ag->getTitle());
+  }
 }
 
 // Email wrapper for affinity groups of category community.
