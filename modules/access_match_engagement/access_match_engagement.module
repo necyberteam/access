@@ -90,11 +90,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       }
     }
 
-    $add_tags = \Drupal::service('access_misc.addtags');
-    $output = $add_tags->getView();
-    $tag_label = t('Add Tags');
-    $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
-    $tag_summary = t('Select Tags');
     $form['field_tags_replace'] = [
       '#type' => 'container',
       '#attributes' => [
@@ -103,7 +98,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       ],
       '#weight' => 15,
     ];
-
 
     $form['field_tags_replace']['replace_button'] = [
       '#type' => 'button',
@@ -115,17 +109,23 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       ],
     ];
 
+    $form['field_tags_replace']['tag_list'] = [
+      '#markup' => "<div id='match-tag-list'>Press the button to get Suggested tags</div>",
+    ];
+
 
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
     $tag_label = t('Add Tags');
     $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
     $tag_summary = t('Select Tags');
-    $form['field_tags_replace']['node_add_tags'] = [
+
+    $form['node_add_tags'] = [
       '#markup' => "<div class='font-bold form-required'>$tag_label</div>
         <div class='tag-description'>$tag_description</div>
         <div id='tag-suggstions'></div>
         <details open class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
+      '#weight' => 15,
       '#allowed_tags' => [
         'button',
         'details',
@@ -323,16 +323,12 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
 function access_match_engagement_replace_section_callback(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
   $raw_data = $form_state->getUserInput();
   $body_filter = Xss::filter($raw_data['body'][0]['value']);
-  // $form['field_tags_replace']['replace_button']['#access'] = false;
-  $suggested_tag_ids = '690, 755';
-  if ($body_filter == 'nope') {
+  $suggested_tag_ids = '0';
+  if ($body_filter) {
     $llm = \Drupal::service('access_llm.ai_references_generator');
     $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
     $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
-    // $messenger = \Drupal::messenger();
-    // $messenger->addStatus($suggestions);
   }
-  // $form['field_tags']['#suffix'] = 'Boop</div>';
   $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;
 
   // Return the updated section.
