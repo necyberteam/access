@@ -1,5 +1,5 @@
 #edit-field-tags-wrapper {
-  /* display: none; */
+  display: none;
 }
 
 details.tags {
@@ -22,6 +22,7 @@ details.tags summary {
   display: inline-block;
   border: 1px solid #232323;
   cursor: pointer;
+  scroll-margin-top: 100px;
   padding: 5px;
   margin: 5px;
 }

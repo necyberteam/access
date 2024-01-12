@@ -113,7 +113,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       '#markup' => "<div id='match-tag-list'>Press the button to get Suggested tags</div>",
     ];
 
-
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
     $tag_label = t('Add Tags');
@@ -324,10 +323,15 @@ function access_match_engagement_replace_section_callback(array &$form, \Drupal\
   $raw_data = $form_state->getUserInput();
   $body_filter = Xss::filter($raw_data['body'][0]['value']);
   $suggested_tag_ids = '0';
-  if ($body_filter) {
+  if (strlen($body_filter) >= 400) {
     $llm = \Drupal::service('access_llm.ai_references_generator');
     $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
     $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
+  }
+  else {
+    $form['field_tags_replace']['tag_list'] = [
+      '#markup' => "<div id='match-tag-list'>Fill in the description above to get suggested tags. Your description must be over 400 characters to get a suggestion.</div>",
+    ];
   }
   $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;
 
