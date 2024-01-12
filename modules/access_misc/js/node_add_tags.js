@@ -29,7 +29,6 @@ Drupal.behaviors.nodeAddTags = {
 
     /* Handle tag selection using the node_add_tags view */
     function selectElement(id) {
-      console.log(selected);
       let element = document.getElementById(id);
       //element.value = valueToSelect;
       Array.from(element.options).forEach(function (option) {
@@ -50,9 +49,11 @@ Drupal.behaviors.nodeAddTags = {
         selectedElements.forEach(element => {
           textArray.push(element.textContent.trim());
         });
-        var divElement = document.getElementById('match-tag-list');
-        // Replace the text content
-        divElement.textContent = 'Selected Tags: ' + textArray.join(", ");
+        if (textArray.length > 0) {
+          var divElement = document.getElementById('match-tag-list');
+          // Replace the text content
+          divElement.textContent = 'Selected Tags: ' + textArray.join(", ");
+        }
       });
     }
 
