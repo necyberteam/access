@@ -87,7 +87,7 @@ Drupal.behaviors.nodeAddTags = {
 
     const buttons = document.getElementsByClassName('tags-select');
     for (let button of buttons) {
-      button.addEventListener("click", buttonPressed);
+      button.addEventListener("click", buttonPressed, false);
     }
 
   }
