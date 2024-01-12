@@ -448,7 +448,6 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
         if (empty($simpleListsId)) {
           $s = "SimpleLists email list: error while adding user to SimpleLists account. " . $msg;
           \Drupal::logger('access_affinitygroup')->error($s);
-          showStatus($s);
           return;
         }
       }
@@ -461,14 +460,12 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
           // Add the existing contact to list.
           $status = $simpleListsApi->updateUserToList($simpleListsId, strtok($simpleListsName, '@'), $msg);
           if (!$status) {
-            $s = "SimpleLists external email list: error while adding to $simpleListsName " . $msg;
-            \Drupal::logger('access_affinitygroup')->error($s);
-            showStatus($s);
+            \Drupal::logger('access_affinitygroup')->error("SimpleLists external email list: error while adding to $simpleListsName " . $msg);
             return;
           }
         }
       }
-      showStatus("You have been added to discussion email list: " . $simpleListsName);
+      \Drupal::logger('access_affinitygroup')->info("Simplelists $simpleListsName added " . $user->getEmail() . "-" .$user->id() . " to:  . $simpleListsName");
     }
     else {
       // Remove contact from the list.
@@ -522,7 +519,7 @@ function check_ext_email_list($entity) {
         if ($status) {
           $entity->set('field_ext_email_list', $listAddress);
 
-          // Take the list of flagged members and add to the new simplelists
+          // Take the list of flagged members and add to the new simplelists.
           $term = $entity->get('field_affinity_group');
           $agMembers = \Drupal::service('flag')->getFlaggingUsers($term->entity);
 
@@ -571,7 +568,7 @@ function check_ext_email_list($entity) {
               }
             } // foreach
           }
-          // everything ok after list create and contact adds.
+          // Everything ok after list create and contact adds.
           showStatus("Simplelists: $newCount new contacts;  $listAddCount added to $listAddress.");
         }
       }
@@ -1150,11 +1147,15 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
   }
 
   if ($form_id == 'node_affinity_group_edit_form') {
+
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
     if (!in_array('administrator', $roles)) {
       $form['field_cider_resources']['#disabled'] = TRUE;
+      $form['field_use_ext_email_list']['#disabled'] = TRUE;
+      $form['field_group_slug']['#disabled'] = TRUE;
     }
+    $form['field_ext_email_list']['#disabled'] = TRUE;
 
     // Only AGs set to Community should see Reccomended Ciders;
     // only AGs set to ACCESS RP category should see Associated Ciders.

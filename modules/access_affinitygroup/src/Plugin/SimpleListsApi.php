@@ -21,7 +21,7 @@ class SimpleListsApi {
       $errmsg = NULL;
       $this->apiKey = '';
 
-      $this->domain = 'list.connectci.org';
+      $this->domain = 'lists.connectci.org';
       $this->apiKey = \Drupal::service('key.repository')->getKey('simplelists')->getKeyValue();
 
       if (empty($this->apiKey)) {
@@ -69,7 +69,9 @@ class SimpleListsApi {
    */
   public function createList($listSlug, &$msg) {
     try {
-      $params = 'name=' . $listSlug . '&subject_prefix=ACCESS ' . $listSlug . ': ';
+      // moderate=6: only allow users of list restrict_post_lists to post
+      $params="name=$listSlug&subject_prefix=$listSlug:&moderate=6&archive_enabled=true&restrict_post_lists=$listSlug";
+
       $ch = $this->makeCurl('POST', 'lists/', $params);
       $response = curl_exec($ch);
       curl_close($ch);
