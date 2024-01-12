@@ -51,8 +51,12 @@ Drupal.behaviors.nodeAddTags = {
         });
         if (textArray.length > 0) {
           var divElement = document.getElementById('match-tag-list');
+          var textTagListing = '';
+          for (let textArrayItem of textArray) {
+            textTagListing = textTagListing + '<a href="#tag-' + textArrayItem + '">' + textArrayItem  + '</a>, '
+          }
           // Replace the text content
-          divElement.textContent = 'Selected Tags: ' + textArray.join(", ");
+          divElement.innerHTML = '<strong>Selected Tags:</strong> ' + textTagListing;
         }
       });
     }
