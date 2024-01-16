@@ -52,3 +52,9 @@ details.tags summary {
   flex-wrap: wrap;
 }
 
+@media screen and (min-width: 900px) {
+  details.tags {
+    margin-right: -250px;
+  }
+}
+

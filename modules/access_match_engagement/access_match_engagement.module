@@ -99,23 +99,42 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       '#weight' => 15,
     ];
 
-    $form['field_tags_replace']['replace_button'] = [
+    $form['field_tags_replace']['field_suggest'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => [
+          'bg-light-teal',
+          'my-5',
+          'p-5'
+        ]
+      ],
+    ];
+
+    $form['field_tags_replace']['field_suggest']['tag_list'] = [
+      '#markup' => "<div id='match-tag-list' class='mb-3'>Get tag suggestions based on your description and then curate as necessary.</div>",
+    ];
+    $form['field_tags_replace']['field_suggest']['replace_button'] = [
       '#type' => 'button',
       '#value' => t('Suggest Tags'),
       '#limit_validation_errors' => array(),
+      '#attributes' => [
+        'class' => [
+          'ml-0'
+        ],
+      ],
       '#ajax' => [
         'callback' => 'access_match_engagement_replace_section_callback',
         'wrapper' => 'field-tags-replace',
       ],
     ];
-
-    $form['field_tags_replace']['tag_list'] = [
-      '#markup' => "<div id='match-tag-list'>Press the button to get Suggested tags</div>",
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
     ];
+
 
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
-    $tag_label = t('Add Tags');
+    $tag_label = t('Tags');
     $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
     $tag_summary = t('Select Tags');
 
@@ -123,7 +142,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       '#markup' => "<div class='font-bold form-required'>$tag_label</div>
         <div class='tag-description'>$tag_description</div>
         <div id='tag-suggstions'></div>
-        <details open class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
+        <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
         'button',
@@ -327,10 +346,15 @@ function access_match_engagement_replace_section_callback(array &$form, \Drupal\
     $llm = \Drupal::service('access_llm.ai_references_generator');
     $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
     $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
   }
   else {
-    $form['field_tags_replace']['tag_list'] = [
-      '#markup' => "<div id='match-tag-list'>Fill in the description above to get suggested tags. Your description must be over 400 characters to get a suggestion.</div>",
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "<div class='match-tag-list bg-blue-200 text-sky-900 my-5 p-5'>
+                    <strong class='text-sky-900'>Fill in the description above to get suggested tags.</strong><br />
+                    Your description must be over 400 characters to get a suggestion.</div>",
     ];
   }
   $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;

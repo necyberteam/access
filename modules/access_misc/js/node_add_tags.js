@@ -50,13 +50,13 @@ Drupal.behaviors.nodeAddTags = {
           textArray.push(element.textContent.trim());
         });
         if (textArray.length > 0) {
-          var divElement = document.getElementById('match-tag-list');
+          var divElement = document.getElementById('tag-suggstions');
           var textTagListing = '';
           for (let textArrayItem of textArray) {
-            textTagListing = textTagListing + '<a href="#tag-' + textArrayItem + '">' + textArrayItem  + '</a>, '
+            textTagListing = textTagListing + '<a class="font-normal text-sky-900" href="#tag-' + textArrayItem + '">' + textArrayItem  + '</a>, '
           }
           // Replace the text content
-          divElement.innerHTML = '<strong>Selected Tags:</strong> ' + textTagListing;
+          divElement.innerHTML = '<div class="bg-slate-100 p-5 my-5"><strong>Selected Tags:</strong><br/>' + textTagListing + '</div>';
         }
       });
     }
