@@ -23,17 +23,20 @@ class AccordionShortcode extends ShortcodeBase {
     $attributes = $this->getAttributes([
       'summary' => '',
       'text' => '',
+      'color' => '',
     ],
       $attributes
     );
 
     $summary = $attributes['summary'];
     $text = $attributes['text'];
+    $color = $attributes['color'];
 
     $output = [
       '#theme' => 'shortcode_accordion',
       '#summary' => $summary,
       '#text' => $text,
+      '#color' => ($color == '') ? 'bg-light-teal' : $color,
     ];
 
     return $this->render($output);
@@ -44,12 +47,12 @@ class AccordionShortcode extends ShortcodeBase {
    */
   public function tips($long = FALSE) {
     $output = [];
-    $output[] = '<p><strong>' . $this->t('[accordion summary="Question" text="Your text here"][/accordion]') . '</strong>';
+    $output[] = '<p><strong>' . $this->t('[accordion summary="Question" text="Your text here" color="bg-light-teal"][/accordion]') . '</strong>';
     if ($long) {
-      $output[] = $this->t('Builds an accordion with summary and text.') . '</p>';
+      $output[] = $this->t('Builds an accordion with summary, text and color.') . '</p>';
     }
     else {
-      $output[] = $this->t('Builds an accordion with summary and text.') . '</p>';
+      $output[] = $this->t('Builds an accordion with summary, text and color.') . '</p>';
     }
 
     return implode(' ', $output);
