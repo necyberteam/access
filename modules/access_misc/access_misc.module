@@ -197,3 +197,20 @@ function access_misc_mail($key, &$message, $params) {
       break;
   }
 }
+
+/**
+ * Implements hook_cron().
+ */
+function access_misc_cron() {
+  // Run this cron job every day at 3am.
+  $currentTime = \Drupal::time()->getCurrentTime();
+  $hour = date('H', $currentTime);
+  $min = date('i', $currentTime);
+
+  // Cron runs every 10 minutes
+  if ($hour == 3 && $min < 10) {
+    // Run the ingest of ACCESS organizations.
+    \Drupal::service('access_misc.import_access_orgs')->ingest();
+  }
+
+}
