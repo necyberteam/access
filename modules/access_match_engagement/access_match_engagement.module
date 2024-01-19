@@ -10,6 +10,7 @@ use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
@@ -54,7 +55,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     ];
 
     // Make text boxes stretch full width and give labels bold/width.
-    $form['#attributes']['class'][] = 'prose';
+    $form['#attributes']['class'][] = 'prose mb-10';
     // Make details top summary text bold.
     $form['#attributes']['class'][] = '[&_summary]--font-bold';
     $form['#attributes']['class'][] = '[&_legend]--font-bold';
@@ -65,14 +66,58 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       }
     }
 
+    $form['field_tags_replace'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => 'field-tags-replace',
+        'data-suggest' => '0',
+      ],
+      '#weight' => 15,
+    ];
+
+    $form['field_tags_replace']['field_suggest'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => [
+          'bg-light-teal',
+          'my-5',
+          'p-5'
+        ]
+      ],
+    ];
+
+    $form['field_tags_replace']['field_suggest']['tag_list'] = [
+      '#markup' => "<div id='match-tag-list' class='mb-3'>Get tag suggestions based on your description and then curate as necessary.</div>",
+    ];
+    $form['field_tags_replace']['field_suggest']['replace_button'] = [
+      '#type' => 'button',
+      '#value' => t('Suggest Tags'),
+      '#limit_validation_errors' => array(),
+      '#attributes' => [
+        'class' => [
+          'ml-0'
+        ],
+      ],
+      '#ajax' => [
+        'callback' => 'access_match_engagement_replace_section_callback',
+        'wrapper' => 'field-tags-replace',
+      ],
+    ];
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+
+
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
-    $tag_label = t('Add Tags');
+    $tag_label = t('Tags');
     $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
     $tag_summary = t('Select Tags');
+
     $form['node_add_tags'] = [
       '#markup' => "<div class='font-bold form-required'>$tag_label</div>
-        <div>$tag_description</div>
+        <div class='tag-description'>$tag_description</div>
+        <div id='tag-suggstions'></div>
         <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
@@ -192,7 +237,6 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       $form['field_lessons_learned']['#access'] = FALSE;
       $form['field_overall_results']['#access'] = FALSE;
     }
-    // kint($form['moderation_state']);
 
     if (!in_array('administrator', $roles) && !in_array('match_sc', $roles)) {
       $form['field_email_user']['#access'] = FALSE;
@@ -265,6 +309,34 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     // Custom Submit handler.
     $form['actions']['submit']['#submit'][] = 'access_match_engagement_submit_function';
   }
+}
+
+/**
+ * Ajax callback function to replace the section with '#markup'.
+ */
+function access_match_engagement_replace_section_callback(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  $raw_data = $form_state->getUserInput();
+  $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  $suggested_tag_ids = '0';
+  if (strlen($body_filter) >= 400) {
+    $llm = \Drupal::service('access_llm.ai_references_generator');
+    $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
+    $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+  }
+  else {
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "<div class='match-tag-list bg-blue-200 text-sky-900 my-5 p-5'>
+                    <strong class='text-sky-900'>Fill in the description above to get suggested tags.</strong><br />
+                    Your description must be over 400 characters to get a suggestion.</div>",
+    ];
+  }
+  $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;
+
+  // Return the updated section.
+  return $form['field_tags_replace'];
 }
 
 /**

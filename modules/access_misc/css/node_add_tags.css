@@ -22,6 +22,7 @@ details.tags summary {
   display: inline-block;
   border: 1px solid #232323;
   cursor: pointer;
+  scroll-margin-top: 100px;
   padding: 5px;
   margin: 5px;
 }
@@ -49,5 +50,11 @@ details.tags summary {
 .view-node-add-tags .view-content {
   display: flex;
   flex-wrap: wrap;
+}
+
+@media screen and (min-width: 900px) {
+  details.tags {
+    margin-right: -250px;
+  }
 }
 
