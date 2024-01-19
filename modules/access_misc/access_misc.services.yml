@@ -6,3 +6,10 @@ services:
   access_misc.addtags:
     class: Drupal\access_misc\Plugin\NodeAddTags
     arguments: ['@renderer']
+
+  access_misc.import_access_orgs:
+    class: Drupal\access_misc\Services\ImportAccessOrgs
+    arguments: ['%access_misc.verbose%']
+
+parameters:
+  access_misc.verbose: FALSE
