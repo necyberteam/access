@@ -65,12 +65,14 @@ class SimpleListsApi {
 
   /**
    * Create the list slug@domain
+   *  agTitle is used in the group email footer with the unsubscribe link.
    *  Return boolean status. Fills $msg.
    */
-  public function createList($listSlug, &$msg) {
+  public function createList($listSlug, $agTitle, &$msg) {
     try {
-      // moderate=6: only allow users of list restrict_post_lists to post
-      $params="name=$listSlug&subject_prefix=$listSlug:&moderate=6&archive_enabled=true&restrict_post_lists=$listSlug";
+      // moderate=6: only allow users of list restrict_post_lists to post.
+      $params = "name=$listSlug&subject_prefix=$listSlug:&moderate=6&archive_enabled=true&restrict_post_lists=$listSlug";
+      $params .= "&message_footer_html=<p>_ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _ _<br><br>You are receiving this message through the $agTitle Affinity Group. To unsubscribe from this email list, <a href=\$UNSUBSCRIBE>click here</a>. To manage your Affinity Group memberships, please use the ACCESS Support Portal or your Connect CI portal.</p>";
 
       $ch = $this->makeCurl('POST', 'lists/', $params);
       $response = curl_exec($ch);

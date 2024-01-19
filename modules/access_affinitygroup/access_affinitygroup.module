@@ -465,7 +465,7 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
           }
         }
       }
-      \Drupal::logger('access_affinitygroup')->info("Simplelists $simpleListsName added " . $user->getEmail() . "-" .$user->id() . " to:  . $simpleListsName");
+      \Drupal::logger('access_affinitygroup')->info("Simplelists $simpleListsName added " . $user->getEmail() . "-" . $user->id() . " to:  . $simpleListsName");
     }
     else {
       // Remove contact from the list.
@@ -513,7 +513,7 @@ function check_ext_email_list($entity) {
         $listAddress = $simpleListsApi->makeListAddress($slug);
 
         // Msg + status returned. Here, slug is set to normalized name.
-        $status = $simpleListsApi->createList($slug, $msg);
+        $status = $simpleListsApi->createList($slug, $entity->getTitle(), $msg);
         showStatus('New simpleLists email list: ' . $msg . ' ' . $listAddress);
 
         if ($status) {
