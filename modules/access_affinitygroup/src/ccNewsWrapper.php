@@ -222,6 +222,15 @@ TOPEXTRA;
     PUBDATE;
   }
 
+  $websiteButtonDisplay = '';
+  if ($newsUrl != NULL) {
+    $websiteButtonDisplay = <<<WEBSITEBUTTONHTML
+      <div style="padding-top:10px;padding-bottom:15px;">
+        <a href="$newsUrl" rel="nofollow noopener noreferrer" class="view-on-website-btn">VIEW ON WEBSITE</a>
+      </div>
+    WEBSITEBUTTONHTML;
+  }
+
   $newsItem = <<<SINGLENEWS
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
     <tr>
@@ -237,14 +246,7 @@ TOPEXTRA;
               <p style="margin: 0;">
                 <br>
               </p>
-
-              <div style="padding-top:10px;padding-bottom:15px;">
-                <a href="$newsUrl" rel="nofollow noopener noreferrer"
-                        class="view-on-website-btn">
-                          VIEW ON WEBSITE
-                  </a>
-              </div>
-
+              $websiteButtonDisplay
             </td>
           </tr>
         </table>
