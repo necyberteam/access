@@ -9,13 +9,13 @@
  * newsTitle: line at the top
  * pubDate: date string to be used with [published: xxxx]
  * agNames: list of Affinity Group names for the 'You are receiving this email through...'
- * newsUrl: link for 'View on website' button
+ * newsUrl: link for 'View on website' button.
  *
- * todo: possible refactor to combine with access theme template code.
+ * @todo possible refactor to combine with access theme template code.
  */
 
 /**
- * newsBody: the next text
+ * NewsBody: the next text
  * newsTitle: headline
  * pubDate: date to display
  * agNames: array of affinity group names for top line
@@ -32,7 +32,7 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
   }
   $agText = 'You are receiving this email through the ' . $agText . ' Affinity Group.';
 
-  $pubDateDisplay = null;
+  $pubDateDisplay = NULL;
   if ($pubDate) {
     $pubDateDisplay = <<<PUBDATE
         <table width="100%" border="0"
@@ -72,6 +72,16 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
             </tbody>
         </table>
     LOGOHTML;
+  }
+
+  $websiteButtonDisplay = '';
+  if ($newsUrl != NULL) {
+    $websiteButtonDisplay = <<<WEBSITEBUTTONHTML
+        <div style="line-height:20px;min-height:20px;" class="spacer"> </div>
+        <div style="text-align:left; padding-left: 40px;padding-top:10px;padding-bottom:15px;">
+            <a href="$newsUrl" rel="nofollow noopener noreferrer" class="view-on-website-btn">VIEW ON WEBSITE</a>
+        </div>
+    WEBSITEBUTTONHTML;
   }
 
   // HTML with values for newsBody, newsTitle, pubdate and agText inserted.
@@ -405,17 +415,7 @@ function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl
                                                                                           </tr>
                                                                                       </tbody>
                                                                                   </table>
-
-                                                                                  <div style="line-height:20px;min-height:20px;"
-                                                                                      class="spacer"> </div>
-
-                                                                                  <div style="text-align:left; padding-left: 40px;padding-top:10px;padding-bottom:15px;">
-                                                                                    <a href="$newsUrl" rel="nofollow noopener noreferrer"
-                                                                                      class="view-on-website-btn">
-                                                                                      VIEW ON WEBSITE
-                                                                                    </a>
-                                                                                  </div>
-
+                                                                                  $websiteButtonDisplay
                                                                                   <div style="min-height:30px;line-height:30px;"
                                                                                       class="spacer"> </div>
                                                                               </td>
