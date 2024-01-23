@@ -330,7 +330,7 @@ function weeklyNewsReport($noSend) {
 
     $wrapper = new EmailWrapper();
     $newsHTML = newsRangeView($d1, $d2, $utmCampaign);
-    $sectionHeader = $emailWrapper->sectionHeadHTML("The ACCESS Support Digest // " . $dtTomorrow->format('F j, Y'));
+    $sectionHeader = $wrapper->sectionHeadHTML("The ACCESS Support Digest // " . $dtTomorrow->format('F j, Y'));
     $newsHTML = $sectionHeader . $newsHTML;
     Drupal::logger('cron_accessnews')->notice('Digest: news from: ' . $d1 . ' to: ' . $d2);
 
@@ -347,7 +347,7 @@ function weeklyNewsReport($noSend) {
     Drupal::logger('cron_accessnews')->notice('Digest: events from: ' . $d1 . ' to: ' . $d2);
     $eventHTML = eventsRangeView($d1, $d2, $utmCampaign);
 
-    $emailHTML = $emailWrapper->ccNewsRollupHTML($newsHTML, $eventHTML);
+    $emailHTML = $wrapper->ccNewsRollupHTML($newsHTML, $eventHTML);
 
     // Create constant contact campaign. this does not send it.
     $campaignName = uniqid('Access Digest: ' . $dtTomorrow->format('n/j/y') . ' ', FALSE);

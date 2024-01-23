@@ -503,7 +503,7 @@ SECTIONHEADHTML;
       $body
       </div>
       </div>";
-    return itemHTML($title, $main, $articleUrl, "Read more");
+    return $this->itemHTML($title, $main, $articleUrl, "Read more");
   }
 
   /**
@@ -514,7 +514,7 @@ SECTIONHEADHTML;
         <div class=\"digest-news-text\">$eventDate</div>
         <div class=\"digest-news-text\">$description</div>
       </div>";
-    return itemHTML($title, $main, $articleUrl, "Read more");
+    return $this->itemHTML($title, $main, $articleUrl, "Read more");
   }
 
   /**
