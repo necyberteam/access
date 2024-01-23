@@ -5,33 +5,14 @@ namespace Drupal\access_affinitygroup\Plugin;
 /**
  * @file
  * Returns the HTML to send to Constant Contact.
- * This is the email template for affinity groups in the Community category.
+ * Email templates for affinity groups in the Community category or the ACCESS_RP
+ * category. Used in emails to Affinity groups sent by coordinators, broadcast of
+ * events and announcements, and for the Access Digest.
  *
- * NewsBody: the html for the main part of the message
- * newsTitle: line at the top
- * pubDate: date string to be used with [published: xxxx]
- * agNames: list of Affinity Group names for the 'You are receiving this email through...'
- * newsUrl: link for 'View on website' button.
- *
- * @todo possible refactor to combine with access theme template code.
+ * Note: this code refers to "news" which has since been renamed to "announcements" on the website.
+ * The website now has "ACCESS News", which are articles suggested by community and written by communications
+ * team, and "announcenments", which anyone can submit for approval. We deal with the latter here.
  */
-  /**
-   * @file
-   * Returns the HTML to send to Constant Contact.
-   *
-   * This is the Access Support email template.
-   * A different file contains the template used for news+events from Affinity Groups
-   * of the Community category.
-   * Using this template, we send 2 types of emails:
-   *  a) the weekly digest of news and event (aka "rollup" in the code)
-   *  b) an individual news item or event "broadcast" as  email to an affinity group (perhaps multiple; not decided)
-   *
-   * Note: this code refers to "news" which has since been renamed to "announcements" on the website.
-   * The website now has "ACCESS News", which are articles suggested by community and written by communications
-   * team, and "announcenments", which anyone can submit for approval. We deal with the latter here.
-   */
-
-
 /**
  *
  */
@@ -42,7 +23,7 @@ class EmailWrapper {
    * newsTitle: headline
    * pubDate: date to display
    * agNames: array of affinity group names for top line
-   * newsUrl: for button link to news item
+   * newsUrl: for button link to news item. If null, no button.
    * logoUrl: url for logo image, or null for none.
    */
   public function ccCommunityNewsHTML($newsBody, $newsTitle, $pubDate, $agNames, $newsUrl, $logoUrl) {
@@ -466,6 +447,7 @@ EMAILTEXT;
     // note: EMAILTEXT must be to the left column-wise of the last tag (php)
     return $emailText;
   }
+
   /**
    * Used in digest (announcements/events rollup).
    */
@@ -490,6 +472,7 @@ EMAILTEXT;
       </tr>
     </table>
 SECTIONHEADHTML;
+    // note: SECTIONHEADHTML must be to the left column-wise of the last tag (php)
     return $sectionHead;
   }
 
@@ -521,7 +504,7 @@ SECTIONHEADHTML;
    * Used in announcements/events digest - each announcement or event item
    * with a link at the bottom to the event.
    */
-  public function itemHTML($titleText, $main, $itemUrl, $itemLinkText) {
+  private function itemHTML($titleText, $main, $itemUrl, $itemLinkText) {
     $title = $this->titleHTML($titleText);
     $article = <<<ARTICLEHTML
   <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
@@ -550,7 +533,6 @@ SECTIONHEADHTML;
                   </tr>
                 </tbody>
               </table>
-
           </td>
         </tr>
       </table>
@@ -588,7 +570,7 @@ ARTICLEHTML;
     </tr>
   </table>
 DIVIDERHTML;
-    // Previous line text marker must be positioned to left of end of html.
+    // Note: the previous line text marker must be positioned to left of end of html.
     return $divider;
   }
 
@@ -597,16 +579,16 @@ DIVIDERHTML;
    */
   public function ccNewsRollupHTML($news, $events) {
     $newsBody = '<div class="access-news-rollup-email">'
-    . '<div class="access-news-rollup-news">' . $news . '</div>'
-    . $this->dividerHTML()
-    . '<div class="access-news-rollup-events">' . $events . '</div>'
-    . $this->dividerHTML()
-    . $this->sectionHeadHTML("Join Affinity Groups")
-    . $this->ccRollupBottomStatic1()
-    . $this->dividerHTML()
-    . $this->sectionHeadHTML("Share with the ACCESS Community")
-    . $this->ccRollupBottomStatic2()
-    . '</div>';
+      . '<div class="access-news-rollup-news">' . $news . '</div>'
+      . $this->dividerHTML()
+      . '<div class="access-news-rollup-events">' . $events . '</div>'
+      . $this->dividerHTML()
+      . $this->sectionHeadHTML("Join Affinity Groups")
+      . $this->ccRollupBottomStatic1()
+      . $this->dividerHTML()
+      . $this->sectionHeadHTML("Share with the ACCESS Community")
+      . $this->ccRollupBottomStatic2()
+      . '</div>';
 
     return $this->ccNewsCommonHTML($newsBody, '');
   }
@@ -630,29 +612,29 @@ DIVIDERHTML;
 
     // Line at the top that lists AG groups.
     $topExtra = <<<TOPEXTRA
-  <table style="background-color:#1a5b6e;table-layout:fixed;" width="100%" border="0" cellpadding="0" cellspacing="0"  bgcolor="#1a5b6e">
-    <tbody>
-      <tr>
-        <td style="width:100%;" align="center" valign="top ">
-          <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed; ">
-            <tbody>
-              <tr>
-                <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;
+    <table style="background-color:#1a5b6e;table-layout:fixed;" width="100%" border="0" cellpadding="0" cellspacing="0"  bgcolor="#1a5b6e">
+      <tbody>
+        <tr>
+          <td style="width:100%;" align="center" valign="top ">
+            <table width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed; ">
+              <tbody>
+                <tr>
+                  <td style="text-align:left;font-family:Arial, Verdana, Helvetica, sans-serif;color:#3E3E3E;font-size:14px;
                           line-height:1.2;display:block;word-wrap:break-word;"
-                  align="left" valign="top">
-                  <p style="margin:0;padding:5px;">
-                    <span style="color:rgb(255, 255, 255);">$agText</span>
-                  </p>
-                </td>
-              </tr>
-            </tbody>
-          </table>
-        </td>
-      </tr>
-    </tbody>
-  </table>
-TOPEXTRA;
-
+                    align="left" valign="top">
+                    <p style="margin:0;padding:5px;">
+                      <span style="color:rgb(255, 255, 255);">$agText</span>
+                    </p>
+                  </td>
+                </tr>
+              </tbody>
+            </table>
+          </td>
+        </tr>
+      </tbody>
+    </table>
+  TOPEXTRA;
+    // Note: the previous line text marker must be positioned to left of end of html.
     $pubDateDisplay = '';
     if ($pubDate) {
       $pubDateDisplay = <<<PUBDATE
@@ -670,6 +652,7 @@ TOPEXTRA;
         </tbody>
       </table>
     PUBDATE;
+      // Note: the previous line text marker must be positioned to left of end of html.
     }
 
     $websiteButtonDisplay = '';
@@ -682,28 +665,28 @@ TOPEXTRA;
     }
 
     $newsItem = <<<SINGLENEWS
-  <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
-    <tr>
-      <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
-        <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
-          <tr>
-            <td class="text_content-cell content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
+      <table class="layout layout--1-column" style="table-layout: fixed;" width="100%" border="0" cellpadding="0" cellspacing="0">
+        <tr>
+          <td class="column column--1 scale stack" style="width:=65%;" align="center" valign="top">
+            <table class="text text--article text--padding-vertical" width="100%" border="0" cellpadding="0" cellspacing="0" style="table-layout:fixed;">
+              <tr>
+                <td class="text_content-cell content-padding-horizontal" style="text-align: left; font-family:Roboto,sans-serif; color: #4d4d4d;
                       font-size: 14px; line-height: 1.2; display: block; word-wrap: break-word; padding: 20px 40px 10px 40px;" align="left" valign="top">
-              $titleDisplay
-              <br>
-              $pubDateDisplay
-              <span style="font-size: 14px;">$main</span>
-              <p style="margin: 0;">
+                $titleDisplay
                 <br>
-              </p>
-              $websiteButtonDisplay
-            </td>
-          </tr>
-        </table>
-      </td>
-    </tr>
-  </table>
-SINGLENEWS;
+                $pubDateDisplay
+                <span style="font-size: 14px;">$main</span>
+                <p style="margin: 0;">
+                <br>
+                </p>
+                $websiteButtonDisplay
+                </td>
+              </tr>
+            </table>
+          </td>
+        </tr>
+      </table>
+    SINGLENEWS;
     // Previous line text marker must positioned to the left of end html.
     return $this->ccNewsCommonHTML($newsItem, $topExtra);
   }
@@ -711,7 +694,7 @@ SINGLENEWS;
   /**
    * News or event title formatting.
    */
-  public function titleHTML($titleText) {
+  private function titleHTML($titleText) {
     $t = <<<TITLE
     <h3 style="font-family:Roboto,sans-serif; color: #f07537; font-size: 18px; font-weight: bold; margin: 0; padding: 0px 0px 8px 0px">
       $titleText
@@ -720,15 +703,11 @@ SINGLENEWS;
     return ($t);
   }
 
-  /* style="background-color:#ffc42d;width:inherit;border-radius:2px;border-spacing:0;border:none;"
-  border="0" cellpadding="0" cellspacing="0" bgcolor="#ffc42d">
-   */
-
   /**
    * Returns complete url with host and full path
    * we assume all of our images are in the sites/default/files/inline_images dir.
    */
-  public function imageUrl($imageFileName) {
+  private function imageUrl($imageFileName) {
     $uri = 'public://inline-images/' . $imageFileName;
     return (\Drupal::service('file_url_generator')->generateAbsoluteString($uri));
   }
@@ -737,7 +716,7 @@ SINGLENEWS;
    * Access Constant Contact Template wrapping common to broadcast news and events,
    * and also the weekly news+events rollup.
    */
-  public function ccNewsCommonHTML($newsBody, $topExtra) {
+  private function ccNewsCommonHTML($newsBody, $topExtra) {
     $imgLogo = $this->imageUrl('access_support_masthead.jpg');
     $fbIcon = $this->imageUrl('circleIconFacebook.png');
     $twIcon = $this->imageUrl('circleIconTwitter.png');
@@ -745,11 +724,11 @@ SINGLENEWS;
     $nsfLogo = ACCESS_SUPPPORT_URL . '/themes/custom/accesstheme/assets/NSF_4-Color_bitmap_Logo_350x350.png';
 
     $emailText = <<<EMAILTEXT1
-  <html lang="en-US">
-  <head>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
-    <style type="text/css" data-premailer="ignore">
+    <html lang="en-US">
+    <head>
+      <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+      <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1">
+      <style type="text/css" data-premailer="ignore">
 
       /* for single event */
       .field--label-hidden.field__label{
@@ -1027,11 +1006,11 @@ SINGLENEWS;
           font-size: 18px !important;
         }
       }
-    </style>
-  </head>
-  <body class="body template template--en-US" data-template-version="1.20.1" data-canonical-name="CPE-PT17831"  align="center"
+      </style>
+    </head>
+    <body class="body template template--en-US" data-template-version="1.20.1" data-canonical-name="CPE-PT17831"  align="center"
         style="-ms-text-size-adjust:100%; -webkit-text-size-adjust: 100%; min-width: 00%; width: 100%; margin: 0px; padding: 0px;">
-  [[trackingImage]]
+    [[trackingImage]]
     <div id="tracking-image" style="color: transparent; display: none; font-size: 1px; line-height: 1px; max-height: 0px; max-width: 0px;
              opacity: 0; overflow: hidden;"></div>
     <div class="shell" lang="en-US" style="background-color:// 1a5b6e;">
@@ -1176,7 +1155,7 @@ SINGLENEWS;
    * "Join Affinity Groups" section
    * possible do this through a news item, but for now, we have an extra image here we need to show
    */
-  public function ccRollupBottomStatic1() {
+  private function ccRollupBottomStatic1() {
     $teamImageUrl = $this->imageUrl('team-looking-at-screen_0.jpg');
     $title = $this->titleHTML('Ensure you keep receiving updates!');
     $bodyText = "Join Affinity Groups to get updates about things you care about. If you have allocations,
@@ -1253,7 +1232,7 @@ SINGLENEWS;
   /**
    * "Share with the ACCESS Community" section.
    */
-  public function ccRollupBottomStatic2() {
+  private function ccRollupBottomStatic2() {
     $title = $this->titleHTML('Do you have announcements or trainings to share?');
     $newsUrl = ACCESS_SUPPPORT_URL . '/announcements';
     $eventsUrl = ACCESS_SUPPPORT_URL . '/events';
@@ -1292,8 +1271,8 @@ SINGLENEWS;
         </tr>
       </tbody>
     </table>
-ROLLUPSTATIC2;
-// note: ROLLUPSTATIC2 must be to the left column-wise of the last tag (php)
+  ROLLUPSTATIC2;
+    // note: ROLLUPSTATIC2 must be to the left column-wise of the last tag (php)
     return $html;
   }
 
