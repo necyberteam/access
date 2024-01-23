@@ -10,7 +10,6 @@ use Drupal\Core\Block\BlockPluginInterface;
 use Drupal\Core\Cache\Cache;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Entity\EntityForm;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
@@ -298,6 +297,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
       ],
     ];
     $form['moderation_state']['widget'][0]['state']['#title'] = t('Save as');
+    $form['moderation_state']['#attributes']['class'][] = '[&_select]--pr-8';
     $form['field_researcher']['#attributes']['class'][] = '[&_div.label-description]--font-normal';
     $form['field_researcher']['widget']['add_more']['#value'] = 'Add another researcher';
     $form['field_preferred_semester']['#attributes']['class'][] = '[&_select]--pr-8';
