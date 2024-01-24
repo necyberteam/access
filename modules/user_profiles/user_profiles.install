@@ -24,7 +24,7 @@ function user_profiles_update_9001() {
 function user_profiles_update_10001() {
   // GET ALL users that have access-ci.org in their username but have no access_organization field value.
   $query = \Drupal::entityQuery('user');
-  $query->condition('name', '%access-ci.org%', 'IN');
+  $query->condition('name', 'access-ci.org', 'ENDS_WITH');
   $query->condition('field_access_organization', NULL, 'IS NULL');
   $query->accessCheck(FALSE);
   $uids = $query->execute();
