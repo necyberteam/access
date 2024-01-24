@@ -9,7 +9,6 @@ use Drupal\Component\Serialization\Json;
 use Drupal\user\Entity\User;
 use GuzzleHttp\Client;
 
-
 /**
  * Hook_update.
  */
@@ -41,7 +40,6 @@ function user_profiles_update_10001() {
     $username = $user->get('name')->value;
     $username = str_replace('@access-ci.org', '', $username);
     // \Drupal::logger('user_profiles')->info($username . ' uid: ' . $user->get('uid')->value);
-
     // Get the organizationId from the api.
     $url = 'https://allocations-api.access-ci.org/identity/profiles/v1/people/' . $username;
     $requestOpts = [
@@ -53,24 +51,28 @@ function user_profiles_update_10001() {
       'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1],
     ];
     $client = new Client();
-    $response = $client->request('GET', $url, $requestOpts);
-    $data = Json::decode((string) $response->getBody());
-    $orgId = $data['organizationId'];
-    // \Drupal::logger('user_profiles')->info('uid: ' . $uid . ', orgId: ' . $orgId);
+    try {
+      $response = $client->request('GET', $url, $requestOpts);
+      $data = Json::decode((string) $response->getBody());
+      $orgId = $data['organizationId'];
+      \Drupal::logger('user_profiles')->info('uid: ' . $uid . ', orgId: ' . $orgId);
+      // Query the access_organization content type to get the node id for the orgId.
+      $query = \Drupal::entityQuery('node');
+      $query->condition('type', 'access_organization');
+      $query->condition('field_organization_id', $orgId);
+      $query->accessCheck(FALSE);
+      $nids = $query->execute();
 
-    // Query the access_organization content type to get the node id for the orgId.
-    $query = \Drupal::entityQuery('node');
-    $query->condition('type', 'access_organization');
-    $query->condition('field_organization_id', $orgId);
-    $query->accessCheck(FALSE);
-    $nids = $query->execute();
-
-    // If the orgId is found, set the user's access_organization field value to the node id.
-    if (!empty($nids)) {
-      $nid = reset($nids);
-      $user->set('field_access_organization', $nid);
-      // \Drupal::logger('user_profiles')->info($user->get('field_access_organization')->getValue()[0]['target_id']);
-      $user->save();
+      // If the orgId is found, set the user's access_organization field value to the node id.
+      if (!empty($nids)) {
+        $nid = reset($nids);
+        $user->set('field_access_organization', $nid);
+        // \Drupal::logger('user_profiles')->info($user->get('field_access_organization')->getValue()[0]['target_id']);
+        $user->save();
+      }
+    }
+    catch (Exception $e) {
+      \Drupal::logger('user_profiles')->error('Error syncing uid: ' . $uid);
     }
   }
 
