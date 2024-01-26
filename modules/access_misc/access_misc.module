@@ -166,7 +166,6 @@ function access_misc_datalayer_alter(&$data_layer) {
  */
 function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   // Custom tags on /form/ci-link webform.
-  // kint($form_id);
   if ($form_id == 'webform_submission_resource_add_form' || $form_id == 'webform_submission_resource_edit_form') {
     $form['field_tags_replace'] = [
       '#type' => 'container',
@@ -213,7 +212,7 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
     $form['custom_tags'] = [
-      '#markup' => "<div id='tag-suggstions'></div>
+      '#markup' => "<div id='tag-suggestions'></div>
                     <details open class='tags'>
                      <summary><label class='js-form-required form-required'>Select relevant tags</label></summary>
                       $output
