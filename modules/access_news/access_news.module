@@ -11,6 +11,7 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 use Drupal\node\Entity\Node;
 use Drupal\recurring_events\Entity\EventInstance;
 use Drupal\user\Entity\User;
+use Drupal\access_affinitygroup\Plugin\EmailWrapper;
 
 define('ACCESS_SUPPPORT_URL', "https://support.access-ci.org");
 
@@ -327,8 +328,9 @@ function weeklyNewsReport($noSend) {
     $d2 = DrupalDateTime::createFromDateTime($dtToday)
       ->format(DateTimeItemInterface::DATE_STORAGE_FORMAT);
 
+    $wrapper = new EmailWrapper();
     $newsHTML = newsRangeView($d1, $d2, $utmCampaign);
-    $sectionHeader = sectionHeadHTML("The ACCESS Support Digest // " . $dtTomorrow->format('F j, Y'));
+    $sectionHeader = $wrapper->sectionHeadHTML("The ACCESS Support Digest // " . $dtTomorrow->format('F j, Y'));
     $newsHTML = $sectionHeader . $newsHTML;
     Drupal::logger('cron_accessnews')->notice('Digest: news from: ' . $d1 . ' to: ' . $d2);
 
@@ -345,8 +347,7 @@ function weeklyNewsReport($noSend) {
     Drupal::logger('cron_accessnews')->notice('Digest: events from: ' . $d1 . ' to: ' . $d2);
     $eventHTML = eventsRangeView($d1, $d2, $utmCampaign);
 
-    // Put wrapper html.
-    $emailHTML = ccNewsRollupHTML($newsHTML, $eventHTML);
+    $emailHTML = $wrapper->ccNewsRollupHTML($newsHTML, $eventHTML);
 
     // Create constant contact campaign. this does not send it.
     $campaignName = uniqid('Access Digest: ' . $dtTomorrow->format('n/j/y') . ' ', FALSE);
@@ -372,8 +373,8 @@ function weeklyNewsReport($noSend) {
 function newsRangeView($fromDate, $toDate, $utmCampaign) {
 
   $listDisplay = '';
-  $divider = dividerHTML();
-
+  $wrapper = new EmailWrapper();
+  $divider = $wrapper->dividerHTML();
   try {
     $nids = \Drupal::entityQuery('node')
       ->condition('status', 1)
@@ -414,7 +415,7 @@ function newsRangeView($fromDate, $toDate, $utmCampaign) {
         if ($nCount > 1) {
           $listDisplay = $listDisplay . $divider;
         }
-        $itemDisplay = newsItemHTML($title, $pubDateDisp, $bodyDisp, $newsUrl);
+        $itemDisplay = $wrapper->newsItemHTML($title, $pubDateDisp, $bodyDisp, $newsUrl);
       }
       catch (Exception $e) {
         $itemDisplay = 'Error retrieving news item: ' . $e->getMessage();
@@ -440,7 +441,8 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
 
   $listDisplay = '';
   $eCount = 0;
-  $divider = dividerHTML();
+  $wrapper = new EmailWrapper();
+  $divider = $wrapper->dividerHTML();
   try {
     $eids = \Drupal::entityQuery('eventinstance')
       ->condition('status', 1)
@@ -495,7 +497,7 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
           $listDisplay = $listDisplay . $divider;
         }
 
-        $itemDisplay = eventItemHTML($title, $dateTimeDisp, $bodyDisp, $eventUrl);
+        $itemDisplay = $wrapper->eventItemHTML($title, $dateTimeDisp, $bodyDisp, $eventUrl);
       }
       catch (Exception $e) {
         // kint("EXCEPTION  at $eCount: ". $e->getMessage());
@@ -505,7 +507,7 @@ function eventsRangeView($fromDate, $toDate, $utmCampaign) {
       $listDisplay = $listDisplay . $itemDisplay;
     } // end for
 
-    $sectionHeader = sectionHeadHTML("Events and Trainings");
+    $sectionHeader = $wrapper->sectionHeadHTML("Events and Trainings");
     $listDisplay = $sectionHeader . $listDisplay;
   }
   catch (Exception $e) {
