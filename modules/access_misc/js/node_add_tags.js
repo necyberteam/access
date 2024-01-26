@@ -50,7 +50,7 @@ Drupal.behaviors.nodeAddTags = {
           textArray.push(element.textContent.trim());
         });
         if (textArray.length > 0) {
-          var divElement = document.getElementById('tag-suggstions');
+          var divElement = document.getElementById('tag-suggestions');
           var textTagListing = '';
           for (let textArrayItem of textArray) {
             textTagListing = textTagListing + '<a class="font-normal text-sky-900" href="#tag-' + textArrayItem + '">' + textArrayItem  + '</a>, '

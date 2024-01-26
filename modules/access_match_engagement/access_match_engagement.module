@@ -117,7 +117,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $form['node_add_tags'] = [
       '#markup' => "<div class='font-bold form-required'>$tag_label</div>
         <div class='tag-description'>$tag_description</div>
-        <div id='tag-suggstions'></div>
+        <div id='tag-suggestions'></div>
         <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
