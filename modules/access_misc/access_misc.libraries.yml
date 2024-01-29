@@ -14,6 +14,8 @@ custom_tags:
       css/custom_tags.css: {}
   js:
     js/custom_tags.js: {}
+  dependencies:
+    - core/once
 node_add_tags:
   css:
     theme:

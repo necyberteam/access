@@ -50,13 +50,19 @@ Drupal.behaviors.nodeAddTags = {
           textArray.push(element.textContent.trim());
         });
         if (textArray.length > 0) {
-          var divElement = document.getElementById('tag-suggstions');
+          var divElement = document.getElementById('tag-suggestions');
           var textTagListing = '';
           for (let textArrayItem of textArray) {
             textTagListing = textTagListing + '<a class="font-normal text-sky-900" href="#tag-' + textArrayItem + '">' + textArrayItem  + '</a>, '
           }
+          // Remove the last comma and space
+          textTagListing = textTagListing.slice(0, -2);
           // Replace the text content
           divElement.innerHTML = '<div class="bg-slate-100 p-5 my-5"><strong>Selected Tags:</strong><br/>' + textTagListing + '</div>';
+        } else {
+          // no tags selected
+          var divElement = document.getElementById('tag-suggestions');
+          divElement.innerHTML = '';
         }
       });
     }

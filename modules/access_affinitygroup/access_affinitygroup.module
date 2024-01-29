@@ -68,7 +68,7 @@ function access_affinitygroup_block_access(Block $block, $operation, AccountInte
         $hide_block = TRUE;
         // Show block to coordinators.
         foreach ($coordinators as $coordinator) {
-          if ($coordinator['target_id'] == $uid) {
+          if (array_key_exists('target_id', $coordinator) && $coordinator['target_id'] == $uid) {
             $hide_block = FALSE;
           }
         }
@@ -1125,16 +1125,64 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
  */
 function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_affinity_group_edit_form' || $form_id == 'node_affinity_group_form') {
+    $form['field_tags_replace'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => 'field-tags-replace',
+        'data-suggest' => '0',
+      ],
+      '#weight' => 3,
+    ];
+
+    $form['field_tags_replace']['field_suggest'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => [
+          'bg-light-teal',
+          'my-5',
+          'p-5'
+        ]
+      ],
+    ];
+
+    $form['field_tags_replace']['field_suggest']['tag_list'] = [
+      '#markup' => "<div id='match-tag-list' class='mb-3'>Get tag suggestions based on your description and then curate as necessary.</div>",
+    ];
+    $form['field_tags_replace']['field_suggest']['replace_button'] = [
+      '#type' => 'button',
+      '#value' => t('Suggest Tags'),
+      '#limit_validation_errors' => array(),
+      '#attributes' => [
+        'class' => [
+          'ml-0'
+        ],
+      ],
+      '#ajax' => [
+        'callback' => 'access_affinitygroup_replace_section_callback',
+        'wrapper' => 'field-tags-replace',
+      ],
+    ];
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
-    $form['oit_advanced'] = [
-      '#markup' => "<details class='tags'><summary>Select relevant tags</summary>$output</details>",
+
+    $form['custom_tags'] = [
+      '#markup' => "<div id='tag-suggestions'></div>
+                    <details open class='tags'>
+                     <summary><label class='js-form-required form-required'>Select relevant tags</label></summary>
+                      $output
+                    </details>",
       '#weight' => 3,
       '#allowed_tags' => [
         'button',
         'details',
         'summary',
+        'label',
         'span',
+        'div',
         'h2',
       ],
     ];
@@ -1213,6 +1261,34 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
       $form['actions']['submit']['#disabled'] = TRUE;
     }
   }
+}
+
+/**
+ * Ajax callback function to replace the section with '#markup'.
+ */
+function access_affinitygroup_replace_section_callback(array &$form, FormStateInterface $form_state) {
+  $raw_data = $form_state->getUserInput();
+  $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  $suggested_tag_ids = '0';
+  if (strlen($body_filter) >= 100) {
+    $llm = \Drupal::service('access_llm.ai_references_generator');
+    $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
+    $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+  }
+  else {
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "<div class='match-tag-list bg-blue-200 text-sky-900 my-5 p-5'>
+                    <strong class='text-sky-900'>Fill in the description above to get suggested tags.</strong><br />
+                    Your description must be over 100 characters to get a suggestion.</div>",
+    ];
+  }
+  $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;
+
+  // Return the updated section.
+  return $form['field_tags_replace'];
 }
 
 /**

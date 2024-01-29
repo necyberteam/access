@@ -117,7 +117,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
     $form['node_add_tags'] = [
       '#markup' => "<div class='font-bold form-required'>$tag_label</div>
         <div class='tag-description'>$tag_description</div>
-        <div id='tag-suggstions'></div>
+        <div id='tag-suggestions'></div>
         <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
       '#weight' => 15,
       '#allowed_tags' => [
@@ -314,7 +314,7 @@ function access_match_engagement_form_alter(&$form, FormStateInterface $form_sta
 /**
  * Ajax callback function to replace the section with '#markup'.
  */
-function access_match_engagement_replace_section_callback(array &$form, \Drupal\Core\Form\FormStateInterface $form_state) {
+function access_match_engagement_replace_section_callback(array &$form, FormStateInterface $form_state) {
   $raw_data = $form_state->getUserInput();
   $body_filter = Xss::filter($raw_data['body'][0]['value']);
   $suggested_tag_ids = '0';
