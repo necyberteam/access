@@ -9,21 +9,23 @@
  * Found it was necessary to include this wrapper or subsequent functions
  * would get null pointers when trying to get dom elements
  */
-document.onreadystatechange = function () {
+var waitForJQuery = setInterval(function () {
+  if (typeof jQuery != 'undefined') {
 
-  // since current & planned outages may be sparse, the following
-  // boolean can be used for debugging / testing -- it forces the
-  // retrieval of all outages
-  const bDebugWithAllOutages = false
+    // since current & planned outages may be sparse, the following
+    // boolean can be used for debugging / testing -- it forces the
+    // retrieval of all outages
+    const bDebugWithAllOutages = false
 
-  if (document.readyState == "complete") {
     const ciderIds = drupalSettings.ciderIds
     // only show outages if there are any ciderIds
     if (bDebugWithAllOutages || (ciderIds && ciderIds.length > 0)) {
       showAgOutages(ciderIds, bDebugWithAllOutages)
     }
+
+    clearInterval(waitForJQuery);
   }
-}
+}, 10);
 
 /**
  * Make API calls for current & future outages, then filter them
@@ -74,8 +76,8 @@ const showCurrentOutages = async function showCurrentOutages(ciderIds, bDebugWit
     `
 
     // add the div to the page
-    let container = document.getElementById('block-accesstheme-content')
-    container.insertBefore(outagesCurrentDiv, container.firstChild);
+    let container = document.querySelector('main .layout-content')
+    container.insertBefore(outagesCurrentDiv, container.firstChild)
     const outagesCurrent = document.getElementById('outages-current-p')
 
     // for all the filtered outages, add a link in a box to the outage to the
@@ -115,10 +117,6 @@ function getOutageHtml(outage) {
  * @param {*} bDebugWithAllOutages -- debug with *all* outages
  */
 const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWithAllOutages) {
-
-  // only show this on the affinity group view
-  container = document.getElementById('access_news')
-  if (!container) return;
 
   // for testing, get all outages
   const endpointUrl = bDebugWithAllOutages
@@ -184,11 +182,11 @@ const showPlannedOutages = async function showPlannedOutages(ciderIds, bDebugWit
 function addOutageTableHtmlToDom() {
 
   let outagesTableDiv = document.createElement('div')
-  outagesTableDiv.innerHTML = `<br>
+  outagesTableDiv.innerHTML = `
     <div class="outage-list section container">
       <div class="row">
         <div class="mb-3">
-          <h3 class="pb-2">Planned Downtimes for Associated Infrastructure</h3>
+          <h3 class="pb-2">Planned Downtime for Associated Infrastructure</h3>
           <div class="table-responsive">
             <table id="ag-outages-planned" class="display text-start table" style="display:none;">
               <thead>
@@ -206,9 +204,10 @@ function addOutageTableHtmlToDom() {
       </div>
     </div>
   `
-  // only show this on the page that has the access_news container.
-  container = document.getElementById('access_news')
-  container.appendChild(outagesTableDiv, container.firstChild);
+  // This is shown on the Affinity Group pages.
+  container = document.querySelector('.page-node-type-affinity-group main .layout-content .layout__region--first > div')
+  const sibling = container.querySelector('.block-field-blocknodeaffinity-groupfield-cider-resources')
+  container.insertBefore(outagesTableDiv, sibling);
 }
 
 /**
