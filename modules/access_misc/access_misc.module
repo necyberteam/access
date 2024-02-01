@@ -105,8 +105,8 @@ function access_misc_preprocess_views_view_field(&$variables) {
 /**
  * Implements hook_datalayer_alter()
  *
- * If the user is not anonymous, add hashed user id and account creation
- * date to dataLayer.
+ * If the user is not anonymous, add hashed user id, account creation
+ * date, and Carnegie Code to dataLayer.
  */
 function access_misc_datalayer_alter(&$data_layer) {
 
@@ -158,6 +158,19 @@ function access_misc_datalayer_alter(&$data_layer) {
       $time_bucket = 7;
     }
     $data_layer['user_created_within'] = $time_bucket;
+
+    $carnegie_code = 'unknown';
+    try {
+      $org = $account->get('field_access_organization')->getValue();
+      if (!empty($org)) {
+        $org = reset($org);
+        $org = \Drupal::entityTypeManager()->getStorage('node')->load($org['target_id']);
+        $carnegie_code = $org->get('field_carnegie_code')->value;
+      }
+    } catch (\Exception $e) {
+      \Drupal::logger('access_misc')->error('Error loading user organization: ' . $e->getMessage());
+    }
+    $data_layer['carnegie_code'] = $carnegie_code;
   }
 }
 
