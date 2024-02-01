@@ -19,7 +19,9 @@ function user_profiles_update_9001() {
 }
 
 /**
- *
+ * Hook_update.
+ * Update the access_organization field for users that have access-ci.org in their username.
+ * This field wasn't set for people who created accounts by logging into ASP.
  */
 function user_profiles_update_10001() {
   // GET ALL users that have access-ci.org in their username but have no access_organization field value.
@@ -55,7 +57,7 @@ function user_profiles_update_10001() {
       $response = $client->request('GET', $url, $requestOpts);
       $data = Json::decode((string) $response->getBody());
       $orgId = $data['organizationId'];
-      \Drupal::logger('user_profiles')->info('uid: ' . $uid . ', orgId: ' . $orgId);
+      // \Drupal::logger('user_profiles')->info('uid: ' . $uid . ', orgId: ' . $orgId);
       // Query the access_organization content type to get the node id for the orgId.
       $query = \Drupal::entityQuery('node');
       $query->condition('type', 'access_organization');
