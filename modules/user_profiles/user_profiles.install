@@ -1,14 +1,81 @@
 <?php
 
 /**
+ * @file
  * At install time, set the default value for the check_suspended_users setting.
  */
 
+use Drupal\Component\Serialization\Json;
+use Drupal\user\Entity\User;
+use GuzzleHttp\Client;
+
 /**
- * hook_update.
+ * Hook_update.
  */
 function user_profiles_update_9001() {
   $config = \Drupal::configFactory()->getEditable('user_profiles.settings');
   $config->set('check_suspended_users', TRUE);
   $config->save();
+}
+
+/**
+ * Hook_update.
+ * Update the access_organization field for users that have access-ci.org in their username.
+ * This field wasn't set for people who created accounts by logging into ASP.
+ */
+function user_profiles_update_10001() {
+  // GET ALL users that have access-ci.org in their username but have no access_organization field value.
+  $query = \Drupal::entityQuery('user');
+  $query->condition('name', 'access-ci.org', 'ENDS_WITH');
+  $query->condition('field_access_organization', NULL, 'IS NULL');
+  $query->accessCheck(FALSE);
+  $uids = $query->execute();
+  \Drupal::logger('user_profiles')->info('UIDs missing ACCESS Organization: ' . print_r($uids, TRUE));
+
+  $path = \Drupal::service('file_system')->realpath("private://") . '/.keys/secrets.json';
+  $secretsData = json_decode(file_get_contents($path), TRUE);
+  $apiKey = $secretsData['ramps_api_key'];
+
+  // For each user found, get the organizationId field.
+  foreach ($uids as $uid) {
+    $user = User::load($uid);
+    $username = $user->get('name')->value;
+    $username = str_replace('@access-ci.org', '', $username);
+    // \Drupal::logger('user_profiles')->info($username . ' uid: ' . $user->get('uid')->value);
+    // Get the organizationId from the api.
+    $url = 'https://allocations-api.access-ci.org/identity/profiles/v1/people/' . $username;
+    $requestOpts = [
+      'headers' => [
+        'XA-API-KEY' => $apiKey,
+        'XA-REQUESTER' => 'MATCH',
+        'Content-Type' => 'application/json',
+      ],
+      'curl' => [CURLOPT_SSLVERSION => CURL_SSLVERSION_TLSv1],
+    ];
+    $client = new Client();
+    try {
+      $response = $client->request('GET', $url, $requestOpts);
+      $data = Json::decode((string) $response->getBody());
+      $orgId = $data['organizationId'];
+      // \Drupal::logger('user_profiles')->info('uid: ' . $uid . ', orgId: ' . $orgId);
+      // Query the access_organization content type to get the node id for the orgId.
+      $query = \Drupal::entityQuery('node');
+      $query->condition('type', 'access_organization');
+      $query->condition('field_organization_id', $orgId);
+      $query->accessCheck(FALSE);
+      $nids = $query->execute();
+
+      // If the orgId is found, set the user's access_organization field value to the node id.
+      if (!empty($nids)) {
+        $nid = reset($nids);
+        $user->set('field_access_organization', $nid);
+        // \Drupal::logger('user_profiles')->info($user->get('field_access_organization')->getValue()[0]['target_id']);
+        $user->save();
+      }
+    }
+    catch (Exception $e) {
+      \Drupal::logger('user_profiles')->error('Error syncing uid: ' . $uid);
+    }
+  }
+
 }

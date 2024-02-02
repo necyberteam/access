@@ -2,6 +2,7 @@
 
 namespace Drupal\access_affinitygroup\Plugin;
 
+use Drupal\access_misc\Plugin\Util\FindAccessOrg;
 use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Batch\BatchBuilder;
@@ -643,7 +644,8 @@ class AllocationsUsersImport {
       $u->set('field_institution', $aUser['organizationName']);
       $citzenships = $this->formatCitizenships($aUser['citizenships']);
       $u->set('field_citizenships', $citzenships);
-      $accessOrg = $this->findAccessOrg($aUser['organizationId']);
+      $findAccessOrg = new FindAccessOrg();
+      $accessOrg = $findAccessOrg->get($aUser['organizationId']);
       $u->set('field_access_organization', $accessOrg);
 
       $u->save();

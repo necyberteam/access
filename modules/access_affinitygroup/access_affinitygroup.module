@@ -785,6 +785,10 @@ function makeListMembershipJSON($flagEntityId, $userDetails) {
     ->execute();
 
   $aval = array_values($node_ids);
+  if (empty($aval)) {
+    \Drupal::logger('cron_affinitygroup')->notice('Missing Affinity group with flag id ' . $flagEntityId . '.');
+    return NULL;
+  }
   $nid = $aval[0];
 
   $ag = Node::load($nid);
