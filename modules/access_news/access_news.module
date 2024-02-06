@@ -4,6 +4,7 @@
  * @file
  */
 
+use Drupal\access_affinitygroup\Plugin\EmailWrapper;
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
@@ -11,7 +12,6 @@ use Drupal\datetime\Plugin\Field\FieldType\DateTimeItemInterface;
 use Drupal\node\Entity\Node;
 use Drupal\recurring_events\Entity\EventInstance;
 use Drupal\user\Entity\User;
-use Drupal\access_affinitygroup\Plugin\EmailWrapper;
 
 define('ACCESS_SUPPPORT_URL', "https://support.access-ci.org");
 
@@ -22,7 +22,6 @@ define('ACCESS_SUPPPORT_URL', "https://support.access-ci.org");
  */
 function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_access_news_edit_form' || $form_id == 'node_access_news_form' || $form_id == 'eventseries_default_add_form' || $form_id == 'eventseries_default_edit_form') {
-
     $form['#validate'][] = 'access_news_validate';
   }
 }
@@ -101,6 +100,22 @@ function access_news_entity_presave(EntityInterface $entity) {
   $type = $entity->getEntityTypeId();
   if ($type == 'eventseries') {
     update_affinity_group($entity);
+  }
+}
+
+/**
+ * Preprocess entity eventinstance registration field to NOT display
+ * registration link if the event is past.
+ */
+function access_news_preprocess_field(&$variables) {
+  if ($variables['entity_type'] == 'eventinstance' && $variables['field_name'] == 'registration') {
+    $event = $variables['element']['#object'];
+    $eventDate = $event->get('date')->value;
+    $eventDate = new DrupalDateTime($eventDate, 'UTC');
+    $now = new DrupalDateTime('now', 'UTC');
+    if ($eventDate < $now) {
+      $variables['items'] = NULL;
+    }
   }
 }
 
