@@ -29,7 +29,7 @@ function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id
         'id' => 'field-tags-replace',
         'data-suggest' => '0',
       ],
-      '#weight' => 2,
+      '#weight' => 1,
     ];
     $form['field_tags_replace']['field_suggest'] = [
       '#type' => 'container',
