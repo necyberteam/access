@@ -5,6 +5,7 @@
  */
 
 use Drupal\Core\Access\AccessResult;
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\block\Entity\Block;
@@ -244,5 +245,16 @@ function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
     if ($enroll_program === FALSE) {
       $role_program_sorter->removeFieldRegion($term_id);
     }
+  }
+}
+
+/**
+ * Implements hook_entity_update().
+ * Invalidate community persona caching when user is updated.
+ */
+function cssn_entity_update(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'user') {
+    \Drupal::service('cache_tags.invalidator')->invalidateTags(['community_persona']);
   }
 }

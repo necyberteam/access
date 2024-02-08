@@ -370,7 +370,8 @@ class CommunityPersonaController extends ControllerBase {
     $should_user_load = FALSE;
     if (is_numeric($user_id)) {
       $user = User::load($user_id);
-      if ($user !== NULL) {
+      // Don't show profile for people who haven't joined a region/program.
+      if ($user !== NULL && count($user->field_region->getValue()) > 0) {
         $should_user_load = TRUE;
       }
       else {
@@ -460,6 +461,9 @@ class CommunityPersonaController extends ControllerBase {
           'project_title' => t('Projects'),
           'projects' => $projects,
         ],
+        '#cache' => [
+          'tags' => ['community_persona'],
+        ],
       ];
       return $persona_page;
     }
@@ -467,7 +471,10 @@ class CommunityPersonaController extends ControllerBase {
       return [
         '#type' => 'markup',
         '#title' => 'User not found',
-        '#markup' => t('No user found at this URL.'),
+        '#cache' => [
+          'tags' => ['community_persona'],
+        ],
+        '#markup' => t('No public profile available for this person.'),
       ];
     }
   }

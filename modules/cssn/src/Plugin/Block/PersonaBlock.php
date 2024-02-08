@@ -34,7 +34,7 @@ class PersonaBlock extends BlockBase {
     }
     if (is_numeric($url_end)) {
       $user = User::load($url_end);
-      if ($user !== NULL) {
+      if ($user !== NULL && count($user->field_region->getValue()) > 0) {
         $should_user_load = TRUE;
       }
     }
