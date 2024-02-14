@@ -362,14 +362,16 @@ function update_removed_ag_leader_roles($entity, $coordinator_ids) {
     //       remove the leader role.
     foreach ($removed_coordinator_ids as $removed_coordinator_id) {
       $user = User::load($removed_coordinator_id);
-      if (!in_array($removed_coordinator_id, $all_other_coordinator_ids)) {
-        $user->removeRole('affinity_group_leader');
-        $user->save();
-        \Drupal::messenger()->addStatus('Removed Affinity Group Leader role for ' . $user->getAccountName());
-      }
-      else {
-        \Drupal::messenger()->addStatus('Not removing Affinity Group Leader role for ' . $user->getAccountName()
-          . ' because coordinator for another Affinity Group');
+      if ($user) {
+        if (!in_array($removed_coordinator_id, $all_other_coordinator_ids)) {
+          $user->removeRole('affinity_group_leader');
+          $user->save();
+          \Drupal::messenger()->addStatus('Removed Affinity Group Leader role for ' . $user->getAccountName());
+        }
+        else {
+          \Drupal::messenger()->addStatus('Not removing Affinity Group Leader role for ' . $user->getAccountName()
+            . ' because coordinator for another Affinity Group');
+        }
       }
     }
   }
