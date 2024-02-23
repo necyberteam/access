@@ -115,6 +115,10 @@ class EmailWrapper {
               border: 4px solid;
             }
 
+            p {
+              margin-bottom: 15px!important;
+            }
+
               @media only screen and (max-width:480px) {
                   # .footer-main-width {
                       width: 100% !important;
@@ -757,6 +761,9 @@ DIVIDERHTML;
         background-color: #ffffff!important;
         border-color:black!important;
         border: 4px solid;
+      }
+       p {
+        margin-bottom: 15px!important;
       }
       /* single event and news: spacing under fields such as location */
       .field__item:last-child {
