@@ -104,12 +104,20 @@ class AffinityBottomLeft extends BlockBase {
       $affinity_group_tax = $node->get('field_affinity_group')->getValue()[0]['target_id'];
     }
     if (!empty($event_list)) {
+      $n = 0;
       foreach ($event_list as $e) {
+        $n++;
+        if ($n > 8) {
+          break;
+        }
         // Incoming time is UTC, so convert to local timezone.
         $start_date = new \DateTime($e['date'], new \DateTimeZone("UTC"));
         $start_date = $start_date->setTimeZone(new \DateTimeZone(date_default_timezone_get()));
         $edate = date_format($start_date, "n/d/Y g:i A T");
         $output .= '<div class="mb-3 text-white-er font-medium leading-5">' . $edate . '<br/>' . $e['title'] . '</div>';
+      }
+      if (count($event_list) > 8) {
+        $output .= '<a class="text-sm uppercase text-white-er hover--text-light-teal no-underline hover--underline" href="/events-trainings?field_affinity_group_target_id_1=' . $affinity_group_tax . '">See more events</a><br />';
       }
     }
     else {
