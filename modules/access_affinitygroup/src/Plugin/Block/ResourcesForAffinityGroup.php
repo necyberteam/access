@@ -100,10 +100,10 @@ class ResourcesForAffinityGroup extends BlockBase {
               '#url' => Url::fromRoute('entity.taxonomy_term.canonical', ['taxonomy_term' => $tag]),
               '#attributes' => ['class' => ['px-2', 'py-1', 'font-normal', 'no-underline', 'border', 'border-black', 'border-solid', 'hover--border-dark-teal', 'hover--text-dark-teal', 'w-fit']],
             ];
-            $tags .= '<div class="mr-4 me-4 mb-2">' . \Drupal::service('renderer')->render($link)->__toString() . '</div>';
+            $tags .= '<div class="mr-2 me-4 mb-2">' . \Drupal::service('renderer')->render($link)->__toString() . '</div>';
           }
         }
-        $tags = '<div class="square-tags flex flex-wrap">' . $tags . '</div>';
+        $tags = '<div class="square-tags d-flex flex flex-wrap">' . $tags . '</div>';
         // Lookup skills by id and make an array of names.
         $skills = '';
         $skill_list = [];
