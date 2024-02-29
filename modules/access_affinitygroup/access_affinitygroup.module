@@ -853,6 +853,35 @@ function access_affinitygroup_user_login(UserInterface $account) {
 }
 
 /**
+ * Implements hook_user_presave().
+ * If user's email address changes, tell simplelists email.
+ */
+function access_affinitygroup_user_presave($uu) {
+
+  if ($uu->original->getEmail() <> $uu->getEmail()) {
+    $msg = "";
+    $simpleListsApi = new SimpleListsApi();
+    \Drupal::logger('access_affinitygroup')->debug("User email changed: " . $uu->getEmail() . ' from ' . $uu->original->getEmail());
+    $status = $simpleListsApi->updateUserEmailAddress($uu->original->getEmail(), $uu->getEmail(), $msg);
+
+    // email not found in simplelists account.
+    if (!isset($status)) {
+      return;
+    }
+
+    // User is a contact in simplelists. Change email address.
+    $displayMsg =  $uu->getEmail() . ' from ' . $uu->original->getEmail() . ' (' . $uu->id() . ')';
+    if ($status) {
+      $displayMsg = "SimpleLists email changed.  $displayMsg";
+      \Drupal::logger('access_affinitygroup')->debug($displayMsg);
+    } else {
+      $displayMsg = "SimpleLists error: $msg. $displayMsg";
+      \Drupal::logger('access_affinitygroup')->error($displayMsg);
+      showStatus($displayMsg);
+    }
+  }
+}
+/**
  * Add user to the Constant Contact account.
  * If user is already in the account, the existing ID will be returned here.
  * Return the new ID if successful.
