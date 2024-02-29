@@ -1480,3 +1480,23 @@ function access_misc_update_10015() {
   $query->condition('roles_target_id', 'cc_rollout');
   $query->execute();
 }
+
+/**
+ * Update nodes set to Access to be 'sent to all affiliates' (D8-2015).
+ */
+function access_misc_update_10016() {
+  $connection = \Drupal::database();
+  $query = $connection->select('node__field_domain_access', 'nfa');
+  $query->fields('nfa', ['entity_id']);
+  $query->condition('nfa.field_domain_access_target_id', 'amp_cyberinfrastructure_org');
+  $result = $query->execute()->fetchCol();
+  foreach ($result as $row) {
+    $connection->delete('node__field_domain_access')
+      ->condition('entity_id', $row)
+      ->execute();
+    $connection->update('node__field_domain_all_affiliates')
+      ->fields(['field_domain_all_affiliates_value' => 1])
+      ->condition('entity_id', $row)
+      ->execute();
+  }
+}
