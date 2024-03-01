@@ -102,11 +102,16 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $likes = $flag_upvote_count == 1 ? "<span>Like</span>" : "<span>Likes</span>";
     // If User is not logged in, show the login link.
     if (\Drupal::currentUser()->isAnonymous()) {
-      $flag_upvote = "<div class='text-center'><a href='user'>Login to like</a></div>";
+      $flag_upvote = "<div class='text-center'>
+                        <i class='fa-light fa-right-to-bracket text-[32px] w-9 me-2'></i>
+                        <br><a href='user'>Login to like</a>
+                      </div>";
     }
     $likes_html = "<div class='mb-5 text-center'>$likes_count $likes</div>";
 
-    $variables['output'] = Markup::create($likes_html . $flag_upvote);
+    $output_html = "<div class='py-4'>$likes_html $flag_upvote</div>";
+
+    $variables['output'] = Markup::create($output_html);
   }
   // Skill Level on CI links search on /search-ci-links page.
   if ($view->id() == 'search_ci_links' && ($view->current_display == 'page_1' && $field->options['id'] == 'nothing')) {
