@@ -35,6 +35,9 @@ class SkillLevel {
     elseif (['Advanced'] == $skill_list) {
       $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-advanced.png" alt="Advanced">';
     }
+    else {
+      $skills = implode(', ', $skill_list);
+    }
     return $skills;
   }
 
