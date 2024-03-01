@@ -69,6 +69,9 @@ function access_cilink_preprocess_views_view_field(&$variables) {
       $description = preg_replace('!^\d+!', '', $description);
       // Lookup webform submission by sid.
       $webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($sid);
+      if (!$webform_submission) {
+        return;
+      }
       // Get link_to_resource field from webform submission.
       $data = $webform_submission->getData();
       $link_to_resource = '<ul class="list-none m-0 p-0">';
