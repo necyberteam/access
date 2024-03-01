@@ -100,6 +100,10 @@ function access_cilink_preprocess_views_view_field(&$variables) {
 
     $likes_count = "<div class='text-[32px] text-dark-teal text-center'>$flag_upvote_count</div>";
     $likes = $flag_upvote_count == 1 ? "<span>Like</span>" : "<span>Likes</span>";
+    // If User is not logged in, show the login link.
+    if (\Drupal::currentUser()->isAnonymous()) {
+      $flag_upvote = "<div class='text-center'><a href='user'>Login to like</a></div>";
+    }
     $likes_html = "<div class='mb-5 text-center'>$likes_count $likes</div>";
 
     $variables['output'] = Markup::create($likes_html . $flag_upvote);
@@ -133,8 +137,9 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                     <li>$flag_inaccurate</li>
                   </ul>
                 </details>";
+      $flag_html = "<div class='pt-4'>$skill_image $flag_link</div>";
 
-      $variables['output'] = Markup::create($skill_image . $flag_link);
+      $variables['output'] = Markup::create($flag_html);
     }
   }
   // Override view /admin/structure/views/view/resources/edit/page_1 sid_2.
