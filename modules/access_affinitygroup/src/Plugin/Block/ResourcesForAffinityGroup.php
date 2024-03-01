@@ -113,21 +113,8 @@ class ResourcesForAffinityGroup extends BlockBase {
             array_push($skill_list, $term->getName());
           }
         }
-        if (['Beginner'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner.png" alt="Beginner">';
-        }
-        elseif (['Beginner', 'Intermediate'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-beginner-medium.png" alt="Beginner, Intermediate">';
-        }
-        elseif (['Beginner', 'Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-all.png" alt="Beginner, Intermediate, Advanced">';
-        }
-        elseif (['Intermediate', 'Advanced'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-medium-advanced.png" alt="Intermediate, Advanced">';
-        }
-        elseif (['Advanced'] == $skill_list) {
-          $skills = '<img class="object-contain m-0 h-auto" src="/themes/contrib/asp-theme/images/icons/SL-advanced.png" alt="Advanced">';
-        }
+
+        $skills = \Drupal::service('access_misc.skillLevel')->getSkillsImage($skill_list);
 
         $rows[] = [
           'name' => [
