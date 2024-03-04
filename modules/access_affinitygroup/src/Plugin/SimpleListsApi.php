@@ -306,4 +306,44 @@ class SimpleListsApi {
     return ($slug . '@' . $this->domain);
   }
 
+  /**
+   * Return NULL is no change attempted because because orignal address not found.
+   * Return true if change is successful or if change not necessary
+   * Return false if there was a problem with attempted address change.
+   * $msg set only if return is false.
+   */
+  public function updateUserEmailAddress($oldEmail, $newEmail, &$msg) {
+
+    // If our slist account has this email in a contact, response is slist
+    // email object with email id.
+    try {
+      $ch = $this->makeCurl('GET', 'emails/' . urlencode($oldEmail) . '/');
+      $response = curl_exec($ch);
+      curl_close($ch);
+
+      $deResponse = json_decode($response, TRUE);
+      if (isset($deResponse['is_error']) && $deResponse['is_error']) {
+        return NULL;
+      }
+
+      // Replace the email address in the email obj with new email.
+      $params = "email=" . urlencode($newEmail);
+      $emailId = $deResponse['id'];
+      $ch = $this->makeCurl('PUT', "emails/$emailId/", $params);
+      $response = curl_exec($ch);
+      curl_close($ch);
+
+      $deResponse = json_decode($response, TRUE);
+      if (isset($deResponse['is_error']) && $deResponse['is_error']) {
+        $msg = $deResponse["message"];
+        return FALSE;
+      }
+    }
+    catch (\Exception $e) {
+      $msg = $e->getMessage();
+      return FALSE;
+    }
+    return TRUE;
+  }
+
 }

@@ -164,8 +164,12 @@ function access_misc_datalayer_alter(&$data_layer) {
       $org = $account->get('field_access_organization')->getValue();
       if (!empty($org)) {
         $org = reset($org);
-        $org = \Drupal::entityTypeManager()->getStorage('node')->load($org['target_id']);
-        $carnegie_code = $org->get('field_carnegie_code')->value;
+        if (array_key_exists('target_id', $org)) {
+          $org = \Drupal::entityTypeManager()->getStorage('node')->load($org['target_id']);
+          if ($org->get('field_carnegie_code')) {
+            $carnegie_code = $org->get('field_carnegie_code')->value;
+          }
+        }
       }
     } catch (\Exception $e) {
       \Drupal::logger('access_misc')->error('Error loading user organization: ' . $e->getMessage());
