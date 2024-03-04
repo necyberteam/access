@@ -857,8 +857,7 @@ function access_affinitygroup_user_login(UserInterface $account) {
  * If user's email address changes, tell simplelists email.
  */
 function access_affinitygroup_user_presave($uu) {
-
-  if ($uu->original->getEmail() <> $uu->getEmail()) {
+  if (isset($uu->original) && ($uu->original->getEmail() <> $uu->getEmail())) {
     $msg = "";
     $simpleListsApi = new SimpleListsApi();
     \Drupal::logger('access_affinitygroup')->debug("User email changed: " . $uu->getEmail() . ' from ' . $uu->original->getEmail());
