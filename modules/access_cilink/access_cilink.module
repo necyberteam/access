@@ -176,8 +176,10 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                               {{ skillImage | raw }}
                             </div>
                             <div class="pt-4">
-                              <details class="relative w-40">
-                                <summary>{{ report }}</summary>
+                              <details class="border border-solid border-dark-teal open:bg-white duration-300 relative w-40">
+                                <summary class="ps-5 pe-10 py-2 text-dark-teal leading-5 uppercase">
+                                  {{ report }}
+                                </summary>
                                 <ul class="dropdown-menu px-2">
                                   <li>{{ flagOutdated }}</li>
                                   <li>{{ flagNotUseful }}</li>
