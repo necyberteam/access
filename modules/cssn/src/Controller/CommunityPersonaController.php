@@ -237,6 +237,22 @@ class CommunityPersonaController extends ControllerBase {
 
     // User Bio.
     $bio = $user_entity->get('field_user_bio')->value;
+    // Trim $bio to 450 characters.
+    $bio_summary = $bio;
+    if (strlen($bio) > 450) {
+      $more = "<div class='mt-4 inline-block bg-light-teal'>
+                  <button id='bio-more' onclick='bioMore()' style='border-width: 0 !important;' class='btn btn-link btn-sm text-dark-teal p-3' type='button'>
+                    <i class='fa-solid fa-chevron-down'></i> More
+                  </button>
+                </div>";
+      $bio_summary = substr($bio, 0, 450) . "... $more";
+      $less = "<div class='mt-4 inline-block bg-light-teal'>
+                  <button id='bio-less' onclick='bioLess()' style='border-width: 0 !important;' class='btn btn-link btn-sm text-dark-teal p-3' type='button'>
+                    <i class='fa-solid fa-chevron-up'></i> Less
+                  </button>
+                </div>";
+      $bio .= $less;
+    }
 
     // List of affinity groups.
     $user_affinity_groups = $this->affinityGroupList($current_user);
@@ -290,7 +306,12 @@ class CommunityPersonaController extends ControllerBase {
             <span class="h4 text-white m-0">{{ bio_title }}</span>
           </div>
           <div class="d-flex flex flex-wrap p-3">
-            {{ bio |raw }}
+            <div id="bio-summary">
+              {{ bio_summary |raw }}
+            </div>
+            <div id="full-bio" class="hidden">
+              {{ bio |raw }}
+            </div>
           </div>
         </div>
         {% endif %}
@@ -352,6 +373,7 @@ class CommunityPersonaController extends ControllerBase {
         ',
       '#context' => [
         'bio_title' => t('Bio'),
+        'bio_summary' => $bio_summary,
         'bio' => $bio,
         'ag_title' => t('My Affinity Groups'),
         'ag_intro' => t('Connected with researchers of common interests.'),
