@@ -236,7 +236,12 @@ class CommunityPersonaController extends ControllerBase {
     $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($current_user->id());
 
     // User Bio.
-    $bio = $user_entity->get('field_user_bio')->value;
+    if ($user_entity->get('field_user_bio')->value == NULL) {
+      $bio = "";
+    }
+    else {
+      $bio = $user_entity->get('field_user_bio')->value;
+    }
     // Trim $bio to 450 characters.
     $bio_summary = $bio;
     if (strlen($bio) > 450) {
