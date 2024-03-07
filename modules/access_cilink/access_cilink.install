@@ -1,0 +1,24 @@
+
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\redirect\Entity\Redirect;
+
+/**
+ * Add redirects for retired pages.
+ */
+function access_cilink_update_10000() {
+  Redirect::create([
+    'redirect_source' => 'knowledge-base/ci-links',
+    'redirect_redirect' => 'internal:/search-ci-links',
+    'status_code' => 301,
+  ])->save();
+  Redirect::create([
+    'redirect_source' => 'ci-links',
+    'redirect_redirect' => 'internal:/search-ci-links',
+    'status_code' => 301,
+  ])->save();
+}
