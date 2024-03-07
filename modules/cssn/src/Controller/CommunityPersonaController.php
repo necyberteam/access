@@ -231,6 +231,13 @@ class CommunityPersonaController extends ControllerBase {
   public function communityPersona() {
     // My Affinity Groups.
     $current_user = \Drupal::currentUser();
+
+    // Load the user using the current user id.
+    $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($current_user->id());
+
+    // User Bio.
+    $bio = $user_entity->get('field_user_bio')->value;
+
     // List of affinity groups.
     $user_affinity_groups = $this->affinityGroupList($current_user);
     // Affinity link.
@@ -276,7 +283,18 @@ class CommunityPersonaController extends ControllerBase {
           'cssn/cssn_library',
         ],
       ],
-      '#template' => '<div class="border border-secondary border-md-teal my-3 mb-6">
+      '#template' => '
+        {% if bio %}
+        <div class="border border-secondary border-md-teal my-3 mb-6">
+          <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0">{{ bio_title }}</span>
+          </div>
+          <div class="d-flex flex flex-wrap p-3">
+            {{ bio |raw }}
+          </div>
+        </div>
+        {% endif %}
+        <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ mi_title }}</span>
           </div>
@@ -333,6 +351,8 @@ class CommunityPersonaController extends ControllerBase {
         {% endif %}
         ',
       '#context' => [
+        'bio_title' => t('Bio'),
+        'bio' => $bio,
         'ag_title' => t('My Affinity Groups'),
         'ag_intro' => t('Connected with researchers of common interests.'),
         'user_affinity_groups' => $user_affinity_groups,
@@ -381,6 +401,10 @@ class CommunityPersonaController extends ControllerBase {
     if ($should_user_load) {
       $user_first_name = $user->get('field_user_first_name')->value;
       $user_last_name = $user->get('field_user_last_name')->value;
+
+      // User Bio.
+      $bio = $user->get('field_user_bio')->value;
+
       // List of affinity groups.
       $user_affinity_groups = $this->affinityGroupList($user, TRUE);
       // My Interests.
@@ -397,7 +421,18 @@ class CommunityPersonaController extends ControllerBase {
       $persona_page['#title'] = "$user_first_name $user_last_name";
       $persona_page['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="border border-secondary border-md-teal my-3 mb-6">
+        '#template' => '
+          {% if bio %}
+          <div class="border border-secondary border-md-teal my-3 mb-6">
+            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
+              <span class="h4 text-white m-0">{{ bio_title }}</span>
+            </div>
+            <div class="d-flex flex flex-wrap p-3">
+              {{ bio |raw }}
+            </div>
+          </div>
+          {% endif %}
+          <div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ mi_title }}</span>
             </div>
@@ -448,6 +483,8 @@ class CommunityPersonaController extends ControllerBase {
           {% endif %}
           ',
         '#context' => [
+          'bio_title' => t('Bio'),
+          'bio' => $bio,
           'ag_title' => t('Affinity Groups'),
           'user_affinity_groups' => $user_affinity_groups,
           'mi_title' => t('Interests'),
