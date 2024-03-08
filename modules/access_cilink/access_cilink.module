@@ -153,7 +153,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
 
     $output['string'] = [
       '#type' => 'inline_template',
-      '#template' => '<details>
+      '#template' => '<details class="search-ci-links">
                         <summary class="flex items-center bg-light-teal p-4 relative after:right-8">
                           <div class="text-dark-teal m-0 font-bold text-lg">{{ title }}</div>
                           <div>
