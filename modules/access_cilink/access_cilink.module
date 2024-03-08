@@ -14,8 +14,8 @@ use Drupal\views\ViewExecutable;
  * Implements hook_views_pre_render().
  */
 function access_cilink_views_pre_render(ViewExecutable $view) {
-  if ($view->id() == 'resource' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') {
-    $view->element['#attached']['library'][] = 'access_cilink/resource_view';
+  if ($view->id() == 'search_ci_links' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') {
+    $view->element['#attached']['library'][] = 'access_cilink/cilink_view';
   }
 }
 
@@ -136,23 +136,36 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     }
     $skill_image = \Drupal::service('access_misc.skillLevel')->getSkillsImage($skill_list);
 
-      // Flags.
-      $flag_classes = 'no-underline text-dark-teal hover--underline';
-      $flag_outdated = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'outdated');
-      $flag_outdated['#attributes']['class'][] = $flag_classes;
-      $flag_outdated = \Drupal::service('renderer')->renderPlain($flag_outdated);
-      $flag_not_useful = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'not_useful');
-      $flag_not_useful['#attributes']['class'][] = $flag_classes;
-      $flag_not_useful = \Drupal::service('renderer')->renderPlain($flag_not_useful);
-      $flag_inaccurate = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'inaccurate');
-      $flag_inaccurate['#attributes']['class'][] = $flag_classes;
-      $flag_inaccurate = \Drupal::service('renderer')->renderPlain($flag_inaccurate);
+    // Flags.
+    $flag_classes = 'no-underline text-dark-teal hover--underline';
+    $flag_outdated = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'outdated');
+    $flag_outdated['#attributes']['class'][] = $flag_classes;
+    $flag_outdated = \Drupal::service('renderer')->renderPlain($flag_outdated);
+    $flag_not_useful = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'not_useful');
+    $flag_not_useful['#attributes']['class'][] = $flag_classes;
+    $flag_not_useful = \Drupal::service('renderer')->renderPlain($flag_not_useful);
+    $flag_inaccurate = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'inaccurate');
+    $flag_inaccurate['#attributes']['class'][] = $flag_classes;
+    $flag_inaccurate = \Drupal::service('renderer')->renderPlain($flag_inaccurate);
+
+    // Get full url including domain.
+    $url = \Drupal::request()->getSchemeAndHttpHost() . '/knowledge-base/ci-links?f%5B0%5D=submission_id%3A' . $sid;
 
     $output['string'] = [
       '#type' => 'inline_template',
       '#template' => '<details>
                         <summary class="flex items-center bg-light-teal p-4 relative after:right-8">
                           <div class="text-dark-teal m-0 font-bold text-lg">{{ title }}</div>
+                          <div>
+                            <button class="ms-4" onclick="copyclip(\'{{ link_url }}\', event)">
+                              <span class="default-message">
+                                <i class="fa-solid fa-link"></i> Copy link to clipboard
+                              </span>
+                              <span class="copied-message hidden">
+                                <i class="fa-solid fa-check"></i> Copied!
+                              </span>
+                            </button>
+                          </div>
                           <div class="bg-white text-orange font-bold py-2 px-4 rounded-full ms-auto me-10">{{ likesCount }}</div>
                         </summary>
                         <div class="grid grid-cols-5 gap-4 p-4">
@@ -196,6 +209,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                       </details>',
       '#context' => [
         'title' => $title,
+        'link_url' => $url,
         'tags' => $tags,
         'typeTitle' => t('Type'),
         'type' => $type,
