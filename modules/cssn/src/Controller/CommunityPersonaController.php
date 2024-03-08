@@ -226,14 +226,15 @@ class CommunityPersonaController extends ControllerBase {
   }
 
   /**
-   * Build content to display on page.
+   * Return bio and bio summary.
+   *
+   * @return array
+   *   Summary and full bio.
    */
-  public function communityPersona() {
-    // My Affinity Groups.
-    $current_user = \Drupal::currentUser();
+  public function userBio($uid) {
 
     // Load the user using the current user id.
-    $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($current_user->id());
+    $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($uid);
 
     // User Bio.
     if ($user_entity->get('field_user_bio')->value == NULL) {
@@ -246,18 +247,33 @@ class CommunityPersonaController extends ControllerBase {
     $bio_summary = $bio;
     if (strlen($bio) > 450) {
       $more = "<div class='mt-4 inline-block bg-light-teal'>
-                  <button id='bio-more' onclick='bioMore()' style='border-width: 0 !important;' class='btn btn-link btn-sm text-dark-teal p-3' type='button'>
+                  <button id='bio-more' onclick='bioMore()' style='border-width: 0 !important;' class='btn btn-link btn-sm text-dark-teal p-3'aria-hidden='TRUE' type='button'>
                     <i class='fa-solid fa-chevron-down'></i> More
                   </button>
                 </div>";
       $bio_summary = substr($bio, 0, 450) . "... $more";
       $less = "<div class='mt-4 inline-block bg-light-teal'>
-                  <button id='bio-less' onclick='bioLess()' style='border-width: 0 !important;' class='btn btn-link btn-sm text-dark-teal p-3' type='button'>
+                  <button id='bio-less' onclick='bioLess()' style='border-width: 0 !important;' class='btn btn-link btn-sm text-dark-teal p-3' aria-hidden='TRUE' type='button'>
                     <i class='fa-solid fa-chevron-up'></i> Less
                   </button>
                 </div>";
       $bio .= $less;
     }
+
+    return [$bio_summary, $bio];
+  }
+
+  /**
+   * Build content to display on page.
+   */
+  public function communityPersona() {
+    // My Affinity Groups.
+    $current_user = \Drupal::currentUser();
+
+    // User Bio.
+    $user_bio = $this->userBio($current_user->id());
+    $bio_summary = $user_bio[0];
+    $bio = $user_bio[1];
 
     // List of affinity groups.
     $user_affinity_groups = $this->affinityGroupList($current_user);
@@ -311,10 +327,10 @@ class CommunityPersonaController extends ControllerBase {
             <span class="h4 text-white m-0">{{ bio_title }}</span>
           </div>
           <div class="d-flex flex flex-wrap p-3">
-            <div id="bio-summary">
+            <div id="bio-summary" aria-hidden="TRUE">
               {{ bio_summary |raw }}
             </div>
-            <div id="full-bio" class="hidden">
+            <div id="full-bio" class="sr-only">
               {{ bio |raw }}
             </div>
           </div>
@@ -430,7 +446,9 @@ class CommunityPersonaController extends ControllerBase {
       $user_last_name = $user->get('field_user_last_name')->value;
 
       // User Bio.
-      $bio = $user->get('field_user_bio')->value;
+      $user_bio = $this->userBio($user->id());
+      $bio_summary = $user_bio[0];
+      $bio = $user_bio[1];
 
       // List of affinity groups.
       $user_affinity_groups = $this->affinityGroupList($user, TRUE);
@@ -448,6 +466,11 @@ class CommunityPersonaController extends ControllerBase {
       $persona_page['#title'] = "$user_first_name $user_last_name";
       $persona_page['string'] = [
         '#type' => 'inline_template',
+        '#attached' => [
+          'library' => [
+            'cssn/cssn_library',
+          ],
+        ],
         '#template' => '
           {% if bio %}
           <div class="border border-secondary border-md-teal my-3 mb-6">
@@ -455,7 +478,12 @@ class CommunityPersonaController extends ControllerBase {
               <span class="h4 text-white m-0">{{ bio_title }}</span>
             </div>
             <div class="d-flex flex flex-wrap p-3">
-              {{ bio |raw }}
+              <div id="bio-summary" aria-hidden="TRUE">
+                {{ bio_summary |raw }}
+              </div>
+              <div id="full-bio" class="sr-only">
+                {{ bio |raw }}
+              </div>
             </div>
           </div>
           {% endif %}
@@ -511,6 +539,7 @@ class CommunityPersonaController extends ControllerBase {
           ',
         '#context' => [
           'bio_title' => t('Bio'),
+          'bio_summary' => $bio_summary,
           'bio' => $bio,
           'ag_title' => t('Affinity Groups'),
           'user_affinity_groups' => $user_affinity_groups,

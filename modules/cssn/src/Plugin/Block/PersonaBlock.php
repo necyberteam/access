@@ -79,6 +79,7 @@ class PersonaBlock extends BlockBase {
       $edit_link = $public ? "" : $edit_link;
       $first_name = $user_entity->get('field_user_first_name')->value;
       $last_name = $user_entity->get('field_user_last_name')->value;
+      $pronouns = $user_entity->get('field_user_preferred_pronouns')->value;
 
       // Show access organization if set; otherwise, use institution field.
       $orgArray = $user_entity->get('field_access_organization')->getValue();
@@ -173,7 +174,12 @@ class PersonaBlock extends BlockBase {
         '#type' => 'inline_template',
         '#template' => '<div class="persona">
                           {{ user_image | raw }}
-                          <h2>{{ first_name }} {{ last_name }}</h2>
+                          <h2 {% if pronouns %}class="m-0" {% endif %}>
+                            {{ first_name }} {{ last_name }}
+                          </h2>
+                          {% if pronouns %}
+                            <div><strong>Pronouns:</strong> {{ pronouns }}</div>
+                          {% endif %}
                           <h4 class="institution text-md-teal">{{ institution }}</h4>
                           {% if academic_status %}
                             <div class="academic-status">{{ academic_status }}</div>
@@ -205,6 +211,7 @@ class PersonaBlock extends BlockBase {
           'edit_link' => $edit_link,
           'first_name' => $first_name,
           'last_name' => $last_name,
+          'pronouns' => $pronouns,
           'institution' => $institution,
           'academic_status' => $academic_status,
           'cssn' => $cssn,
