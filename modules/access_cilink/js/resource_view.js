@@ -13,8 +13,8 @@ function copyclip(url, event) {
   var clickedButton = event.currentTarget;
 
   // Get the span elements within the clicked button.
-  var copyDefault = clickedButton.querySelector('.default-message');
-  var copySuccess = clickedButton.querySelector('.copied-message');
+  var copyDefault = clickedButton.parentElement.parentElement.querySelector('.default-message');
+  var copySuccess = clickedButton.parentElement.parentElement.querySelector('.copied-message');
 
   // Add 'hidden' class to the default message and remove it from the success message.
   copyDefault.classList.add('hidden');
