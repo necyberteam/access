@@ -155,14 +155,16 @@ function access_cilink_preprocess_views_view_field(&$variables) {
       '#type' => 'inline_template',
       '#template' => '<details class="search-ci-links">
                         <summary class="flex items-center bg-light-teal p-4 relative after:right-8">
-                          <div class="text-dark-teal m-0 font-bold text-lg">{{ title }}</div>
+                          <div class="text-dark-teal m-0 pe-20 font-bold text-lg">{{ title }}</div>
                           <div>
-                            <button class="ms-4" onclick="copyclip(\'{{ link_url }}\', event)">
-                              <span class="default-message">
-                                <i class="fa-solid fa-link"></i> Copy link to clipboard
+                            <button class="ms-4 absolute top-4 right-28" onclick="copyclip(\'{{ link_url }}\', event)">
+                              <span class="default-message block leading-5 text-dark-teal">
+                                <i class="fa-solid fa-link"></i><br />
+                                Copy link
                               </span>
-                              <span class="copied-message hidden">
-                                <i class="fa-solid fa-check"></i> Copied!
+                              <span class="copied-message text-dark-teal hidden">
+                                <i class="fa-solid fa-check"></i><br />
+                                Copied!
                               </span>
                             </button>
                           </div>
