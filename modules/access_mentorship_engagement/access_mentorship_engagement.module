@@ -1,0 +1,138 @@
+<?php
+
+/**
+ * @file
+ * Module for customizing mentorship_engagement node.
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+use Drupal\Core\Link;
+
+/**
+ * Implements hook_form_alter().
+ */
+function access_mentorship_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_mentorship_engagement_edit_form' || $form_id == 'node_mentorship_engagement_form') {
+    $form['field_tags_replace'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => 'field-tags-replace',
+        'data-suggest' => '0',
+      ],
+      '#weight' => 15,
+    ];
+
+    $form['field_tags_replace']['field_suggest'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => [
+          'bg-light-teal',
+          'my-5',
+          'p-5'
+        ]
+      ],
+    ];
+
+    $form['field_tags_replace']['field_suggest']['tag_list'] = [
+      '#markup' => "<div id='match-tag-list' class='mb-3'>Get tag suggestions based on your description and then curate as necessary.</div>",
+    ];
+    $form['field_tags_replace']['field_suggest']['replace_button'] = [
+      '#type' => 'button',
+      '#value' => t('Suggest Tags'),
+      '#limit_validation_errors' => array(),
+      '#attributes' => [
+        'class' => [
+          'ml-0'
+        ],
+      ],
+      '#ajax' => [
+        'callback' => 'access_mentorship_engagement_replace_section_callback',
+        'wrapper' => 'field-tags-replace',
+      ],
+    ];
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+
+
+    $add_tags = \Drupal::service('access_misc.addtags');
+    $output = $add_tags->getView();
+    $tag_label = t('Tags');
+    $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
+    $tag_summary = t('Select Tags');
+
+    $form['node_add_tags'] = [
+      '#markup' => "<div class='font-bold form-required'>$tag_label</div>
+        <div class='tag-description'>$tag_description</div>
+        <div id='tag-suggestions'></div>
+        <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
+      '#weight' => 15,
+      '#allowed_tags' => [
+        'button',
+        'details',
+        'summary',
+        'div',
+        'span',
+        'h2',
+      ],
+    ];
+
+    // Attach javascript.
+    $form['#attached']['library'][] = 'access_misc/node_add_tags';
+  }
+}
+
+/**
+ * Ajax callback function to replace the section with '#markup'.
+ */
+function access_mentorship_engagement_replace_section_callback(array &$form, FormStateInterface $form_state) {
+  $raw_data = $form_state->getUserInput();
+  $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  $suggested_tag_ids = '0';
+  if (strlen($body_filter) >= 400) {
+    $llm = \Drupal::service('access_llm.ai_references_generator');
+    $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
+    $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+  }
+  else {
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "<div class='match-tag-list bg-blue-200 text-sky-900 my-5 p-5'>
+                    <strong class='text-sky-900'>Fill in the description above to get suggested tags.</strong><br />
+                    Your description must be over 400 characters to get a suggestion.</div>",
+    ];
+  }
+  $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;
+
+  // Return the updated section.
+  return $form['field_tags_replace'];
+}
+
+function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
+  kint($entity->bundle());
+  kint(get_class_methods($entity));
+  die();
+  \Drupal::logger('access_mentorship_engagement')
+    ->info('ENTITY_TYPE created: @type @id', [
+    '@type' => $entity->getEntityType(),
+    '@id' => $entity->id(),
+  ]);
+  if ($entity->bundle() == 'mentorship_engagement') {
+    $nid = $entity->id();
+    $body['string'] = [
+      '#type' => 'inline_template',
+      '#template' => '<p>{{ text }}:  {{ link }}</p>',
+      '#context' => [
+        'text' => $this->t('The following node has been created'),
+        'link' => Link::fromTextAndUrl(t('View Submission'), $here)->toString(),
+      ],
+    ];
+    $render = \Drupal::service('renderer');
+    $body = $render->render($body)->__toString();
+    $nr = new NotifyRoles();
+    $nr->notifyRole('site_developer', $this->t('The following node has been created'), $body);
+  }
+}

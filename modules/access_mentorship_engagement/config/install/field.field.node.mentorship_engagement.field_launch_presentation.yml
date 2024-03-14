@@ -1,0 +1,27 @@
+uuid: 1928118c-7e00-47cc-aa90-4bc7b04ffff6
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_launch_presentation
+    - node.type.mentorship_engagement
+  module:
+    - file
+id: node.mentorship_engagement.field_launch_presentation
+field_name: field_launch_presentation
+entity_type: node
+bundle: mentorship_engagement
+label: 'Launch Presentation'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:file'
+  handler_settings: {  }
+  file_directory: 'match_engagement/[date:custom:Y]-[date:custom:m]'
+  file_extensions: 'ppt pptx'
+  max_filesize: 25mb
+  description_field: false
+field_type: file

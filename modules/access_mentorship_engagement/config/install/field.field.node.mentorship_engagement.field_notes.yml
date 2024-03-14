@@ -1,0 +1,19 @@
+uuid: af1f0783-0ff5-4834-b962-60a7c53744b6
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_notes
+    - node.type.mentorship_engagement
+id: node.mentorship_engagement.field_notes
+field_name: field_notes
+entity_type: node
+bundle: mentorship_engagement
+label: Notes
+description: 'Notes are not publicly displayed.'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string_long

@@ -1,0 +1,25 @@
+uuid: 7a62439f-9562-447e-a619-f3f8f702a11f
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_domain_source
+    - node.type.mentorship_engagement
+id: node.mentorship_engagement.field_domain_source
+field_name: field_domain_source
+entity_type: node
+bundle: mentorship_engagement
+label: 'Domain Source'
+description: 'Select the canonical domain for this content.'
+required: false
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:domain'
+  handler_settings:
+    target_bundles: null
+    sort:
+      field: weight
+      direction: ASC
+field_type: entity_reference

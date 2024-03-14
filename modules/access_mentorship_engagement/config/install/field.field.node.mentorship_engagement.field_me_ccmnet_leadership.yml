@@ -1,0 +1,29 @@
+uuid: e83adaa1-e6e1-4aaf-a1cb-99593b2b92ab
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_me_ccmnet_leadership
+    - node.type.mentorship_engagement
+id: node.mentorship_engagement.field_me_ccmnet_leadership
+field_name: field_me_ccmnet_leadership
+entity_type: node
+bundle: mentorship_engagement
+label: 'CCMNet Leadership Team Liaison'
+description: ''
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:user'
+  handler_settings:
+    target_bundles: null
+    sort:
+      field: _none
+      direction: ASC
+    auto_create: false
+    filter:
+      type: _none
+    include_anonymous: true
+field_type: entity_reference
