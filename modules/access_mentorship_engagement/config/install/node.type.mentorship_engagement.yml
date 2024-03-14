@@ -1,0 +1,17 @@
+uuid: e3c17449-9cd2-4188-bd30-814e101fe90c
+langcode: en
+status: true
+dependencies:
+  module:
+    - menu_ui
+third_party_settings:
+  menu_ui:
+    available_menus: {  }
+    parent: ''
+name: 'Mentorship Engagement'
+type: mentorship_engagement
+description: ''
+help: ''
+new_revision: true
+preview_mode: 0
+display_submitted: false

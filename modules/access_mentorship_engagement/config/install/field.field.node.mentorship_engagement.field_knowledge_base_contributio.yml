@@ -1,0 +1,24 @@
+uuid: b98c994d-7bf6-44a3-8830-cc47cbc17755
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_knowledge_base_contributio
+    - filter.format.basic_html
+    - node.type.mentorship_engagement
+  module:
+    - text
+id: node.mentorship_engagement.field_knowledge_base_contributio
+field_name: field_knowledge_base_contributio
+entity_type: node
+bundle: mentorship_engagement
+label: 'Knowledge Base Contributions'
+description: 'Please describe how you will contribute to the Knowledge Base as part of this mentorship engagement. For example, you might contribute [CI Links](/ci-links) pointing to resources that were helpful to you or post questions and answers on the [Ask.CI discussion forum](https://ask.ci).'
+required: false
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  allowed_formats:
+    - basic_html
+field_type: text_long

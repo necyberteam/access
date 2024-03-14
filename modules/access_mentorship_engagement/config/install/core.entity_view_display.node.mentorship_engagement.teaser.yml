@@ -1,0 +1,64 @@
+uuid: 659ef24e-316a-4f78-89b7-3087e2e7c506
+langcode: en
+status: true
+dependencies:
+  config:
+    - core.entity_view_mode.node.teaser
+    - field.field.node.mentorship_engagement.body
+    - field.field.node.mentorship_engagement.field_domain_access
+    - field.field.node.mentorship_engagement.field_domain_all_affiliates
+    - field.field.node.mentorship_engagement.field_domain_source
+    - field.field.node.mentorship_engagement.field_knowledge_base_contributio
+    - field.field.node.mentorship_engagement.field_launch_presentation
+    - field.field.node.mentorship_engagement.field_launch_presentation_date
+    - field.field.node.mentorship_engagement.field_match_interested_users
+    - field.field.node.mentorship_engagement.field_me_ccmnet_leadership
+    - field.field.node.mentorship_engagement.field_me_looking_for
+    - field.field.node.mentorship_engagement.field_me_preferred_attributes
+    - field.field.node.mentorship_engagement.field_me_state
+    - field.field.node.mentorship_engagement.field_mentee
+    - field.field.node.mentorship_engagement.field_mentor
+    - field.field.node.mentorship_engagement.field_notes
+    - field.field.node.mentorship_engagement.field_tags
+    - field.field.node.mentorship_engagement.field_wrap_presentation
+    - field.field.node.mentorship_engagement.field_wrap_presentation_date
+    - node.type.mentorship_engagement
+  module:
+    - text
+    - user
+id: node.mentorship_engagement.teaser
+targetEntityType: node
+bundle: mentorship_engagement
+mode: teaser
+content:
+  body:
+    type: text_summary_or_trimmed
+    label: hidden
+    settings:
+      trim_length: 600
+    third_party_settings: {  }
+    weight: 101
+    region: content
+  links:
+    settings: {  }
+    third_party_settings: {  }
+    weight: 100
+    region: content
+hidden:
+  field_domain_access: true
+  field_domain_all_affiliates: true
+  field_domain_source: true
+  field_knowledge_base_contributio: true
+  field_launch_presentation: true
+  field_launch_presentation_date: true
+  field_match_interested_users: true
+  field_me_ccmnet_leadership: true
+  field_me_looking_for: true
+  field_me_preferred_attributes: true
+  field_me_state: true
+  field_mentee: true
+  field_mentor: true
+  field_notes: true
+  field_tags: true
+  field_wrap_presentation: true
+  field_wrap_presentation_date: true

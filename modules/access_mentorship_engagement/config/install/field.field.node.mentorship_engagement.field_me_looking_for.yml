@@ -1,0 +1,21 @@
+uuid: 2ef88bc2-7c22-41b6-b2c2-e3bfa41e9541
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_me_looking_for
+    - node.type.mentorship_engagement
+  module:
+    - options
+id: node.mentorship_engagement.field_me_looking_for
+field_name: field_me_looking_for
+entity_type: node
+bundle: mentorship_engagement
+label: 'I am looking for'
+description: ''
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: list_string

@@ -1,0 +1,18 @@
+uuid: 1a4750c0-cc3c-4151-a884-e36c7c05048e
+langcode: en
+status: true
+dependencies:
+  config:
+    - node.type.mentorship_engagement
+id: node.mentorship_engagement.title
+field_name: title
+entity_type: node
+bundle: mentorship_engagement
+label: 'Engagement Title'
+description: ''
+required: true
+translatable: true
+default_value: {  }
+default_value_callback: ''
+settings: {  }
+field_type: string

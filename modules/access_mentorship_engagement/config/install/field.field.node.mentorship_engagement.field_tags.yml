@@ -1,0 +1,29 @@
+uuid: a695e212-a6f7-405e-9063-a1c320b56a5d
+langcode: en
+status: true
+dependencies:
+  config:
+    - field.storage.node.field_tags
+    - node.type.mentorship_engagement
+    - taxonomy.vocabulary.tags
+id: node.mentorship_engagement.field_tags
+field_name: field_tags
+entity_type: node
+bundle: mentorship_engagement
+label: Tags
+description: 'Select tags that relate to the area(s) of expertise needed for the mentorship engagement.'
+required: true
+translatable: false
+default_value: {  }
+default_value_callback: ''
+settings:
+  handler: 'default:taxonomy_term'
+  handler_settings:
+    target_bundles:
+      tags: tags
+    sort:
+      field: name
+      direction: asc
+    auto_create: false
+    auto_create_bundle: ''
+field_type: entity_reference
