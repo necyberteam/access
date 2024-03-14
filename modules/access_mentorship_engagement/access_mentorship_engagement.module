@@ -112,16 +112,10 @@ function access_mentorship_engagement_replace_section_callback(array &$form, For
 }
 
 function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
-  kint($entity->bundle());
-  kint(get_class_methods($entity));
-  die();
-  \Drupal::logger('access_mentorship_engagement')
-    ->info('ENTITY_TYPE created: @type @id', [
-    '@type' => $entity->getEntityType(),
-    '@id' => $entity->id(),
-  ]);
   if ($entity->bundle() == 'mentorship_engagement') {
+    $options = ['absolute' => TRUE];
     $nid = $entity->id();
+    $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
     $body['string'] = [
       '#type' => 'inline_template',
       '#template' => '<p>{{ text }}:  {{ link }}</p>',
