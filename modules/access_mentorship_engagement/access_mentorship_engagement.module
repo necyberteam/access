@@ -6,8 +6,9 @@
  */
 
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\Core\Url;
 use Drupal\Core\Link;
+use Drupal\access_misc\Plugin\Util\NotifyRoles;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_form_alter().
@@ -116,17 +117,35 @@ function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInte
     $options = ['absolute' => TRUE];
     $nid = $entity->id();
     $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
-    $body['string'] = [
+    $ccmnet_body['string'] = [
       '#type' => 'inline_template',
-      '#template' => '<p>{{ text }}:  {{ link }}</p>',
+      '#template' => '<p>{{ text }} {{ link }}</p>',
       '#context' => [
-        'text' => $this->t('The following node has been created'),
+        'text' => t('A new CCMNet mentorship engagement has been requested.'),
         'link' => Link::fromTextAndUrl(t('View Submission'), $here)->toString(),
       ],
     ];
+    $author_body['string'] = [
+      '#type' => 'inline_template',
+      '#template' => '<p>{{ text }} {{ link }}</p>',
+      '#context' => [
+        'text' => t('Your requested CCMNet mentorship engagement has been created on the portal. Thank you for your participation! '),
+        'link' => Link::fromTextAndUrl(t('View Submission'), $here)->toString(),
+      ],
+    ];
+    $env = getenv('PANTHEON_ENVIRONMENT');
+    $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
     $render = \Drupal::service('renderer');
-    $body = $render->render($body)->__toString();
+    $ccmnet_body = $render->renderRoot($ccmnet_body)->__toString();
+    $author_body = $render->renderRoot($author_body)->__toString();
+
+    // Get current users email.
+    $current_user = \Drupal::currentUser();
+    $user = \Drupal\user\Entity\User::load($current_user->id());
+    $email = $user->getEmail();
+
     $nr = new NotifyRoles();
-    $nr->notifyRole('site_developer', $this->t('The following node has been created'), $body);
+    $nr->notifyRole($role, t('New Mentorship Engagement created'), $ccmnet_body);
+    $nr->notifyRole(NULL, t('Mentorship Engagement received'), $author_body, $email);
   }
 }
