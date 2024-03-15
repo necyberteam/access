@@ -15,27 +15,28 @@ class NotifyRoles {
    *  subject: email subject
    *  body: content of email
    */
-  public function notifyRole($roleName, $subject, $body) {
+  public function notifyRole($roleName, $subject, $body, $toAddrs = NULL) {
+    if (!$toAddrs) {
+      // Make destination list of emails of users with role.
+      $userIds = \Drupal::entityQuery('user')
+        ->condition('status', 1)
+        ->condition('roles', $roleName)
+        ->accessCheck(FALSE)
+        ->execute();
+      $users = User::loadMultiple($userIds);
+      $toAddrs = '';
+      $userCount = count($users);
+      if ($userCount == 0) {
+        return;
+      }
 
-    // Make destination list of emails of users with role.
-    $userIds = \Drupal::entityQuery('user')
-      ->condition('status', 1)
-      ->condition('roles', $roleName)
-      ->accessCheck(FALSE)
-      ->execute();
-    $users = User::loadMultiple($userIds);
-    $toAddrs = '';
-    $userCount = count($users);
-    if ($userCount == 0) {
-      return;
-    }
-
-    $iterate = 0;
-    foreach ($users as $user) {
-      $iterate++;
-      $toAddrs .= $user->get('mail')->getString();
-      if ($userCount != $iterate) {
-        $toAddrs .= ",";
+      $iterate = 0;
+      foreach ($users as $user) {
+        $iterate++;
+        $toAddrs .= $user->get('mail')->getString();
+        if ($userCount != $iterate) {
+          $toAddrs .= ",";
+        }
       }
     }
 
