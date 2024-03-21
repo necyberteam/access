@@ -34,6 +34,9 @@ function access_misc_views_pre_render(ViewExecutable $view) {
       $view->exposed_widgets = NULL;
     }
   }
+  if ($view->id() == 'user_profile') {
+    $view->element['#attached']['library'][] = 'cssn/cssn_library';
+  }
 }
 
 /**
