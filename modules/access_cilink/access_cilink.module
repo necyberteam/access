@@ -153,7 +153,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
 
     $output['string'] = [
       '#type' => 'inline_template',
-      '#template' => '<div class="relative">
+      '#template' => '<div class="details-wrap relative">
                         <button class="copyclip ms-4 absolute top-4 right-28 z-10" onclick="copyclip(\'{{ link_url }}\', event)">
                           <span class="default-message block leading-5 text-dark-teal">
                             <i class="fa-solid fa-link"></i><br />
@@ -167,13 +167,13 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                         <details class="search-ci-links">
                           <summary class="flex items-center bg-light-teal p-4 relative after:right-8">
                             <div class="text-dark-teal m-0 pe-20 font-bold text-lg">{{ title }}</div>
-                            <div class="bg-white text-orange font-bold py-2 px-4 rounded-full ms-auto me-10">{{ likesCount }}</div>
+                            <div class="linkcount bg-white text-orange font-bold py-2 px-4 rounded-full ms-auto me-10 ml-auto border round border-radius">{{ likesCount }}</div>
                           </summary>
                           <div class="grid grid-cols-5 gap-4 p-4">
                             <div class="col-span-5 md--col-span-4">
                               {{ linkToResource | raw }}
                               {{ description }}
-                              {{ tags | raw }}
+                              <div class="square-tags">{{ tags | raw }}</div>
                             </div>
                             <div class="col-span-5 md--col-span-1 flex flex-row flex-wrap justify-between">
                               {{ likesOutput | raw }}
@@ -198,7 +198,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                                   <summary class="ps-2 pe-10 py-2 text-dark-teal leading-5 uppercase">
                                     {{ report }}
                                   </summary>
-                                  <ul class="dropdown-menu px-2 mb-2">
+                                  <ul class="px-2 mb-2">
                                     <li>{{ flagOutdated }}</li>
                                     <li>{{ flagNotUseful }}</li>
                                     <li>{{ flagInaccurate }}</li>
