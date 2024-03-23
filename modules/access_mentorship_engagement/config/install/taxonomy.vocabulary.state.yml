@@ -1,8 +1,0 @@
-uuid: 19c5dcac-7acc-4bbe-a41e-cd91d79b8337
-langcode: en
-status: true
-dependencies: {  }
-name: State
-vid: state
-description: 'The moderation state of a node'
-weight: 0
