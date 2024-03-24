@@ -5,11 +5,57 @@
  * Module for customizing mentorship_engagement node.
  */
 
+use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Link;
 use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Core\Url;
 use Drupal\Component\Utility\Xss;
+
+
+/**
+ * Implements hook_entity_insert().
+ */
+function access_mentorship_engagement_entity_insert(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'mentorship_engagement') {
+    $nid = $entity->id();
+    $mentor = $entity->get('field_mentor')->getValue()[0]['target_id'];
+    $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+    $author = $entity->getOwner()->id();
+    $authorized_users = [];
+    if ($mentor && $mentor != $author) {
+      $authorized_users[] = $mentor;
+    }
+    if ($mentee && $mentee != $author) {
+      $authorized_users[] = $mentee;
+    }
+    $grant = \Drupal::service('access_misc.nodeaccess.grant');
+    $grant->grant($authorized_users, $nid);
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function access_mentorship_engagement_entity_update(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'mentorship_engagement') {
+    $nid = $entity->id();
+    $mentor = $entity->get('field_mentor')->getValue()[0]['target_id'];
+    $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+    $author = $entity->getOwner()->id();
+    $authorized_users = [];
+    if ($mentor && $mentor != $author) {
+      $authorized_users[] = $mentor;
+    }
+    if ($mentee && $mentee != $author) {
+      $authorized_users[] = $mentee;
+    }
+    $grant = \Drupal::service('access_misc.nodeaccess.grant');
+    $grant->grant($authorized_users, $nid);
+  }
+}
 
 /**
  * Implements hook_form_alter().
