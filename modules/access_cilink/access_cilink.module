@@ -4,7 +4,9 @@
  * @file
  */
 
+use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
+use Drupal\Core\Url;
 use Drupal\node\Entity\Node;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
@@ -113,9 +115,15 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $likes = $flag_upvote_count == 1 ? "<span>Like</span>" : "<span>Likes</span>";
     // If User is not logged in, show the login link.
     if (\Drupal::currentUser()->isAnonymous()) {
+      $options = [
+        'query' => ['destination' => \Drupal::request()->getRequestUri()],
+        'attributes' => ['class' => ['text-dark-teal', 'no-underline', 'hover--underline']],
+      ];
+      $login = Link::fromTextAndUrl('Login to vote', Url::fromUri('internal:/user/login', $options))->toString();
+
       $flag_upvote = "<div class=''>
                         <i class='fa-light fa-right-to-bracket text-dark-teal text-[32px] w-9 me-2'></i>
-                        <br><a href='user' class='text-dark-teal'>Login to like</a>
+                        <br> " . $login . "
                       </div>";
     }
     $likes_html = "<div class='mb-5 text-dark-teal font-bold'>$likes_count $likes</div>";
