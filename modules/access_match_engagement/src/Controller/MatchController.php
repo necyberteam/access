@@ -18,7 +18,7 @@ class MatchController extends ControllerBase {
     $nid = \Drupal::routeMatch()->getRawParameter('node');
     // Load entity node using node id.
     $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
-    if ($node->getType() == 'match_engagement') {
+    if ($node->getType() == 'match_engagement' || $node->getType() == 'mentorship_engagement'){
       $current_user = \Drupal::currentUser()->id();
       $interested_users = $node->get('field_match_interested_users')->getValue();
       if (array_search($current_user, array_column($interested_users, 'target_id')) !== FALSE) {
