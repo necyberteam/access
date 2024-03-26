@@ -199,18 +199,18 @@ function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInte
     $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
     $ccmnet_body['string'] = [
       '#type' => 'inline_template',
-      '#template' => '<p>{{ text }} {{ link }}</p>',
+      '#template' => '{{ text }} {{ link }}',
       '#context' => [
         'text' => t('A new CCMNet mentorship engagement has been requested.'),
-        'link' => Link::fromTextAndUrl(t('View Submission'), $here)->toString(),
+        'link' => $here->toString(TRUE)->getGeneratedUrl(),
       ],
     ];
     $author_body['string'] = [
       '#type' => 'inline_template',
-      '#template' => '<p>{{ text }} {{ link }}</p>',
+      '#template' => '{{ text }} {{ link }}',
       '#context' => [
         'text' => t('Your requested CCMNet mentorship engagement has been created on the portal. Thank you for your participation! '),
-        'link' => Link::fromTextAndUrl(t('View Submission'), $here)->toString(),
+        'link' => $here->toString(TRUE)->getGeneratedUrl(),
       ],
     ];
     $env = getenv('PANTHEON_ENVIRONMENT');
