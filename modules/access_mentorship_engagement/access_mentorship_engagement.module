@@ -208,7 +208,7 @@ function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInte
       '#type' => 'inline_template',
       '#template' => '{{ text }} {{ link }}',
       '#context' => [
-        'text' => t('Your requested CCMNet mentorship engagement has been created on the portal. Thank you for your participation! '),
+        'text' => t('Your requested CCMNet mentorship engagement has been created on the portal. Thank you for your participation! View your submission here:'),
         'link' => $here->toString(TRUE)->getGeneratedUrl(),
       ],
     ];
