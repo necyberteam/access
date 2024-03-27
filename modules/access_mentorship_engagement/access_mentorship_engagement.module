@@ -228,3 +228,56 @@ function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInte
     $nr->notifyRole(NULL, t('Mentorship Engagement received'), $author_body, $email);
   }
 }
+
+/**
+ * Implements hook_cron().
+ */
+function access_mentorship_engagement_cron() {
+  $env = getenv('PANTHEON_ENVIRONMENT');
+  //if ($env == 'live') {
+    $interested_status = \Drupal::state()->get('access_mentorship_interested');
+    // Send interested email at 1:00am.
+    //if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5) && $interested_status != 0) {
+    if ($interested_status != 0) {
+      $render = \Drupal::service('renderer');
+      $nr = new NotifyRoles();
+      $interested_list = json_decode($interested_status);
+      $interested_links = '';
+      foreach ($interested_list as $interested_nid) {
+        $email_body = [];
+        $node = \Drupal::entityTypeManager()->getStorage('node')->load($interested_nid);
+        $options = ['absolute' => TRUE];
+        $here = Url::fromRoute('entity.node.canonical', ['node' => $interested_nid], $options);
+        // Get author of node.
+        $author = $node->getOwner()->getEmail();
+        $interested_links .= $here->toString(TRUE)->getGeneratedUrl() . "\n";;
+        $email_body['string'] = [
+          '#type' => 'inline_template',
+          '#template' => '{{ text }}
+                          {{ link }}',
+          '#context' => [
+            'text' => t('Someone is interested in your mentorship request.'),
+            'link' => $here->toString(TRUE)->getGeneratedUrl(),
+          ],
+        ];
+        $body_string = $render->renderRoot($email_body)->__toString();
+        $nr->notifyRole(NULL, t('Mentorship interest'), $body_string, $author);
+      }
+      $env = getenv('PANTHEON_ENVIRONMENT');
+      $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+      $email_body = [];
+      $email_body['string'] = [
+        '#type' => 'inline_template',
+        '#template' => '{{ text }}
+                        {{ link }}',
+        '#context' => [
+          'text' => t('Someone is interested in your mentorship request.'),
+          'link' => $interested_links,
+        ],
+      ];
+      $body_string = $render->renderRoot($email_body)->__toString();
+      $nr->notifyRole($role, t('Mentorship interest'), $body_string);
+      \Drupal::state()->set('access_mentorship_interested', 0);
+    }
+  //}
+}
