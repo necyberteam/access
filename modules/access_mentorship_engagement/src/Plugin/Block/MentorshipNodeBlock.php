@@ -168,7 +168,7 @@ class MentorshipNodeBlock extends BlockBase implements
    */
   public function getInterestedUsers($interested_users) {
     // Only show interested users to match_sc, match_pm, and admin.
-    $accepted_roles = ['administrator', 'match_sc', 'match_pm'];
+    $accepted_roles = ['administrator', 'ccmnet_pm'];
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
     if (empty(in_array($accepted_roles, $roles))) {
