@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Module updates.
+ */
+
+use Drupal\taxonomy\Entity\Term;
+
+/**
+ *
+ */
+function access_mentorship_engagement_install() {
+  \Drupal::state()->set('access_mentorship_interested', 0);
+  // Add the tag 'Recruiting' to the 'State' Taxonomy.
+  $states = [
+    'Recruiting',
+    'Review Applicants',
+    'In Progress',
+    'On Hold',
+    'Finishing Up',
+    'Complete',
+    'Halted',
+  ];
+
+  $weight = 0;
+
+  foreach ($states as $state) {
+    $term = Term::create([
+      'name' => $state,
+      'vid' => 'state',
+      'weight' => $weight,
+    ]);
+    $term->save();
+    $weight++;
+  }
+}
