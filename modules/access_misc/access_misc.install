@@ -1500,3 +1500,55 @@ function access_misc_update_10016() {
       ->execute();
   }
 }
+
+/**
+ * Update MATCH and Announcment nodes to amp_cyberinfrastructure_org domain.
+ */
+function access_misc_update_10017() {
+  // Entity lookup all nodes match_engagement nids.
+  $match_nids = \Drupal::entityQuery('node')
+    ->condition('type', 'match_engagement')
+    ->accessCheck(FALSE)
+    ->execute();
+  $announcment_nids = \Drupal::entityQuery('node')
+    ->condition('type', 'access_news')
+    ->accessCheck(FALSE)
+    ->execute();
+  $connection = \Drupal::database();
+  $connection->delete('node__field_domain_access')
+    ->condition('bundle', 'match_engagement')
+    ->execute();
+  foreach ($match_nids as $row) {
+    $node = \Drupal::entityTypeManager()->getStorage('node')->load($row);
+    $revision_id = $node->get('vid')->value;
+    $connection->insert('node__field_domain_access')
+      ->fields([
+        'bundle' => 'match_engagement',
+        'deleted' => 0,
+        'entity_id' => $row,
+        'revision_id' => $revision_id,
+        'langcode' => 'en',
+        'delta' => 0,
+        'field_domain_access_target_id' => 'amp_cyberinfrastructure_org',
+      ])
+      ->execute();
+  }
+  $connection->delete('node__field_domain_access')
+    ->condition('bundle', 'access_news')
+    ->execute();
+  foreach ($announcment_nids as $row) {
+    $node = \Drupal::entityTypeManager()->getStorage('node')->load($row);
+    $revision_id = $node->get('vid')->value;
+    $connection->insert('node__field_domain_access')
+      ->fields([
+        'bundle' => 'access_news',
+        'deleted' => 0,
+        'entity_id' => $row,
+        'revision_id' => $revision_id,
+        'langcode' => 'en',
+        'delta' => 0,
+        'field_domain_access_target_id' => 'amp_cyberinfrastructure_org',
+      ])
+      ->execute();
+  }
+}

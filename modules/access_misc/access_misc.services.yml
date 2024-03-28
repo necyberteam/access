@@ -7,6 +7,9 @@ services:
     class: Drupal\access_misc\Plugin\NodeAddTags
     arguments: ['@renderer']
 
+  access_misc.skillLevel:
+    class: Drupal\access_misc\Plugin\SkillLevel
+
   access_misc.import_access_orgs:
     class: Drupal\access_misc\Services\ImportAccessOrgs
     arguments: ['%access_misc.verbose%']
