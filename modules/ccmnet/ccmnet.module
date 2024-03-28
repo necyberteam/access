@@ -15,7 +15,7 @@ use Drupal\Component\Utility\Xss;
 /**
  * Implements hook_entity_insert().
  */
-function access_mentorship_engagement_entity_insert(EntityInterface $entity) {
+function ccmnet_entity_insert(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'mentorship_engagement') {
     $nid = $entity->id();
@@ -37,7 +37,7 @@ function access_mentorship_engagement_entity_insert(EntityInterface $entity) {
 /**
  * Implements hook_entity_insert().
  */
-function access_mentorship_engagement_entity_update(EntityInterface $entity) {
+function ccmnet_entity_update(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'mentorship_engagement') {
     $nid = $entity->id();
@@ -59,7 +59,7 @@ function access_mentorship_engagement_entity_update(EntityInterface $entity) {
 /**
  * Implements hook_form_alter().
  */
-function access_mentorship_engagement_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_mentorship_engagement_edit_form' || $form_id == 'node_mentorship_engagement_form') {
     $form['field_tags_replace'] = [
       '#type' => 'container',
@@ -143,7 +143,7 @@ function access_mentorship_engagement_form_alter(&$form, FormStateInterface $for
 
     // Attach javascript.
     $form['#attached']['library'][] = 'access_misc/node_add_tags';
-    $form['#attached']['library'][] = 'access_mentorship_engagement/mentorship_engagement';
+    $form['#attached']['library'][] = 'ccmnet/mentorship_engagement';
   }
 }
 
@@ -191,7 +191,10 @@ function access_mentorship_engagement_replace_section_callback(array &$form, For
   return $form['field_tags_replace'];
 }
 
-function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
+/**
+ * Implements hook_node_insert().
+ */
+function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
   if ($entity->bundle() == 'mentorship_engagement') {
     $options = ['absolute' => TRUE];
     $nid = $entity->id();
@@ -232,7 +235,7 @@ function access_mentorship_engagement_node_insert(\Drupal\Core\Entity\EntityInte
 /**
  * Implements hook_cron().
  */
-function access_mentorship_engagement_cron() {
+function ccmnet_cron() {
   $env = getenv('PANTHEON_ENVIRONMENT');
   //if ($env == 'live') {
     $interested_status = \Drupal::state()->get('access_mentorship_interested');

@@ -10,7 +10,7 @@ use Drupal\taxonomy\Entity\Term;
 /**
  *
  */
-function access_mentorship_engagement_install() {
+function ccmnet_install() {
   \Drupal::state()->set('access_mentorship_interested', 0);
   // Add the tag 'Recruiting' to the 'State' Taxonomy.
   $states = [

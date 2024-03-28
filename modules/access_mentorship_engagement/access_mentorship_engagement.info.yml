@@ -1,7 +1,0 @@
-name: Mentorship Engagement
-description: 'Custom functionality for the Mentorship Engagement node type'
-type: module
-core_version_requirement: ^10
-package: Custom
-dependencies:
-  - access
