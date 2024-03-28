@@ -1,6 +1,6 @@
 <?php
 
-namespace Drupal\access_mentorship_engagement\Plugin\Block;
+namespace Drupal\ccmnet\Plugin\Block;
 
 use Drupal\node\NodeInterface;
 use Drupal\Core\Block\BlockBase;
