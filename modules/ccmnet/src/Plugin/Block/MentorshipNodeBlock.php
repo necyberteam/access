@@ -171,7 +171,14 @@ class MentorshipNodeBlock extends BlockBase implements
     $accepted_roles = ['administrator', 'ccmnet_pm'];
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
-    if (empty(in_array($accepted_roles, $roles))) {
+    $hide = TRUE;
+    foreach ($accepted_roles as $role) {
+      if (in_array($role, $roles)) {
+        $hide = FALSE;
+        break;
+      }
+    }
+    if ($hide) {
       return [];
     };
 
