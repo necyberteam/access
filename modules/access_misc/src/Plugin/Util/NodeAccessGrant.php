@@ -35,10 +35,10 @@ class NodeAccessGrant {
    * Function to grant access to node.
    */
   public function grant($authorized_users, $nid) {
-    $this->connection->delete('node_access')
-      ->condition('nid', $nid)
-      ->execute();
     if ($authorized_users) {
+      $this->connection->delete('node_access')
+        ->condition('nid', $nid)
+        ->execute();
       $authorized_users[] = 6;
       $authorized_users[] = 1;
       foreach ($authorized_users as $uid) {
