@@ -89,6 +89,7 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
         $form['field_user_bio']['#access'] = FALSE;
         $form['field_institution']['#access'] = FALSE;
         $form['field_citizenships']['#access'] = FALSE;
+        $form['field_user_preferred_pronouns']['#access'] = FALSE;
       }
       break;
   }
