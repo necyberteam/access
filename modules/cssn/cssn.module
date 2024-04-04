@@ -11,11 +11,21 @@ use Drupal\Core\Session\AccountInterface;
 use Drupal\block\Entity\Block;
 use Drupal\cssn\Plugin\Util\RoleProgramSorter;
 use Drupal\user\Entity\User;
+use Drupal\views\ViewExecutable;
 
 /**
  * @file
  * Module for CSSN.
  */
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function cssn_views_pre_render(ViewExecutable $view) {
+  if ($view->id() == 'cssn_directory') {
+    $view->element['#attached']['library'][] = 'cssn/cssn_directory';
+  }
+}
 
 /**
  * Implements hook_block_access().
