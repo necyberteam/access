@@ -69,7 +69,7 @@ function access_affinitygroup_preprocess_views_view_field(&$variables) {
     $tid = $node->get('field_affinity_group')->getValue();
     $tid = $tid[0]['target_id'];
     $flag_ag = \Drupal::service('flag.link_builder')->build('taxonomy_term', $tid, 'affinity_group');
-    $flag_ag['#attributes']['class'][] = 'dropdown-item';
+    $flag_ag['#attributes']['class'][] = 'btn-sm btn-small btn-secondary-outline py-0 px-4';
     $flag_ag = \Drupal::service('renderer')->renderPlain($flag_ag);
     $current_user = \Drupal::currentUser();
     if ($current_user->isAnonymous()) {
@@ -79,7 +79,7 @@ function access_affinitygroup_preprocess_views_view_field(&$variables) {
         '#context' => [
             'link_url' => '/user/login?destination=/affinity_groups',
             'title' => t('Login to join'),
-            'button_text' => t('Login'),
+            'button_text' => t('Join'),
         ],
       ];
       $variables['output'] = $output;
