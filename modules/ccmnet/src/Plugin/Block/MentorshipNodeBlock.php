@@ -109,34 +109,67 @@ class MentorshipNodeBlock extends BlockBase implements
       $nid = $thisNode->id();
       $node = $this->entityInterface->getStorage('node')->load($nid);
       $state = $node->get('field_me_state')->getValue();
+      $is_recruiting = false;
       if ($state) {
         $lookup = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'recruiting', 'vid' => 'state']);
         $state_tid = array_keys($lookup)[0];
         $state = $state[0]['target_id'];
         $is_recruiting = strcasecmp($state, $state_tid) == 0 ? TRUE : FALSE;
       }
+      if (!$is_recruiting) {
+        return [];
+      }
+
       $nid = $node->id();
+
+      $looking_for = $node->get('field_me_looking_for')->getValue();
+      $looking_for = $looking_for[0]['value'];
+      $img = '<img src="/modules/custom/access/modules/ccmnet/images/asterisk.png" alt="asterisk" />';
+      $section_header = '<div class="mentorship_attrib_pretitle text-uppercase">' . $img . $looking_for . ' preferred attributes:' . '</div>';
+
+      // button to contact the originating mentor/mentee
+      if ($looking_for == 'mentor') {
+        $seeker = $node->get('field_mentee')->getValue();
+      } else {
+        $seeker = $node->get('field_mentor')->getValue();
+      }
+      if (!empty($seeker)) {
+        $seeker = $seeker[0]['target_id'];
+        $current_path  = \Drupal::service('path.current')->getPath();
+        $path_alias = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
+        $question_button = "<a class='btn btn-primary' href='/user/$seeker/contact?destination=$path_alias'>I have a question</a>";
+      } else {
+        $question_button = '';
+      }
+
       $interested_users = $node->get('field_match_interested_users')->getValue();
       // Lookup user names from uid.
       $interested_users = $this->getInterestedUsers($interested_users);
       $interested_button = '';
-      if ($is_recruiting) {
-        $interested_list = $node->get('field_match_interested_users')->getValue();
-        $user = \Drupal::currentUser()->id();
-        if (array_search($user, array_column($interested_list, 'target_id')) !== FALSE) {
-          $uninterested_text = $this->t("I'm no longer Interested");
-          $interested_button = "<a class='btn btn-primary' href='/node/$nid/interested'>$uninterested_text</a>";
-        }
-        else {
-          $interested_text = $this->t("I'm Interested");
-          $interested_button = $is_recruiting ? "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>" : '';
-        }
+
+      $interested_list = $node->get('field_match_interested_users')->getValue();
+      $user = \Drupal::currentUser()->id();
+      if (array_search($user, array_column($interested_list, 'target_id')) !== FALSE) {
+        $uninterested_text = $this->t("I'm no longer Interested");
+        $interested_button = "<a class='btn btn-primary' href='/node/$nid/interested'>$uninterested_text</a>";
+      } else {
+        $interested_text = $this->t("I'm Interested");
+        $interested_button = "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>";
       }
+
+      $recruitee_attrib = $node->get('field_me_preferred_attributes')->getValue();
+      $recruitee_attrib = $recruitee_attrib[0]['value'];
+
       $match_node_block['string'] = [
         '#type' => 'inline_template',
-        '#template' => '<div class="">
+        '#template' => '<div class="mentorship_attrib_section">
+            {{ section_header | raw }}
+            <div class="mentorship_attrib">
+              {{recruitee_attributes | raw}}
+            </div>
           <div class="mb-5">
            {{ interested_button | raw }}
+            {{ question_button | raw }}
           </div>
           {% if interested_users %}
             <div>
@@ -147,19 +180,21 @@ class MentorshipNodeBlock extends BlockBase implements
                 {% endfor %}
                 </ul>
             </div>
-        {% endif %}',
+          {% endif %}
+          </div>',
         '#context' => [
+          'section_header' => $section_header,
+          'recruitee_attributes' => $recruitee_attrib,
           'interested_button' => $interested_button,
           'interested_users' => $interested_users,
+          'question_button' => $question_button,
         ],
       ];
       return $match_node_block;
-    }
-    else {
+    } else {
       return [
         '#markup' => $this->t('Mentorship Node Block - not a mentorship node')
       ];
-
     }
   }
 
