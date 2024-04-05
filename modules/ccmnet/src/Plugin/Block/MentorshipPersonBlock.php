@@ -21,19 +21,18 @@ class MentorshipPersonBlock extends BlockBase {
   public function build() {
 
     // Note: title from layout builder block placement used here
-    $isMentor =  $this->configuration['label'] == 'Mentor' ? true : false;
+    $isMentor =  $this->configuration['label'] == 'Mentor' ? TRUE : FALSE;
     $personFieldName = $isMentor ? 'field_mentor' : 'field_mentee';
 
     $node_param = \Drupal::routeMatch()->getParameter('node');
     $node_storage = \Drupal::entityTypeManager()->getStorage('node');
 
-    // todo - how to return so title does not display if block is empty
+    // need this for using layout builder
     if (empty($node_param) || empty($node_param->id())) {
       return [
-        '#markup' => $this->t('No node found.'),   // TODO : errmsg  just for now to see what's happening.
+        '#markup' => $this->t('No node.'),
       ];
     }
-
     $node = $node_storage->load($node_param->id());
 
     $userName = '';
@@ -41,7 +40,9 @@ class MentorshipPersonBlock extends BlockBase {
     $institution = '';
     $personA = $node->get($personFieldName)->getValue();
 
-    if (!empty($personA) && !empty([$personA][0])) {
+    if (empty($personA) || empty([$personA][0])) {
+      return [];
+    } else {
       $person = $personA[0]['target_id'];
       // load user from user id mentee
       $user = User::load($person);
@@ -80,9 +81,10 @@ class MentorshipPersonBlock extends BlockBase {
       $userName = $user->getDisplayName();
     }
 
-    $display = '<div class="container"><div class="row">' .
-      '<div class="col-sm">' . $user_image . '</div>' .
-      '<div class="col-sm"><div>' . $userName . '</div><div>' . $institution . '</div></div></div></div>';
+    $display = '<div class="d-flex justify-content-start mentorship-person">' .
+          '<div class="col-sm p-0 " >' . $user_image . '</div>' .
+          '<div class="col-sm d-flex  flex-column justify-content-start">' .
+            '<div><strong>' . $userName . '</strong></div><div>' . $institution . '</div></div></div>';
 
     return [
       '#markup' => $this->t($display),
