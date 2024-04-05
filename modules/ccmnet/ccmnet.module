@@ -263,9 +263,10 @@ function ccmnet_node_view(array &$build, EntityInterface $entity, EntityViewDisp
       if ($display->getComponent('field_mentorship_pretitle')) {
 
         $field_looking = $entity->get('field_me_looking_for')->getValue();
-        $field_looking = $field_looking[0]['value'];
+
+        $field_looking = '<span class="pl-2 ">Recruiting: ' . $field_looking[0]['value'] . '<span>';
         $img = '<img src="/modules/custom/access/modules/ccmnet/images/star-o.png" alt="star" />';
-        $text = '<div class="mentorship_pretitle text-uppercase">' . $img . ' Recruiting: ' . $field_looking . '</div>';
+        $text = '<div class="mentorship_pretitle d-flex align-items-center text-uppercase">' . $img . $field_looking . '</div>';
 
         $build['field_mentorship_pretitle'] = [
           '#type' => 'markup',

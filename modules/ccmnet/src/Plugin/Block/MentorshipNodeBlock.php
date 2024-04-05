@@ -123,9 +123,9 @@ class MentorshipNodeBlock extends BlockBase implements
       $nid = $node->id();
 
       $looking_for = $node->get('field_me_looking_for')->getValue();
-      $looking_for = $looking_for[0]['value'];
+      $looking_for = '<span class=" pt-1 pl-2 ">' . $looking_for[0]['value'] . ' preferred attributes: </span>';
       $img = '<img src="/modules/custom/access/modules/ccmnet/images/asterisk.png" alt="asterisk" />';
-      $section_header = '<div class="mentorship_attrib_pretitle text-uppercase">' . $img . $looking_for . ' preferred attributes:' . '</div>';
+      $section_header = '<div class="d-flex align-items-center text-uppercase">' . $img . $looking_for . '</div>';
 
       // button to contact the originating mentor/mentee
       if ($looking_for == 'mentor') {
@@ -137,7 +137,7 @@ class MentorshipNodeBlock extends BlockBase implements
         $seeker = $seeker[0]['target_id'];
         $current_path  = \Drupal::service('path.current')->getPath();
         $path_alias = \Drupal::service('path_alias.manager')->getAliasByPath($current_path);
-        $question_button = "<a class='btn btn-primary' href='/user/$seeker/contact?destination=$path_alias'>I have a question</a>";
+        $question_button = "<a class='btn btn-rounded  bg-ccmnet-lightblue text-white' href='/user/$seeker/contact?destination=$path_alias'>I have a question</a>";
       } else {
         $question_button = '';
       }
@@ -151,10 +151,10 @@ class MentorshipNodeBlock extends BlockBase implements
       $user = \Drupal::currentUser()->id();
       if (array_search($user, array_column($interested_list, 'target_id')) !== FALSE) {
         $uninterested_text = $this->t("I'm no longer Interested");
-        $interested_button = "<a class='btn btn-primary' href='/node/$nid/interested'>$uninterested_text</a>";
+        $interested_button = "<a class='btn btn-rounded bg-red text-white' href='/node/$nid/interested'>$uninterested_text</a>";
       } else {
         $interested_text = $this->t("I'm Interested");
-        $interested_button = "<a class='btn btn-primary' href='/node/$nid/interested'>$interested_text</a>";
+        $interested_button = "<a class='btn btn-rounded bg-red text-white' href='/node/$nid/interested'>$interested_text</a>";
       }
 
       $recruitee_attrib = $node->get('field_me_preferred_attributes')->getValue();
@@ -164,11 +164,11 @@ class MentorshipNodeBlock extends BlockBase implements
         '#type' => 'inline_template',
         '#template' => '<div class="mentorship_attrib_section">
             {{ section_header | raw }}
-            <div class="mentorship_attrib">
+            <div>
               {{recruitee_attributes | raw}}
             </div>
           <div class="mb-5">
-           {{ interested_button | raw }}
+            {{ interested_button | raw }}
             {{ question_button | raw }}
           </div>
           {% if interested_users %}
