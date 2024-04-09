@@ -13,10 +13,10 @@ access_cilink.cilink:
   requirements:
     _permission: 'access content'
 access_cilink.kb_cilinks:
-  path: '/knowledge-base/ci-links/{sid}'
+  path: '/knowledge-base/resources/{sid}'
   defaults:
     _controller: '\Drupal\access_cilink\Controller\CiLinkController::cilinks'
-    _title: 'CI Link'
+    _title: 'Knowledge Base Resources'
     _title_callback: '\Drupal\access_cilink\Controller\CiLinkController::getTitle'
   requirements:
     _permission: 'access content'
