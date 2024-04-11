@@ -82,9 +82,9 @@ class MentorshipPersonBlock extends BlockBase {
     }
 
     $display = '<div class="d-flex justify-content-start mentorship-person">' .
-          '<div class="col-sm p-0 " >' . $user_image . '</div>' .
-          '<div class="col-sm d-flex  flex-column justify-content-start">' .
-            '<div><strong>' . $userName . '</strong></div><div>' . $institution . '</div></div></div>';
+      '<div class="mentorship-person-picture p-0" >' . $user_image . '</div>' .
+      '<div class="col d-flex  flex-column justify-content-start">' .
+      '<div><strong>' . $userName . '</strong></div><div>' . $institution . '</div></div></div>';
 
     return [
       '#markup' => $this->t($display),

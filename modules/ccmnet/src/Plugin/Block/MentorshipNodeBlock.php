@@ -167,7 +167,7 @@ class MentorshipNodeBlock extends BlockBase implements
             <div>
               {{recruitee_attributes | raw}}
             </div>
-          <div class="mb-5">
+          <div>
             {{ interested_button | raw }}
             {{ question_button | raw }}
           </div>
