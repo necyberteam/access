@@ -77,10 +77,10 @@ class ResourcesForAffinityGroup extends BlockBase {
         $token = \Drupal::token();
         $domainName = Html::getClass($token->replace(t('[domain:name]')));
         if ($domainName == 'access-support') {
-          $ci_link_path = '/knowledge-base/ci-links/';
+          $ci_link_path = '/knowledge-base/resources/';
         }
         else {
-          $ci_link_path = '/ci-links/';
+          $ci_link_path = '/resources/';
         }
         $ci_link = [
           '#type' => 'link',
