@@ -156,10 +156,11 @@ function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
 
     if ($current_domain_name == 'ccmnet') {
       $form['field_region']['widget']['#access'] = FALSE;
-
-      // First handler called before user saved; the second afterwards.
-      array_unshift($form['actions']['submit']['#submit'], 'ccmnet_add_program_form_submit');
-      $form['actions']['submit']['#submit'][] = 'ccmnet_add_ag_form_submit';
+      if ($form_id == 'user_register_form') {
+        // First handler called before user saved; the second afterwards.
+        array_unshift($form['actions']['submit']['#submit'], 'ccmnet_add_program_form_submit');
+        $form['actions']['submit']['#submit'][] = 'ccmnet_add_ag_form_submit';
+      }
     }
   }
 }
