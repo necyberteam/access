@@ -80,7 +80,7 @@ class ResourcesForAffinityGroup extends BlockBase {
           $ci_link_path = '/knowledge-base/resources/';
         }
         else {
-          $ci_link_path = '/resources/';
+          $ci_link_path = '/knowledge-base/resources/';
         }
         $ci_link = [
           '#type' => 'link',
