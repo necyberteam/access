@@ -123,12 +123,12 @@ class MentorshipNodeBlock extends BlockBase implements
       $nid = $node->id();
 
       $looking_for = $node->get('field_me_looking_for')->getValue();
-      $looking_for = '<span class=" pt-1 pl-2 ">' . $looking_for[0]['value'] . ' preferred attributes: </span>';
+      $looking_span = '<span class="pt-1 pl-2">' . $looking_for[0]['value'] . ' preferred attributes: </span>';
       $img = '<img src="/modules/custom/access/modules/ccmnet/images/asterisk.png" alt="asterisk" />';
-      $section_header = '<div class="d-flex align-items-center text-uppercase">' . $img . $looking_for . '</div>';
+      $section_header = '<div class="d-flex align-items-center text-uppercase">' . $img . $looking_span . '</div>';
 
       // button to contact the originating mentor/mentee
-      if ($looking_for == 'mentor') {
+      if ($looking_for[0]['value'] == 'mentor') {
         $seeker = $node->get('field_mentee')->getValue();
       } else {
         $seeker = $node->get('field_mentor')->getValue();

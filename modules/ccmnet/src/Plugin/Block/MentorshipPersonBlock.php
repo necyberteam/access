@@ -20,14 +20,14 @@ class MentorshipPersonBlock extends BlockBase {
    */
   public function build() {
 
-    // Note: title from layout builder block placement used here
-    $isMentor =  $this->configuration['label'] == 'Mentor' ? TRUE : FALSE;
+    // Note: title from layout builder block placement used here.
+    $isMentor = $this->configuration['label'] == 'Mentor' ? TRUE : FALSE;
     $personFieldName = $isMentor ? 'field_mentor' : 'field_mentee';
 
     $node_param = \Drupal::routeMatch()->getParameter('node');
     $node_storage = \Drupal::entityTypeManager()->getStorage('node');
 
-    // need this for using layout builder
+    // Need this for using layout builder.
     if (empty($node_param) || empty($node_param->id())) {
       return [
         '#markup' => $this->t('No node.'),
@@ -36,27 +36,27 @@ class MentorshipPersonBlock extends BlockBase {
     $node = $node_storage->load($node_param->id());
 
     $userName = '';
-    $user_image = '';
+    $userImage = '';
     $institution = '';
     $personA = $node->get($personFieldName)->getValue();
 
     if (empty($personA) || empty([$personA][0])) {
       return [];
     } else {
-      $person = $personA[0]['target_id'];
-      // load user from user id mentee
-      $user = User::load($person);
+      $personId = $personA[0]['target_id'];
+      // Load user from user id mentee.
+      $user = User::load($personId);
 
-      // get user profile picure image
-      $user_image = $user->get('user_picture');
+      // Get user profile picure image.
+      $userImage = $user->get('user_picture');
 
-      if ($user_image->entity !== NULL) {
-        $user_image = $user_image->entity->getFileUri();
-        $user_image = \Drupal::service('file_url_generator')->generateAbsoluteString($user_image);
+      if ($userImage->entity !== NULL) {
+        $userImage = $userImage->entity->getFileUri();
+        $userImage = \Drupal::service('file_url_generator')->generateAbsoluteString($userImage);
       } else {
-        $user_image = '/themes/nect-theme/img/user-picture.svg';
+        $userImage = '/themes/nect-theme/img/user-picture.svg';
       }
-      $user_image = '<img src="' . $user_image . '" />';
+      $userImage = '<img src="' . $userImage . '" />';
 
       // Show access organization if set; otherwise, use institution field.
       $orgArray = $user->get('field_access_organization')->getValue();
@@ -70,17 +70,14 @@ class MentorshipPersonBlock extends BlockBase {
       $userName = $user->getDisplayName();
     }
 
+    $userUrl = "/community-persona/$personId";
     $display = '<div class="d-flex justify-content-start mentorship-person">' .
-      '<div class="mentorship-person-picture p-0" >' . $user_image . '</div>' .
+      '<div class="mentorship-person-picture p-0" >' . $userImage . '</div>' .
       '<div class="col d-flex  flex-column justify-content-start">' .
-      '<div><strong>' . $userName . '</strong></div><div>' . $institution . '</div></div></div>';
+      '<div><strong><a href="' . $userUrl . '">' . $userName . '</a></strong></div><div>' . $institution . '</div></div></div>';
 
     return [
       '#markup' => $this->t($display),
     ];
-  }
-
-  //
-  function personDisplay($fieldName) {
   }
 }
