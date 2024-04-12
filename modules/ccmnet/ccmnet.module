@@ -5,12 +5,13 @@
  * Module for customizing mentorship_engagement node.
  */
 
-use Drupal\Core\Entity\EntityInterface;
-use Drupal\Core\Form\FormStateInterface;
 use Drupal\access_misc\Plugin\Util\NotifyRoles;
-use Drupal\Core\Url;
+use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_entity_insert().
@@ -144,6 +145,23 @@ function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
     // Attach javascript.
     $form['#attached']['library'][] = 'access_misc/node_add_tags';
     $form['#attached']['library'][] = 'ccmnet/mentorship_engagement';
+  } else if ($form_id == 'user_register_form' || $form_id == 'user_form') {
+    // For forms on ccmnet domain only:
+    // Hide region field for both user registration and user edit.
+    // For user registration only, add handlers to add user to CCMNet program + affinity group.
+
+    $token = \Drupal::token();
+    $domainName = t("[domain:name]");
+    $current_domain_name = Html::getClass($token->replace($domainName));
+
+    if ($current_domain_name == 'ccmnet') {
+      $form['field_region']['widget']['#access'] = FALSE;
+      if ($form_id == 'user_register_form') {
+        // First handler called before user saved; the second afterwards.
+        array_unshift($form['actions']['submit']['#submit'], 'ccmnet_add_program_form_submit');
+        $form['actions']['submit']['#submit'][] = 'ccmnet_add_ag_form_submit';
+      }
+    }
   }
 }
 
@@ -189,6 +207,29 @@ function access_mentorship_engagement_replace_section_callback(array &$form, For
   // Return the updated section.
   return $form['field_tags_replace'];
 }
+
+/**
+ * Submit handler from hook form_alter user_register_form.
+ * Add user to CCMNet program (aka region).
+ */
+function ccmnet_add_program_form_submit(array &$form, FormStateInterface $form_state) {
+
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'CCMNet']);
+  $term = reset($term);
+  $form_state->setValue('field_region', [['target_id' => $term->id()]]);
+}
+/*
+* Submit handler from hook form_alter for user_register_form.
+* Add new user to CCMNet Mentors affinity group.
+*/
+function ccmnet_add_ag_form_submit($form, &$form_state) {
+  $uid = $form_state->getValue('uid');
+  $user = \Drupal\user\Entity\User::load($uid);
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'CCMNet Mentors']);
+  $flag = \Drupal::service('cssn.flag');
+  $flag->setFlag('affinity_group', reset($term), $user);
+}
+
 
 /**
  * Implements hook_node_insert().

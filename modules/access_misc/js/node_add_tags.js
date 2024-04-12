@@ -9,7 +9,7 @@ Drupal.behaviors.nodeAddTags = {
   attach: function (context, settings) {
     // Only run this code once
     check++;
-    if (context === document && check < 5) {
+    if (context === document && check < 3) {
       var options = document.getElementById('edit-field-tags').selectedOptions;
       var set_tid = Array.from(options).map(({ value }) => value);
       const selected = [];
