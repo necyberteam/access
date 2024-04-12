@@ -29,7 +29,7 @@ function access_cilink_views_post_render(ViewExecutable $view) {
   if ($view->id() == 'resources' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_2') {
     $tid = $view->getTitle();
     if (term::load($tid)) {
-      $title = 'CI Links tagged ' . term::load($tid)->get('name')->value;
+      $title = 'Resources tagged ' . term::load($tid)->get('name')->value;
       // Set the view title.
       $view->setTitle($title);
       // Set the route title.
