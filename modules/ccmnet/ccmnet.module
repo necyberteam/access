@@ -264,7 +264,7 @@ function ccmnet_node_view(array &$build, EntityInterface $entity, EntityViewDisp
 
         $field_looking = $entity->get('field_me_looking_for')->getValue();
 
-        $field_looking = '<span class="pl-2 ">Recruiting: ' . $field_looking[0]['value'] . '<span>';
+        $field_looking = '<span class="pt-2 pl-2 ">Recruiting: ' . $field_looking[0]['value'] . '<span>';
         $img = '<img src="/modules/custom/access/modules/ccmnet/images/star-o.png" alt="star" />';
         $text = '<div class="mentorship_pretitle d-flex align-items-center text-uppercase">' . $img . $field_looking . '</div>';
 
