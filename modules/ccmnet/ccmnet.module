@@ -5,13 +5,13 @@
  * Module for customizing mentorship_engagement node.
  */
 
+use Drupal\access_misc\Plugin\Util\NotifyRoles;
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Xss;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Core\Url;
-use Drupal\Component\Utility\Xss;
-use Drupal\Component\Utility\Html;
-
 
 /**
  * Implements hook_entity_insert().
@@ -269,6 +269,52 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
     $nr = new NotifyRoles();
     $nr->notifyRole($role, t('New Mentorship Engagement created'), $ccmnet_body);
     $nr->notifyRole(NULL, t('Mentorship Engagement received'), $author_body, $email);
+  }
+}
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function ccmnet_entity_extra_field_info() {
+
+  $extra = [];
+  $extra['node']['mentorship_engagement']['display']['field_mentorship_pretitle'] = [
+    'label' => t('Pretitle'),
+    'description' => t('Pretitle pseudo field.'),
+    'weight' => 0,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ * If state is recruiting, return string for pre-title display:
+ * Recruiting: mentor / Recruiting: mentee.
+ */
+function ccmnet_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() == 'mentorship_engagement') {
+
+    $recruitingTerm = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'recruiting']);
+    $recruitingTermId = array_keys($recruitingTerm)[0];
+    $state = $entity->get('field_me_state')->getValue()[0]['target_id'];
+
+    if ($state == $recruitingTermId) {
+
+      if ($display->getComponent('field_mentorship_pretitle')) {
+
+        $field_looking = $entity->get('field_me_looking_for')->getValue();
+
+        $field_looking = '<span class="pt-2 pl-2 ">Recruiting: ' . $field_looking[0]['value'] . '<span>';
+        $img = '<img src="/modules/custom/access/modules/ccmnet/images/star-o.png" alt="star" />';
+        $text = '<div class="mentorship_pretitle d-flex align-items-center text-uppercase">' . $img . $field_looking . '</div>';
+
+        $build['field_mentorship_pretitle'] = [
+          '#type' => 'markup',
+          '#markup' => $text,
+        ];
+      }
+    }
   }
 }
 
