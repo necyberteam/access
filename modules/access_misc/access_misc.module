@@ -90,6 +90,42 @@ function access_misc_preprocess_views_view_field(&$variables) {
   $view = $variables['view'];
   $field = $variables['field'];
 
+  // Overwrite affinity_groups into /people page on the
+  // /admin/structure/views/view/nect_cc_people/edit/page_1 view.
+  if ($view->id() == 'nect_cc_people' && $view->current_display == 'page_1' && $field->options['id'] == 'uid_1') {
+    $uid = $variables['output'];
+    // Get all 'affinity_group' flags by user.
+    $flag_service = \Drupal::service('flag');
+    $flag_storage = $flag_service->getFlagById('affinity_group');
+    $flagging_storage = \Drupal::entityTypeManager()->getStorage('flagging');
+    $flaggings = $flagging_storage->loadByProperties(['uid' => $uid, 'flag_id' => $flag_storage->id()]);
+    $affinity_groups = "";
+    $n = 0;
+    foreach ($flaggings as $flagging) {
+      $tid = $flagging->getFlaggableId();
+      // Entity query to get affinity_group node that has tid for field_affinity_group.
+      if (!empty($tid)) {
+        if ($n < 3) {
+          $entity_query = \Drupal::entityQuery('node')
+            ->condition('type', 'affinity_group')
+            ->condition('field_affinity_group', $tid)
+            ->accessCheck(FALSE)
+            ->execute();
+          if ($entity_query) {
+            $term = Term::load($tid);
+            $affinity_group_name = $term->getName();
+            $nid = implode($entity_query);
+            // Drupal 10 Create link to affinity group node.
+            $affinity_groups .= "<a class='small' href='/node/$nid'>$affinity_group_name</a> ";
+
+          }
+        }
+      $n++;
+      }
+    }
+    $variables['output'] = Markup::create($affinity_groups);
+  }
+
   // Display event instance date in the right format.
   if ($view->id() == 'recurring_events_event_instances' && ($view->current_display == 'block_1' || $view->current_display == 'block_2')) {
     if ($field->field == 'date__value') {
