@@ -14,6 +14,27 @@ use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Url;
 
 /**
+ * Implements hook_page_attachments_alter().
+ */
+function access_misc_page_attachments_alter(array &$attachments) {
+  // get path.
+  $module_path = \Drupal::service('module_handler')->getModule('ccmnet')->getPath();
+  // Get domain.
+  $domain = \Drupal::config('domain.settings');
+  $token = \Drupal::token();
+  $domainName = Html::getClass($token->replace(t('[domain:name]')));
+  if ($domainName == 'ccmnet') {
+    $attachments['#attached']['html_head_link'][0] = [
+      [
+        "rel" => "icon",
+        "href" => "/$module_path/images/ccmnet-favicon.ico",
+        "type" => "image/x-icon"
+      ]
+    ];
+  }
+}
+
+/**
  * Implements hook_entity_insert().
  */
 function ccmnet_entity_insert(EntityInterface $entity) {
