@@ -149,7 +149,7 @@ class PersonaBlock extends BlockBase {
         $cssn = "Not a CSSN Member";
       }
       else {
-        $cssn_url = Url::fromUri('internal:/community/cssn#join-cssn');
+        $cssn_url = Url::fromUri('https://support.access-ci.org/community/cssn#join-cssn');
         $cssn_link = Link::fromTextAndUrl('Join the CSSN', $cssn_url);
         $cssn_renderable = $cssn_link->toRenderable();
         $cssn = $cssn_renderable;

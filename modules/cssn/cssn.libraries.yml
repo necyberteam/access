@@ -1,3 +1,6 @@
 cssn_library:
   js:
     js/cssn.js: {}
+cssn_directory:
+  js:
+    js/cssn-directory.js: {}
