@@ -66,7 +66,7 @@ class CommunityPersonaController extends ControllerBase {
    *   Link to affinity page.
    */
   public function buildAffinityLink() {
-    $affinity_url = Url::fromUri('internal:/affinity_groups');
+    $affinity_url = Url::fromUri('internal:/affinity-groups');
     $affinity_link = Link::fromTextAndUrl('All Affinity Groups', $affinity_url);
     $affinity_renderable = $affinity_link->toRenderable();
     $build_affinity_link = $affinity_renderable;
