@@ -1170,7 +1170,7 @@ DIVIDERHTML;
                 When you join the ACCESS Support Affinity Group you'll receive these weekly digests.";
 
     $buttonText = "See Affinity Groups";
-    $buttonUrl = ACCESS_SUPPPORT_URL . '/affinity_groups';
+    $buttonUrl = ACCESS_SUPPPORT_URL . '/affinity-groups';
 
     $html = <<<ROLLUPSTATIC1
     <table class="layout" style="table-layout:fixed" width="100%" border="0" cellpadding="0" cellspacing="0">

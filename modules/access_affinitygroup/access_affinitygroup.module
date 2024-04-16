@@ -75,7 +75,7 @@ function access_affinitygroup_preprocess_views_view_field(&$variables) {
         '#type' => 'inline_template',
         '#template' => '<a href="{{ link_url }}" class="btn btn-sm btn-small btn-secondary-outline btn-md-teal py-0 px-4" title="{{ title }}"><small>{{ button_text }}</small></a>',
         '#context' => [
-            'link_url' => '/user/login?destination=/affinity_groups',
+            'link_url' => '/user/login?destination=/affinity-groups',
             'title' => t('Login to join'),
             'button_text' => t('Join'),
         ],
