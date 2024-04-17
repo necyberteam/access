@@ -34,14 +34,15 @@ details.tags summary {
     color: #1A5B6E;
 }
 
-.selected {
-  background-color: #1A5B6E;
-  border-color: #1A5B6E;
-  color: #ffffff;
+details.tags .tags-select.selected {
+  background-color: var(--selected-tag) !important;
+  border-color: var(--selected-tag) !important;
+  color: #ffffff !important;
 }
 
-.selected:hover {
-  color: #ffffff;
+details.tags .tags-select.selected:hover {
+  border-color: var(--selected-tag) !important;
+  color: #ffffff !important;
   opacity: 0.8;
 }
 
