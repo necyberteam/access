@@ -37,6 +37,8 @@ use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -952,6 +954,50 @@ function showStatus($logmsg) {
  * 2) User Allocations Import
  */
 function access_affinitygroup_cron() {
+  $email_recruit = FALSE;
+  // Adding for logging purposes to check server time.
+  if ((date('G', time()) == 10) && (date('i', time()) < 9)) {
+    $email_recruit = TRUE;
+  }
+  // Temporarily set to true for testing.
+  $email_recruit = TRUE;
+  if ($email_recruit) {
+    // Get 'state' taxonomy with term name 'recruiting' tid.
+    $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'recruiting']);
+    $term_id = array_keys($term)[0];
+    // EntityQuery to get all mentorship nodes updated in the last 24 hours with
+    // recruiting.
+    $query = \Drupal::entityQuery('node')
+      ->condition('type', 'mentorship_engagement')
+      ->condition('field_me_state', $term_id)
+      ->condition('changed', strtotime('-1 day'), '>')
+      ->accessCheck(FALSE);
+    $nids = $query->execute();
+    if ($nids) {
+      $body = t("New mentorship engagements have been requested on the CCMNet portal") . ": <ul>";
+      foreach ($nids as $nid) {
+        $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+        $node_title = $node->getTitle();
+        $options = ['absolute' => TRUE];
+        $link_build = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+        $link = Link::fromTextAndUrl($node_title, $link_build)->toString();
+        $body .= "<li>$link</li>";
+      }
+      $body .= "</ul>";
+      // If there are any mentorship engagements in recruiting state, send email.
+      $title = t('New Mentorship Engagements set to recruiting');
+      // Load 'CCMNet Mentors' AG node.
+      $node = \Drupal::entityTypeManager()->getStorage('node')->load(5951);
+      $ccListIds = [$node->get('field_list_id')->getValue()[0]['value']];
+      $agNames = [$node->getTitle()];
+      $pubDate = date('m/d/Y');
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+      $email_link = $host . '/node/5951';
+      emailToAffinityGroups($body, "$title", $pubDate, $agNames, $email_link, $ccListIds, 1, NULL);
+    }
+  }
+
+
   try {
     // Make sure we are on the support domain, This is crucial for
     // the constant contact connection.

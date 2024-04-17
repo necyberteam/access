@@ -1,0 +1,393 @@
+<?php
+
+/**
+ * @file
+ * Module for customizing mentorship_engagement node.
+ */
+
+use Drupal\access_misc\Plugin\Util\NotifyRoles;
+use Drupal\Component\Utility\Html;
+use Drupal\Component\Utility\Xss;
+use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Entity\EntityInterface;
+use Drupal\Core\Form\FormStateInterface;
+use Drupal\Core\Url;
+
+/**
+ * Implements hook_page_attachments_alter().
+ */
+function access_misc_page_attachments_alter(array &$attachments) {
+  // get path.
+  $module_path = \Drupal::service('module_handler')->getModule('ccmnet')->getPath();
+  // Get domain.
+  $domain = \Drupal::config('domain.settings');
+  $token = \Drupal::token();
+  $domainName = Html::getClass($token->replace(t('[domain:name]')));
+  if ($domainName == 'ccmnet') {
+    $attachments['#attached']['html_head_link'][0] = [
+      [
+        "rel" => "icon",
+        "href" => "/$module_path/images/ccmnet-favicon.ico",
+        "type" => "image/x-icon"
+      ]
+    ];
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function ccmnet_entity_insert(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'mentorship_engagement') {
+    $nid = $entity->id();
+    $mentor = $entity->get('field_mentor')->getValue()[0]['target_id'];
+    $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+    $author = $entity->getOwner()->id();
+    $authorized_users = [];
+    if ($mentor && $mentor != $author) {
+      $authorized_users[] = $mentor;
+    }
+    if ($mentee && $mentee != $author) {
+      $authorized_users[] = $mentee;
+    }
+    $grant = \Drupal::service('access_misc.nodeaccess.grant');
+    $grant->grant($authorized_users, $nid);
+  }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function ccmnet_entity_update(EntityInterface $entity) {
+  $type = $entity->bundle();
+  if ($type == 'mentorship_engagement') {
+    $nid = $entity->id();
+    $mentor = $entity->get('field_mentor')->getValue()[0]['target_id'];
+    $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+    $author = $entity->getOwner()->id();
+    $authorized_users = [];
+    if ($mentor && $mentor != $author) {
+      $authorized_users[] = $mentor;
+    }
+    if ($mentee && $mentee != $author) {
+      $authorized_users[] = $mentee;
+    }
+    $grant = \Drupal::service('access_misc.nodeaccess.grant');
+    $grant->grant($authorized_users, $nid);
+  }
+}
+
+/**
+ * Implements hook_form_alter().
+ */
+function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'node_mentorship_engagement_edit_form' || $form_id == 'node_mentorship_engagement_form') {
+    $form['field_tags_replace'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'id' => 'field-tags-replace',
+        'data-suggest' => '0',
+      ],
+      '#weight' => 11,
+    ];
+
+    $form['field_tags_replace']['field_suggest'] = [
+      '#type' => 'container',
+      '#attributes' => [
+        'class' => [
+          'bg-light-teal',
+          'my-5',
+          'p-5'
+        ]
+      ],
+    ];
+
+    $form['field_tags_replace']['field_suggest']['tag_list'] = [
+      '#markup' => "<div id='match-tag-list' class='mb-3'>Get tag suggestions based on your description and then curate as necessary.</div>",
+    ];
+    $form['field_tags_replace']['field_suggest']['replace_button'] = [
+      '#type' => 'button',
+      '#value' => t('Suggest Tags'),
+      '#limit_validation_errors' => array(),
+      '#attributes' => [
+        'class' => [
+          'ml-0'
+        ],
+      ],
+      '#ajax' => [
+        'callback' => 'access_mentorship_engagement_replace_section_callback',
+        'wrapper' => 'field-tags-replace',
+      ],
+    ];
+
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+
+    $add_tags = \Drupal::service('access_misc.addtags');
+    $output = $add_tags->getView();
+    $tag_label = t('Tags');
+    $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
+    $tag_summary = t('Select Tags');
+
+    $form['node_add_tags'] = [
+      '#markup' => "<div class='font-bold form-required'>$tag_label</div>
+        <div class='tag-description'>$tag_description</div>
+        <div id='tag-suggestions'></div>
+        <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
+      '#weight' => 11,
+      '#allowed_tags' => [
+        'button',
+        'details',
+        'summary',
+        'div',
+        'span',
+        'h2',
+      ],
+    ];
+
+    # Lookup current users username.
+    $current_user = \Drupal::currentUser();
+    $uid = $current_user->id();
+    $user = \Drupal\user\Entity\User::load($uid);
+    // Create variable 'First Last (ID)'.
+    $author = $user->get('field_user_first_name')->value . ' ' . $user->get('field_user_last_name')->value . ' (' . $uid . ')';
+
+    $form['field_me_looking_for']['widget']['#attributes']['onchange'] = "setMentoree('$author')";
+
+    # Set mentor mentee fields to author on opposite from selection.
+    #    $form['field_me_looking_for']['#ajax'] = [
+    #      'callback' => 'access_mentorship_engagement_select_mentoree',
+    #      'event' => 'autocompleteselect',
+    #      'wrapper' => 'mentoree',
+    #    ];
+
+    // Attach javascript.
+    $form['#attached']['library'][] = 'access_misc/node_add_tags';
+    $form['#attached']['library'][] = 'ccmnet/mentorship_engagement';
+  } else if ($form_id == 'user_register_form' || $form_id == 'user_form') {
+    // For forms on ccmnet domain only:
+    // Hide region field for both user registration and user edit.
+    // For user registration only, add handlers to add user to CCMNet program + affinity group.
+
+    $token = \Drupal::token();
+    $domainName = t("[domain:name]");
+    $current_domain_name = Html::getClass($token->replace($domainName));
+
+    if ($current_domain_name == 'ccmnet') {
+      $form['field_region']['widget']['#access'] = FALSE;
+      if ($form_id == 'user_register_form') {
+        // First handler called before user saved; the second afterwards.
+        array_unshift($form['actions']['submit']['#submit'], 'ccmnet_add_program_form_submit');
+        $form['actions']['submit']['#submit'][] = 'ccmnet_add_ag_form_submit';
+      }
+    }
+  }
+}
+
+/**
+ * Ajax callback function to replace the section with '#markup'.
+ */
+function access_mentorship_engagement_select_mentoree(array &$form, FormStateInterface $form_state) {
+  # Lookup current users username.
+  $current_user = \Drupal::currentUser();
+  $uid = $current_user->id();
+  $user = \Drupal\user\Entity\User::load($uid);
+
+  $form['field_mentee']['widget'][0]['#default_value'] = $user;
+  $form['field_mentee']['widget'][0]['target_id']['#attributes']['data-suggest'] = 1;
+
+  // Return the updated section.
+  return $form['group_mentoree_container'];
+}
+
+/**
+ * Ajax callback function to replace the section with '#markup'.
+ */
+function access_mentorship_engagement_replace_section_callback(array &$form, FormStateInterface $form_state) {
+  $raw_data = $form_state->getUserInput();
+  $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  $suggested_tag_ids = '0';
+  if (strlen($body_filter) >= 400) {
+    $llm = \Drupal::service('access_llm.ai_references_generator');
+    $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
+    $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "",
+    ];
+  } else {
+    $form['field_tags_replace']['user_message'] = [
+      '#markup' => "<div class='match-tag-list bg-blue-200 text-sky-900 my-5 p-5'>
+                    <strong class='text-sky-900'>Fill in the description above to get suggested tags.</strong><br />
+                    Your description must be over 400 characters to get a suggestion.</div>",
+    ];
+  }
+  $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids;
+
+  // Return the updated section.
+  return $form['field_tags_replace'];
+}
+
+/**
+ * Submit handler from hook form_alter user_register_form.
+ * Add user to CCMNet program (aka region).
+ */
+function ccmnet_add_program_form_submit(array &$form, FormStateInterface $form_state) {
+
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'CCMNet']);
+  $term = reset($term);
+  $form_state->setValue('field_region', [['target_id' => $term->id()]]);
+}
+/*
+* Submit handler from hook form_alter for user_register_form.
+* Add new user to CCMNet Mentors affinity group.
+*/
+function ccmnet_add_ag_form_submit($form, &$form_state) {
+  $uid = $form_state->getValue('uid');
+  $user = \Drupal\user\Entity\User::load($uid);
+  $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'CCMNet Mentors']);
+  $flag = \Drupal::service('cssn.flag');
+  $flag->setFlag('affinity_group', reset($term), $user);
+}
+
+
+/**
+ * Implements hook_node_insert().
+ */
+function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
+  if ($entity->bundle() == 'mentorship_engagement') {
+    $options = ['absolute' => TRUE];
+    $nid = $entity->id();
+    $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+    $ccmnet_body['string'] = [
+      '#type' => 'inline_template',
+      '#template' => '{{ text }} {{ link }}',
+      '#context' => [
+        'text' => t('A new CCMNet mentorship engagement has been requested.'),
+        'link' => $here->toString(TRUE)->getGeneratedUrl(),
+      ],
+    ];
+    $author_body['string'] = [
+      '#type' => 'inline_template',
+      '#template' => '{{ text }} {{ link }}',
+      '#context' => [
+        'text' => t('Your requested CCMNet mentorship engagement has been created on the portal. Thank you for your participation! View your submission here:'),
+        'link' => $here->toString(TRUE)->getGeneratedUrl(),
+      ],
+    ];
+    $env = getenv('PANTHEON_ENVIRONMENT');
+    $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+    $render = \Drupal::service('renderer');
+    $ccmnet_body = $render->renderRoot($ccmnet_body)->__toString();
+    $author_body = $render->renderRoot($author_body)->__toString();
+
+    // Get current users email.
+    $current_user = \Drupal::currentUser();
+    $user = \Drupal\user\Entity\User::load($current_user->id());
+    $email = $user->getEmail();
+
+    $nr = new NotifyRoles();
+    $nr->notifyRole($role, t('New Mentorship Engagement created'), $ccmnet_body);
+    $nr->notifyRole(NULL, t('Mentorship Engagement received'), $author_body, $email);
+  }
+}
+/**
+ * Implements hook_entity_extra_field_info().
+ */
+function ccmnet_entity_extra_field_info() {
+
+  $extra = [];
+  $extra['node']['mentorship_engagement']['display']['field_mentorship_pretitle'] = [
+    'label' => t('Pretitle'),
+    'description' => t('Pretitle pseudo field.'),
+    'weight' => 0,
+    'visible' => TRUE,
+  ];
+
+  return $extra;
+}
+
+/**
+ * Implements hook_ENTITY_TYPE_view().
+ * If state is recruiting, return string for pre-title display:
+ * Recruiting: mentor / Recruiting: mentee.
+ */
+function ccmnet_node_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display, $view_mode) {
+  if ($entity->bundle() == 'mentorship_engagement') {
+
+    $recruitingTerm = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'recruiting']);
+    $recruitingTermId = array_keys($recruitingTerm)[0];
+    $state = $entity->get('field_me_state')->getValue()[0]['target_id'];
+
+    if ($state == $recruitingTermId) {
+
+      if ($display->getComponent('field_mentorship_pretitle')) {
+
+        $field_looking = $entity->get('field_me_looking_for')->getValue();
+
+        $field_looking = '<span class="pt-2 pl-2 ">Recruiting: ' . $field_looking[0]['value'] . '<span>';
+        $img = '<img src="/modules/custom/access/modules/ccmnet/images/star-o.png" alt="star" />';
+        $text = '<div class="mentorship_pretitle d-flex align-items-center text-uppercase">' . $img . $field_looking . '</div>';
+
+        $build['field_mentorship_pretitle'] = [
+          '#type' => 'markup',
+          '#markup' => $text,
+        ];
+      }
+    }
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function ccmnet_cron() {
+  $env = getenv('PANTHEON_ENVIRONMENT');
+  //if ($env == 'live') {
+  $interested_status = \Drupal::state()->get('access_mentorship_interested');
+  // Send interested email at 1:00am.
+  //if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5) && $interested_status != 0) {
+  if ($interested_status != 0) {
+    $render = \Drupal::service('renderer');
+    $nr = new NotifyRoles();
+    $interested_list = json_decode($interested_status);
+    $interested_links = '';
+    foreach ($interested_list as $interested_nid) {
+      $email_body = [];
+      $node = \Drupal::entityTypeManager()->getStorage('node')->load($interested_nid);
+      $options = ['absolute' => TRUE];
+      $here = Url::fromRoute('entity.node.canonical', ['node' => $interested_nid], $options);
+      // Get author of node.
+      $author = $node->getOwner()->getEmail();
+      $interested_links .= $here->toString(TRUE)->getGeneratedUrl() . "\n";;
+      $email_body['string'] = [
+        '#type' => 'inline_template',
+        '#template' => '{{ text }}
+                          {{ link }}',
+        '#context' => [
+          'text' => t('Someone is interested in your mentorship request.'),
+          'link' => $here->toString(TRUE)->getGeneratedUrl(),
+        ],
+      ];
+      $body_string = $render->renderRoot($email_body)->__toString();
+      $nr->notifyRole(NULL, t('Mentorship interest'), $body_string, $author);
+    }
+    $env = getenv('PANTHEON_ENVIRONMENT');
+    $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+    $email_body = [];
+    $email_body['string'] = [
+      '#type' => 'inline_template',
+      '#template' => '{{ text }}
+                        {{ link }}',
+      '#context' => [
+        'text' => t('Someone is interested in your mentorship request.'),
+        'link' => $interested_links,
+      ],
+    ];
+    $body_string = $render->renderRoot($email_body)->__toString();
+    $nr->notifyRole($role, t('Mentorship interest'), $body_string);
+    \Drupal::state()->set('access_mentorship_interested', 0);
+  }
+  //}
+}
