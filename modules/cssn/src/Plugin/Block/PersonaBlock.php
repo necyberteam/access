@@ -199,7 +199,7 @@ class PersonaBlock extends BlockBase {
                             {% endif %}
                           </div>
                           {% if program %}
-                            <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
+                            <div class="mb-3"><b>{{ program_text }}:</b><br />{{ program }}</div>
                           {% endif %}
                           <div class="w-100">
                            {{ send_email | raw }}
