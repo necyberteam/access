@@ -8,6 +8,7 @@ use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\cssn\Plugin\Util\MatchLookup;
 use Drupal\cssn\Plugin\Util\ProjectLookup;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 use Drupal\webform\Entity\WebformSubmission;
@@ -431,6 +432,14 @@ class CommunityPersonaController extends ControllerBase {
     $end_url = new EndUrl();
     $user_id = $end_url->getUrlEnd();
     $should_user_load = FALSE;
+    // Get current user id.
+    $current_user = \Drupal::currentUser();
+    // Redirect to to profile if public persona page is for current user.
+    if ($current_user->id() == $user_id) {
+      $url = Url::fromUri('internal:/community-persona');
+      $response = new RedirectResponse($url->toString());
+      $response->send();
+    }
     if (is_numeric($user_id)) {
       $user = User::load($user_id);
       // Don't show profile for people who haven't joined a region/program.
