@@ -1,0 +1,37 @@
+<?php
+
+/**
+ * @file
+ * Module updates.
+ */
+
+use Drupal\taxonomy\Entity\Term;
+
+/**
+ *
+ */
+function ccmnet_install() {
+  \Drupal::state()->set('access_mentorship_interested', 0);
+  // Add the tag 'Recruiting' to the 'State' Taxonomy.
+  $states = [
+    'Recruiting',
+    'Reviewing',
+    'In Progress',
+    'Finishing Up',
+    'Complete',
+    'On Hold',
+    'Halted',
+  ];
+
+  $weight = 0;
+
+  foreach ($states as $state) {
+    $term = Term::create([
+      'name' => $state,
+      'vid' => 'state',
+      'weight' => $weight,
+    ]);
+    $term->save();
+    $weight++;
+  }
+}

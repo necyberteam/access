@@ -37,6 +37,8 @@ use Drupal\block\Entity\Block;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
+use Drupal\Core\Link;
+use Drupal\Core\Url;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
@@ -49,6 +51,43 @@ use Drupal\user\UserInterface;
 use Drupal\views\ViewExecutable;
 
 const cAccessEmail = "supportapiaccess@access-ci.org";
+
+
+/**
+ * Implements hook_preprocess_views_view_field().
+ */
+function access_affinitygroup_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+
+  $field = $variables['field'];
+  // Override view /admin/structure/views/view/affinity_group_search ID to show Join flag.
+  // Details output on CI links search on /affinity_group page.
+  if ($view->id() == 'affinity_group_search' && ($view->current_display == 'page_1' && $field->options['id'] == 'nid')) {
+    $nid = $variables['output']->__toString();
+    // Load Entity node from $nid.
+    $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+    $tid = $node->get('field_affinity_group')->getValue();
+    $tid = $tid[0]['target_id'];
+    $flag_ag = \Drupal::service('flag.link_builder')->build('taxonomy_term', $tid, 'affinity_group');
+    $flag_ag['#attributes']['class'][] = 'btn-sm btn-small btn-secondary-outline py-0 px-4';
+    $flag_ag = \Drupal::service('renderer')->renderPlain($flag_ag);
+    $current_user = \Drupal::currentUser();
+    if ($current_user->isAnonymous()) {
+      $output['string'] = [
+        '#type' => 'inline_template',
+        '#template' => '<a href="{{ link_url }}" class="btn btn-sm btn-small btn-secondary-outline btn-md-teal py-0 px-4" title="{{ title }}"><small>{{ button_text }}</small></a>',
+        '#context' => [
+            'link_url' => '/user/login?destination=/affinity-groups',
+            'title' => t('Login to join'),
+            'button_text' => t('Join'),
+        ],
+      ];
+      $variables['output'] = $output;
+    } else {
+      $variables['output'] = $flag_ag;
+    }
+  }
+}
 
 /**
  * Implements hook_block_access().
@@ -915,6 +954,50 @@ function showStatus($logmsg) {
  * 2) User Allocations Import
  */
 function access_affinitygroup_cron() {
+  $email_recruit = FALSE;
+  // Adding for logging purposes to check server time.
+  if ((date('G', time()) == 10) && (date('i', time()) < 9)) {
+    $email_recruit = TRUE;
+  }
+  // Temporarily set to true for testing.
+  $email_recruit = TRUE;
+  if ($email_recruit) {
+    // Get 'state' taxonomy with term name 'recruiting' tid.
+    $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'recruiting']);
+    $term_id = array_keys($term)[0];
+    // EntityQuery to get all mentorship nodes updated in the last 24 hours with
+    // recruiting.
+    $query = \Drupal::entityQuery('node')
+      ->condition('type', 'mentorship_engagement')
+      ->condition('field_me_state', $term_id)
+      ->condition('changed', strtotime('-1 day'), '>')
+      ->accessCheck(FALSE);
+    $nids = $query->execute();
+    if ($nids) {
+      $body = t("New mentorship engagements have been requested on the CCMNet portal") . ": <ul>";
+      foreach ($nids as $nid) {
+        $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
+        $node_title = $node->getTitle();
+        $options = ['absolute' => TRUE];
+        $link_build = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+        $link = Link::fromTextAndUrl($node_title, $link_build)->toString();
+        $body .= "<li>$link</li>";
+      }
+      $body .= "</ul>";
+      // If there are any mentorship engagements in recruiting state, send email.
+      $title = t('New Mentorship Engagements set to recruiting');
+      // Load 'CCMNet Mentors' AG node.
+      $node = \Drupal::entityTypeManager()->getStorage('node')->load(5951);
+      $ccListIds = [$node->get('field_list_id')->getValue()[0]['value']];
+      $agNames = [$node->getTitle()];
+      $pubDate = date('m/d/Y');
+      $host = \Drupal::request()->getSchemeAndHttpHost();
+      $email_link = $host . '/node/5951';
+      emailToAffinityGroups($body, "$title", $pubDate, $agNames, $email_link, $ccListIds, 1, NULL);
+    }
+  }
+
+
   try {
     // Make sure we are on the support domain, This is crucial for
     // the constant contact connection.

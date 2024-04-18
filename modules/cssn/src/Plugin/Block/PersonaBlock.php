@@ -105,7 +105,7 @@ class PersonaBlock extends BlockBase {
         $academic_status = '';
       }
       // Don't display these roles.
-      $roles_not_to_include = ['authenticated', 'administrator', 'Masquerade', 'exportpeople', 'site_developer'];
+      $roles_not_to_include = ['authenticated', 'administrator', 'Masquerade', 'exportpeople', 'site_developer', 'ccmnet'];
       foreach ($roles_not_to_include as $role) {
         $key = array_search($role, $roles);
         if ($key !== FALSE) {
@@ -199,7 +199,7 @@ class PersonaBlock extends BlockBase {
                             {% endif %}
                           </div>
                           {% if program %}
-                            <p><b>{{ program_text }}:</b><br /> {{ program }}</p>
+                            <div class="mb-3"><b>{{ program_text }}:</b><br />{{ program }}</div>
                           {% endif %}
                           <div class="w-100">
                            {{ send_email | raw }}
