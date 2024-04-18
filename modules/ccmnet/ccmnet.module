@@ -22,12 +22,15 @@ function ccmnet_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'mentorship_facet_search' && $display->display['id'] == 'block_1') {
     $view->element['#attached']['library'][] = 'ccmnet/mentorship_front_more';
   }
+  if ($view->id() == 'ccmnet_members') {
+    $view->element['#attached']['library'][] = 'cssn/cssn_directory';
+  }
 }
 
 /**
  * Implements hook_page_attachments_alter().
  */
-function access_misc_page_attachments_alter(array &$attachments) {
+function ccmnet_page_attachments_alter(array &$attachments) {
   // get path.
   $module_path = \Drupal::service('module_handler')->getModule('ccmnet')->getPath();
   // Get domain.
