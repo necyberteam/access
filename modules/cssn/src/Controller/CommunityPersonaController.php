@@ -290,7 +290,7 @@ class CommunityPersonaController extends ControllerBase {
     $my_skills = $this->mySkills($current_user);
     // Link to add Skills/Expertise.
     $edit_skill_url = Url::fromUri('internal:/community-persona/add-skill');
-    $edit_skill_link = Link::fromTextAndUrl('Update expertise', $edit_skill_url);
+    $edit_skill_link = Link::fromTextAndUrl('Update skills', $edit_skill_url);
     $edit_skill_renderable = $edit_skill_link->toRenderable();
     $edit_skill_renderable['#attributes']['class'] = ['btn', 'btn-primary', 'btn-sm', 'py-1', 'px-2'];
     // My Knowledge Base Contributions.
@@ -338,21 +338,21 @@ class CommunityPersonaController extends ControllerBase {
         {% endif %}
         <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
-            <span class="h4 text-white m-0">{{ mi_title }}</span>
-          </div>
-          <div class="d-flex flex flex-wrap p-3">
-            {{ my_interests|raw }}
-          </div>
-          <div class="p-3 pt-0">{{ edit_interest_link }}</div>
-        </div>
-        <div class="border border-secondary border-md-teal my-3 mb-6">
-          <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ me_title }}</span>
           </div>
           <div class="d-flex flex flex-wrap p-3">
             {{ my_skills|raw }}
           </div>
           <div class="p-3 pt-0">{{ edit_skill_link }}</div>
+        </div>
+        <div class="border border-secondary border-md-teal my-3 mb-6">
+          <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
+            <span class="h4 text-white m-0">{{ mi_title }}</span>
+          </div>
+          <div class="d-flex flex flex-wrap p-3">
+            {{ my_interests|raw }}
+          </div>
+          <div class="p-3 pt-0">{{ edit_interest_link }}</div>
         </div>
         <div class="border border-secondary border-md-teal my-3 mb-6">
           <div class="text-white h4 py-2 px-3 m-0 bg-dark bg-md-teal text-2xl p-4">{{ ag_title }}</div>
@@ -403,7 +403,7 @@ class CommunityPersonaController extends ControllerBase {
         'mi_title' => t('My Interests'),
         'my_interests' => $my_interests,
         'edit_interest_link' => $edit_interest_renderable,
-        'me_title' => t('My Expertise'),
+        'me_title' => t('My Skills'),
         'my_skills' => $my_skills,
         'edit_skill_link' => $edit_skill_renderable,
         'match_title' => t('My MATCH Engagements'),
@@ -489,18 +489,18 @@ class CommunityPersonaController extends ControllerBase {
           {% endif %}
           <div class="border border-secondary border-md-teal my-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
-              <span class="h4 text-white m-0">{{ mi_title }}</span>
-            </div>
-            <div class="d-flex flex flex-wrap p-3">
-              {{ my_interests|raw }}
-            </div>
-          </div>
-          <div class="border border-secondary border-md-teal my-3 mb-6">
-            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ me_title }}</span>
             </div>
             <div class="d-flex flex flex-wrap p-3">
               {{ my_skills|raw }}
+            </div>
+          </div>
+          <div class="border border-secondary border-md-teal my-3 mb-6">
+            <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
+              <span class="h4 text-white m-0">{{ mi_title }}</span>
+            </div>
+            <div class="d-flex flex flex-wrap p-3">
+              {{ my_interests|raw }}
             </div>
           </div>
           <div class="border border-secondary border-md-teal my-3 mb-6">
@@ -545,7 +545,7 @@ class CommunityPersonaController extends ControllerBase {
           'user_affinity_groups' => $user_affinity_groups,
           'mi_title' => t('Interests'),
           'my_interests' => $my_interests,
-          'me_title' => t('Expertise'),
+          'me_title' => t('Skills'),
           'my_skills' => $my_skills,
           'ws_title' => t('Knowledge Base Contributions'),
           'ws_links' => $ws_link,
