@@ -1,3 +1,6 @@
 mentorship_engagement:
   js:
     js/mentorship_engagement.js: {}
+mentorship_front_more:
+  js:
+    js/mentorship_front_more.js: {}
