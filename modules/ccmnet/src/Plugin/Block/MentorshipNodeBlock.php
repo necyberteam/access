@@ -158,7 +158,7 @@ class MentorshipNodeBlock extends BlockBase implements
       }
 
       $recruitee_attrib = $node->get('field_me_preferred_attributes')->getValue();
-      $recruitee_attrib = $recruitee_attrib[0]['value'];
+      $recruitee_attrib = isset($recruitee_attrib[0]) ? $recruitee_attrib[0]['value'] : '';
 
       $match_node_block['string'] = [
         '#type' => 'inline_template',
