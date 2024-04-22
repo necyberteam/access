@@ -18,7 +18,8 @@ use Drupal\Component\Utility\Xss;
  * Implements hook_views_pre_render().
  */
 function ccmnet_views_pre_render(ViewExecutable $view) {
-  if ($view->id() == 'mentorship_facet_search' && $view->getDisplay()->view->element['#display_id'] == 'block_1') {
+  $display = $view->getDisplay();
+  if ($view->id() == 'mentorship_facet_search' && $display->display['id'] == 'block_1') {
     $view->element['#attached']['library'][] = 'ccmnet/mentorship_front_more';
   }
 }
