@@ -11,7 +11,18 @@ use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
+use Drupal\views\ViewExecutable;
 use Drupal\Core\Url;
+
+/**
+ * Implements hook_views_pre_render().
+ */
+function ccmnet_views_pre_render(ViewExecutable $view) {
+  $display = $view->getDisplay();
+  if ($view->id() == 'mentorship_facet_search' && $display->display['id'] == 'block_1') {
+    $view->element['#attached']['library'][] = 'ccmnet/mentorship_front_more';
+  }
+}
 
 /**
  * Implements hook_page_attachments_alter().
