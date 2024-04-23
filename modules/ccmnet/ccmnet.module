@@ -13,26 +13,6 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\views\ViewExecutable;
 use Drupal\Core\Url;
-use Drupal\views\ViewExecutable;
-
-/**
- * Implements hook_views_pre_render().
- */
-function ccmnet_views_pre_render(ViewExecutable $view) {
-  if ($view->id() == 'ccmnet_members') {
-    $view->element['#attached']['library'][] = 'cssn/cssn_directory';
-  }
-}
-
-/**
- * Implements hook_views_pre_render().
- */
-function ccmnet_views_pre_render(ViewExecutable $view) {
-  $display = $view->getDisplay();
-  if ($view->id() == 'mentorship_facet_search' && $display->display['id'] == 'block_1') {
-    $view->element['#attached']['library'][] = 'ccmnet/mentorship_front_more';
-  }
-}
 
 /**
  * Implements hook_views_pre_render().
