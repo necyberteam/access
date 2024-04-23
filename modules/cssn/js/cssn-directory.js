@@ -8,6 +8,8 @@ function addCount(item) {
     var squareTags = squareTags - 5;
     var more = "+ " + squareTags + " more";
     item.querySelector('li:last-child').innerHTML = more;
-    item.querySelector('li:last-child').style.display = "inline-block";
+    item.querySelector('li:last-child').style.display = "flex";
+    item.querySelector('li:last-child').style.alignItems = "center";
+    item.querySelector('li:last-child').style.fontSize = "14px";
   }
 }
