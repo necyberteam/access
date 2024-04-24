@@ -8,10 +8,10 @@ use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\EndUrl;
 use Drupal\cssn\Plugin\Util\MatchLookup;
 use Drupal\cssn\Plugin\Util\ProjectLookup;
-use Symfony\Component\HttpFoundation\RedirectResponse;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 use Drupal\webform\Entity\WebformSubmission;
+use Symfony\Component\HttpFoundation\RedirectResponse;
 
 /**
  * Controller for Community Persona.
@@ -89,7 +89,7 @@ class CommunityPersonaController extends ControllerBase {
     $flagged_skills = $term->execute()->fetchCol();
     $my_skills = "";
     if ($flagged_skills == NULL && $public === FALSE) {
-      $my_skills = '<p class="mb-3">' . t('You currently have not added any skills. Click Edit expertise to add.') . "</p>";
+      $my_skills = '<p class="mb-3">' . t('You currently have not added any skills. Click update expertise to add.') . "</p>";
     }
     if ($flagged_skills == NULL && $public === TRUE) {
       $my_skills = '<p>' . t('No skills added.') . "</p>";
@@ -212,7 +212,7 @@ class CommunityPersonaController extends ControllerBase {
     $flagged_interests = $term_interest->execute()->fetchCol();
     $my_interests = "";
     if ($flagged_interests == NULL && $public === FALSE) {
-      $my_interests = '<p>' . t('You currently have not added any interests. Click Edit interests to add.') . "</p>";
+      $my_interests = '<p>' . t('You currently have not added any interests. Click update interests to add.') . "</p>";
     }
     if ($flagged_interests == NULL && $public === TRUE) {
       $my_interests = '<p>' . t('No interests added.') . "</p>";
