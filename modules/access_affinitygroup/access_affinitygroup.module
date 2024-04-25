@@ -77,9 +77,9 @@ function access_affinitygroup_preprocess_views_view_field(&$variables) {
         '#type' => 'inline_template',
         '#template' => '<a href="{{ link_url }}" class="btn btn-sm btn-small btn-secondary-outline btn-md-teal py-0 px-4" title="{{ title }}"><small>{{ button_text }}</small></a>',
         '#context' => [
-            'link_url' => '/user/login?destination=/affinity-groups',
-            'title' => t('Login to join'),
-            'button_text' => t('Join'),
+          'link_url' => '/user/login?destination=/affinity-groups',
+          'title' => t('Login to join'),
+          'button_text' => t('Join'),
         ],
       ];
       $variables['output'] = $output;
@@ -208,8 +208,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
 
       // If present, remove this AG from this user's block list.
       removeBlockedAG($taxonomyId, $userDetails);
-    }
-    else {
+    } else {
       // Case 2: Affinity group edit was saved by admin user.
       // slug is a required field.
       $x = $entity->get('field_group_slug')->getValue()[0]['value'];
@@ -267,8 +266,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
 
         if (!empty($list_id)) {
           $entity->set('field_list_id', $list_id);
-        }
-        else {
+        } else {
           showStatus('Bad list id received from Constant Contact.');
         }
       }
@@ -406,8 +404,7 @@ function update_removed_ag_leader_roles($entity, $coordinator_ids) {
           $user->removeRole('affinity_group_leader');
           $user->save();
           \Drupal::messenger()->addStatus('Removed Affinity Group Leader role for ' . $user->getAccountName());
-        }
-        else {
+        } else {
           \Drupal::messenger()->addStatus('Not removing Affinity Group Leader role for ' . $user->getAccountName()
             . ' because coordinator for another Affinity Group');
         }
@@ -425,8 +422,7 @@ function add_ag_taxonomy_term($entity) {
   $tid = NULL;
   if ($exists) {
     $tid = array_keys(ag_taxonomy_lookup($ag_title))[0];
-  }
-  else {
+  } else {
     $tid = create_ag_taxonomy_term($ag_title);
   }
 
@@ -480,25 +476,25 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
       if (empty($simpleListsId)) {
         // New contact, including list membership.
         $userDet = User::load($user->id());
-        $simpleListsId = $simpleListsApi->addUser($user->id(),
-                                                  $user->getEmail(),
-                                                  $userDet->get('field_user_first_name')->getString(),
-                                                  $userDet->get('field_user_last_name')->getString(),
-                                                  strtok($simpleListsName, '@'),
-                                                  $msg);
+        $simpleListsId = $simpleListsApi->addUser(
+          $user->id(),
+          $user->getEmail(),
+          $userDet->get('field_user_first_name')->getString(),
+          $userDet->get('field_user_last_name')->getString(),
+          strtok($simpleListsName, '@'),
+          $msg
+        );
         $listMemberships = '';
         if (empty($simpleListsId)) {
           $s = "SimpleLists email list: error while adding user to SimpleLists account. " . $msg;
           \Drupal::logger('access_affinitygroup')->error($s);
           return;
         }
-      }
-      else {
+      } else {
         // We had an existing contact.
         if (in_array($simpleListsName, $listMemberships)) {
           return;
-        }
-        else {
+        } else {
           // Add the existing contact to list.
           $status = $simpleListsApi->updateUserToList($simpleListsId, strtok($simpleListsName, '@'), $msg);
           if (!$status) {
@@ -508,8 +504,7 @@ function subscribeToSimpleLists($flagEntityId, $user, $isSubscribe) {
         }
       }
       \Drupal::logger('access_affinitygroup')->info("Simplelists $simpleListsName added " . $user->getEmail() . "-" . $user->id() . " to:  . $simpleListsName");
-    }
-    else {
+    } else {
       // Remove contact from the list.
       $status = $simpleListsApi->removeUserFromList($user->getEmail(), strtok($simpleListsName, '@'), $msg);
       if (!$status) {
@@ -578,33 +573,31 @@ function check_ext_email_list($entity) {
                 if (empty($simpleListsId)) {
                   // Need new contact; add with list membership.
                   $userDet = User::load($oneMember->id());
-                  $simpleListsId = $simpleListsApi->addUser($oneMember->id(),
-                                                            $oneMember->getEmail(),
-                                                            $userDet->get('field_user_first_name')->getString(),
-                                                            $userDet->get('field_user_last_name')->getString(),
-                                                            $slug,
-                                                            $msg);
+                  $simpleListsId = $simpleListsApi->addUser(
+                    $oneMember->id(),
+                    $oneMember->getEmail(),
+                    $userDet->get('field_user_first_name')->getString(),
+                    $userDet->get('field_user_last_name')->getString(),
+                    $slug,
+                    $msg
+                  );
                   $listMemberships = '';
                   if (empty($simpleListsId)) {
                     showStatus("SimpleLists error adding contact at $index; uid: " . $oneMember->id() . " " . $msg);
-                  }
-                  else {
+                  } else {
                     $newCount++;
                     $listAddCount++;
                   }
-                }
-                else {
+                } else {
                   // Add the existing contact to list.
                   $status = $simpleListsApi->updateUserToList($simpleListsId, $slug, $msg);
                   if (!$status) {
                     showStatus("SimpleLists: error adding contact to $slug " . $msg);
-                  }
-                  else {
+                  } else {
                     $listAddCount++;
                   }
                 }
-              }
-              catch (Exception $e) {
+              } catch (Exception $e) {
                 showstatus("SimpleLists: exception for $slug at index $index uid " . $oneMember->id() . $msg);
                 break;
               }
@@ -613,13 +606,11 @@ function check_ext_email_list($entity) {
           // Everything ok after list create and contact adds.
           showStatus("Simplelists: $newCount new contacts;  $listAddCount added to $listAddress.");
         }
-      }
-      catch (Exception $e) {
+      } catch (Exception $e) {
         showStatus("Simplelists: Exception creating $listAddress " . $e->getMessage());
       }
     }
-  }
-  else {
+  } else {
     // Unchecked box: Delete the simplelists external email list if exists.
     $error = TRUE;
     if ($simpleListsName !== "") {
@@ -631,8 +622,7 @@ function check_ext_email_list($entity) {
           $error = FALSE;
           showStatus("Simplelists email list $simpleListsName deleted.");
         }
-      }
-      catch (Exception $e) {
+      } catch (Exception $e) {
         $msg = $e->getMessage();
       }
       if ($error) {
@@ -674,8 +664,7 @@ function subscribeToCCList($taxonomyId, $userDetails) {
   $postJSON = makeListMembershipJSON($taxonomyId, $userDetails);
   if (empty($postJSON)) {
     showStatus("Can't add user to email list; check if user is missing Constant Contact ID.");
-  }
-  else {
+  } else {
     $cca = new ConstantContactApi();
     $ccResponse = $cca->apiCall('/activities/add_list_memberships', $postJSON, 'POST');
   }
@@ -718,8 +707,7 @@ function access_affinitygroup_entity_delete(EntityInterface $entity) {
       }
       // Put this AG on this user's block list if not already there.
       addBlockedAG($taxonomyId, $userDetails);
-    }
-    else {
+    } else {
       // Case 2: AG getting deleted. Remove simplelists & constant contact lists.
       $simpleListsName = "";
       $simpleListsNameA = $entity->get('field_ext_email_list')->getValue();
@@ -786,8 +774,7 @@ function removeBlockedAG($agTaxonomyId, $userDetails) {
   foreach ($userBlockedArray as $userBlock) {
     if ($userBlock['target_id'] !== $agTaxonomyId) {
       $userBlockedTaxIds[] = $userBlock['target_id'];
-    }
-    else {
+    } else {
       $wasBlocked = TRUE;
     }
   }
@@ -879,13 +866,11 @@ function access_affinitygroup_user_login(UserInterface $account) {
     $cca_user_id = addUserToConstantContact($current_user->getEmail(), $firstName, $lastName);
     if (empty($cca_user_id)) {
       showStatus("Could not add user to Constant Contact.");
-    }
-    else {
+    } else {
       $user_detail->set('field_constant_contact_id', $cca_user_id);
       $user_detail->save();
     }
-  }
-  else {
+  } else {
     // This else just for debugging in early stages
     // showStatus("Login and NOT attempting add of new constant contact id.");.
   }
@@ -959,6 +944,7 @@ function access_affinitygroup_cron() {
   if ((date('G', time()) == 10) && (date('i', time()) < 9)) {
     $email_recruit = TRUE;
   }
+
   if ($email_recruit) {
     // Get 'state' taxonomy with term name 'recruiting' tid.
     $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'recruiting']);
@@ -976,10 +962,10 @@ function access_affinitygroup_cron() {
       foreach ($nids as $nid) {
         $node = \Drupal::entityTypeManager()->getStorage('node')->load($nid);
         $node_title = $node->getTitle();
-        $options = ['absolute' => TRUE];
+        $options = ['absolute' => FALSE];
         $link_build = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
-        $link = Link::fromTextAndUrl($node_title, $link_build)->toString();
-        $body .= "<li>$link</li>";
+        $url = 'https://ccmnet.org' . $link_build->tostring(TRUE)->getGeneratedUrl();
+        $body .= '<li><a href="' . $node_title . '">' . $url . '</a></li>';
       }
       $body .= "</ul>";
       // If there are any mentorship engagements in recruiting state, send email.
@@ -989,8 +975,8 @@ function access_affinitygroup_cron() {
       $ccListIds = [$node->get('field_list_id')->getValue()[0]['value']];
       $agNames = [$node->getTitle()];
       $pubDate = date('m/d/Y');
-      $host = \Drupal::request()->getSchemeAndHttpHost();
-      $email_link = $host . '/node/5951';
+      $email_link = 'https://ccmnet.org/node/5951';
+
       emailToAffinityGroups($body, "$title", $pubDate, $agNames, $email_link, $ccListIds, 1, NULL);
     }
   }
@@ -1027,8 +1013,7 @@ function access_affinitygroup_cron() {
       $aui = new AllocationsUsersImport();
       $aui->runCronSlice();
     }
-  }
-  catch (Exception $e) {
+  } catch (Exception $e) {
     \Drupal::logger('cron_affinitygroup')->notice('exception in cron: ' . $e->getMessage());
   }
 }
@@ -1053,8 +1038,7 @@ function shouldRun($function) {
     if ($hoursDiff >= 6) {
       return TRUE;
     }
-  }
-  elseif ($function == 'users') {
+  } elseif ($function == 'users') {
 
     if (\Drupal::state()->get('access_affinitygroup.allocCronDisable', FALSE)) {
       return FALSE;
@@ -1138,8 +1122,7 @@ function emailToAffinityGroups($emailText, $emailTitle, $pubDate, $agNames, $new
   $wrapper = new EmailWrapper();
   if ($communityTemplate) {
     $emailHtml = $wrapper->ccCommunityNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl, $logoUrl);
-  }
-  else {
+  } else {
     $emailHtml = $wrapper->ccAccessNewsHTML($emailText, $emailTitle, $pubDate, $agNames, $newsUrl);
   }
 
@@ -1222,8 +1205,7 @@ function sendEmailCampaign($campaignId, $campaignActivityId, $ccListIds) {
   }
   if ($sent) {
     showStatus("Your message was sent to this Affinity Group.");
-  }
-  else {
+  } else {
     showStatus("Error while trying to email announcement to affinity group.");
   }
 }
@@ -1327,8 +1309,7 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
     if (!isset($category[0]) || $category[0] !== 'ACCESS_RP') {
       $form['field_cider_resources']['#access'] = FALSE;
     }
-  }
-  elseif ($form_id == 'webform_submission_affinity_group_contact_add_form') {
+  } elseif ($form_id == 'webform_submission_affinity_group_contact_add_form') {
     $form_allowed = FALSE;
     $coordinator = FALSE;
     // Allow this form only if the node is an affinity group.
@@ -1347,8 +1328,7 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
     $roles = $user->getRoles();
     if (in_array('administrator', $roles) && $form_allowed) {
       $form_allowed = TRUE;
-    }
-    elseif ($form_allowed) {
+    } elseif ($form_allowed) {
       $is_coordinator = FALSE;
       $form['elements']['name']['#access'] = FALSE;
       if ($coordinator) {
@@ -1370,8 +1350,7 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
       $form['elements']['cc_list_id']['#default_value'] = $cc_list_id[0]['value'];
       $form['actions']['submit']['#submit'][] = 'webform_submission_affinity_group_affinity_contact';
       $form['#validate'][] = 'webform_submission_affinity_group_affinity_contact_validate';
-    }
-    else {
+    } else {
       \Drupal::messenger()->addMessage(t('It doesn\'t appear you came here from an affinity group page. Please go to an affinity group page and click the \'Contact Group\' link to send a message to that affinity group.'), 'warning');
       $form['actions']['submit']['#disabled'] = TRUE;
     }
@@ -1392,15 +1371,14 @@ function access_affinitygroup_replace_section_callback(array &$form, FormStateIn
     $form['field_tags_replace']['user_message'] = [
       '#markup' => "",
     ];
-  }
-  else {
+  } else {
     $form['field_tags_replace']['user_message'] = [
       '#markup' => "<div class='match-tag-list bg-blue-200 text-sky-900 my-5 p-5'>
                     <strong class='text-sky-900'>Fill in the description above to get suggested tags.</strong><br />
                     Your description must be over 100 characters to get a suggestion.</div>",
     ];
   }
-  $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids ;
+  $form['field_tags_replace']['#attributes']['data-suggest'] = $suggested_tag_ids;
 
   // Return the updated section.
   return $form['field_tags_replace'];
@@ -1414,7 +1392,6 @@ function access_affinitygroup_node_presave(NodeInterface $node) {
   if ($type == 'recommended_cider') {
     $node->setTitle('');
   }
-
 }
 
 /**
