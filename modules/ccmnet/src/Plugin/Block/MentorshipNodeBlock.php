@@ -176,7 +176,7 @@ class MentorshipNodeBlock extends BlockBase implements
               <h3>Interested People</h3>
                 <ul>
                 {% for interested_user in interested_users %}
-                  <li>{{ interested_user }}</li>
+                  <li><a href="/community-persona/{{interested_user.target_id}}" >{{interested_user.name}}</a></li>
                 {% endfor %}
                 </ul>
             </div>
@@ -221,7 +221,11 @@ class MentorshipNodeBlock extends BlockBase implements
     $users = $this->entityInterface->getStorage('user')->loadMultiple($interested_users);
     $user_names = [];
     foreach ($users as $user) {
-      $user_names[] = $user->get('field_user_first_name')->value . ' ' . $user->get('field_user_last_name')->value;
+      $one_user = [
+        'target_id' => $user->id(),
+        'name' => $user->get('field_user_first_name')->value . ' ' . $user->get('field_user_last_name')->value,
+      ];
+      $user_names[] = $one_user;
     }
     return $user_names;
   }
