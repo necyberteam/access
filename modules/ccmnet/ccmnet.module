@@ -378,14 +378,14 @@ function ccmnet_cron() {
           $here = Url::fromRoute('entity.node.canonical', ['node' => $interested_nid], $options);
           // Get author of node.
           $author = $node->getOwner()->getEmail();
-          $interested_links .= 'https://ccmnet.org/' . $here->toString(TRUE)->getGeneratedUrl() . "\n";
+          $interested_links .= 'https://ccmnet.org' . $here->toString(TRUE)->getGeneratedUrl() . "\n";
           $email_body['string'] = [
             '#type' => 'inline_template',
             '#template' => '{{ text }}
                             {{ link }}',
             '#context' => [
               'text' => t('Someone is interested in your mentorship request. Please click here to view.'),
-              'link' => 'https://ccmnet.org/' . $here->toString(TRUE)->getGeneratedUrl(),
+              'link' => 'https://ccmnet.org' . $here->toString(TRUE)->getGeneratedUrl(),
             ],
           ];
           $body_string = $render->renderRoot($email_body)->__toString();
