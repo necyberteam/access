@@ -131,7 +131,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                         <br> " . $login . "
                       </div>";
     }
-    $likes_html_class = $domainName == 'ccmnet' ? 'mb-3' : 'mb-5';
+    $likes_html_class = $domainName == 'ccmnet' ? 'mb-2' : 'mb-5';
     $likes_html = "<div class='$likes_html_class text-dark-teal font-bold'>$likes_count $likes</div>";
 
     $likes_class = $domainName == 'ccmnet' ? '' : 'bg-light-teal p-4';
@@ -185,7 +185,6 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                             <div class="linkcount bg-white text-orange font-bold py-2 px-4 rounded-full ms-auto me-10 ml-auto border round border-radius">{{ likesCount }}</div>
                             {% if domainName == "ccmnet" %}
                               <i class="fa-solid fa-chevron-down ml-3"></i>
-                              <i class="fa-solid fa-chevron-up ml-3"></i>
                             {% endif %}
                           </summary>
                           <div class="grid grid-cols-5 gap-4 p-4">
@@ -197,7 +196,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                             <div class="col-span-5 md--col-span-1 flex flex-row flex-wrap justify-between">
                               {{ likesOutput | raw }}
                               <div class="px-2">
-                                <div class="text-dark-teal m-0 py-3 font-bold text-lg">
+                                <div class="text-dark-teal m-0 pt-3 font-bold text-lg">
                                   {{ typeTitle }}
                                 </div>
                                 <div>
@@ -205,7 +204,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                                 </div>
                               </div>
                               <div class="px-2">
-                                <div class="text-dark-teal m-0 py-3 font-bold text-lg">
+                                <div class="text-dark-teal m-0 pt-3 font-bold text-lg">
                                   {{ skillTitle }}
                                 </div>
                                 <div>
@@ -240,7 +239,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
         'linkToResource' => $link_to_resource,
         'likesCount' => $flag_upvote_count,
         'likesOutput' => $likes_output_html,
-        'report' => t('Flag as'),
+        'report' => $domainName == 'accesssupport' ? t('Flag as') :  t('Flag as <i class="fa-solid fa-chevron-down ml-3"></i>'),
         'flagOutdated' => $flag_outdated,
         'flagNotUseful' => $flag_not_useful,
         'flagInaccurate' => $flag_inaccurate,
