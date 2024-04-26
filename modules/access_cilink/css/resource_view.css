@@ -10,6 +10,7 @@
   content: '';
   height: 32px;
   width: 32px;
+  min-width: 32px;
   background-image: url('/modules/custom/access/modules/access_cilink/img/link.svg');
   background-repeat: no-repeat;
   background-position: center;
