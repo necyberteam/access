@@ -313,11 +313,13 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
  */
 function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
   if ($entity->bundle() == 'mentorship_engagement') {
-    // Get field field_me_looking_for.
+    $render = \Drupal::service('renderer');
     $field_looking = $entity->get('field_me_looking_for')->getValue();
+    $state = $entity->get('field_me_state')->getValue()[0]['target_id'];
+    $prev_state = $entity->original->get('field_me_state')->getValue()[0]['target_id'];
     if ($field_looking[0]['value'] == 'mentor') {
-      $prev_mentor = $entity->original->get('field_mentor') !== null ? $entity->original->get('field_mentor')->getValue()[0]['target_id'] : 0;
-      $mentor = $entity->get('field_mentor') !== null ? $entity->get('field_mentor')->getValue()[0]['target_id'] : 0;
+      $prev_mentor = $entity->original->get('field_mentor')->getValue() ? $entity->original->get('field_mentor')->getValue()[0]['target_id'] : 0;
+      $mentor = $entity->get('field_mentor')->getValue() ? $entity->get('field_mentor')->getValue()[0]['target_id'] : 0;
       if ($prev_mentor != $mentor) {
         if ($mentor !== 0) {
           ccmnet_updated_mentor_mentee_notify($entity, $mentor);
@@ -325,13 +327,36 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       }
     }
     if ($field_looking[0]['value'] == 'mentee') {
-      $prev_mentee = $entity->original->get('field_mentee')->getValue()[0]['target_id'];
-      $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+      $prev_mentee = $entity->original->get('field_mentee')->getValue() ? $entity->original->get('field_mentee')->getValue()[0]['target_id'] : 0;
+      $mentee = $entity->get('field_mentee')->getValue() ? $entity->get('field_mentee')->getValue()[0]['target_id'] : 0;
       if ($prev_mentee != $mentee) {
-        if ($mentee !== null) {
+        if ($mentee !== 0) {
           ccmnet_updated_mentor_mentee_notify($entity, $mentee);
         }
       }
+    }
+    if (($state != $prev_state) && ($state == 829)) {
+      $liaison = $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'];
+      $liaison_user = \Drupal\user\Entity\User::load($liaison);
+      $liaison_email = $liaison_user->getEmail();
+      $env = getenv('PANTHEON_ENVIRONMENT');
+      $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+      $options = ['absolute' => TRUE];
+      $nid = $entity->id();
+      $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+      $email_body['string'] = [
+        '#type' => 'inline_template',
+        '#template' => '{{ text }}
+        {{ link }}',
+        '#context' => [
+          'text' => t('Status on a CCMNet mentorship you are watching has been changed to “In Progress”.'),
+          'link' => $here->toString(TRUE)->getGeneratedUrl(),
+        ],
+      ];
+      $email_body = $render->renderRoot($email_body)->__toString();
+
+      $nr = new NotifyRoles();
+      $nr->notifyRoleAndEmail($role, t('CCMNet mentorship in progress'), $email_body, $liaison_email);
     }
   }
 }
