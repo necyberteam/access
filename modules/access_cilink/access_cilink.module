@@ -4,6 +4,7 @@
  * @file
  */
 
+use Drupal\Component\Utility\Html;
 use Drupal\Core\Link;
 use Drupal\Core\Render\Markup;
 use Drupal\Core\Url;
@@ -16,7 +17,7 @@ use Drupal\views\ViewExecutable;
  * Implements hook_views_pre_render().
  */
 function access_cilink_views_pre_render(ViewExecutable $view) {
-  if ($view->id() == 'search_ci_links' && isset($view->getDisplay()->view->element['#display_id']) && $view->getDisplay()->view->element['#display_id'] == 'page_1') {
+  if ($view->id() == 'search_ci_links' && isset($view->getDisplay()->view->element['#display_id']) && ($view->getDisplay()->view->element['#display_id'] == 'page_1' || $view->getDisplay()->view->element['#display_id'] == 'page_2')) {
     $view->element['#attached']['library'][] = 'access_cilink/cilink_view';
   }
 }
@@ -61,7 +62,10 @@ function access_cilink_preprocess_views_view_field(&$variables) {
   $field = $variables['field'];
   // Override view /admin/structure/views/view/search_ci_links title.
   // Details output on CI links search on /search-ci-links page.
-  if ($view->id() == 'search_ci_links' && ($view->current_display == 'page_1' && $field->options['id'] == 'sid_3')) {
+  if ($view->id() == 'search_ci_links' && (($view->current_display == 'page_1' || $view->current_display == 'page_2') && $field->options['id'] == 'sid_3')) {
+    $token = \Drupal::token();
+    $domainName = Html::getClass($token->replace(t('[domain:name]')));
+
     $sid = $variables['output']->__toString();
     $webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($sid);
     if (!$webform_submission) {
@@ -95,10 +99,11 @@ function access_cilink_preprocess_views_view_field(&$variables) {
 
     // Resource links.
     $link_to_resource = '<ul class="list-none mb-5 mx-0 p-0">';
+    $link_color = $domainName == 'ccmnet' ? 'text-dark' : 'text-dark-teal';
     foreach ($data['link_to_resource'] as $link) {
       $link_to_resource .= "<li class='list-image-link'><a href='" .
         $link['url'] .
-        "' class='text-dark-teal text-lg no-underline hover--underline font-semibold'>" .
+        "' class='$link_color text-lg no-underline hover--underline font-semibold'>" .
         $link['title'] . "</a></li>";
     }
     $link_to_resource .= '</ul>';
@@ -126,9 +131,11 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                         <br> " . $login . "
                       </div>";
     }
-    $likes_html = "<div class='mb-5 text-dark-teal font-bold'>$likes_count $likes</div>";
+    $likes_html_class = $domainName == 'ccmnet' ? 'mb-2' : 'mb-5';
+    $likes_html = "<div class='$likes_html_class text-dark-teal font-bold'>$likes_count $likes</div>";
 
-    $likes_output_html = "<div class='bg-light-teal p-4 font-bold md--w-full'>$likes_html $flag_upvote</div>";
+    $likes_class = $domainName == 'ccmnet' ? '' : 'bg-light-teal p-4';
+    $likes_output_html = "<div class='$likes_class font-bold md--w-full'>$likes_html $flag_upvote</div>";
 
     // Skills.
     $skill_id = $data['skill_level'];
@@ -176,6 +183,9 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                           <summary class="flex items-center bg-light-teal p-4 relative after:right-8">
                             <div class="text-dark-teal m-0 pe-20 font-bold text-lg">{{ title }}</div>
                             <div class="linkcount bg-white text-orange font-bold py-2 px-4 rounded-full ms-auto me-10 ml-auto border round border-radius">{{ likesCount }}</div>
+                            {% if domainName == "ccmnet" %}
+                              <i class="fa-solid fa-chevron-down ml-3"></i>
+                            {% endif %}
                           </summary>
                           <div class="grid grid-cols-5 gap-4 p-4">
                             <div class="col-span-5 md--col-span-4">
@@ -186,7 +196,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                             <div class="col-span-5 md--col-span-1 flex flex-row flex-wrap justify-between">
                               {{ likesOutput | raw }}
                               <div class="px-2">
-                                <div class="text-dark-teal m-0 py-3 font-bold text-lg">
+                                <div class="text-dark-teal m-0 pt-3 font-bold text-lg">
                                   {{ typeTitle }}
                                 </div>
                                 <div>
@@ -194,7 +204,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                                 </div>
                               </div>
                               <div class="px-2">
-                                <div class="text-dark-teal m-0 py-3 font-bold text-lg">
+                                <div class="text-dark-teal m-0 pt-3 font-bold text-lg">
                                   {{ skillTitle }}
                                 </div>
                                 <div>
@@ -229,10 +239,11 @@ function access_cilink_preprocess_views_view_field(&$variables) {
         'linkToResource' => $link_to_resource,
         'likesCount' => $flag_upvote_count,
         'likesOutput' => $likes_output_html,
-        'report' => t('Flag as'),
+        'report' => $domainName == 'accesssupport' ? t('Flag as') :  t('Flag as <i class="fa-solid fa-chevron-down ml-3"></i>'),
         'flagOutdated' => $flag_outdated,
         'flagNotUseful' => $flag_not_useful,
         'flagInaccurate' => $flag_inaccurate,
+        'domainName' => $domainName,
       ],
     ];
 
