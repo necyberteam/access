@@ -313,10 +313,12 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
 function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
   if ($entity->bundle() == 'mentorship_engagement') {
     $render = \Drupal::service('renderer');
-    $emailFactory = \Drupal::service('email_factory');
 
     // Mentorship title.
     $title = $entity->getTitle();
+
+    // Mailer Policy type.
+    $policy = 'ccmnet';
 
     // Link back to mentorship.
     $options = ['absolute' => TRUE];
@@ -336,18 +338,21 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         if ($mentor !== 0) {
           $mentor_user = \Drupal\user\Entity\User::load($mentor);
           $mentor_email = $mentor_user->getEmail();
+          $link = $here->toString(TRUE)->getGeneratedUrl();
+          $policy_subtype = 'mentee_changed';
 
-          $emailFactory->sendTypedEmail('ccmnet', 'mentor_changed');
+          ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentor_email, $link);
 
-          $email = $emailFactory->newTypedEmail('ccmnet', 'mentor_changed')
-          ->setTo($mentor_email)
-          ->setVariable('title', $title)
-          ->setVariable('url', $here->toString(TRUE)->getGeneratedUrl());
-
-          $email->send();
+          $liaison = $entity->get('field_me_ccmnet_leadership') ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
+          if ($liaison) {
+            $liaison_user = \Drupal\user\Entity\User::load($liaison);
+            $liaison_email = $liaison_user->getEmail();
+            ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
+          }
         }
       }
     }
+
     if ($field_looking[0]['value'] == 'mentee') {
       $prev_mentee = $entity->original->get('field_mentee')->getValue() ? $entity->original->get('field_mentee')->getValue()[0]['target_id'] : 0;
       $mentee = $entity->get('field_mentee')->getValue() ? $entity->get('field_mentee')->getValue()[0]['target_id'] : 0;
@@ -355,13 +360,17 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         if ($mentee !== 0) {
           $mentee_user = \Drupal\user\Entity\User::load($mentee);
           $mentee_email = $mentee_user->getEmail();
-          $emailFactory->sendTypedEmail('ccmnet', 'mentee_changed');
-          $email = $emailFactory->newTypedEmail('ccmnet', 'mentee_changed')
-          ->setTo($mentee_email)
-          ->setVariable('title', $title)
-          ->setVariable('url', $here->toString(TRUE)->getGeneratedUrl());
+          $link = $here->toString(TRUE)->getGeneratedUrl();
+          $policy_subtype = 'mentee_changed';
 
-          $email->send();
+          ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentee_email, $link);
+
+          $liaison = $entity->get('field_me_ccmnet_leadership') ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
+          if ($liaison) {
+            $liaison_user = \Drupal\user\Entity\User::load($liaison);
+            $liaison_email = $liaison_user->getEmail();
+            ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
+          }
         }
       }
     }
@@ -389,6 +398,22 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       $nr->notifyRoleAndEmail($role, t('CCMNet mentorship in progress'), $email_body, $liaison_email);
     }
   }
+}
+
+/**
+ * Send notification email.
+ */
+function ccmnet_send_notification_email($policy, $policy_subtype, $title, $email, $link) {
+  $render = \Drupal::service('renderer');
+  $emailFactory = \Drupal::service('email_factory');
+
+  $emailFactory->sendTypedEmail($policy, $policy_subtype);
+  $email = $emailFactory->newTypedEmail($policy, $policy_subtype)
+  ->setTo($email)
+  ->setVariable('title', $title)
+  ->setVariable('url', $link);
+
+  $email->send();
 }
 
 /**
