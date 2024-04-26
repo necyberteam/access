@@ -306,6 +306,76 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
     $nr->notifyRole(NULL, t('Mentorship Engagement received'), $author_body, $email);
   }
 }
+
+/**
+ * Implements hook_entity_presave().
+ */
+function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
+  if ($entity->bundle() == 'mentorship_engagement') {
+    // Get field field_me_looking_for.
+    $field_looking = $entity->get('field_me_looking_for')->getValue();
+    if ($field_looking[0]['value'] == 'mentor') {
+      $prev_mentor = $entity->original->get('field_mentor') !== null ? $entity->original->get('field_mentor')->getValue()[0]['target_id'] : 0;
+      $mentor = $entity->get('field_mentor') !== null ? $entity->get('field_mentor')->getValue()[0]['target_id'] : 0;
+      if ($prev_mentor != $mentor) {
+        if ($mentor !== 0) {
+          ccmnet_updated_mentor_mentee_notify($entity, $mentor);
+        }
+      }
+    }
+    if ($field_looking[0]['value'] == 'mentee') {
+      $prev_mentee = $entity->original->get('field_mentee')->getValue()[0]['target_id'];
+      $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+      if ($prev_mentee != $mentee) {
+        if ($mentee !== null) {
+          ccmnet_updated_mentor_mentee_notify($entity, $mentee);
+        }
+      }
+    }
+  }
+}
+
+/**
+ * Email new mentor or mentee.
+ */
+function ccmnet_updated_mentor_mentee_notify($entity, $changed_user_id) {
+  $render = \Drupal::service('renderer');
+  $liaison = $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'];
+  $options = ['absolute' => TRUE];
+  $nid = $entity->id();
+  $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+  $email_body['string'] = [
+    '#type' => 'inline_template',
+    '#template' => '{{ text }} {{ title }}: {{ link }}
+    {{ end_text }}',
+    '#context' => [
+      'text' => t('Thank you for your interest in'),
+      'title' => $entity->getTitle(),
+      'link' => $here->toString(TRUE)->getGeneratedUrl(),
+      'end_text' => t('We are pleased to inform you that you have been selected!'),
+    ],
+  ];
+  $email_body = $render->renderRoot($email_body)->__toString();
+  $liaison_email_body['string'] = [
+    '#type' => 'inline_template',
+    '#template' => '{{ text }}. {{ link }}.
+    {{ end_text }}',
+    '#context' => [
+      'text' => t('A CCMNet mentor match has been made'),
+      'title' => $entity->getTitle(),
+      'link' => $here->toString(TRUE)->getGeneratedUrl(),
+    ],
+  ];
+  $liaison_email_body = $render->renderRoot($liaison_email_body)->__toString();
+  $new_user = \Drupal\user\Entity\User::load($changed_user_id);
+  $new_user_email = $new_user->getEmail();
+  $liaison_user = \Drupal\user\Entity\User::load($liaison);
+  $liaison_email = $liaison_user->getEmail();
+  $nr = new NotifyRoles();
+  $nr->notifyRole(NULL, t('You have been selected'), $email_body, $new_user_email);
+  $nr->notifyRole(NULL, t('New mentor selected'), $liaison_email_body, $liaison_email);
+}
+
 /**
  * Implements hook_entity_extra_field_info().
  */
