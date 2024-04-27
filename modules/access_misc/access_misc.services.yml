@@ -18,6 +18,9 @@ services:
     class: Drupal\access_misc\Plugin\Util\NodeAccessGrant
     arguments: ['@database']
 
+  access_misc.usertools:
+    class: Drupal\access_misc\Plugin\Util\UserTools
+    arguments: ['@entity_type.manager']
 
 parameters:
   access_misc.verbose: FALSE

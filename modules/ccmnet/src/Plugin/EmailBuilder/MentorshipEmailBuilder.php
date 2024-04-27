@@ -14,6 +14,7 @@ use Drupal\symfony_mailer\EmailInterface;
  *     "mentor_changed" = @Translation("Mentor Changed notification"),
  *     "mentee_changed" = @Translation("Mentee Changed notification"),
  *     "liaison_mentor_mentee_changed" = @Translation("Liaison Mentor/Mentee Changed notification"),
+ *     "mentorship_in_progress" = @Translation("Notify liaison and ccmnet pm that mentorship has switched to progress"),
  *   },
  *   common_adjusters = {"email_subject", "email_body"},
  * )

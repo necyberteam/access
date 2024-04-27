@@ -324,6 +324,7 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
     $options = ['absolute' => TRUE];
     $nid = $entity->id();
     $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+    $link = $here->toString(TRUE)->getGeneratedUrl();
 
     $field_looking = $entity->get('field_me_looking_for')->getValue();
 
@@ -338,7 +339,6 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         if ($mentor !== 0) {
           $mentor_user = \Drupal\user\Entity\User::load($mentor);
           $mentor_email = $mentor_user->getEmail();
-          $link = $here->toString(TRUE)->getGeneratedUrl();
           $policy_subtype = 'mentee_changed';
 
           ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentor_email, $link);
@@ -360,7 +360,6 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         if ($mentee !== 0) {
           $mentee_user = \Drupal\user\Entity\User::load($mentee);
           $mentee_email = $mentee_user->getEmail();
-          $link = $here->toString(TRUE)->getGeneratedUrl();
           $policy_subtype = 'mentee_changed';
 
           ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentee_email, $link);
@@ -383,19 +382,11 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       $options = ['absolute' => TRUE];
       $nid = $entity->id();
       $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
-      $email_body['string'] = [
-        '#type' => 'inline_template',
-        '#template' => '{{ text }}
-        {{ link }}',
-        '#context' => [
-          'text' => t('Status on a CCMNet mentorship you are watching has been changed to “In Progress”.'),
-          'link' => $here->toString(TRUE)->getGeneratedUrl(),
-        ],
-      ];
-      $email_body = $render->renderRoot($email_body)->__toString();
 
-      $nr = new NotifyRoles();
-      $nr->notifyRoleAndEmail($role, t('CCMNet mentorship in progress'), $email_body, $liaison_email);
+      // Get list of unique emails.
+      $progress_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], [$liaison_email]);
+
+      ccmnet_send_notification_email($policy, 'mentorship_in_progress', 'Click here to view', $progress_emails, $link);
     }
   }
 }
@@ -406,6 +397,8 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
 function ccmnet_send_notification_email($policy, $policy_subtype, $title, $email, $link) {
   $render = \Drupal::service('renderer');
   $emailFactory = \Drupal::service('email_factory');
+
+  $email = explode(',', $email);
 
   $emailFactory->sendTypedEmail($policy, $policy_subtype);
   $email = $emailFactory->newTypedEmail($policy, $policy_subtype)
