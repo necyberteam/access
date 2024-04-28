@@ -327,9 +327,11 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
     }
     $region = $entity->get('field_region')->getValue();
     $region_ccmnet = 0;
-    foreach ($region as $region_value) {
-      if ($region_value['target_id'] == "835") {
-        $region_ccmnet = 1;
+    if ($region) {
+      foreach ($region as $region_value) {
+        if ($region_value['target_id'] == "835") {
+          $region_ccmnet = 1;
+        }
       }
     }
     if ($region_ccmnet === 1 && $prev_region_ccmnet === 0) {
