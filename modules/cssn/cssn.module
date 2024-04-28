@@ -126,6 +126,19 @@ function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
     }
     $form['elements']['i_am_joining_as_a_']['#default_value'] = $roles_set;
 
+    $user_loaded = \Drupal::entityTypeManager()->getStorage('user')->load($user->id());
+    // Get user's field_region.
+    $regions = $user_loaded->get('field_region')->getValue();
+    $cssn_member = 0;
+    foreach ($regions as $region) {
+      if ($region['target_id'] == '780') {
+        $cssn_member = 1;
+        break;
+      }
+    }
+
+    $form['elements']['cssn_member']['#default_value'] = $cssn_member;
+
     /*
      * Handle case where user has roles but no "ACCESS CSSN" region.
      * This could happen if the user selects a CSSN role through
