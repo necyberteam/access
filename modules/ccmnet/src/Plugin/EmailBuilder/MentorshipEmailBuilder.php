@@ -17,6 +17,7 @@ use Drupal\symfony_mailer\EmailInterface;
  *     "mentorship_in_progress" = @Translation("Notify liaison and ccmnet pm that mentorship has switched to progress"),
  *     "mentorship_created_admin" = @Translation("Notify ccmnet admin that mentorship has been created"),
  *     "mentorship_approved_ccmnet_pm" = @Translation("Notify ccmnet pm that mentorship has been approved"),
+ *     "ccmnet_new_user" = @Translation("Notify ccmnet pm that a new user has been created"),
  *   },
  *   common_adjusters = {"email_subject", "email_body"},
  * )

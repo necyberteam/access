@@ -312,9 +312,39 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
  * Implements hook_entity_presave().
  */
 function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
-  if ($entity->bundle() == 'mentorship_engagement' && $entity->original) {
-    $render = \Drupal::service('renderer');
+  if ($entity->bundle() == 'user') {
+    // Mailer Policy type.
+    $policy = 'ccmnet';
 
+    $prev_region = $entity->original->get('field_region')->getValue();
+    $prev_region_ccmnet = 0;
+    if ($prev_region) {
+      foreach ($prev_region as $prev_region_value) {
+        if ($prev_region_value['target_id'] == "835") {
+          $prev_region_ccmnet = 1;
+        }
+      }
+    }
+    $region = $entity->get('field_region')->getValue();
+    $region_ccmnet = 0;
+    foreach ($region as $region_value) {
+      if ($region_value['target_id'] == "835") {
+        $region_ccmnet = 1;
+      }
+    }
+    if ($region_ccmnet === 1 && $prev_region_ccmnet === 0) {
+      $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+      $ccmnet_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+      $uid = $entity->id();
+      // Link to /community-persona/uid.
+      $options = ['absolute' => TRUE];
+      $here = Url::fromUri('internal:/community-persona/' . $uid, $options);
+      $link = $here->toString(TRUE)->getGeneratedUrl();
+
+      ccmnet_send_notification_email($policy, 'ccmnet_new_user', 'Click here to view', $ccmnet_emails, $link);
+    }
+  }
+  if ($entity->bundle() == 'mentorship_engagement' && $entity->original) {
     // Mentorship title.
     $title = $entity->getTitle();
 
@@ -411,7 +441,6 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
  * Send notification email.
  */
 function ccmnet_send_notification_email($policy, $policy_subtype, $title, $email, $link) {
-  $render = \Drupal::service('renderer');
   $emailFactory = \Drupal::service('email_factory');
 
   $email = explode(',', $email);
