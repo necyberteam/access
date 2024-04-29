@@ -288,7 +288,7 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
     ];
     $env = getenv('PANTHEON_ENVIRONMENT');
     $render = \Drupal::service('renderer');
-    $ccmnet_body = $render->renderRoot($ccmnet_body)->__toString();
+    // $ccmnet_body = $render->renderRoot($ccmnet_body)->__toString();
     $author_body = $render->renderRoot($author_body)->__toString();
 
     // Get current users email.
