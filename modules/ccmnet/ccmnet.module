@@ -303,7 +303,7 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
     $role = $env == 'live' ? 'ccmnet_admin' : 'site_developer';
     $ccmnet_admin_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
 
-    ccmnet_send_notification_email($policy, 'mentorship_created_admin', 'Click here to view', $ccmnet_admin_emails, $link);
+    ccmnet_send_notification_email($policy, 'mentorship_created_admin', 'here', $ccmnet_admin_emails, $link);
   }
 }
 
@@ -315,15 +315,18 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
     // Mailer Policy type.
     $policy = 'ccmnet';
 
-    $prev_region = $entity->original->get('field_region')->getValue();
     $prev_region_ccmnet = 0;
-    if ($prev_region) {
-      foreach ($prev_region as $prev_region_value) {
-        if ($prev_region_value['target_id'] == "835") {
-          $prev_region_ccmnet = 1;
+    if (!$entity->isNew()) {
+      $prev_region = $entity->original->get('field_region')->getValue();
+      if ($prev_region) {
+        foreach ($prev_region as $prev_region_value) {
+          if ($prev_region_value['target_id'] == "835") {
+            $prev_region_ccmnet = 1;
+          }
         }
       }
     }
+
     $region = $entity->get('field_region')->getValue();
     $region_ccmnet = 0;
     if ($region) {
