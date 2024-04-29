@@ -317,7 +317,7 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
     $policy = 'ccmnet';
 
     $prev_region_ccmnet = 0;
-    if (!$entity->isNew()) {
+    if (isset($entity->original)) {
       $prev_region = $entity->original->get('field_region')->getValue();
       if ($prev_region) {
         foreach ($prev_region as $prev_region_value) {
