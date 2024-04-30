@@ -17,11 +17,11 @@ function copyclip(url, event) {
   var copySuccess = clickedButton.parentElement.parentElement.querySelector('.copied-message');
 
   // Add 'hidden' class to the default message and remove it from the success message.
-  copyDefault.classList.add('hidden');
-  copySuccess.classList.remove('hidden')
+  copyDefault.classList.add('hidden', 'd-none');
+  copySuccess.classList.remove('hidden', 'd-none')
   // After 3 seconds, remove the 'hidden' class from the default message and add it to the success message.
   setTimeout(function() {
-    copyDefault.classList.remove('hidden');
-    copySuccess.classList.add('hidden');
+    copyDefault.classList.remove('hidden', 'd-none');
+    copySuccess.classList.add('hidden', 'd-none');
   }, 3000);
 }

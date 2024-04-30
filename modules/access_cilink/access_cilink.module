@@ -166,6 +166,10 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     // Get full url including domain.
     $url = \Drupal::request()->getSchemeAndHttpHost() . '/knowledge-base/ci-links?f%5B0%5D=submission_id%3A' . $sid;
 
+    // Check if the user is logged in.
+    $user = \Drupal::currentUser();
+    $authenticated = $user->isAuthenticated();
+
     $output['string'] = [
       '#type' => 'inline_template',
       '#template' => '<div class="details-wrap relative">
@@ -174,7 +178,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                             <i class="fa-solid fa-link"></i><br />
                             Copy link
                           </span>
-                          <span class="copied-message text-dark-teal hidden">
+                          <span class="copied-message text-dark-teal hidden d-none">
                             <i class="fa-solid fa-check"></i><br />
                             Copied!
                           </span>
@@ -211,18 +215,20 @@ function access_cilink_preprocess_views_view_field(&$variables) {
                                   {{ skillImage | raw }}
                                 </div>
                               </div>
-                              <div class="pt-4 md--w-full">
-                                <details class="border border-solid border-dark-teal open:bg-white duration-300 relative">
-                                  <summary class="ps-2 pe-10 py-2 text-dark-teal leading-5 uppercase">
-                                    {{ report }}
-                                  </summary>
-                                  <ul class="px-2 mb-2">
-                                    <li>{{ flagOutdated }}</li>
-                                    <li>{{ flagNotUseful }}</li>
-                                    <li>{{ flagInaccurate }}</li>
-                                  </ul>
-                                </details>
-                              </div>
+                              {% if authenticated %}
+                                <div class="pt-4 md--w-full">
+                                  <details class="border border-solid border-dark-teal open:bg-white duration-300 relative">
+                                    <summary class="ps-2 pe-10 py-2 text-dark-teal leading-5 uppercase">
+                                      {{ report }}
+                                    </summary>
+                                    <ul class="px-2 mb-2">
+                                      <li>{{ flagOutdated }}</li>
+                                      <li>{{ flagNotUseful }}</li>
+                                      <li>{{ flagInaccurate }}</li>
+                                    </ul>
+                                  </details>
+                                </div>
+                              {% endif %}
                             </div>
                           </div>
                         </details>
@@ -240,6 +246,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
         'likesCount' => $flag_upvote_count,
         'likesOutput' => $likes_output_html,
         'report' => $domainName == 'accesssupport' ? t('Flag as') :  t('Flag as <i class="fa-solid fa-chevron-down ml-3"></i>'),
+        'authenticated' => $authenticated,
         'flagOutdated' => $flag_outdated,
         'flagNotUseful' => $flag_not_useful,
         'flagInaccurate' => $flag_inaccurate,
