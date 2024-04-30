@@ -18,6 +18,7 @@ use Drupal\symfony_mailer\EmailInterface;
  *     "mentorship_created_admin" = @Translation("Notify ccmnet admin that mentorship has been created"),
  *     "mentorship_approved_ccmnet_pm" = @Translation("Notify ccmnet pm that mentorship has been approved"),
  *     "ccmnet_new_user" = @Translation("Notify ccmnet pm that a new user has been created"),
+ *     "ccmnet_welcome" = @Translation("Welcome message for new ccmnet user"),
  *   },
  *   common_adjusters = {"email_subject", "email_body"},
  * )
