@@ -335,7 +335,7 @@ function ccmnet_user_login($account) {
 
     // send the welcome email
     if ($new_ccmnet_user) {
-      $link = "https://ccmnet.org/community-persona/$uid";
+      $link = "/community-persona/$uid";
       $email = $user->getEmail();
       ccmnet_send_notification_email('ccmnet', 'ccmnet_welcome', '', $email, $link);
       $user->save();
