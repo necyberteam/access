@@ -1,3 +1,6 @@
+// Set maxlenght of #edit-title-0-value to 65.
+document.getElementById('edit-title-0-value').setAttribute('maxlength', '65');
+
 function setMentoree(mentoree) {
   const selection = document.querySelector('input[name="field_me_looking_for"]:checked').value;
   if (selection === 'mentor') {

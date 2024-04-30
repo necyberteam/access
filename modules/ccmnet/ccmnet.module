@@ -97,6 +97,7 @@ function ccmnet_entity_update(EntityInterface $entity) {
  */
 function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'node_mentorship_engagement_edit_form' || $form_id == 'node_mentorship_engagement_form') {
+    $form['title']['widget'][0]['#maxlength'] = 65;
     $form['body']['widget'][0]['summary']['#description'] = t('No html tags allowed in summary. Limit to 275 characters.');
     $form['body']['widget'][0]['summary']['#maxlength'] = 275;
 
