@@ -307,6 +307,13 @@ function ccmnet_user_login($account) {
     // affinity group
     add_to_ccmnet_ag($uid, FALSE);
 
+    // role
+    $roles = $current_user->getRoles();
+    if (!in_array('ccmnet', $roles)) {
+      $user->addRole('ccmnet');
+      $user->save();
+    }
+
     // program
     $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'CCMNet']);
     $term_id = reset($term)->id();
@@ -328,13 +335,10 @@ function ccmnet_user_login($account) {
 
     // send the welcome email
     if ($new_ccmnet_user) {
+      $link = "https://ccmnet.org/community-persona/$uid";
+      $email = $user->getEmail();
+      ccmnet_send_notification_email('ccmnet', 'ccmnet_welcome', '', $email, $link);
       $user->save();
-
-      $options = ['absolute' => TRUE];
-      $here = Url::fromUri('internal:/community-persona/' . $uid, $options);
-      $link = $here->toString(TRUE)->getGeneratedUrl();
-
-      ccmnet_send_notification_email('ccmnet', 'ccmnet_welcome', 'title-null', $user->getEmail(), $link);
     }
   }
 }
@@ -410,6 +414,7 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       }
     }
     if ($region_ccmnet === 1 && $prev_region_ccmnet === 0) {
+      $env = getenv('PANTHEON_ENVIRONMENT');
       $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
       $ccmnet_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
       $uid = $entity->id();
