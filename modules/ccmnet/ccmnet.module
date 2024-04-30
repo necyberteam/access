@@ -288,8 +288,11 @@ function add_to_ccmnet_ag($uid, $isNewUser) {
 
 /**
  * Implements hook_user_login().
- * If on ccmnet domain, a user logging in while be added to ccmnet program
- * and ccmnet AG if not already there.
+ * If on ccmnet domain, a user logging in while be added to ccmnet program,
+ * ccmnet role, and ccmnet AG if not already there.
+ * If user is new to ccmnet (defined by lack of ccmnet program on the user),
+ * a welcome email is sent.
+ *
  */
 function ccmnet_user_login($account) {
 
@@ -308,10 +311,11 @@ function ccmnet_user_login($account) {
     $term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'CCMNet']);
     $term_id = reset($term)->id();
 
+    $new_ccmnet_user = FALSE;
     $programs = $user->get('field_region')->referencedEntities();
     if (count($programs) == 0) {
       $user->set('field_region', $term_id);
-      $user->save();
+      $new_ccmnet_user = TRUE;
     } else if (!array_filter(
       $programs,
       function ($program) use ($term_id) {
@@ -319,7 +323,18 @@ function ccmnet_user_login($account) {
       }
     )) {
       $user->get('field_region')->appendItem(['target_id' => $term_id]);
+      $new_ccmnet_user = TRUE;
+    }
+
+    // send the welcome email
+    if ($new_ccmnet_user) {
       $user->save();
+
+      $options = ['absolute' => TRUE];
+      $here = Url::fromUri('internal:/community-persona/' . $uid, $options);
+      $link = $here->toString(TRUE)->getGeneratedUrl();
+
+      ccmnet_send_notification_email('ccmnet', 'ccmnet_welcome', 'title-null', $user->getEmail(), $link);
     }
   }
 }
