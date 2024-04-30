@@ -273,15 +273,10 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
   if ($entity->bundle() == 'mentorship_engagement') {
     $options = ['absolute' => TRUE];
     $nid = $entity->id();
+    $policy = 'ccmnet';
     $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
-    $ccmnet_body['string'] = [
-      '#type' => 'inline_template',
-      '#template' => '{{ text }} {{ link }}',
-      '#context' => [
-        'text' => t('A new CCMNet mentorship engagement has been requested.'),
-        'link' => $here->toString(TRUE)->getGeneratedUrl(),
-      ],
-    ];
+    $link = $here->toString(TRUE)->getGeneratedUrl();
+
     $author_body['string'] = [
       '#type' => 'inline_template',
       '#template' => '{{ text }} {{ link }}',
@@ -291,9 +286,8 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
       ],
     ];
     $env = getenv('PANTHEON_ENVIRONMENT');
-    $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
     $render = \Drupal::service('renderer');
-    $ccmnet_body = $render->renderRoot($ccmnet_body)->__toString();
+    // $ccmnet_body = $render->renderRoot($ccmnet_body)->__toString();
     $author_body = $render->renderRoot($author_body)->__toString();
 
     // Get current users email.
@@ -302,10 +296,168 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
     $email = $user->getEmail();
 
     $nr = new NotifyRoles();
-    $nr->notifyRole($role, t('New Mentorship Engagement created'), $ccmnet_body);
     $nr->notifyRole(NULL, t('Mentorship Engagement received'), $author_body, $email);
+
+    // Send email to CCMNet admin.
+    // mentorship_created_admin
+    $role = $env == 'live' ? 'ccmnet_admin' : 'site_developer';
+    $ccmnet_admin_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+
+    ccmnet_send_notification_email($policy, 'mentorship_created_admin', 'here', $ccmnet_admin_emails, $link);
   }
 }
+
+/**
+ * Implements hook_entity_presave().
+ */
+function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
+  if ($entity->bundle() == 'user') {
+    // Mailer Policy type.
+    $policy = 'ccmnet';
+
+    $prev_region_ccmnet = 0;
+    if (isset($entity->original)) {
+      $prev_region = $entity->original->get('field_region')->getValue();
+      if ($prev_region) {
+        foreach ($prev_region as $prev_region_value) {
+          if ($prev_region_value['target_id'] == "835") {
+            $prev_region_ccmnet = 1;
+          }
+        }
+      }
+    }
+
+    $region = $entity->get('field_region')->getValue();
+    $region_ccmnet = 0;
+    if ($region) {
+      foreach ($region as $region_value) {
+        if ($region_value['target_id'] == "835") {
+          $region_ccmnet = 1;
+        }
+      }
+    }
+    if ($region_ccmnet === 1 && $prev_region_ccmnet === 0) {
+      $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+      $ccmnet_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+      $uid = $entity->id();
+      // Link to /community-persona/uid.
+      $options = ['absolute' => TRUE];
+      $here = Url::fromUri('internal:/community-persona/' . $uid, $options);
+      $link = $here->toString(TRUE)->getGeneratedUrl();
+
+      ccmnet_send_notification_email($policy, 'ccmnet_new_user', 'Click here to view', $ccmnet_emails, $link);
+    }
+  }
+  if ($entity->bundle() == 'mentorship_engagement' && $entity->original) {
+    // Mentorship title.
+    $title = $entity->getTitle();
+
+    // Mailer Policy type.
+    $policy = 'ccmnet';
+
+    // Get environment.
+    $env = getenv('PANTHEON_ENVIRONMENT');
+
+    // Link back to mentorship.
+    $options = ['absolute' => TRUE];
+    $nid = $entity->id();
+    $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
+    $link = $here->toString(TRUE)->getGeneratedUrl();
+
+    $field_looking = $entity->get('field_me_looking_for')->getValue();
+
+    $state = $entity->get('field_me_state')->getValue()[0]['target_id'];
+    $prev_state = $entity->original->get('field_me_state')->getValue()[0]['target_id'];
+
+    $approved_state = $entity->get('field_ccmnet_approved')->getValue()[0]['value'];
+    $prev_approved_state = $entity->original->get('field_ccmnet_approved')->getValue()[0]['value'];
+
+    // If state is changed to 'Approved', send email to ccmnet pm.
+    if ($approved_state == 1 && $prev_approved_state != $approved_state) {
+      $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+      $ccmnet_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+
+      ccmnet_send_notification_email($policy, 'mentorship_approved_ccmnet_pm', 'here', $ccmnet_emails, $link);
+    }
+
+    // If mentor is added or changed, send email to new mentor and liaison.
+    if ($field_looking[0]['value'] == 'mentor') {
+      $prev_mentor = $entity->original->get('field_mentor')->getValue() ? $entity->original->get('field_mentor')->getValue()[0]['target_id'] : 0;
+      $mentor = $entity->get('field_mentor')->getValue() ? $entity->get('field_mentor')->getValue()[0]['target_id'] : 0;
+
+      if ($prev_mentor != $mentor) {
+        if ($mentor !== 0) {
+          $mentor_user = \Drupal\user\Entity\User::load($mentor);
+          $mentor_email = $mentor_user->getEmail();
+          $policy_subtype = 'mentee_changed';
+
+          ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentor_email, $link);
+
+          $liaison = $entity->get('field_me_ccmnet_leadership') ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
+          if ($liaison) {
+            $liaison_user = \Drupal\user\Entity\User::load($liaison);
+            $liaison_email = $liaison_user->getEmail();
+            ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
+          }
+        }
+      }
+    }
+
+    // if mentee is added or changed, send email to new mentee and liaison.
+    if ($field_looking[0]['value'] == 'mentee') {
+      $prev_mentee = $entity->original->get('field_mentee')->getValue() ? $entity->original->get('field_mentee')->getValue()[0]['target_id'] : 0;
+      $mentee = $entity->get('field_mentee')->getValue() ? $entity->get('field_mentee')->getValue()[0]['target_id'] : 0;
+      if ($prev_mentee != $mentee) {
+        if ($mentee !== 0) {
+          $mentee_user = \Drupal\user\Entity\User::load($mentee);
+          $mentee_email = $mentee_user->getEmail();
+          $policy_subtype = 'mentee_changed';
+
+          ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentee_email, $link);
+
+          $liaison = $entity->get('field_me_ccmnet_leadership') ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
+          if ($liaison) {
+            $liaison_user = \Drupal\user\Entity\User::load($liaison);
+            $liaison_email = $liaison_user->getEmail();
+            ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
+          }
+        }
+      }
+    }
+
+    // If state is changed to 'In Progress', send email to ccmnet pm and liaison.
+    if (($state != $prev_state) && ($state == 829)) {
+      $liaison = $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'];
+      $liaison_user = \Drupal\user\Entity\User::load($liaison);
+      $liaison_email = $liaison_user->getEmail();
+
+      $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
+
+      // Get list of unique emails.
+      $progress_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], [$liaison_email]);
+
+      ccmnet_send_notification_email($policy, 'mentorship_in_progress', 'Click here to view', $progress_emails, $link);
+    }
+  }
+}
+
+/**
+ * Send notification email.
+ */
+function ccmnet_send_notification_email($policy, $policy_subtype, $title, $email, $link) {
+  $emailFactory = \Drupal::service('email_factory');
+
+  $email = explode(',', $email);
+
+  $emailFactory->sendTypedEmail($policy, $policy_subtype);
+  $email = $emailFactory->newTypedEmail($policy, $policy_subtype)
+  ->setTo($email)
+  ->setVariable('title', $title)
+  ->setVariable('url', $link);
+
+  $email->send();
+}
+
 /**
  * Implements hook_entity_extra_field_info().
  */
