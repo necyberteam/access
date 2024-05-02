@@ -23,5 +23,5 @@ function copyclip(url, event) {
   setTimeout(function() {
     copyDefault.classList.remove('hidden', 'd-none');
     copySuccess.classList.add('hidden', 'd-none');
-  }, 3000);
+  }, 6000);
 }
