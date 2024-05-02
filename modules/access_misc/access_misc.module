@@ -33,14 +33,16 @@ function access_misc_user_login(UserInterface $account) {
   $destination = \Drupal::request()->query->get('destination');
   $current = \Drupal::request()->query->get('current');
   if (!$destination) {
+    $current_request = \Drupal::service('request_stack')->getCurrentRequest();
     $url = Url::fromRoute('<front>', [], ['absolute' => 'true'])->toString();
     if ($current) {
       $url = Url::fromUri("internal:$current")->toString();
     }
-    $response = new RedirectResponse($url);
-    $response->send();
+    $current_request->query->set(
+      'destination',
+      $url
+    );
   }
-  return;
 }
 
 /**
