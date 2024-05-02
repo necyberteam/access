@@ -43,6 +43,7 @@ function access_misc_user_login(UserInterface $account) {
       $url
     );
   }
+  \Drupal::messenger()->deleteAll();
 }
 
 /**
