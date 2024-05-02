@@ -322,8 +322,10 @@ class CommunityPersonaController extends ControllerBase {
         ],
       ],
       '#template' => '
+        {% set skill_margin = "mb-3" %}
         {% if bio %}
-        <div class="border border-secondary border-md-teal my-3 mb-6">
+        {% set skill_margin = "my-3" %}
+        <div class="border border-secondary border-md-teal mb-3 mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ bio_title }}</span>
           </div>
@@ -337,7 +339,7 @@ class CommunityPersonaController extends ControllerBase {
           </div>
         </div>
         {% endif %}
-        <div class="border border-secondary border-md-teal my-3 mb-6">
+        <div class="border border-secondary border-md-teal {{ skill_margin }} mb-6">
           <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
             <span class="h4 text-white m-0">{{ me_title }}</span>
           </div>
@@ -481,8 +483,10 @@ class CommunityPersonaController extends ControllerBase {
           ],
         ],
         '#template' => '
+          {% set skill_margin = "mb-3" %}
           {% if bio %}
-          <div class="border border-secondary border-md-teal my-3 mb-6">
+          {% set skill_margin = "my-3" %}
+          <div class="border border-secondary border-md-teal mb-3 mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ bio_title }}</span>
             </div>
@@ -496,7 +500,7 @@ class CommunityPersonaController extends ControllerBase {
             </div>
           </div>
           {% endif %}
-          <div class="border border-secondary border-md-teal my-3 mb-6">
+          <div class="border border-secondary border-md-teal {{ skill_margin }} mb-6">
             <div class="text-white py-2 px-3 bg-dark bg-md-teal text-2xl p-4 d-flex flex align-items-center justify-content-between">
               <span class="h4 text-white m-0">{{ me_title }}</span>
             </div>
