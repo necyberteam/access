@@ -37,7 +37,7 @@ class CiCommunity extends BlockBase implements
    *
    * @var \Drupal\Core\Routing\RouteMatchInterface
    */
-  protected $routMatchInterface;
+  protected $routeMatchInterface;
 
   /**
    * The http_client service.
@@ -83,13 +83,13 @@ class CiCommunity extends BlockBase implements
    * Construct object.
    */
   public function __construct(
-                              array $configuration,
-                              $plugin_id,
-                              $plugin_definition,
-                              EntityTypeManagerInterface $entity_type_manager,
-                              RouteMatchInterface $route_match_interface,
-                              Client $http_client,
-                              LoggerChannelFactoryInterface $logger_interface
+    array $configuration,
+    $plugin_id,
+    $plugin_definition,
+    EntityTypeManagerInterface $entity_type_manager,
+    RouteMatchInterface $route_match_interface,
+    Client $http_client,
+    LoggerChannelFactoryInterface $logger_interface,
   ) {
     parent::__construct($configuration, $plugin_id, $plugin_definition);
     $this->entityTypeManager = $entity_type_manager;
