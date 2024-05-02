@@ -299,7 +299,7 @@ class CommunityPersonaController extends ControllerBase {
 
     // Link to add Knowledge Base Contribution webform.
     $webform_url = Url::fromUri('internal:/form/resource');
-    $webform_link = Link::fromTextAndUrl('Add CI Link', $webform_url);
+    $webform_link = Link::fromTextAndUrl('Add Resource', $webform_url);
     $webform_renderable = $webform_link->toRenderable();
     $build_webform_link = $webform_renderable;
     $build_webform_link['#attributes']['class'] = ['btn', 'btn-outline-dark', 'btn-md-teal', 'btn-sm', 'py-1', 'px-2', 'm-0'];

@@ -29,7 +29,7 @@ class ResourcesForAffinityGroup extends BlockBase {
     // Create empty string in case the following if statement is not true.
     $rendered = '';
     if (!empty($field_resources_entity_reference)) {
-      $rendered = '<h2 class="text-white-er text-xl font-semibold border-bottom pb-2 bg-dark-teal py-2 px-4">CI Links</h2>';
+      $rendered = '<h2 class="text-white-er text-xl font-semibold border-bottom pb-2 bg-dark-teal py-2 px-4">Knowledge Base Resources</h2>';
       $header = [
         [
           'data' => 'Title',
@@ -77,10 +77,10 @@ class ResourcesForAffinityGroup extends BlockBase {
         $token = \Drupal::token();
         $domainName = Html::getClass($token->replace(t('[domain:name]')));
         if ($domainName == 'access-support') {
-          $ci_link_path = '/knowledge-base/ci-links/';
+          $ci_link_path = '/knowledge-base/resources/';
         }
         else {
-          $ci_link_path = '/ci-links/';
+          $ci_link_path = '/knowledge-base/resources/';
         }
         $ci_link = [
           '#type' => 'link',

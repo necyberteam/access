@@ -17,3 +17,37 @@ function access_cilink_update_10000() {
     'status_code' => 301,
   ])->save();
 }
+
+/**
+ * Remove and replace redirects.
+ */
+function access_cilink_update_10001() {
+  $ids = [];
+  $ci = \Drupal::entityQuery('redirect')
+    ->condition('redirect_redirect__uri', 'internal:/ci-links')
+    ->accessCheck(FALSE)
+    ->execute();
+  $kbci = \Drupal::entityQuery('redirect')
+    ->condition('redirect_redirect__uri', 'internal:/knowledge-base/ci-links')
+    ->accessCheck(FALSE)
+    ->execute();
+  $ids = array_merge($ci, $kbci);
+  $entities = Redirect::loadMultiple($ids);
+  \Drupal::entityTypeManager()->getStorage('redirect')->delete($entities);
+
+  Redirect::create([
+    'redirect_source' => 'ci-links',
+    'redirect_redirect' => 'internal:/knowledge-base/resources',
+    'status_code' => 301,
+  ])->save();
+  Redirect::create([
+    'redirect_source' => 'resources',
+    'redirect_redirect' => 'internal:/knowledge-base/resources',
+    'status_code' => 301,
+  ])->save();
+  Redirect::create([
+    'redirect_source' => 'knowledge-base/ci-links',
+    'redirect_redirect' => 'internal:/knowledge-base/resources',
+    'status_code' => 301,
+  ])->save();
+}

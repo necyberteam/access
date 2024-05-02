@@ -1,4 +1,4 @@
-// Set maxlenght of #edit-title-0-value to 65.
+// Set maxlength of #edit-title-0-value to 65.
 document.getElementById('edit-title-0-value').setAttribute('maxlength', '65');
 
 function setMentoree(mentoree) {

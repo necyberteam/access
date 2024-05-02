@@ -185,6 +185,7 @@ function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
     // Attach javascript.
     $form['#attached']['library'][] = 'access_misc/node_add_tags';
     $form['#attached']['library'][] = 'ccmnet/mentorship_engagement';
+    
     $form['#validate'][] = 'access_mentorship_engagement_validate';
   } else if ($form_id == 'user_register_form' || $form_id == 'user_form') {
     // For forms on ccmnet domain only:
@@ -277,6 +278,7 @@ function ccmnet_add_program_form_submit(array &$form, FormStateInterface $form_s
 */
 function ccmnet_add_ag_form_submit($form, &$form_state) {
   $uid = $form_state->getValue('uid');
+
   add_to_ccmnet_ag($uid, TRUE);
 }
 
@@ -431,6 +433,7 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       }
     }
     if ($region_ccmnet === 1 && $prev_region_ccmnet === 0) {
+
       $env = getenv('PANTHEON_ENVIRONMENT');
       $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
       $ccmnet_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);

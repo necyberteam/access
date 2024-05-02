@@ -164,7 +164,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $flag_inaccurate = \Drupal::service('renderer')->renderPlain($flag_inaccurate);
 
     // Get full url including domain.
-    $url = \Drupal::request()->getSchemeAndHttpHost() . '/knowledge-base/ci-links?f%5B0%5D=submission_id%3A' . $sid;
+    $url = \Drupal::request()->getSchemeAndHttpHost() . '/knowledge-base/resources?f%5B0%5D=submission_id%3A' . $sid;
 
     // Check if the user is logged in.
     $user = \Drupal::currentUser();
