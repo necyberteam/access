@@ -9,10 +9,13 @@ use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Render\Markup;
+use Drupal\user\UserInterface;
 use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
 use Drupal\Component\Utility\Xss;
+use Symfony\Component\HttpFoundation\RedirectResponse;
+use Drupal\Core\Url;
 
 /**
  * Implements hook_page_attachments().
@@ -20,6 +23,24 @@ use Drupal\Component\Utility\Xss;
 function access_misc_page_attachments(&$variables) {
   // Adding global library to all pages.
   $variables['#attached']['library'][] = 'access_misc/global';
+}
+
+/**
+ * Implements hook_user_login().
+ */
+function access_misc_user_login(UserInterface $account) {
+  // Check if destination is set in url.
+  $destination = \Drupal::request()->query->get('destination');
+  $current = \Drupal::request()->query->get('current');
+  if (!$destination) {
+    $url = Url::fromRoute('<front>', [], ['absolute' => 'true'])->toString();
+    if ($current) {
+      $url = Url::fromUri("internal:$current")->toString();
+    }
+    $response = new RedirectResponse($url);
+    $response->send();
+  }
+  return;
 }
 
 /**
