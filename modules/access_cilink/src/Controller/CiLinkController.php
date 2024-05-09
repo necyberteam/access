@@ -307,7 +307,7 @@ class CiLinkController extends ControllerBase {
         'skill_graph' => $skill_graph,
         'affinity_groups' => $affinity_nodes,
         'user' => $user->id(),
-        'report' => $this->t('Flag this CI Link'),
+        'report' => $this->t('Flag this resource'),
         'outdated' => $flag_outdated,
         'not_useful' => $flag_not_useful,
         'inaccurate' => $flag_inaccurate,
