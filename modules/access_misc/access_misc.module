@@ -27,6 +27,11 @@ function access_misc_page_attachments(&$variables) {
 
 /**
  * Implements hook_user_login().
+ * 
+ * Redirect people to the <front> page on successful login 
+ * unless the current or destination parameter is set.
+ * Also, clear any messages to prevent the previous 
+ * access denied message from showing after login.
  */
 function access_misc_user_login(UserInterface $account) {
   // Check if destination is set in url.
