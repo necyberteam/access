@@ -18,6 +18,8 @@ access_cilink.kb_cilinks:
     _controller: '\Drupal\access_cilink\Controller\CiLinkController::cilinks'
     _title: 'Knowledge Base Resources'
     _title_callback: '\Drupal\access_cilink\Controller\CiLinkController::getTitle'
+  requirements:
+    _permission: 'access content'
 access_cilink.cilink_redirect:
   path: '/knowledge-base/ci-links/{sid}'
   defaults:
