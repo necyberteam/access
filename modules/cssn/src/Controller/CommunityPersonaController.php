@@ -58,7 +58,7 @@ class CommunityPersonaController extends ControllerBase {
         }
 
         if ($ag_node) {
-          $affinity_group_loaded = \Drupal::entityTypeManager()->getStorage('node')->load($ag_node->id());
+          $affinity_group_loaded = $ag_node;
           $url = Url::fromRoute('entity.node.canonical', ['node' => $affinity_group_loaded->id()]);
           $class = ['font-bold', 'underline', 'hover--no-underline', 'hover--text-dark-teal'];
           $project_link = Link::fromTextAndUrl($affinity_group_loaded->getTitle(), $url)->toRenderable();
