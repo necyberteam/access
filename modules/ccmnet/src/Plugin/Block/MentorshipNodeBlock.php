@@ -121,11 +121,7 @@ class MentorshipNodeBlock extends BlockBase implements
       }
 
       $nid = $node->id();
-
       $looking_for = $node->get('field_me_looking_for')->getValue();
-      $looking_span = '<span class="pt-1 pl-2">' . $looking_for[0]['value'] . ' preferred attributes: </span>';
-      $img = '<img src="/modules/custom/access/modules/ccmnet/images/asterisk.png" alt="asterisk" />';
-      $section_header = '<div class="d-flex align-items-center text-uppercase">' . $img . $looking_span . '</div>';
 
       // button to contact the originating mentor/mentee
       if ($looking_for[0]['value'] == 'mentor') {
@@ -159,6 +155,15 @@ class MentorshipNodeBlock extends BlockBase implements
 
       $recruitee_attrib = $node->get('field_me_preferred_attributes')->getValue();
       $recruitee_attrib = isset($recruitee_attrib[0]) ? $recruitee_attrib[0]['value'] : '';
+
+      $section_header = "";
+
+      if (!empty($recruitee_attrib)) {
+        $section_header = '';
+        $looking_span = '<span class="pt-1 pl-2">' . $looking_for[0]['value'] . ' preferred attributes: </span>';
+        $img = '<img src="/modules/custom/access/modules/ccmnet/images/asterisk.png" alt="asterisk" />';
+        $section_header = '<div class="d-flex align-items-center text-uppercase">' . $img . $looking_span . '</div>';
+      }
 
       $match_node_block['string'] = [
         '#type' => 'inline_template',
