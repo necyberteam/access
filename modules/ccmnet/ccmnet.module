@@ -613,7 +613,7 @@ function ccmnet_cron() {
     $interested_status = \Drupal::state()->get('access_mentorship_interested');
 
     // Send interested email at 1:00am.
-    if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 5) && $interested_status != 0) {
+    if ((date('G', time()) == 01) && (date('i', time()) >= 0) && (date('i', time()) < 15) && $interested_status != 0) {
       if ($interested_status != 0) {
         $render = \Drupal::service('renderer');
         $nr = new NotifyRoles();
