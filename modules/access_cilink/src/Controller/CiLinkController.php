@@ -321,15 +321,19 @@ class CiLinkController extends ControllerBase {
   }
 
   /**
+   * Redirect to knowledge-base page.
+   */
+  public function redirectToResource() {
+    $response = new RedirectResponse('/knowledge-base/resources/' . $this->sid);
+    return $response->send();
+  }
+
+  /**
    * Redirect to cilinks page.
    */
   public function cilink() {
     $response = new RedirectResponse('/ci-links/' . $this->sid);
-    $response->send();
-    return [
-      '#type' => 'markup',
-      '#markup' => "👋 " . $this->t("You shouldn't see this."),
-    ];
+    return $response->send();
   }
 
   /**
