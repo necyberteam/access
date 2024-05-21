@@ -954,6 +954,7 @@ function access_affinitygroup_cron() {
     $query = \Drupal::entityQuery('node')
       ->condition('type', 'mentorship_engagement')
       ->condition('field_me_state', $term_id)
+      ->condition('field_ccmnet_approved', 1)
       ->condition('changed', strtotime('-1 day'), '>')
       ->accessCheck(FALSE);
     $nids = $query->execute();
