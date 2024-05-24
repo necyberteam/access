@@ -5,4 +5,13 @@ access_affinitygroup.constantcontact_form:
     _title: 'Constant Contact setup token'
   requirements:
     _role: 'administrator'
+access_affinitygroup.simplelist:
+  path: '/simplelist/{sl_action}'
+  defaults:
+    _controller: '\Drupal\access_affinitygroup\Controller\SimpleListController::simplelist'
+    _title: ''
+  requirements:
+    _role: 'authenticated'
+  options:
+    no_cache: 'TRUE'
 
