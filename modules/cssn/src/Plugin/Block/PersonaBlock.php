@@ -187,10 +187,10 @@ class PersonaBlock extends BlockBase {
                           {% endif %}
                           <h4 class="institution text-md-teal">{{ institution }}</h4>
                           {% if job_title %}
-                            <div class="mb-3">{{ job_title }}</div>
+                            <div class="mb-3"><i>{{ job_title }}</i></div>
                           {% endif %}
-                          {% if academic_status %}
-                            <div class="academic-status">{{ academic_status }}</div>
+                          {% if academic_status and academic_status != "I am not in an academic program but interested in shifting focus to research computing facilitation"  %}
+                            <div class="academic-status mb-3">{{ academic_status }}</div>
                           {% endif %}
                           {% if cssn != "Not a CSSN Member" %}
                             <div class="d-flex justify-content-between flex justify-between border-b border-black">
