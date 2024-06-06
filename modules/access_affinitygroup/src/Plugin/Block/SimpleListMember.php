@@ -58,6 +58,7 @@ class SimpleListMember extends BlockBase implements
     $msg = "";
     // Load current node.
     $node = \Drupal::routeMatch()->getParameter('node');
+    $simple_list_enabled = $node->get('field_use_ext_email_list')->value;
     $group_slug = $node->get('field_group_slug')->value;
     // Get current user email.
     $current_user = \Drupal::currentUser();
@@ -112,7 +113,9 @@ class SimpleListMember extends BlockBase implements
       ],
     ];
 
-    return $simple;
+    $output = $simple_list_enabled ? $simple : [];
+
+    return $output;
   }
 
   /**
