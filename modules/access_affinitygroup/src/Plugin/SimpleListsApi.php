@@ -103,7 +103,7 @@ class SimpleListsApi {
       $list_info = curl_exec($ch);
       curl_close($ch);
       $list_info = json_decode($list_info, TRUE);
-      $subscribers = $list_info['contacts'];
+      $subscribers = isset($list_info['contacts']) ? $list_info['contacts'] : [];
     }
     catch (\Exception $e) {
       $msg = $e->getMessage();
@@ -135,7 +135,7 @@ class SimpleListsApi {
         $contact  = curl_exec($ch);
         curl_close($ch);
         $contact = json_decode($contact, TRUE);
-        $contact_list = isset($contact['lists') ? $contact['lists'] : [];
+        $contact_list = isset($contact['lists']) ? $contact['lists'] : [];
         foreach ($contact_list as $list) {
           if ($list['list'] == $listName) {
             // Digest is either 1 for daily digest or else send right away
