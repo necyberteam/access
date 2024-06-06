@@ -221,7 +221,6 @@ class PersonaBlock extends BlockBase {
           'last_name' => $last_name,
           'pronouns' => $pronouns,
           'institution' => $institution,
-          'job_title_label' => t('Job Title'),
           'job_title' => $job_title,
           'academic_status' => $academic_status,
           'cssn' => $cssn,
