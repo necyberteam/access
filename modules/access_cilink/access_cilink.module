@@ -19,6 +19,7 @@ use Drupal\views\ViewExecutable;
 function access_cilink_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'search_ci_links' && isset($view->getDisplay()->view->element['#display_id']) && ($view->getDisplay()->view->element['#display_id'] == 'page_1' || $view->getDisplay()->view->element['#display_id'] == 'page_2')) {
     $view->element['#attached']['library'][] = 'access_cilink/cilink_view';
+    $view->element['#attached']['library'][] = 'access_misc/copyclip';
   }
 }
 
