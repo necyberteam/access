@@ -170,6 +170,11 @@ class PersonaBlock extends BlockBase {
       // Show the email button on public profiles.
       $send_email = $public ? "<a href='/user/$user_id/contact?destination=community-persona/$user_id' class='w-100 btn btn-primary btn-sm py-1 px-2'><i class='fa-solid fa-envelope'></i> Send Email</a>" : "";
 
+      // Get Job title
+      $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($user_id);
+      $job_title = $user_entity->get('field_current_occupation')->value;
+
+
       $persona_block['string'] = [
         '#type' => 'inline_template',
         '#template' => '<div class="persona">
@@ -181,8 +186,11 @@ class PersonaBlock extends BlockBase {
                             <div><strong>Pronouns:</strong> {{ pronouns }}</div>
                           {% endif %}
                           <h4 class="institution text-md-teal">{{ institution }}</h4>
-                          {% if academic_status %}
-                            <div class="academic-status">{{ academic_status }}</div>
+                          {% if job_title %}
+                            <div class="mb-3"><i>{{ job_title }}</i></div>
+                          {% endif %}
+                          {% if academic_status and academic_status != "I am not in an academic program but interested in shifting focus to research computing facilitation"  %}
+                            <div class="academic-status mb-3">{{ academic_status }}</div>
                           {% endif %}
                           {% if cssn != "Not a CSSN Member" %}
                             <div class="d-flex justify-content-between flex justify-between border-b border-black">
@@ -213,6 +221,7 @@ class PersonaBlock extends BlockBase {
           'last_name' => $last_name,
           'pronouns' => $pronouns,
           'institution' => $institution,
+          'job_title' => $job_title,
           'academic_status' => $academic_status,
           'cssn' => $cssn,
           'cssn_indicator' => $cssn_indicator,
