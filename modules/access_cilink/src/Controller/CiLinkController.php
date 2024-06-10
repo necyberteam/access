@@ -293,6 +293,7 @@ class CiLinkController extends ControllerBase {
       '#attached' => [
         'library' => [
           'access_cilink/cilink_view',
+          'access_misc/copyclip',
         ],
       ],
       '#template' => $template,

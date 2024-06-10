@@ -2,6 +2,10 @@ misc_library:
   version: 1.x
   js:
     js/create_ticket_links.js: {}
+copyclip:
+  version: 1.x
+  js:
+    js/copyclip.js: {}
 add_select:
   version: 1.x
   js:

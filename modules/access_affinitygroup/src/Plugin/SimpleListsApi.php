@@ -94,6 +94,117 @@ class SimpleListsApi {
   }
 
   /**
+   * Check if user is subscribed to list and if so get their type of digest.
+   */
+  public function getUserListStatus($listName, $userEmail,  &$msg) {
+    // Gets list info.
+    try {
+      $ch = $this->makeCurl('GET', "lists/$listName/");
+      $list_info = curl_exec($ch);
+      curl_close($ch);
+      $list_info = json_decode($list_info, TRUE);
+      $subscribers = isset($list_info['contacts']) ? $list_info['contacts'] : [];
+    }
+    catch (\Exception $e) {
+      $msg = $e->getMessage();
+      $subscribers = NULL;
+    }
+
+    // Get user simplelist id.
+    $userId = $this->getUserIdFromEmail($userEmail, $msg);
+
+    // If user is not a member of the list, return false.
+    $isMember = 'none';
+
+    $user_subscribed = FALSE;
+    if ($subscribers != NULL) {
+      foreach ($subscribers as $sub) {
+        if ($sub == $userId) {
+          // Find user simplelist id in list.
+          $isMember = TRUE;
+          break;
+        }
+      }
+    }
+
+    // If user is a member, get their email digest status.
+    if ($isMember) {
+      try {
+        // Gets Contact.
+        $ch = $this->makeCurl('GET', "contacts/$userId/");
+        $contact  = curl_exec($ch);
+        curl_close($ch);
+        $contact = json_decode($contact, TRUE);
+        $contact_list = isset($contact['lists']) ? $contact['lists'] : [];
+        foreach ($contact_list as $list) {
+          if ($list['list'] == $listName) {
+            // Digest is either 1 for daily digest or else send right away
+            $user_subscribed = $list['digest'] === 1 ? 'daily' : 'full';
+            break;
+          }
+        }
+      }
+      catch (\Exception $e) {
+        $msg = $e->getMessage();
+        $contact = NULL;
+      }
+    }
+
+    return $user_subscribed;
+  }
+
+  /**
+   * Check if user is subscribed to list and if so get their type of digest.
+   */
+  public function setUserDigest($listName, $userEmail, $digest, &$msg) {
+    // Get user simplelist id.
+    $userId = $this->getUserIdFromEmail($userEmail, $msg);
+
+    try {
+      // Gets Contact.
+      $ch = $this->makeCurl('GET', "contacts/$userId/");
+      $contact  = curl_exec($ch);
+      curl_close($ch);
+      $contact = json_decode($contact, TRUE);
+      $contact_list = $contact['lists'];
+      foreach ($contact_list as $list) {
+        if ($list['list'] == $listName) {
+          $membershipId = $list['id'];
+          break;
+        }
+      }
+    }
+    catch (\Exception $e) {
+      $msg = $e->getMessage();
+      $membershipId = NULL;
+    }
+
+    if ($membershipId) {
+      try {
+        // Update Membership digest settings.
+        $params = "digest=$digest";
+        $ch = $this->makeCurl('PUT', "membership/$membershipId/", $params);
+        $response = curl_exec($ch);
+        curl_close($ch);
+      }
+      catch (\Exception $e) {
+        $msg = $e->getMessage();
+      }
+
+      try {
+        // Update Membership digest settings.
+        $ch = $this->makeCurl('GET', "membership/$membershipId/");
+        $membership  = curl_exec($ch);
+        curl_close($ch);
+      }
+      catch (\Exception $e) {
+        $msg = $e->getMessage();
+      }
+    }
+
+  }
+
+  /**
    * Add user, and add to listName if not null. returns new id or null.
    * $listName is slug.
    */
