@@ -157,7 +157,12 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
   // Email any infrastructure news with the 'Email only subscribers' box checked.
   if ($type == 'infrastructure_news') {
     $inf_title = $entity->get('title')->getValue()[0]['value'];
-    $inf_body = $entity->get('body') !== NULL ? $entity->get('body')->getValue()[0]['value'] : '';
+    $inf_body = '';
+    if ($entity->get('body') !== NULL || $entity->get('body') !== 0) {
+      if (isset($entity->get('body')->getValue()[0])) {
+        $inf_body =$entity->get('body')->getValue()[0]['value'];
+      }
+    }
     $doEmailSubscribers = $entity->get('field_do_email_subscribers')->getValue();
     if ($doEmailSubscribers[0]['value']) {
       $affectedInfrastructure = $entity->get('field_affected_infrastructure')->getValue();
