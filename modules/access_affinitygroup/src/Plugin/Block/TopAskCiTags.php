@@ -36,7 +36,7 @@ class TopAskCiTags extends BlockBase implements
    *
    * @var \Drupal\Core\Routing\RouteMatchInterface
    */
-  protected $routMatchInterface;
+  protected $routeMatchInterface;
 
   /**
    * The http_client service.
