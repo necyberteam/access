@@ -4,6 +4,7 @@ namespace Drupal\access_affinitygroup\Plugin\Block;
 
 use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Cache\Cache;
+use Drupal\node\Entity\Node;
 
 /**
  * Provides a button to view coordinator documentation.
@@ -20,10 +21,18 @@ class AffinityCoordinatorDocumentation extends BlockBase {
    */
   public function build() {
     $node = \Drupal::routeMatch()->getParameter('node');
+
     $current_user = \Drupal::currentUser();
     $roles = $current_user->getRoles();
     // Adding a default for layout page.
-    $nid = $node ? $node->id() : 291;
+    if ($node) {
+      $nid = $node->id();
+    }
+    else {
+      $nid = 291;
+      $node = Node::load($nid);
+    }
+
     $field_coordinator = $node->get('field_coordinator')->getValue();
     $coordinator = [];
     foreach ($field_coordinator as $key => $value) {
