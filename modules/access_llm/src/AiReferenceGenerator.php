@@ -3,7 +3,6 @@
 namespace Drupal\access_llm;
 
 use Drupal\Core\Config\ConfigFactoryInterface;
-use Drupal\Core\Config\ImmutableConfig;
 use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\Link;
 use Drupal\Core\Logger\LoggerChannelFactoryInterface;
@@ -16,7 +15,6 @@ use Drupal\key\KeyRepository;
 use Drupal\node\NodeInterface;
 use Gioni06\Gpt3Tokenizer\Gpt3Tokenizer;
 use Gioni06\Gpt3Tokenizer\Gpt3TokenizerConfig;
-use PhpParser\Node\Stmt\Foreach_;
 
 /**
  * Class AiReferencesGenerator.
@@ -74,13 +72,24 @@ class AiReferenceGenerator {
 
   /**
    * The prompt.
+   *
+   * @var string
    */
   protected $prompt;
 
   /**
    * The Taxonomy array.
+   *
+   * @var array
    */
   protected $termData;
+
+  /**
+   * Logger.
+   *
+   * @var \Drupal\Core\Logger\LoggerChannelInterface
+   */
+  protected $logger;
 
   /**
    * Constructs a new AiReferencesGenerator object.
@@ -93,7 +102,7 @@ class AiReferenceGenerator {
     AccountInterface $current_user,
     LoggerChannelFactoryInterface $channel_factory,
     ThemeInitializationInterface $theme_initialization,
-    ThemeManagerInterface $theme_manager
+    ThemeManagerInterface $theme_manager,
   ) {
     $this->key = $key_repository;
     $this->entityTypeManager = $entity_type_manager;
@@ -292,11 +301,6 @@ class AiReferenceGenerator {
 
   /**
    * Performs AI API call.
-   *
-   * @param \Drupal\Core\Config\ImmutableConfig $config
-   *   AI auto-reference config.
-   * @param string $prompt
-   *   AI prompt.
    *
    * @return string
    *   AI answer.
