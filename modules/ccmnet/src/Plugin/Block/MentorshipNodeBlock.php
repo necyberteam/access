@@ -138,9 +138,10 @@ class MentorshipNodeBlock extends BlockBase implements
         $question_button = '';
       }
 
+      $is_owner = $node->getOwnerId() == \Drupal::currentUser()->id();
       $interested_users = $node->get('field_match_interested_users')->getValue();
       // Lookup user names from uid.
-      $interested_users = $this->getInterestedUsers($interested_users);
+      $interested_users = $this->getInterestedUsers($interested_users, $is_owner);
       $interested_button = '';
 
       $interested_list = $node->get('field_match_interested_users')->getValue();
@@ -206,21 +207,23 @@ class MentorshipNodeBlock extends BlockBase implements
   /**
    * Get interested users.
    */
-  public function getInterestedUsers($interested_users) {
-    // Only show interested users to match_sc, match_pm, and admin.
-    $accepted_roles = ['administrator', 'ccmnet_pm'];
-    $current_user = \Drupal::currentUser();
-    $roles = $current_user->getRoles();
-    $hide = TRUE;
-    foreach ($accepted_roles as $role) {
-      if (in_array($role, $roles)) {
-        $hide = FALSE;
-        break;
+  public function getInterestedUsers($interested_users, $is_owner) {
+    if (!$is_owner) {
+      // Only show interested users to ccmnet_pm, and admin roles.
+      $accepted_roles = ['administrator', 'ccmnet_pm'];
+      $current_user = \Drupal::currentUser();
+      $roles = $current_user->getRoles();
+      $hide = TRUE;
+      foreach ($accepted_roles as $role) {
+        if (in_array($role, $roles)) {
+          $hide = FALSE;
+          break;
+        }
       }
+      if ($hide) {
+        return [];
+      };
     }
-    if ($hide) {
-      return [];
-    };
 
     $interested_users = array_column($interested_users, 'target_id');
     $users = $this->entityInterface->getStorage('user')->loadMultiple($interested_users);
