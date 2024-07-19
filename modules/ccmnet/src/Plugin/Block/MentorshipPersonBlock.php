@@ -43,7 +43,9 @@ class MentorshipPersonBlock extends BlockBase {
     if (empty($personA) || empty([$personA][0])) {
       return [];
     } else {
-      $display = "";
+      $title = $isMentor ? 'Mentor' : 'Mentee';
+      $title .= isset($personA[1]) ? 's' : '';
+      $display = "<h2>$title</h2>";
       foreach ($personA as $person) {
         $personId = $person['target_id'];
         // Load user from user id mentee.
@@ -72,8 +74,8 @@ class MentorshipPersonBlock extends BlockBase {
         $userName = $user->getDisplayName();
         $userUrl = "/community-persona/$personId";
 
-        $display .= '<div class="d-flex justify-content-start mentorship-person">' .
-          '<div class="mentorship-person-picture p-0" >' . $userImage . '</div>' .
+        $display .= '<div class="d-flex justify-content-start mentorship-person mb-3">' .
+          '<div class="mentorship-person-picture p-0">' . $userImage . '</div>' .
           '<div class="col d-flex  flex-column justify-content-start">' .
           '<div><strong><a href="' . $userUrl . '">' . $userName . '</a></strong></div><div>' . $institution . '</div></div></div>';
       }
