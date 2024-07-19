@@ -35,3 +35,11 @@ function ccmnet_install() {
     $weight++;
   }
 }
+
+/**
+ * Update to reset the access_mentorship_interested state.
+ */
+function ccmnet_update_10000() {
+  \Drupal::state()->set('access_mentorship_interested', 0);
+
+}
