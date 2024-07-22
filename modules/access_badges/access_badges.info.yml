@@ -1,0 +1,8 @@
+name: Access Badges
+description: 'Provides a way to add badges to user accounts based on their profiles.'
+type: module
+core_version_requirement: ^10 || ^11
+package: Custom
+dependencies:
+  - access
+
