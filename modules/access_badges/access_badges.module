@@ -1,0 +1,26 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function access_badges_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'user_form') {
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function access_badges_cron() {
+  // User entity lookup that were created 30 days or less ago.
+  $query = \Drupal::entityQuery('user');
+  $query->condition('created', strtotime('-30 days'), '>');
+  $query->accessCheck(FALSE);
+  $users = $query->execute();
+}
