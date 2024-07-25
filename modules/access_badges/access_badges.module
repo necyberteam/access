@@ -48,6 +48,14 @@ function access_badges_cron() {
     $users = $query->execute();
 
     foreach ($users as $user) {
+      // Need to look up delta for $user, if it exists increment by 1.
+      $query = $connection->select('user__field_user_badges', 'ufub');
+      $query->fields('ufub', ['delta']);
+      $query->condition('ufub.entity_id', $user);
+      $query->orderBy('delta', 'DESC');
+      $delta = $query->execute()->fetchField();
+      $delta = $delta ? $delta + 1 : 0;
+
       $connection->insert('user__field_user_badges')
         ->fields([
           'bundle' => 'user',
@@ -55,7 +63,7 @@ function access_badges_cron() {
           'entity_id' => $user,
           'revision_id' => $user,
           'langcode' => 'en',
-          'delta' => 0,
+          'delta' => $delta,
           'field_user_badges_target_id' => $new_to_accss,
         ])
         ->execute();
