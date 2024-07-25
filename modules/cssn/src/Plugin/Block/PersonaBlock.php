@@ -142,7 +142,7 @@ class PersonaBlock extends BlockBase {
         $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
         $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
         if ($image) {
-          $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-3' width='80' height='80' />";
+          $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-3' width='60' height='60' />";
         }
       }
 
