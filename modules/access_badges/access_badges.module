@@ -11,6 +11,12 @@ use Drupal\Core\Form\FormStateInterface;
  */
 function access_badges_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form_id == 'user_form') {
+    // Check if user is an administator.
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $roles = $user->getRoles();
+    if (!in_array('administrator', $roles)) {
+      $form['field_user_badges']['widget']['actions']['ief_add_existing']['#access'] = FALSE;
+    }
   }
 }
 
@@ -18,9 +24,41 @@ function access_badges_form_alter(&$form, FormStateInterface $form_state, $form_
  * Implements hook_cron().
  */
 function access_badges_cron() {
-  // User entity lookup that were created 30 days or less ago.
-  $query = \Drupal::entityQuery('user');
-  $query->condition('created', strtotime('-30 days'), '>');
-  $query->accessCheck(FALSE);
-  $users = $query->execute();
+  // Do not run for now.
+  if ( TRUE == FALSE) {
+    $query = \Drupal::entityQuery('taxonomy_term');
+    $query->condition('vid', 'badges');
+    $query->condition('name', 'New to ACCESS');
+    $query->accessCheck(FALSE);
+    $tids = $query->execute();
+    // There should just be one term.
+    $new_to_accss = implode('', $tids);
+
+
+    $connection = \Drupal::database();
+
+    $connection->delete('user__field_user_badges')
+      ->condition('field_user_badges_target_id', $new_to_accss)
+      ->execute();
+
+    // User entity lookup that were created 30 days or less ago.
+    $query = \Drupal::entityQuery('user');
+    $query->condition('created', strtotime('-30 days'), '>');
+    $query->accessCheck(FALSE);
+    $users = $query->execute();
+
+    foreach ($users as $user) {
+      $connection->insert('user__field_user_badges')
+        ->fields([
+          'bundle' => 'user',
+          'deleted' => 0,
+          'entity_id' => $user,
+          'revision_id' => $user,
+          'langcode' => 'en',
+          'delta' => 0,
+          'field_user_badges_target_id' => $new_to_accss,
+        ])
+        ->execute();
+    }
+  }
 }

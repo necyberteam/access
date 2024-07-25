@@ -11,10 +11,9 @@
 function access_badges_install() {
   $terms = [
     'New to CSSN',
-    'New to ACCESS, KB Resource Contributor (1)',
-    'KB Resource Contributor (5)',
-    'KB Resource Contributor (10)',
-    'ACCESS CSSN & SCIPE Hackathon (24)',
+    'New to ACCESS',
+    'KB Resource Contributor',
+    'ACCESS CSSN & SCIPE Hackathon',
     'Affinity Group Coordinator',
     'MATCH',
     'CCEP Awardee',

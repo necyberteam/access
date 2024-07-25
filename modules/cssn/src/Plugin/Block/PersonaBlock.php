@@ -131,6 +131,21 @@ class PersonaBlock extends BlockBase {
         $cssn_role = "";
       }
 
+      // Badges.
+      $badges = $user_entity->get('field_user_badges')->getValue();
+      $badge_name = [];
+      $user_badges = '';
+      foreach ($badges as $badge) {
+        $term_id = $badge['target_id'];
+        $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
+        $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
+        $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
+        $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
+        if ($image) {
+          $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-3' width='80' height='80' />";
+        }
+      }
+
       // Programs.
       $program = implode(', ', $terms);
       // If $terms contains 'ACCESS CSSN', then the user is a CSSN member.
@@ -193,10 +208,13 @@ class PersonaBlock extends BlockBase {
                             <div class="academic-status mb-3">{{ academic_status }}</div>
                           {% endif %}
                           {% if cssn != "Not a CSSN Member" %}
-                            <div class="d-flex justify-content-between flex justify-between border-b border-black">
+                            <div class="d-flex justify-content-between flex justify-between">
                               <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
                               <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
                             </div>
+                          {% endif %}
+                          {% if user_badges %}
+                            <div class="py-3 border-b border-black flex">{{ user_badges | raw }}</div>
                           {% endif %}
                           <div class="d-flex justify-content-between flex justify-between border-top border-bottom mb-3 py-3 border-secondary border-b border-black">
                             {% if roles %}
@@ -226,6 +244,7 @@ class PersonaBlock extends BlockBase {
           'cssn' => $cssn,
           'cssn_indicator' => $cssn_indicator,
           'cssn_more' => $cssn_more,
+          'user_badges' => $user_badges,
           'roles' => $roles,
           'role_text' => t('Roles'),
           'cssn_role' => $cssn_role,
