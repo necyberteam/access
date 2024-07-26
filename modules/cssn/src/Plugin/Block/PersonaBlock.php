@@ -137,12 +137,14 @@ class PersonaBlock extends BlockBase {
       $user_badges = '';
       foreach ($badges as $badge) {
         $term_id = $badge['target_id'];
-        $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
-        $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
-        $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
-        $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
-        if ($image) {
-          $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-2 mb-2' width='55' height='55' />";
+        if (\Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity) {
+          $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
+          $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
+          $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
+          $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
+          if ($image) {
+            $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-2 mb-2' width='55' height='55' />";
+          }
         }
       }
 
