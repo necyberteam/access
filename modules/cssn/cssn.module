@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\block\Entity\Block;
+use Drupal\Core\Render\Markup;
 use Drupal\cssn\Plugin\Util\RoleProgramSorter;
 use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
@@ -24,6 +25,46 @@ use Drupal\views\ViewExecutable;
 function cssn_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'cssn_directory') {
     $view->element['#attached']['library'][] = 'cssn/cssn_directory';
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_field for views-view-field.html.twig.
+ */
+function cssn_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+
+  // Overwrite cssn directory on /community/cssn/directory.
+  if ($view->id() == 'cssn_directory' && $view->current_display == 'page_1' && $field->options['id'] == 'nothing') {
+    $output = $variables['output']->__toString();
+    $lines = explode("\n", $output);
+    $new_output = '';
+    $badges = "";
+    foreach ($lines as $key => $line) {
+      if ($key == 0) {
+        $lines = explode(', ', $line);
+        if (!empty($lines[0])) {
+          foreach ($lines as $key => $line) {
+            $term_id = $line;
+            if (\Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity != NULL) {
+              $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
+              $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
+              $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
+              $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
+              if ($image) {
+                $badges .= "<img src='$image' alt='$image_alt' title='$name' class='ms-2 mb-1' width='35' height='35' />";
+              }
+            }
+          }
+        }
+      } elseif ($line == "!!!!=-=-= This line is programmatically replaced, if you change anything in this line you'll break badges. See cssn.module to fix any issues =-=-=-=-!!!!") {
+        $new_output .= $badges;
+      } else {
+        $new_output .= $line;
+      }
+    }
+    $variables['output'] = Markup::create($new_output);
   }
 }
 
