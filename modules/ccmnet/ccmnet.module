@@ -56,15 +56,19 @@ function ccmnet_entity_insert(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'mentorship_engagement') {
     $nid = $entity->id();
-    $mentor = $entity->get('field_mentor')->getValue()[0]['target_id'];
-    $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+    $mentor = $entity->get('field_mentor')->getValue();
+    $mentee = $entity->get('field_mentee')->getValue();
     $author = $entity->getOwner()->id();
     $authorized_users = [];
-    if ($mentor && $mentor != $author) {
-      $authorized_users[] = $mentor;
+    foreach ($mentor as $mentor_id) {
+      if ($mentor_id != $author) {
+        $authorized_users[] = $mentor_id['target_id'];
+      }
     }
-    if ($mentee && $mentee != $author) {
-      $authorized_users[] = $mentee;
+    foreach ($mentee as $mentee_id) {
+      if ($mentee_id != $author) {
+        $authorized_users[] = $mentee_id['target_id'];
+      }
     }
     $grant = \Drupal::service('access_misc.nodeaccess.grant');
     $grant->grant($authorized_users, $nid);
@@ -78,8 +82,8 @@ function ccmnet_entity_update(EntityInterface $entity) {
   $type = $entity->bundle();
   if ($type == 'mentorship_engagement') {
     $nid = $entity->id();
-    $mentor = $entity->get('field_mentor')->getValue()[0]['target_id'];
-    $mentee = $entity->get('field_mentee')->getValue()[0]['target_id'];
+    $mentor = isset($entity->get('field_mentor')->getValue()[0]) ? $entity->get('field_mentor')->getValue()[0]['target_id'] : 0;
+    $mentee = isset($entity->get('field_mentee')->getValue()[0]) ? $entity->get('field_mentee')->getValue()[0]['target_id'] : 0;
     $author = $entity->getOwner()->id();
     $authorized_users = [];
     if ($mentor && $mentor != $author) {
@@ -480,46 +484,61 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
 
     // If mentor is added or changed, send email to new mentor and liaison.
     if ($field_looking[0]['value'] == 'mentor') {
-      $prev_mentor = $entity->original->get('field_mentor')->getValue() ? $entity->original->get('field_mentor')->getValue()[0]['target_id'] : 0;
-      $mentor = $entity->get('field_mentor')->getValue() ? $entity->get('field_mentor')->getValue()[0]['target_id'] : 0;
+      $policy_subtype = 'mentee_changed';
+      $mentor = $entity->get('field_mentor')->getValue();
+      $mentor_update = 0;
+      $og_mentor = [];
 
-      if ($prev_mentor != $mentor) {
-        if ($mentor !== 0) {
-          $mentor_user = \Drupal\user\Entity\User::load($mentor);
+      foreach ($entity->original->get('field_mentor')->getValue() as $og_mentor_id) {
+        $og_mentor[] = $og_mentor_id['target_id'];
+      }
+
+      foreach ($mentor as $mentor_id) {
+        $current_mentor_id = $mentor_id['target_id'];
+
+        if ( !in_array($current_mentor_id, $og_mentor) ) {
+          $mentor_user = \Drupal\user\Entity\User::load($current_mentor_id);
           $mentor_email = $mentor_user->getEmail();
-          $policy_subtype = 'mentee_changed';
-
           ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentor_email, $link);
-
-          $liaison = $entity->get('field_me_ccmnet_leadership') ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
-          if ($liaison) {
-            $liaison_user = \Drupal\user\Entity\User::load($liaison);
-            $liaison_email = $liaison_user->getEmail();
-            ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
-          }
+          $mentor_update = 1;
         }
+      }
+
+      $liaison = isset($entity->get('field_me_ccmnet_leadership')->getValue()[0]) ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
+      if ($liaison && $mentor_update) {
+        $liaison_user = \Drupal\user\Entity\User::load($liaison);
+        $liaison_email = $liaison_user->getEmail();
+        ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
       }
     }
 
     // if mentee is added or changed, send email to new mentee and liaison.
     if ($field_looking[0]['value'] == 'mentee') {
-      $prev_mentee = $entity->original->get('field_mentee')->getValue() ? $entity->original->get('field_mentee')->getValue()[0]['target_id'] : 0;
-      $mentee = $entity->get('field_mentee')->getValue() ? $entity->get('field_mentee')->getValue()[0]['target_id'] : 0;
-      if ($prev_mentee != $mentee) {
-        if ($mentee !== 0) {
-          $mentee_user = \Drupal\user\Entity\User::load($mentee);
+      $policy_subtype = 'mentee_changed';
+      $mentee = $entity->get('field_mentee')->getValue();
+      $mentee_update = 0;
+      $og_mentee = [];
+
+      foreach ($entity->original->get('field_mentee')->getValue() as $og_mentee_id) {
+        $og_mentee[] = $og_mentee_id['target_id'];
+      }
+
+      foreach ($mentee as $key => $mentee_id) {
+        $current_mentee_id = $mentee_id['target_id'];
+        if ( !in_array($current_mentee_id, $og_mentee) ) {
+          $mentee_user = \Drupal\user\Entity\User::load($current_mentee_id);
           $mentee_email = $mentee_user->getEmail();
-          $policy_subtype = 'mentee_changed';
-
           ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentee_email, $link);
-
-          $liaison = $entity->get('field_me_ccmnet_leadership') ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
-          if ($liaison) {
-            $liaison_user = \Drupal\user\Entity\User::load($liaison);
-            $liaison_email = $liaison_user->getEmail();
-            ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
-          }
+          $mentee_update = 1;
         }
+      }
+
+      $liaison = isset($entity->get('field_me_ccmnet_leadership')->getValue()[0]) ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
+
+      if ($liaison && $mentee_update) {
+        $liaison_user = \Drupal\user\Entity\User::load($liaison);
+        $liaison_email = $liaison_user->getEmail();
+        ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
       }
     }
 
@@ -542,22 +561,31 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
 /**
  * Send notification email.
  */
-function ccmnet_send_notification_email($policy, $policy_subtype, $title, $email, $link, $extra = null) {
-  $emailFactory = \Drupal::service('email_factory');
+function ccmnet_send_notification_email($policy, $policy_subtype, $title, $set_email, $link) {
 
-  $email = explode(',', $email);
-
-  $emailFactory->sendTypedEmail($policy, $policy_subtype);
-  $email = $emailFactory->newTypedEmail($policy, $policy_subtype)
-    ->setTo($email)
-    ->setVariable('title', $title)
-    ->setVariable('url', $link);
-
-  if ($extra) {
-    $email->setVariable('extra', $extra);
+  // Currently multiple emails are not working. Send separately.
+  if (strpos($set_email, ',') !== FALSE) {
+    $set_email = explode(',', $set_email);
   }
 
-  $email->send();
+  if (is_array($set_email)) {
+    foreach ($set_email as $single_email) {
+      $email_factory = Drupal::service('email_factory');
+      $email = $email_factory ->newTypedEmail($policy, $policy_subtype)
+        ->setVariable('title', $title)
+        ->setVariable('url', $link);
+      $email->setTo($single_email);
+      $email->send();
+    }
+  } else {
+    $email_factory = Drupal::service('email_factory');
+    $email = $email_factory ->newTypedEmail($policy, $policy_subtype)
+      ->setVariable('title', $title)
+      ->setVariable('url', $link);
+    $email->setTo($set_email);
+    $email->send();
+  }
+
 }
 
 /**

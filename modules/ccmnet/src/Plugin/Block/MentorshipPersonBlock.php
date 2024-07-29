@@ -43,38 +43,44 @@ class MentorshipPersonBlock extends BlockBase {
     if (empty($personA) || empty([$personA][0])) {
       return [];
     } else {
-      $personId = $personA[0]['target_id'];
-      // Load user from user id mentee.
-      $user = User::load($personId);
+      $title = $isMentor ? 'Mentor' : 'Mentee';
+      $title .= isset($personA[1]) ? 's' : '';
+      $display = "<h2>$title</h2>";
+      foreach ($personA as $person) {
+        $personId = $person['target_id'];
+        // Load user from user id mentee.
+        $user = User::load($personId);
 
-      // Get user profile picure image.
-      $userImage = $user->get('user_picture');
+        // Get user profile picure image.
+        $userImage = $user->get('user_picture');
 
-      if ($userImage->entity !== NULL) {
-        $userImage = $userImage->entity->getFileUri();
-        $userImage = \Drupal::service('file_url_generator')->generateAbsoluteString($userImage);
-      } else {
-        $userImage = '/themes/nect-theme/img/user-picture.svg';
-      }
-      $userImage = '<img src="' . $userImage . '" />';
-
-      // Show access organization if set; otherwise, use institution field.
-      $orgArray = $user->get('field_access_organization')->getValue();
-      if (!empty($orgArray) && !empty($orgArray[0])) {
-        $nodeId = $orgArray[0]['target_id'];
-        if (!empty($nodeId)) {
-          $orgNode = \Drupal::entityTypeManager()->getStorage('node')->load($nodeId);
+        if ($userImage->entity !== NULL) {
+          $userImage = $userImage->entity->getFileUri();
+          $userImage = \Drupal::service('file_url_generator')->generateAbsoluteString($userImage);
+        } else {
+          $userImage = '/themes/nect-theme/img/user-picture.svg';
         }
-      }
-      $institution = isset($orgNode) ? $orgNode->getTitle() : $user->get('field_institution')->value;
-      $userName = $user->getDisplayName();
-    }
+        $userImage = '<img src="' . $userImage . '" />';
 
-    $userUrl = "/community-persona/$personId";
-    $display = '<div class="d-flex justify-content-start mentorship-person">' .
-      '<div class="mentorship-person-picture p-0" >' . $userImage . '</div>' .
-      '<div class="col d-flex  flex-column justify-content-start">' .
-      '<div><strong><a href="' . $userUrl . '">' . $userName . '</a></strong></div><div>' . $institution . '</div></div></div>';
+        // Show access organization if set; otherwise, use institution field.
+        $orgArray = $user->get('field_access_organization')->getValue();
+        if (!empty($orgArray) && !empty($orgArray[0])) {
+          $nodeId = $orgArray[0]['target_id'];
+          if (!empty($nodeId)) {
+            $orgNode = \Drupal::entityTypeManager()->getStorage('node')->load($nodeId);
+          }
+        }
+        $institution = isset($orgNode) ? $orgNode->getTitle() : $user->get('field_institution')->value;
+        $userName = $user->getDisplayName();
+        $userUrl = "/community-persona/$personId";
+
+        $display .= '<div class="d-flex justify-content-start mentorship-person mb-3">' .
+          '<div class="mentorship-person-picture p-0">' . $userImage . '</div>' .
+          '<div class="col d-flex  flex-column justify-content-start">' .
+          '<div><strong><a href="' . $userUrl . '">' . $userName . '</a></strong></div><div>' . $institution . '</div></div></div>';
+      }
+
+    }
 
     return [
       '#markup' => $this->t($display),
