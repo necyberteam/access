@@ -496,7 +496,7 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       foreach ($mentor as $mentor_id) {
         $current_mentor_id = $mentor_id['target_id'];
 
-        if ( !in_array($current_mentor_id , $og_mentor) ) {
+        if ( !in_array($current_mentor_id, $og_mentor) ) {
           $mentor_user = \Drupal\user\Entity\User::load($current_mentor_id);
           $mentor_email = $mentor_user->getEmail();
           ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentor_email, $link);
@@ -524,10 +524,13 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       }
 
       foreach ($mentee as $key => $mentee_id) {
-        $mentee_user = \Drupal\user\Entity\User::load($mentee_id['target_id']);
-        $mentee_email = $mentee_user->getEmail();
-        ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentee_email, $link);
-        $mentee_update = 1;
+        $current_mentee_id = $mentee_id['target_id'];
+        if ( !in_array($current_mentee_id, $og_mentee) ) {
+          $mentee_user = \Drupal\user\Entity\User::load($current_mentee_id);
+          $mentee_email = $mentee_user->getEmail();
+          ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentee_email, $link);
+          $mentee_update = 1;
+        }
       }
 
       $liaison = isset($entity->get('field_me_ccmnet_leadership')->getValue()[0]) ? $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'] : 0;
