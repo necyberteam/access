@@ -7,6 +7,7 @@ details.tags {
   padding: 0 1rem;
   max-height: 300px;
   overflow: auto;
+  border-radius: 0.25rem;
 }
 
 details.tags summary {
@@ -28,14 +29,15 @@ details.tags summary {
 }
 
 .tags-select:hover {
-    border: 1px solid #1A5B6E;
-    color: #1A5B6E;
+    border: 1px solid var(--selected-tag);
+    color: var(--selected-tag);
+    background-color: #ffffff !important;
 }
 
-.selected {
-  background-color: #1A5B6E;
-  border-color: #1A5B6E;
-  color: #ffffff;
+details.tags .tags-select.selected {
+  background-color: var(--selected-tag);
+  border-color: var(--selected-tag) !important;
+  color: #ffffff !important;
 }
 
 .selected:hover {
