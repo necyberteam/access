@@ -32,7 +32,7 @@ function access_badges_cron() {
     $query->accessCheck(FALSE);
     $tids = $query->execute();
     // There should just be one term.
-    $new_to_accss = implode('', $tids);
+    $new_to_access = implode('', $tids);
 
 
     $connection = \Drupal::database();
@@ -41,9 +41,11 @@ function access_badges_cron() {
       ->condition('field_user_badges_target_id', $new_to_accss)
       ->execute();
 
-    // User entity lookup that were created 30 days or less ago.
+    // User entity lookup that were created 90 days or less ago and has
+    // access-ci.org in their name.
     $query = \Drupal::entityQuery('user');
-    $query->condition('created', strtotime('-30 days'), '>');
+    $query->condition('created', strtotime('-90 days'), '>');
+    $query->condition('name', '%access-ci.org%', 'LIKE');
     $query->accessCheck(FALSE);
     $users = $query->execute();
 
@@ -64,7 +66,7 @@ function access_badges_cron() {
           'revision_id' => $user,
           'langcode' => 'en',
           'delta' => $delta,
-          'field_user_badges_target_id' => $new_to_accss,
+          'field_user_badges_target_id' => $new_to_access,
         ])
         ->execute();
     }

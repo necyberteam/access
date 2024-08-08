@@ -1,0 +1,3 @@
+services:
+  access_badges.badgeTid:
+    class: Drupal\access_badges\Plugin\BadgeTid
