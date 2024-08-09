@@ -106,6 +106,45 @@ function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
     $form['body']['widget'][0]['summary']['#description'] = t('No html tags allowed in summary. Limit to 275 characters.');
     $form['body']['widget'][0]['summary']['#maxlength'] = 275;
 
+    // Hide the Goals if the mentorship has not been approved.
+    if (!$form['field_ccmnet_approved']['widget']['value']['#default_value']) {
+      $form['field_milestone_description']['#access'] = FALSE;
+      $form['field_milestone_completion_date']['#access'] = FALSE;
+      $form['field_milestone_actual_date']['#access'] = FALSE;
+      $form['field_milestone_description_1']['#access'] = FALSE;
+      $form['field_completion_date_goal_1']['#access'] = FALSE;
+      $form['field_actual_completion_date_1']['#access'] = FALSE;
+      $form['field_milestone_description_2']['#access'] = FALSE;
+      $form['field_completion_date_goal_2']['#access'] = FALSE;
+      $form['field_actual_completion_date_2']['#access'] = FALSE;
+      $form['field_goal_3_description']['#access'] = FALSE;
+      $form['field_completion_date_goal_3']['#access'] = FALSE;
+      $form['field_actual_completion_date_3']['#access'] = FALSE;
+      $form['field_milestone_description_4']['#access'] = FALSE;
+      $form['field_completion_date_goal_4']['#access'] = FALSE;
+      $form['field_actual_completion_date_4']['#access'] = FALSE;
+    } else {
+      // Fixup date-time fields to act as date-only.
+      $date_only_fields = [
+        "field_milestone_actual_date",
+        "field_actual_completion_date_1",
+        "field_actual_completion_date_2",
+        "field_actual_completion_date_3",
+        "field_actual_completion_date_4",
+        "field_milestone_completion_date",
+        "field_completion_date_goal_1",
+        "field_completion_date_goal_2",
+        "field_completion_date_goal_3",
+        "field_completion_date_goal_4",
+        "field_launch_presentation_date",
+        "field_wrap_presentation_date",
+      ];
+      foreach ($date_only_fields as $fieldname) {
+        $form[$fieldname]['widget'][0]['value']['#date_time_element'] = 'none';
+        $form[$fieldname]['widget'][0]['value']['#date_time_format'] = '';
+      }
+    }
+
     $form['field_tags_replace'] = [
       '#type' => 'container',
       '#attributes' => [
@@ -411,10 +450,12 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
  * Implements hook_entity_presave().
  */
 function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
+  // Notify CCMNet PMs when new user is added to CCMNet program.
   if ($entity->bundle() == 'user') {
     // Mailer Policy type.
     $policy = 'ccmnet';
 
+    // Check the previous region value.
     $prev_region_ccmnet = 0;
     if (isset($entity->original)) {
       $prev_region = $entity->original->get('field_region')->getValue();
@@ -426,7 +467,7 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         }
       }
     }
-
+    // Check the current region value.
     $region = $entity->get('field_region')->getValue();
     $region_ccmnet = 0;
     if ($region) {
@@ -436,6 +477,7 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         }
       }
     }
+    // Compare the previous and current region values.
     if ($region_ccmnet === 1 && $prev_region_ccmnet === 0) {
 
       $env = getenv('PANTHEON_ENVIRONMENT');
