@@ -36,5 +36,35 @@ function access_badges_install() {
     $new_term->save();
   }
 
+  $badge_tools = \Drupal::service('access_badges.badgeTools');
+
+  // Get 'Campus Champions' term id.
+  $cc_badge = $badge_tools->getBadgeTid('Campus Champion');
+
+  // Get users with Campus Champion region.
+  $users = $badge_tools->getProgramUsers(572);
+
+  // Set badges for users.
+  $badge_tools->setBadges($cc_badge, $users);
+
+  // Get 'Careers' term id.
+  $careers_badge = $badge_tools->getBadgeTid('CAREERS');
+
+  // Get users with Careers region.
+  $users = $badge_tools->getProgramUsers(323);
+
+  // Set badges for users.
+  $badge_tools->setBadges($careers_badge, $users);
+
+  // Get 'ccmnet' term id.
+  $ccmnet_badge = $badge_tools->getBadgeTid('CCMNet Member');
+
+  $query = \Drupal::entityQuery('user');
+  $query->condition('roles', 'ccmnet');
+  $query->accessCheck(FALSE);
+  $users = $query->execute();
+
+  // Set badges for users.
+  $badge_tools->setBadges($ccmnet_badge, $users);
 }
 

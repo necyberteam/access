@@ -456,9 +456,9 @@ function access_cilink_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $
 function access_cilink_webform_submission_resource_submit($form, \Drupal\Core\Form\FormStateInterface $form_state) {
   // Get current user.
   $user = \Drupal::currentUser();
-  $kb_one = \Drupal::service('access_badges.badgeTid')->getBadgeTid('KB Resource Contributor (1)');
-  $kb_five = \Drupal::service('access_badges.badgeTid')->getBadgeTid('KB Resource Contributor (5)');
-  $kb_ten = \Drupal::service('access_badges.badgeTid')->getBadgeTid('KB Resource Contributor (10)');
+  $kb_one = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (1)');
+  $kb_five = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (5)');
+  $kb_ten = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (10)');
   // Look up webform submissions by user for the resource webform.
   $query = \Drupal::entityQuery('webform_submission')
     ->condition('webform_id', 'resource')
@@ -476,7 +476,6 @@ function access_cilink_webform_submission_resource_submit($form, \Drupal\Core\Fo
     $user->save();
   }
   if (count($submission_ids) == 5) {
-    kint('5');
     foreach ($badgetid as $key => $value) {
       if ($value['target_id'] == $kb_one) {
         unset($badgetid[$key]);
@@ -487,7 +486,6 @@ function access_cilink_webform_submission_resource_submit($form, \Drupal\Core\Fo
     $user->save();
   }
   if (count($submission_ids) == 10) {
-    kint('10');
     foreach ($badgetid as $key => $value) {
       if ($value['target_id'] == $kb_five) {
         unset($badgetid[$key]);

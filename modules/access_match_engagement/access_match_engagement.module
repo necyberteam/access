@@ -557,6 +557,30 @@ function access_match_engagement_entity_presave(EntityInterface $entity) {
       access_match_engagement_email($ame_nid, $ame_title, $ame_notes, $owner_user->id(), $ame_type);
       $entity->set('field_email_user', 0);
     }
+
+    // Get field_students from entity.
+    $students = $entity->get('field_students')->getValue();
+
+    $badge_tools = \Drupal::service('access_badges.badgeTools');
+
+    // Get 'Match' term id.
+    $match_badge = $badge_tools->getBadgeTid('MATCH');
+
+    // Give 'MATCH' badge to students.
+    $badge_tools->setUserBadge($match_badge, $students);
+
+    // Get field_mentor from entity.
+    $mentors = $entity->get('field_mentor')->getValue();
+
+    // Give 'MATCH' badge to mentors.
+    $badge_tools->setUserBadge($match_badge, $mentors);
+
+    // Get field_researcher from entity.
+    $researchers = $entity->get('field_researcher')->getValue();
+
+    // Give 'MATCH' badge to researchers.
+    $badge_tools->setUserBadge($match_badge, $researchers);
+
   }
 }
 

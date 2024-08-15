@@ -24,51 +24,30 @@ function access_badges_form_alter(&$form, FormStateInterface $form_state, $form_
  * Implements hook_cron().
  */
 function access_badges_cron() {
-  // Do not run for now.
-  if ( TRUE == FALSE) {
-    $query = \Drupal::entityQuery('taxonomy_term');
-    $query->condition('vid', 'badges');
-    $query->condition('name', 'New to ACCESS');
-    $query->accessCheck(FALSE);
-    $tids = $query->execute();
-    // There should just be one term.
-    $new_to_access = implode('', $tids);
+  // Run this cron job every day at 4am.
+  $currentTime = \Drupal::time()->getCurrentTime();
+  $hour = date('H', $currentTime);
+  $min = date('i', $currentTime);
 
-
-    $connection = \Drupal::database();
-
-    $connection->delete('user__field_user_badges')
-      ->condition('field_user_badges_target_id', $new_to_accss)
-      ->execute();
+  // Cron runs every 10 minutes
+  if ($hour == 4 && $min < 20) {
+    // Get 'New to ACCESS' term id.
+    $new_to_access = \Drupal::service('access_badges.badgeTools')->getBadgeTid('New to ACCESS');
 
     // User entity lookup that were created 90 days or less ago and has
     // access-ci.org in their name.
-    $query = \Drupal::entityQuery('user');
-    $query->condition('created', strtotime('-90 days'), '>');
-    $query->condition('name', '%access-ci.org%', 'LIKE');
-    $query->accessCheck(FALSE);
-    $users = $query->execute();
+    $users = \Drupal::service('access_badges.badgeTools')->getAccessUsers();
 
-    foreach ($users as $user) {
-      // Need to look up delta for $user, if it exists increment by 1.
-      $query = $connection->select('user__field_user_badges', 'ufub');
-      $query->fields('ufub', ['delta']);
-      $query->condition('ufub.entity_id', $user);
-      $query->orderBy('delta', 'DESC');
-      $delta = $query->execute()->fetchField();
-      $delta = $delta ? $delta + 1 : 0;
+    // Set badges for users.
+    \Drupal::service('access_badges.badgeTools')->setBadges($new_to_access, $users);
 
-      $connection->insert('user__field_user_badges')
-        ->fields([
-          'bundle' => 'user',
-          'deleted' => 0,
-          'entity_id' => $user,
-          'revision_id' => $user,
-          'langcode' => 'en',
-          'delta' => $delta,
-          'field_user_badges_target_id' => $new_to_access,
-        ])
-        ->execute();
-    }
+    // Get 'New to ACCESS' term id.
+    $ag_group_coordinator = \Drupal::service('access_badges.badgeTools')->getBadgeTid('Affinity Group Coordinator');
+
+    // Lookup users with 'affinity_group_leader' role.
+    $ag_users = \Drupal::service('access_badges.badgeTools')->getAgRoleUsers();
+
+    // Set badges for ag_users.
+    \Drupal::service('access_badges.badgeTools')->setBadges($ag_group_coordinator, $ag_users);
   }
 }
