@@ -66,5 +66,44 @@ function access_badges_install() {
 
   // Set badges for users.
   $badge_tools->setBadges($ccmnet_badge, $users);
-}
 
+
+  // Set Knowledge Base Resource Contributor badges.
+  $query = \Drupal::database()->select('webform_submission', 'ws');
+  $query->fields('ws', ['sid', 'uid']);
+  $query->condition('ws.webform_id', 'resource');
+  $query->condition('ws.uid', 0, '>');
+  $wf_submissions = $query->execute()->fetchAll();
+
+  $authors = [];
+  foreach ($wf_submissions as $submission) {
+    if (!isset($authors[$submission->uid])) {
+      $authors[$submission->uid] = 1;
+    } else {
+      $authors[$submission->uid]++;
+    }
+  }
+
+  $kb_one = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (1)');
+  $kb_five = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (5)');
+  $kb_ten = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (10)');
+
+  foreach ($authors as $uid => $count) {
+    $user = \Drupal\user\Entity\User::load($uid);
+    $badgetid = $user->get('field_user_badges')->getValue();
+
+    if ($count < 4) {
+      $badgetid[] = ['target_id' => $kb_one];
+      $user->set('field_user_badges', $badgetid);
+      $user->save();
+    } elseif ($count > 5 && $count < 10) {
+      $badgetid[] = ['target_id' => $kb_five];
+      $user->set('field_user_badges', $badgetid);
+      $user->save();
+    } elseif ($count >= 10) {
+      $badgetid[] = ['target_id' => $kb_ten];
+      $user->set('field_user_badges', $badgetid);
+      $user->save();
+    }
+  }
+}
