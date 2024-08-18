@@ -106,4 +106,10 @@ function access_badges_install() {
       $user->save();
     }
   }
+
+  // Add MATCH badge to mentee, mentor, or reasearchers.
+  $badge_tools = \Drupal::service('access_badges.badgeTools');
+  $badge_tools->fieldToBadge('field_mentee', 'MATCH');
+  $badge_tools->fieldToBadge('field_mentor', 'MATCH');
+  $badge_tools->fieldToBadge('field_researcher', 'MATCH');
 }
