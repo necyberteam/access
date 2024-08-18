@@ -176,9 +176,10 @@ class BadgeTools {
   /**
    * Fields with user id's to badge.
    */
-  public function fieldToBadge($field, $badge) {
+  public function fieldToBadge($field, $badge, $bundle) {
     $query = \Drupal::database()->select('node__' . $field, 'fd');
     $query->fields('fd', [$field . '_target_id']);
+    $query->condition('fd.bundle', $bundle);
     $field_users = $query->execute()->fetchAll();
 
     foreach ($field_users as $field_user) {
@@ -189,7 +190,6 @@ class BadgeTools {
       $badge_check = $this->checkBadges($badgetid_new, $uid);
       // Give user the badge if they don't have one.
       if (!$badge_check) {
-        kint($uid);
         $badgetid[] = ['target_id' => $badgetid_new];
         $user->set('field_user_badges', $badgetid);
         $user->save();
