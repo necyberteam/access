@@ -67,6 +67,18 @@ function access_badges_install() {
   // Set badges for users.
   $badge_tools->setBadges($ccmnet_badge, $users);
 
+  // Get 'SCIPE Awardee' term id.
+  $scipe = $badge_tools->getBadgeTid('SCIPE Awardee');
+
+  // Set SCIPE Awardee badge for users with CIP role.
+  $query = \Drupal::entityQuery('user');
+  $query->condition('roles', 'CIP');
+  $query->accessCheck(FALSE);
+  $users = $query->execute();
+
+  // Set badges for users.
+  $badge_tools->setBadges($scipe, $users);
+
 
   // Set Knowledge Base Resource Contributor badges.
   $query = \Drupal::database()->select('webform_submission', 'ws');

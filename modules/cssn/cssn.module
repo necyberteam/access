@@ -293,7 +293,7 @@ function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
   if ($checked) {
     if (!empty($role)) {
       $role_program_sorter->addRole($role);
-      if ($role == 'cssn') {
+      if ($role == 'cip') {
         $badgetid[] = ['target_id' => $scipe_badge];
         $user->set('field_user_badges', $badgetid);
         $user->save();
@@ -317,7 +317,7 @@ function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
   else {
     if (!empty($role)) {
       $role_program_sorter->removeRole($role);
-      if ($role == 'cssn') {
+      if ($role == 'cip') {
         $badge_unset = FALSE;
         foreach ($badgetid as $key => $badge) {
           if ($badge['target_id'] == $scipe_badge) {
