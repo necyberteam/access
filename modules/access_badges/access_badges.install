@@ -9,6 +9,33 @@
  * Add Badges to taxonomy.
  */
 function access_badges_install() {
+  $terms = [
+    'New to CSSN',
+    'New to ACCESS',
+    'KB Resource Contributor (1)',
+    'KB Resource Contributor (5)',
+    'KB Resource Contributor (10)',
+    'ACCESS CSSN & SCIPE Hackathon',
+    'Affinity Group Coordinator',
+    'MATCH',
+    'CCEP Awardee',
+    'SCIPE Awardee',
+    'Campus Champion',
+    'CCMNet Engagement Participant',
+    'CCMNet Member',
+    'CAREERS',
+    'Ask.CI Contributor',
+    'On Ask.CI Leaderboard',
+  ];
+
+  foreach ($terms as $term) {
+    $new_term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->create([
+      'vid' => 'badges',
+      'name' => $term,
+    ]);
+    $new_term->save();
+  }
+
   $badge_tools = \Drupal::service('access_badges.badgeTools');
 
   // Get 'Campus Champion' term id.
