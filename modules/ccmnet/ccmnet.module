@@ -230,6 +230,15 @@ function ccmnet_form_alter(&$form, FormStateInterface $form_state, $form_id) {
     $form['#attached']['library'][] = 'ccmnet/mentorship_engagement';
 
     $form['#validate'][] = 'access_mentorship_engagement_validate';
+
+    // Only create mentorships on ccmnet domain.
+    $domain = \Drupal::config('domain.settings');
+    $token = \Drupal::token();
+    $domainName = Html::getClass($token->replace(t('[domain:name]')));
+    if ($domainName != 'ccmnet') {
+      \Drupal::messenger()->addWarning(t('You must be on the CCMNet domain to create a mentorship engagement.'));
+      $form['#access'] = FALSE;
+    }
   } else if ($form_id == 'user_register_form' || $form_id == 'user_form') {
     // For forms on ccmnet domain only:
     // Hide region field for both user registration and user edit.
