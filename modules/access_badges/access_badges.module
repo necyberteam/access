@@ -15,6 +15,7 @@ function access_badges_form_alter(&$form, FormStateInterface $form_state, $form_
     $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
     $roles = $user->getRoles();
     if (!in_array('administrator', $roles)) {
+      $form['#attached']['library'][] = 'access_badges/hide_ief_button';
       $form['field_user_badges']['widget']['actions']['ief_add_existing']['#access'] = FALSE;
     }
   }

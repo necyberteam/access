@@ -128,3 +128,21 @@ function access_badges_install() {
   $badge_tools->fieldToBadge('field_mentee', 'CCMNet Engagement Participant', 'mentorship_engagement');
   $badge_tools->fieldToBadge('field_mentor', 'CCMNet Engagement Participant', 'mentorship_engagement');
 }
+
+
+/**
+ * Remove Badges from taxonomy.
+ */
+function access_badges_uninstall() {
+  \Drupal::database()->truncate('user__field_user_badges')->execute();
+
+
+  $tids = \Drupal::entityQuery('taxonomy_term')
+    ->condition('vid', 'badges')
+    ->accessCheck(FALSE)
+    ->execute();
+
+  $controller = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  $entities = $controller->loadMultiple($tids);
+  $controller->delete($entities);
+}

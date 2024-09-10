@@ -1,0 +1,4 @@
+hide_ief_button:
+  css:
+    theme:
+      css/nonadmin-remove-ief-button.css: {}
