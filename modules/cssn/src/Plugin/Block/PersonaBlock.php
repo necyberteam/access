@@ -147,10 +147,10 @@ class PersonaBlock extends BlockBase {
           $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
           if ($image) {
             if ($description) {
-              $user_badges .= "<div class='badge' class='top' data-toggle='tooltip' title='$description'>";
+              $user_badges .= "<div class='badge' data-placement='top' data-toggle='tooltip' title='$description'>";
             }
             else {
-              $user_badges .= "<div class='badge'>";
+              $user_badges .= "<div>";
             }
 
             $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-2 mb-2' width='55' height='55' />";
