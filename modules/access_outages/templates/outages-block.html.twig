@@ -101,18 +101,12 @@
 </div>
 
 <script>
-  const showOutages = async function showOutages(outageName, endpointUrl) {
-    const response = await fetch(endpointUrl)
-    var outages = await response.json()
-    if (outages.results.length > 0) {
-      const noOutages = document.getElementById(`no-${outageName}-outages`)
-      noOutages.style.display = 'none'
-      const outagesTable = document.getElementById('outages-' + outageName)
-      const options = {
-        timeZoneName: 'short'
-      }
-
-      jQuery(outagesTable).DataTable({
+window.onload = function() {
+  function showOutagesTable(outagesTable, outages) {
+    const options = {
+      timeZoneName: 'short'
+    }
+    jQuery(outagesTable).DataTable({
         data: outages.results,
         columns: [
           { data: 'Subject',
@@ -159,6 +153,29 @@
         bAutoWidth: false
       })
       outagesTable.style.display = 'block'
+  }
+
+  const showOutages = async function showOutages(outageName, endpointUrl) {
+    const response = await fetch(endpointUrl)
+    var outages = await response.json()
+    if (outages.results.length > 0) {
+      const noOutages = document.getElementById(`no-${outageName}-outages`)
+      noOutages.style.display = 'none'
+      const outagesTable = document.getElementById('outages-' + outageName)
+
+      // Check if DataTables is defined
+      if (jQuery.fn.DataTable) {
+        // DataTables is loaded
+        showOutagesTable(outagesTable, outages)
+      } else {
+        // Poll until DataTables is available
+        var checkDataTablesLoaded = setInterval(function () {
+          if (jQuery.fn.DataTable) {
+            clearInterval(checkDataTablesLoaded);
+            showOutagesTable(outagesTable, outages)
+          }
+        }, 100); // Check every 100 milliseconds
+      }
     }
   }
 
@@ -238,5 +255,5 @@
   } else {
     showOutage(outageID)
   }
-
+};
 </script>
