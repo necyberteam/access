@@ -49,11 +49,20 @@ function cssn_preprocess_views_view_field(&$variables) {
             $term_id = $line;
             if (\Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity != NULL) {
               $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
+              $description = \Drupal\taxonomy\Entity\Term::load($term_id)->get('description')->value;
+              $description = strip_tags($description);
               $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
               $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
               $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
               if ($image) {
-                $badges .= "<img src='$image' alt='$image_alt' title='$name' class='ms-2 mb-1' width='35' height='35' />";
+                if ($description) {
+                  $badges .= "<div class='ms-2 mb-1' data-placement='left' data-toggle='tooltip' title='$description'>";
+                }
+                else {
+                  $badges .= "<div class='ms-2 mb-1'>";
+                }
+                $badges .= "<img src='$image' alt='$image_alt' title='$name' width='35' height='35' />";
+                $badges .= "</div>";
               }
             }
           }

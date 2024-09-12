@@ -7,6 +7,7 @@ use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\EndUrl;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 
 /**
@@ -137,13 +138,24 @@ class PersonaBlock extends BlockBase {
       $user_badges = '';
       foreach ($badges as $badge) {
         $term_id = $badge['target_id'];
-        if (\Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity) {
-          $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
-          $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
-          $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
+        if (Term::load($term_id)->get('field_badge')->entity) {
+          $name = Term::load($term_id)->get('name')->value;
+          $description = Term::load($term_id)->get('description')->value;
+          $description = strip_tags($description);
+          $image_alt = Term::load($term_id)->get('field_badge')->alt;
+          $image_url = Term::load($term_id)->get('field_badge')->entity->getFileUri();
           $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
           if ($image) {
+            if ($description) {
+              $user_badges .= "<div class='badge' class='top' data-toggle='tooltip' title='$description'>";
+            }
+            else {
+              $user_badges .= "<div class='badge'>";
+            }
+
             $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-2 mb-2' width='55' height='55' />";
+
+            $user_badges .= "</div>";
           }
         }
       }
@@ -187,10 +199,9 @@ class PersonaBlock extends BlockBase {
       // Show the email button on public profiles.
       $send_email = $public ? "<a href='/user/$user_id/contact?destination=community-persona/$user_id' class='w-100 btn btn-primary btn-sm py-1 px-2'><i class='fa-solid fa-envelope'></i> Send Email</a>" : "";
 
-      // Get Job title
+      // Get Job title.
       $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($user_id);
       $job_title = $user_entity->get('field_current_occupation')->value;
-
 
       $persona_block['string'] = [
         '#type' => 'inline_template',
