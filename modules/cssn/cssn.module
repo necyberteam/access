@@ -56,7 +56,7 @@ function cssn_preprocess_views_view_field(&$variables) {
               $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
               if ($image) {
                 if ($description) {
-                  $badges .= "<div class='ms-2 mb-1' data-placement='left' data-toggle='tooltip' title='$description'>";
+                  $badges .= "<div class='ms-2 mb-1 position-relative' style='z-index:10;' data-placement='left' data-toggle='tooltip' title='$description'>";
                 }
                 else {
                   $badges .= "<div class='ms-2 mb-1'>";
