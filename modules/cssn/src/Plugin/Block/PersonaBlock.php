@@ -140,14 +140,12 @@ class PersonaBlock extends BlockBase {
         $term_id = $badge['target_id'];
         if (Term::load($term_id)->get('field_badge')->entity) {
           $name = Term::load($term_id)->get('name')->value;
-          $description = Term::load($term_id)->get('description')->value;
-          $description = strip_tags($description);
           $image_alt = Term::load($term_id)->get('field_badge')->alt;
           $image_url = Term::load($term_id)->get('field_badge')->entity->getFileUri();
           $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
           if ($image) {
-            if ($description) {
-              $user_badges .= "<div class='badge' data-placement='top' data-toggle='tooltip' title='$description'>";
+            if ($name) {
+              $user_badges .= "<div class='badge' data-placement='top' data-toggle='tooltip' title='$name'>";
             }
             else {
               $user_badges .= "<div>";

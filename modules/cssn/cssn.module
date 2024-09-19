@@ -55,8 +55,8 @@ function cssn_preprocess_views_view_field(&$variables) {
               $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
               $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
               if ($image) {
-                if ($description) {
-                  $badges .= "<div class='ms-2 mb-1 position-relative' style='z-index:10;' data-placement='left' data-toggle='tooltip' title='$description'>";
+                if ($name) {
+                  $badges .= "<div class='ms-2 mb-1 position-relative' style='z-index:100;' data-placement='left' data-toggle='tooltip' title='$name'>";
                 }
                 else {
                   $badges .= "<div class='ms-2 mb-1'>";
