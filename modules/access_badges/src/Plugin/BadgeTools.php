@@ -103,6 +103,26 @@ class BadgeTools {
   }
 
   /**
+   * Return Users that have submitted the CSSN webform in the last 90 days.
+   */
+  public function getNewCssnUsers() {
+    // Lookup webform submissions for 'join_the_cssn_network'.
+    $webform = \Drupal::entityTypeManager()->getStorage('webform')->load('join_the_cssn_network');
+    $webform_submissions = \Drupal::entityTypeManager()->getStorage('webform_submission')->loadByProperties(['webform_id' => $webform->id()]);
+    // Grab all submissions submited in the last 90 days.
+    $submission_users = [];
+    foreach ($webform_submissions as $submission) {
+      $created = $submission->getCreatedTime();
+      $now = \Drupal::time()->getCurrentTime();
+      $diff = $now - $created;
+      if ($diff < 7776000) {
+        $submission_users[] = $submission->getOwnerId();
+      }
+    }
+    return $submission_users;
+  }
+
+  /**
    * Check if user has badge, return boolean.
    */
   public function checkBadges($badge, $user) {
@@ -122,7 +142,7 @@ class BadgeTools {
   public function setBadges($badge, $users) {
     $connection = \Drupal::database();
 
-    // Remove all new to access badges to reset.
+    // Remove all badges to reset.
     $connection->delete('user__field_user_badges')
       ->condition('field_user_badges_target_id', $badge)
       ->execute();

@@ -51,5 +51,15 @@ function access_badges_cron() {
 
     // Set badges for ag_users.
     $badge_tools->setBadges($ag_group_coordinator, $ag_users);
+
+    // Lookup users that have submitted the CSSN webform in the last 90 days.
+    $submission_users = $badge_tools->getNewCssnUsers();
+
+    // Get 'New to CSSN' term id.
+    $new_to_cssn = $badge_tools->getBadgeTid('New to CSSN');
+
+    // Set badges for submission_users.
+    $badge_tools->setBadges($new_to_cssn, $submission_users);
+
   //}
 }
