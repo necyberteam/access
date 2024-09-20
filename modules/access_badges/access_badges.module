@@ -31,7 +31,7 @@ function access_badges_cron() {
   $min = date('i', $currentTime);
 
   // Cron runs every 10 minutes
-  //if ($hour == 4 && $min < 20) {
+  if ($hour == 4 && $min < 20) {
     $badge_tools = \Drupal::service('access_badges.badgeTools');
     // Get 'New to ACCESS' term id.
     $new_to_access = $badge_tools->getBadgeTid('New to ACCESS');
@@ -61,5 +61,5 @@ function access_badges_cron() {
     // Set badges for submission_users.
     $badge_tools->setBadges($new_to_cssn, $submission_users);
 
-  //}
+  }
 }
