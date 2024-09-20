@@ -9,6 +9,7 @@ use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Session\AccountInterface;
 use Drupal\block\Entity\Block;
+use Drupal\Core\Render\Markup;
 use Drupal\cssn\Plugin\Util\RoleProgramSorter;
 use Drupal\user\Entity\User;
 use Drupal\views\ViewExecutable;
@@ -24,6 +25,55 @@ use Drupal\views\ViewExecutable;
 function cssn_views_pre_render(ViewExecutable $view) {
   if ($view->id() == 'cssn_directory') {
     $view->element['#attached']['library'][] = 'cssn/cssn_directory';
+  }
+}
+
+/**
+ * Implements hook_preprocess_views_view_field for views-view-field.html.twig.
+ */
+function cssn_preprocess_views_view_field(&$variables) {
+  $view = $variables['view'];
+  $field = $variables['field'];
+
+  // Overwrite cssn directory on /community/cssn/directory.
+  if ($view->id() == 'cssn_directory' && $view->current_display == 'page_1' && $field->options['id'] == 'nothing') {
+    $output = $variables['output']->__toString();
+    $lines = explode("\n", $output);
+    $new_output = '';
+    $badges = "";
+    foreach ($lines as $key => $line) {
+      if ($key == 0) {
+        $lines = explode(', ', $line);
+        if (!empty($lines[0])) {
+          foreach ($lines as $key => $line) {
+            $term_id = $line;
+            if (\Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity != NULL) {
+              $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
+              $description = \Drupal\taxonomy\Entity\Term::load($term_id)->get('description')->value;
+              $description = strip_tags($description);
+              $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
+              $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
+              $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
+              if ($image) {
+                if ($name) {
+                  $badges .= "<div class='ms-2 mb-1 position-relative' style='z-index:100;' data-placement='left' data-toggle='tooltip' title='$name'>";
+                }
+                else {
+                  $badges .= "<div class='ms-2 mb-1'>";
+                }
+                $badges .= "<img src='$image' alt='$image_alt' title='$name' width='35' height='35' />";
+                $badges .= "</div>";
+              }
+            }
+          }
+        }
+      } elseif ($line == "!!!!=-=-= This line is programmatically replaced, if you change anything in this line you'll break badges. See cssn.module to fix any issues =-=-=-=-!!!!") {
+        $new_output .= $badges;
+      } else {
+        $new_output .= $line;
+      }
+    }
+    $variables['output'] = Markup::create($new_output);
   }
 }
 
@@ -124,6 +174,7 @@ function cssn_form_alter(&$form, FormStateInterface $form_state, $form_id) {
         $roles_set[] = $role;
       }
     }
+
     $form['elements']['i_am_joining_as_a_']['#default_value'] = $roles_set;
 
     $user_loaded = \Drupal::entityTypeManager()->getStorage('user')->load($user->id());
@@ -238,13 +289,24 @@ function cssn_update_academic_status($user, $form) {
 }
 
 /**
- * Set or remove role and region.
+ * Set or remove role and region and add badge for CSSN.
  */
 function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
   $role_program_sorter = new RoleProgramSorter($user);
+  $scipe_badge = \Drupal::service('access_badges.badgeTools')->getBadgeTid('SCIPE Awardee');
+
+  // Lookup user field 'field_user_badges'.
+  $user = User::load($user->id());
+  $badgetid = $user->get('field_user_badges')->getValue();
+
   if ($checked) {
     if (!empty($role)) {
       $role_program_sorter->addRole($role);
+      if ($role == 'cip') {
+        $badgetid[] = ['target_id' => $scipe_badge];
+        $user->set('field_user_badges', $badgetid);
+        $user->save();
+      }
       // Flag user as part of the CSSN Affinity Group.
       $cssn_affinity_group = \Drupal::entityTypeManager()
         ->getStorage('taxonomy_term')
@@ -264,6 +326,19 @@ function cssn_role_region($role, $checked, $term_id, $enroll_program, $user) {
   else {
     if (!empty($role)) {
       $role_program_sorter->removeRole($role);
+      if ($role == 'cip') {
+        $badge_unset = FALSE;
+        foreach ($badgetid as $key => $badge) {
+          if ($badge['target_id'] == $scipe_badge) {
+            unset($badgetid[$key]);
+            $badge_unset = TRUE;
+          }
+        }
+        if ($badge_unset) {
+          $user->set('field_user_badges', $badgetid);
+          $user->save();
+        }
+      }
     }
     if ($enroll_program === FALSE) {
       $role_program_sorter->removeFieldRegion($term_id);

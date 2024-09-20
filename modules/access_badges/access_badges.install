@@ -1,0 +1,148 @@
+<?php
+
+/**
+ * @file
+ * Access Badges updates.
+ */
+
+/**
+ * Add Badges to taxonomy.
+ */
+function access_badges_install() {
+  $terms = [
+    'New to CSSN',
+    'New to ACCESS',
+    'KB Resource Contributor (1)',
+    'KB Resource Contributor (5)',
+    'KB Resource Contributor (10)',
+    'ACCESS CSSN & SCIPE Hackathon',
+    'Affinity Group Coordinator',
+    'MATCH',
+    'CCEP Awardee',
+    'SCIPE Awardee',
+    'Campus Champion',
+    'CCMNet Engagement Participant',
+    'CCMNet Member',
+    'CAREERS',
+    'Ask.CI Contributor',
+    'On Ask.CI Leaderboard',
+  ];
+
+  foreach ($terms as $term) {
+    $new_term = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->create([
+      'vid' => 'badges',
+      'name' => $term,
+    ]);
+    $new_term->save();
+  }
+
+  $badge_tools = \Drupal::service('access_badges.badgeTools');
+
+  // Get 'Campus Champion' term id.
+  $cc_badge = $badge_tools->getBadgeTid('Campus Champion');
+
+  // Get users with Campus Champion region.
+  $users = $badge_tools->getProgramUsers(572);
+
+  // Set badges for users.
+  $badge_tools->setBadges($cc_badge, $users);
+
+  // Get 'Careers' term id.
+  $careers_badge = $badge_tools->getBadgeTid('CAREERS');
+
+  // Get users with Careers region.
+  $users = $badge_tools->getProgramUsers(323);
+
+  // Set badges for users.
+  $badge_tools->setBadges($careers_badge, $users);
+
+  // Get 'ccmnet' term id.
+  $ccmnet_badge = $badge_tools->getBadgeTid('CCMNet Member');
+
+  $query = \Drupal::entityQuery('user');
+  $query->condition('roles', 'ccmnet');
+  $query->accessCheck(FALSE);
+  $users = $query->execute();
+
+  // Set badges for users.
+  $badge_tools->setBadges($ccmnet_badge, $users);
+
+  // Get 'SCIPE Awardee' term id.
+  $scipe = $badge_tools->getBadgeTid('SCIPE Awardee');
+
+  // Set SCIPE Awardee badge for users with CIP role.
+  $query = \Drupal::entityQuery('user');
+  $query->condition('roles', 'CIP');
+  $query->accessCheck(FALSE);
+  $users = $query->execute();
+
+  // Set badges for users.
+  $badge_tools->setBadges($scipe, $users);
+
+
+  // Set Knowledge Base Resource Contributor badges.
+  $query = \Drupal::database()->select('webform_submission', 'ws');
+  $query->fields('ws', ['sid', 'uid']);
+  $query->condition('ws.webform_id', 'resource');
+  $query->condition('ws.uid', 0, '>');
+  $wf_submissions = $query->execute()->fetchAll();
+
+  $authors = [];
+  foreach ($wf_submissions as $submission) {
+    if (!isset($authors[$submission->uid])) {
+      $authors[$submission->uid] = 1;
+    } else {
+      $authors[$submission->uid]++;
+    }
+  }
+
+  $kb_one = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (1)');
+  $kb_five = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (5)');
+  $kb_ten = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (10)');
+
+  foreach ($authors as $uid => $count) {
+    $user = \Drupal\user\Entity\User::load($uid);
+    $badgetid = $user->get('field_user_badges')->getValue();
+
+    if ($count < 4) {
+      $badgetid[] = ['target_id' => $kb_one];
+      $user->set('field_user_badges', $badgetid);
+      $user->save();
+    } elseif ($count > 5 && $count < 10) {
+      $badgetid[] = ['target_id' => $kb_five];
+      $user->set('field_user_badges', $badgetid);
+      $user->save();
+    } elseif ($count >= 10) {
+      $badgetid[] = ['target_id' => $kb_ten];
+      $user->set('field_user_badges', $badgetid);
+      $user->save();
+    }
+  }
+
+  // Add MATCH badge to mentee, mentor, or reasearchers.
+  $badge_tools->fieldToBadge('field_students', 'MATCH', 'match_engagement');
+  $badge_tools->fieldToBadge('field_mentor', 'MATCH', 'match_engagement');
+  $badge_tools->fieldToBadge('field_researcher', 'MATCH', 'match_engagement');
+
+  // Add CMNET Engagement Participant badge to mentee, or mentor.
+  $badge_tools->fieldToBadge('field_mentee', 'CCMNet Engagement Participant', 'mentorship_engagement');
+  $badge_tools->fieldToBadge('field_mentor', 'CCMNet Engagement Participant', 'mentorship_engagement');
+}
+
+
+/**
+ * Remove Badges from taxonomy.
+ */
+function access_badges_uninstall() {
+  \Drupal::database()->truncate('user__field_user_badges')->execute();
+
+
+  $tids = \Drupal::entityQuery('taxonomy_term')
+    ->condition('vid', 'badges')
+    ->accessCheck(FALSE)
+    ->execute();
+
+  $controller = \Drupal::entityTypeManager()->getStorage('taxonomy_term');
+  $entities = $controller->loadMultiple($tids);
+  $controller->delete($entities);
+}

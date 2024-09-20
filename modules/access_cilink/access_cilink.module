@@ -442,6 +442,62 @@ function cilink_send($key, $params) {
 }
 
 /**
+ * Implements hook_form_alter().
+ */
+function access_cilink_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'webform_submission_resource_add_form' || $form_id == 'webform_submission_resource_edit_form') {
+    $form['actions']['submit']['#submit'][] = 'access_cilink_webform_submission_resource_submit';
+  }
+}
+
+/**
+ * Webform submission resource submit.
+ */
+function access_cilink_webform_submission_resource_submit($form, \Drupal\Core\Form\FormStateInterface $form_state) {
+  // Get current user.
+  $user = \Drupal::currentUser();
+  $kb_one = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (1)');
+  $kb_five = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (5)');
+  $kb_ten = \Drupal::service('access_badges.badgeTools')->getBadgeTid('KB Resource Contributor (10)');
+  // Look up webform submissions by user for the resource webform.
+  $query = \Drupal::entityQuery('webform_submission')
+    ->condition('webform_id', 'resource')
+    ->condition('uid', $user->id())
+    ->accessCheck(FALSE);
+  $submission_ids = $query->execute();
+
+  // Lookup user field 'field_user_badges'.
+  $user = User::load($user->id());
+  $badgetid = $user->get('field_user_badges')->getValue();
+
+  if (count($submission_ids) == 1) {
+    $badgetid[] = ['target_id' => $kb_one];
+    $user->set('field_user_badges', $badgetid);
+    $user->save();
+  }
+  if (count($submission_ids) == 5) {
+    foreach ($badgetid as $key => $value) {
+      if ($value['target_id'] == $kb_one) {
+        unset($badgetid[$key]);
+      }
+    }
+    $badgetid[] = ['target_id' => $kb_five];
+    $user->set('field_user_badges', $badgetid);
+    $user->save();
+  }
+  if (count($submission_ids) == 10) {
+    foreach ($badgetid as $key => $value) {
+      if ($value['target_id'] == $kb_five) {
+        unset($badgetid[$key]);
+      }
+    }
+    $badgetid[] = ['target_id' => $kb_ten];
+    $user->set('field_user_badges', $badgetid);
+    $user->save();
+  }
+}
+
+/**
  * Implements hook_cron().
  */
 function access_cilink_cron() {

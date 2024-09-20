@@ -1,0 +1,3 @@
+services:
+  access_badges.badgeTools:
+    class: Drupal\access_badges\Plugin\BadgeTools

@@ -1,0 +1,65 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\Core\Form\FormStateInterface;
+
+/**
+ * Implements hook_form_alter().
+ */
+function access_badges_form_alter(&$form, FormStateInterface $form_state, $form_id) {
+  if ($form_id == 'user_form') {
+    // Check if user is an administator.
+    $user = \Drupal\user\Entity\User::load(\Drupal::currentUser()->id());
+    $roles = $user->getRoles();
+    if (!in_array('administrator', $roles)) {
+      $form['#attached']['library'][] = 'access_badges/hide_ief_button';
+      $form['field_user_badges']['widget']['actions']['ief_add_existing']['#access'] = FALSE;
+    }
+  }
+}
+
+/**
+ * Implements hook_cron().
+ */
+function access_badges_cron() {
+  // Run this cron job every day at 4am.
+  $currentTime = \Drupal::time()->getCurrentTime();
+  $hour = date('H', $currentTime);
+  $min = date('i', $currentTime);
+
+  // Cron runs every 10 minutes
+  if ($hour == 4 && $min < 20) {
+    $badge_tools = \Drupal::service('access_badges.badgeTools');
+    // Get 'New to ACCESS' term id.
+    $new_to_access = $badge_tools->getBadgeTid('New to ACCESS');
+
+    // User entity lookup that were created 90 days or less ago and has
+    // access-ci.org in their name.
+    $users = $badge_tools->getAccessUsers();
+
+    // Set badges for users.
+    $badge_tools->setBadges($new_to_access, $users);
+
+    // Get 'Affinity Group Coordinator' term id.
+    $ag_group_coordinator = $badge_tools->getBadgeTid('Affinity Group Coordinator');
+
+    // Lookup users with 'affinity_group_leader' role.
+    $ag_users = $badge_tools->getAgRoleUsers();
+
+    // Set badges for ag_users.
+    $badge_tools->setBadges($ag_group_coordinator, $ag_users);
+
+    // Lookup users that have submitted the CSSN webform in the last 90 days.
+    $submission_users = $badge_tools->getNewCssnUsers();
+
+    // Get 'New to CSSN' term id.
+    $new_to_cssn = $badge_tools->getBadgeTid('New to CSSN');
+
+    // Set badges for submission_users.
+    $badge_tools->setBadges($new_to_cssn, $submission_users);
+
+  }
+}

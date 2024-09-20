@@ -110,6 +110,83 @@ function user_profiles_form_alter(&$form, &$form_state, $form_id) {
  * Also bypass this step if doing an affinity group allocations run.
  */
 function user_profiles_entity_presave(Object $entity) {
+  if ($entity->getEntityTypeId() == 'user') {
+    $badge_tools = \Drupal::service('access_badges.badgeTools');
+    $cc = $badge_tools->getBadgeTid('Campus Champion');
+
+    $badgetid = $entity->get('field_user_badges')->getValue();
+
+    $program = $entity->get('field_region')->getValue();
+
+    $query = \Drupal::entityQuery('taxonomy_term');
+    $query->condition('vid', 'region');
+    $query->condition('name', 'Campus Champions');
+    $query->accessCheck(FALSE);
+    $tids = $query->execute();
+
+    $campus_champions_tid = implode($tids);
+
+    $cc_check = $badge_tools->checkBadges($cc, $entity->id());
+
+    if (!$cc_check) {
+      foreach ($program as $prog) {
+        if ($prog['target_id'] == $campus_champions_tid) {
+          $badgetid[] = [
+            'weight' => 0,
+            'form' => null,
+            'target_id' => $cc,
+            'needs_save' => TRUE,
+          ];
+        }
+        $entity->set('field_user_badges', $badgetid);
+      }
+    }
+
+    // Get $entity roles.
+    $roles = $entity->getRoles();
+    $ccmnet_badge = $badge_tools->getBadgeTid('CCMNet Member');
+    $ccmnet_check = $badge_tools->checkBadges($ccmnet_badge, $entity->id());
+
+    if (!$ccmnet_check) {
+      foreach ($roles as $role) {
+        if ($role == 'ccmnet') {
+          $badgetid[] = [
+            'weight' => 0,
+            'form' => null,
+            'target_id' => $ccmnet_badge,
+            'needs_save' => TRUE,
+          ];
+          $entity->set('field_user_badges', $badgetid);
+        }
+      }
+    }
+
+    $careers = $badge_tools->getBadgeTid('CAREERS');
+
+    $careers_query = \Drupal::entityQuery('taxonomy_term');
+    $careers_query->condition('vid', 'region');
+    $careers_query->condition('name', '	CAREERS');
+    $careers_query->accessCheck(FALSE);
+    $query_tids = $query->execute();
+
+    $careers_tid = implode($query_tids);
+
+    $careers_check = $badge_tools->checkBadges($careers, $entity->id());
+
+    if (!$careers_check) {
+      foreach ($program as $prog) {
+        if ($prog['target_id'] == $careers_tid) {
+          $badgetid[] = [
+            'weight' => 0,
+            'form' => null,
+            'target_id' => $careers,
+            'needs_save' => TRUE,
+          ];
+        }
+        $entity->set('field_user_badges', $badgetid);
+      }
+    }
+  }
 
   $config = \Drupal::configFactory()->getEditable('user_profiles.settings');
   $check_suspended_users = $config->get('check_suspended_users');

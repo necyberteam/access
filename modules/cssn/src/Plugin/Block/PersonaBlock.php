@@ -7,6 +7,7 @@ use Drupal\Core\Block\BlockBase;
 use Drupal\Core\Link;
 use Drupal\Core\Url;
 use Drupal\cssn\Plugin\Util\EndUrl;
+use Drupal\taxonomy\Entity\Term;
 use Drupal\user\Entity\User;
 
 /**
@@ -131,6 +132,32 @@ class PersonaBlock extends BlockBase {
         $cssn_role = "";
       }
 
+      // Badges.
+      $badges = $user_entity->get('field_user_badges')->getValue();
+      $badge_name = [];
+      $user_badges = '';
+      foreach ($badges as $badge) {
+        $term_id = $badge['target_id'];
+        if (Term::load($term_id)->get('field_badge')->entity) {
+          $name = Term::load($term_id)->get('name')->value;
+          $image_alt = Term::load($term_id)->get('field_badge')->alt;
+          $image_url = Term::load($term_id)->get('field_badge')->entity->getFileUri();
+          $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
+          if ($image) {
+            if ($name) {
+              $user_badges .= "<div class='badge' data-placement='top' data-toggle='tooltip' title='$name'>";
+            }
+            else {
+              $user_badges .= "<div>";
+            }
+
+            $user_badges .= "<img src='$image' alt='$image_alt' title='$name' class='me-2 mb-2' width='55' height='55' />";
+
+            $user_badges .= "</div>";
+          }
+        }
+      }
+
       // Programs.
       $program = implode(', ', $terms);
       // If $terms contains 'ACCESS CSSN', then the user is a CSSN member.
@@ -170,10 +197,9 @@ class PersonaBlock extends BlockBase {
       // Show the email button on public profiles.
       $send_email = $public ? "<a href='/user/$user_id/contact?destination=community-persona/$user_id' class='w-100 btn btn-primary btn-sm py-1 px-2'><i class='fa-solid fa-envelope'></i> Send Email</a>" : "";
 
-      // Get Job title
+      // Get Job title.
       $user_entity = \Drupal::entityTypeManager()->getStorage('user')->load($user_id);
       $job_title = $user_entity->get('field_current_occupation')->value;
-
 
       $persona_block['string'] = [
         '#type' => 'inline_template',
@@ -193,10 +219,13 @@ class PersonaBlock extends BlockBase {
                             <div class="academic-status mb-3">{{ academic_status }}</div>
                           {% endif %}
                           {% if cssn != "Not a CSSN Member" %}
-                            <div class="d-flex justify-content-between flex justify-between border-b border-black">
+                            <div class="d-flex justify-content-between flex justify-between">
                               <p>{{ cssn_indicator | raw }} <strong>{{ cssn }}</strong></p>
                               <div><i class="text-dark fa-regular fa-circle-info text-md-teal"></i> {{ cssn_more }}</div>
                             </div>
+                          {% endif %}
+                          {% if user_badges %}
+                            <div class="py-3 border-b border-black flex flex-wrap">{{ user_badges | raw }}</div>
                           {% endif %}
                           <div class="d-flex justify-content-between flex justify-between border-top border-bottom mb-3 py-3 border-secondary border-b border-black">
                             {% if roles %}
@@ -226,6 +255,7 @@ class PersonaBlock extends BlockBase {
           'cssn' => $cssn,
           'cssn_indicator' => $cssn_indicator,
           'cssn_more' => $cssn_more,
+          'user_badges' => $user_badges,
           'roles' => $roles,
           'role_text' => t('Roles'),
           'cssn_role' => $cssn_role,
