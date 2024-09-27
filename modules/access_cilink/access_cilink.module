@@ -173,7 +173,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $output['string'] = [
       '#type' => 'inline_template',
       '#template' => '<div class="details-wrap relative">
-                        <button class="copyclip ms-4 absolute top-4 right-28 z-10" onclick="copyclip(\'{{ link_url }}\', event)">
+                        <button class="text-sm copyclip ms-4 absolute top-5 right-28 z-10" onclick="copyclip(\'{{ link_url }}\', event)">
                           <span class="default-message block leading-5 text-dark-teal">
                             <i class="fa-solid fa-link"></i><br />
                             Copy link
