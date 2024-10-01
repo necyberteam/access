@@ -67,7 +67,9 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $token = \Drupal::token();
     $domainName = Html::getClass($token->replace(t('[domain:name]')));
 
-    $sid = $variables['output']->__toString();
+    $view_output = explode(',', $variables['output']->__toString());
+    $sid = $view_output[0];
+    $flag_upvote_count = $view_output[1];
     $webform_submission = \Drupal::entityTypeManager()->getStorage('webform_submission')->load($sid);
     if (!$webform_submission) {
       return;
@@ -113,9 +115,6 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $flag_upvote = \Drupal::service('flag.link_builder')->build('webform_submission', $sid, 'upvote');
     $flag_upvote = \Drupal::service('renderer')->renderPlain($flag_upvote);
     $flag_upvote = "<div class=''>$flag_upvote</div>";
-    $flag_upvote_count = \Drupal::service('flag.count')->getEntityFlagCounts($webform_submission);
-    $flag_upvote_set = $flag_upvote_count['upvote'] ?? 0;
-    $flag_upvote_count = $flag_upvote_set ? $flag_upvote_count['upvote'] : 0;
 
     $likes_count = "<span class='text-[32px] inline-block text-center me-2' style='min-width: 32px;'>$flag_upvote_count</span>";
     $likes = $flag_upvote_count == 1 ? "<span>Like</span>" : "<span>Likes</span>";
@@ -174,7 +173,7 @@ function access_cilink_preprocess_views_view_field(&$variables) {
     $output['string'] = [
       '#type' => 'inline_template',
       '#template' => '<div class="details-wrap relative">
-                        <button class="copyclip ms-4 absolute top-4 right-28 z-10" onclick="copyclip(\'{{ link_url }}\', event)">
+                        <button class="text-sm copyclip ms-4 absolute top-5 right-28 z-10" onclick="copyclip(\'{{ link_url }}\', event)">
                           <span class="default-message block leading-5 text-dark-teal">
                             <i class="fa-solid fa-link"></i><br />
                             Copy link
