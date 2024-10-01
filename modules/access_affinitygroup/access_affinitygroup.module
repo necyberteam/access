@@ -1481,10 +1481,12 @@ function webform_submission_affinity_group_affinity_contact(&$form, FormStateInt
   $agNames = [$affinity_group];
   $cc_list_id = $form['elements']['cc_list_id']['#value'];
   $ccListIds = [$cc_list_id];
-  $message = $form['elements']['message']['value']['#value'];
+  $subject = $form['elements']['subject']['#value'];
+  $message = "<p>$subject</p>\n\n";
+  $message .= $form['elements']['message']['value']['#value'];
   $message .= '<p>Sent by ' . $form['elements']['name']['#value'] . '</p>';
   $pubDate = date('m/d/Y');
-  emailToAffinityGroups($message, "$affinity_group", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
+  emailToAffinityGroups($message, "$subject", $pubDate, $agNames, NULL, $ccListIds, 1, NULL);
 }
 
 /**
