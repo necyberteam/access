@@ -25,14 +25,13 @@ function access_page_attachments(array &$attachments) {
       // Counteract negative weights.
       $weight = $weight + 200;
       $menu[$weight]['name'] = $title;
-      $n = 0;
       foreach ($item->subtree as $subitem) {
+        $sub_weight = $subitem->link->getWeight()+200;
         $sub_title = $subitem->link->getTitle();
         $sub_url_obj = $subitem->link->getUrlObject();
         $sub_url = $sub_url_obj->toString();
-        $menu[$weight]['items'][$n]['name'] = $sub_title;
-        $menu[$weight]['items'][$n]['url'] = $sub_url;
-        $n++;
+        $menu[$weight]['items'][$sub_weight]['name'] = $sub_title;
+        $menu[$weight]['items'][$sub_weight]['url'] = $sub_url;
       }
     }
     ksort($menu);
@@ -41,10 +40,11 @@ function access_page_attachments(array &$attachments) {
     foreach ($menu as $menu_items) {
       $js_menu .= '{';
       $js_menu .= "name: '{$menu_items['name']}', items: [";
+      ksort($menu_items['items']);
       foreach ($menu_items['items'] as $item) {
         $js_menu .= "{name: '{$item['name']}', href: '{$item['url']}'},";
       }
-      $js_menu .= ']},';
+      $js_menu .= '],},';
     }
     $js_menu .= ']';
 
