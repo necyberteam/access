@@ -1,6 +1,6 @@
 /**
  * @file
- * Contains the definition of the behaviour jsTestRedWeight.
+ * Header and footer JS.
  */
 
 import {
@@ -35,11 +35,12 @@ function setMenu(menu) {
   let mainMenu = menu;
 
   const siteItems = mainMenu;
-
+  const isLoggedIn = document.body.classList.contains("user-logged-in");
 
   universalMenus({
+    isLoggedIn: isLoggedIn,
     loginUrl: "/login",
-    logoutUrl: "/logout",
+    logoutUrl: "/user/logout",
     siteName: "Support",
     target: document.getElementById("universal-menus"),
   });
