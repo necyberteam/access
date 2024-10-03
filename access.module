@@ -5,6 +5,7 @@
  */
 
 use Drupal\Component\Utility\Html;
+use Drupal\Core\Menu\MenuTreeParameters;
 
 /**
  * Implements hook_page_attachments().
@@ -16,7 +17,7 @@ function access_page_attachments(array &$attachments) {
   if ($domain_name = "access-support") {
 
     // Get 'access-secondary-menu' menu items and links.
-    $tree = \Drupal::menuTree()->load('access-secondary-menu', new \Drupal\Core\Menu\MenuTreeParameters());
+    $tree = \Drupal::menuTree()->load('access-secondary-menu', new MenuTreeParameters());
     $menu = [];
     foreach ($tree as $item) {
       $title = $item->link->getTitle();
@@ -26,7 +27,7 @@ function access_page_attachments(array &$attachments) {
       $weight = $weight + 200;
       $menu[$weight]['name'] = $title;
       foreach ($item->subtree as $subitem) {
-        $sub_weight = $subitem->link->getWeight()+200;
+        $sub_weight = $subitem->link->getWeight() + 200;
         $sub_title = $subitem->link->getTitle();
         $sub_url_obj = $subitem->link->getUrlObject();
         $sub_url = $sub_url_obj->toString();
@@ -39,13 +40,17 @@ function access_page_attachments(array &$attachments) {
     $js_menu = '[';
     foreach ($menu as $menu_items) {
       $js_menu .= '{';
-      $js_menu .= "name: '{$menu_items['name']}', items: [";
+      $js_menu .= '"name": "' . $menu_items['name'] . '", "items": [';
       ksort($menu_items['items']);
       foreach ($menu_items['items'] as $item) {
-        $js_menu .= "{name: '{$item['name']}', href: '{$item['url']}'},";
+        $js_menu .= '{"name": "' . $item['name'] . '", "href": "' . $item['url'] . '"},';
       }
-      $js_menu .= '],},';
+      // remove last comma
+      $js_menu = rtrim($js_menu, ',');
+      $js_menu .= ']},';
     }
+    // remove last comma
+    $js_menu = rtrim($js_menu, ',');
     $js_menu .= ']';
 
     // Adding global library to all pages.

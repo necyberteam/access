@@ -20,16 +20,13 @@ import {
    */
   Drupal.behaviors.accessMenuData = {
     attach: function (context, settings) {
-      const currentMenu = drupalSettings.access.current_menu;
+      var currentMenu = drupalSettings.access.current_menu;
       try {
         currentMenu = JSON.parse(currentMenu);
       } catch (e) {
         console.error("Failed to parse currentMenu:", e);
       }
-      console.log(currentMenu);
-      var menu = [{name: 'Quick Links', items: [{name: 'ACCESS Resource Advisor (ARA)', href: 'https://access-ara.ccs.uky.edu:8080'},{name: 'Software Documentation Service (SDS)', href: 'https://access-sds.ccs.uky.edu:8080'},{name: 'Create an Account', href: 'https://operations.access-ci.org/identity/new-user'},{name: 'Search ACCESS', href: '/find'},{name: 'Open a Help Ticket', href: 'https://support.access-ci.org/help-ticket'},{name: 'View your Help Tickets', href: 'https://access-ci.atlassian.net/servicedesk/customer/user/requests'},],},{name: 'Community', items: [{name: 'Overview', href: '/community/overview'},{name: 'Affinity Groups', href: '/affinity_groups'},{name: 'CSSN', href: '/community/cssn'},{name: 'Community of Communities', href: 'https://coco.cyberinfrastructure.org'},{name: 'SCIPE/CIP', href: '/community/scipe'},],},{name: 'CCEP', items: [{name: 'Overview', href: '/ccep/overview'},{name: 'Workforce Development Workshops', href: 'https://support.access-ci.org/ccep-workforce-development-funded-workshops'},],},{name: 'Knowledge Base', items: [{name: 'Overview', href: '/knowledge-base/overview'},{name: 'Documentation', href: 'https://access-ci.atlassian.net/wiki/spaces/ACCESSdocumentation/'},{name: 'Ask.CI Forum', href: 'https://ask.ci/'},{name: 'Resources', href: '/knowledge-base/resources'},{name: 'Video Learning Center', href: 'https://support.access-ci.org/video-learning-center'},],},{name: 'MATCH Services', items: [{name: 'Overview', href: '/match/overview'},{name: 'Engagements', href: '/match/engagements'},],},{name: 'Tools', items: [{name: 'Overview', href: '/tools/overview'},{name: 'ACCESS Resource Advisor (ARA)', href: 'https://access-ara.ccs.uky.edu:8080/'},{name: 'OnDemand', href: '/tools/ondemand'},{name: 'Pegasus Workflows', href: '/tools/pegasus'},{name: 'Science Gateways', href: '/science-gateways'},{name: 'Software Documentation Service (SDS)', href: 'https://access-sds.ccs.uky.edu:8080'},{name: 'XDMoD', href: '/tools/xdmod'},],},];
-      console.log(menu);
-      setMenu(menu);
+      setMenu(currentMenu);
     }
   };
 })(Drupal, drupalSettings);
