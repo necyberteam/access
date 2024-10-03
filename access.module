@@ -1,0 +1,55 @@
+<?php
+
+/**
+ * @file
+ */
+
+use Drupal\Component\Utility\Html;
+
+/**
+ * Implements hook_page_attachments().
+ */
+function access_page_attachments(array &$attachments) {
+  $token = \Drupal::token();
+  $domain_name = Html::getClass($token->replace(t('[domain:name]')));
+
+  if ($domain_name = "access-support") {
+
+    // Get 'access-secondary-menu' menu items and links.
+    $tree = \Drupal::menuTree()->load('access-secondary-menu', new \Drupal\Core\Menu\MenuTreeParameters());
+    $menu = [];
+    foreach ($tree as $item) {
+      $title = $item->link->getTitle();
+      // Get weight.
+      $weight = $item->link->getWeight();
+      // Counteract negative weights.
+      $weight = $weight + 200;
+      $menu[$weight]['name'] = $title;
+      $n = 0;
+      foreach ($item->subtree as $subitem) {
+        $sub_title = $subitem->link->getTitle();
+        $sub_url_obj = $subitem->link->getUrlObject();
+        $sub_url = $sub_url_obj->toString();
+        $menu[$weight]['items'][$n]['name'] = $sub_title;
+        $menu[$weight]['items'][$n]['url'] = $sub_url;
+        $n++;
+      }
+    }
+    ksort($menu);
+
+    $js_menu = '[';
+    foreach ($menu as $menu_items) {
+      $js_menu .= '{';
+      $js_menu .= "name: '{$menu_items['name']}', items: [";
+      foreach ($menu_items['items'] as $item) {
+        $js_menu .= "{name: '{$item['name']}', href: '{$item['url']}'},";
+      }
+      $js_menu .= ']},';
+    }
+    $js_menu .= ']';
+
+    // Adding global library to all pages.
+    $attachments['#attached']['drupalSettings']['access']['current_menu'] = $js_menu;
+    $attachments['#attached']['library'][] = 'access/header_footer_library';
+  }
+}
