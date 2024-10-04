@@ -4,10 +4,10 @@
  */
 
 import {
+  footer,
+  footerMenus,
   header,
   siteMenus,
-  tableOfContents,
-  universalMenuItems,
   universalMenus,
 } from "https://esm.sh/@access-ci/ui@0.3.0-beta1";
 
@@ -54,6 +54,15 @@ function setMenu(menu) {
     items: siteItems,
     siteName: "Support",
     target: document.getElementById("site-menus"),
+  });
+
+  footerMenus({
+    items: siteItems,
+    target: document.getElementById("footer-menus"),
+  });
+
+  footer({
+    target: document.getElementById("footer")
   });
 
 };

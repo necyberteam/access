@@ -14,3 +14,10 @@ misc.login:
     _permission: 'access content'
   options:
     no_cache: 'TRUE'
+wvuf_api_integration.unmask:
+  path: 'unmask'
+  defaults:
+    _controller: '\Drupal\masquerade\Controller\SwitchController::switchBack'
+    _title: 'Unmask'
+  requirements:
+    _user_is_masquerading: 'TRUE'
