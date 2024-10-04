@@ -34,6 +34,12 @@ function access_page_attachments(array &$attachments) {
         $menu[$weight]['items'][$sub_weight]['name'] = $sub_title;
         $menu[$weight]['items'][$sub_weight]['url'] = $sub_url;
       }
+      $mask = \Drupal::service('masquerade');
+      if ($title == 'Quick Links' && $mask->isMasquerading()) {
+        $sub_weight = 400;
+        $menu[$weight]['items'][$sub_weight]['name'] = 'Unmask';
+        $menu[$weight]['items'][$sub_weight]['url'] = '/unmask';
+      }
     }
     ksort($menu);
 
