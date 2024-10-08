@@ -21,17 +21,18 @@ import {
   Drupal.behaviors.accessMenuData = {
     attach: function (context, settings) {
       var currentMenu = drupalSettings.access.current_menu;
+      var currentUri = drupalSettings.access.current_uri;
       try {
         currentMenu = JSON.parse(currentMenu);
       } catch (e) {
         console.error("Failed to parse currentMenu:", e);
       }
-      setMenu(currentMenu);
+      setMenu(currentMenu, currentUri);
     }
   };
 })(Drupal, drupalSettings);
 
-function setMenu(menu) {
+function setMenu(menu, currentUri) {
   let mainMenu = menu;
 
   const siteItems = mainMenu;
@@ -39,7 +40,7 @@ function setMenu(menu) {
 
   universalMenus({
     isLoggedIn: isLoggedIn,
-    loginUrl: "/login",
+    loginUrl: "/login?redirect=" + currentUri,
     logoutUrl: "/user/logout",
     siteName: "Support",
     target: document.getElementById("universal-menus"),

@@ -59,7 +59,10 @@ function access_page_attachments(array &$attachments) {
     $js_menu = rtrim($js_menu, ',');
     $js_menu .= ']';
 
+    $current_uri = \Drupal::request()->getRequestUri();
+
     // Adding global library to all pages.
+    $attachments['#attached']['drupalSettings']['access']['current_uri'] = $current_uri;
     $attachments['#attached']['drupalSettings']['access']['current_menu'] = $js_menu;
     $attachments['#attached']['library'][] = 'access/header_footer_library';
   }
