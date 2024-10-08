@@ -50,13 +50,13 @@ function cssn_preprocess_views_view_field(&$variables) {
             if (\Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity != NULL) {
               $name = \Drupal\taxonomy\Entity\Term::load($term_id)->get('name')->value;
               $description = \Drupal\taxonomy\Entity\Term::load($term_id)->get('description')->value;
-              $description = strip_tags($description);
+              $description = $description ? strip_tags($description) : '';
               $image_alt = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->alt;
               $image_url = \Drupal\taxonomy\Entity\Term::load($term_id)->get('field_badge')->entity->getFileUri();
               $image = \Drupal::service('file_url_generator')->generateAbsoluteString($image_url);
               if ($image) {
                 if ($name) {
-                  $badges .= "<div class='ms-2 mb-1 position-relative' style='z-index:100;' data-placement='left' data-toggle='tooltip' title='$name'>";
+                  $badges .= "<div class='me-2 mb-1 position-relative float-right' data-placement='left' data-toggle='tooltip' title='$name'>";
                 }
                 else {
                   $badges .= "<div class='ms-2 mb-1'>";
