@@ -1,0 +1,7 @@
+header_footer_library:
+  header: true
+  js:
+    js/headerfooter.js: { attributes: { type: module } }
+  dependencies:
+    - core/drupal
+    - core/drupalSettings
