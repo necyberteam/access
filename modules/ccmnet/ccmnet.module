@@ -443,26 +443,18 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
     $here = Url::fromRoute('entity.node.canonical', ['node' => $nid], $options);
     $link = $here->toString(TRUE)->getGeneratedUrl();
 
-    $author_body['string'] = [
-      '#type' => 'inline_template',
-      '#template' => '{{ text }} {{ link }}',
-      '#context' => [
-        'text' => t('Your requested CCMNet mentorship engagement has been created on the portal. Thank you for your participation! View your submission here:'),
-        'link' => $here->toString(TRUE)->getGeneratedUrl(),
-      ],
-    ];
     $env = getenv('PANTHEON_ENVIRONMENT');
-    $render = \Drupal::service('renderer');
-    // $ccmnet_body = $render->renderRoot($ccmnet_body)->__toString();
-    $author_body = $render->renderRoot($author_body)->__toString();
 
     // Get current users email.
     $current_user = \Drupal::currentUser();
     $user = \Drupal\user\Entity\User::load($current_user->id());
     $email = $user->getEmail();
 
-    $nr = new NotifyRoles();
-    $nr->notifyRole(NULL, t('Mentorship Engagement received'), $author_body, $email);
+    // Mail person creating mentorship engagement.
+    $policy_subtype = 'mentorship_created';
+    $link_title = t('here');
+
+    ccmnet_send_notification_email($policy, $policy_subtype, $link_title, $email, $link);
 
     // Send email to CCMNet admin.
     // mentorship_created_admin
