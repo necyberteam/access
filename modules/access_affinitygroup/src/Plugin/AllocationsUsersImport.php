@@ -639,8 +639,19 @@ class AllocationsUsersImport {
     if (strlen($body) > 3000) {
       $body = substr($body, 0, 3000) . "\r\n...see logs for more.";
     }
-    $nr = new NotifyRoles();
-    $nr->notifyRole('site_developer', 'Errors during allocations import', $body);
+
+    // Send email to Site Developer.
+    // allocation_error
+    $policy = 'affinitygroup';
+    $policy_subtype = 'allocation_error';
+    $role = 'site_developer';
+    $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+
+    $email_factory = Drupal::service('email_factory');
+    $email = $email_factory ->newTypedEmail($policy, $policy_subtype)
+      ->setVariable('body', $body);
+    $email->setTo($site_dev_emails);
+    $email->send();
   }
 
   /**

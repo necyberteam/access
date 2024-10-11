@@ -12,6 +12,7 @@ use Drupal\symfony_mailer\EmailInterface;
  *   id = "affinitygroup",
  *   sub_types = {
  *     "simplelist_error" = @Translation("Simplelist Error"),
+ *     "allocation_error" = @Translation("Allocation Error"),
  *   },
  *   common_adjusters = {"email_subject", "email_body"},
  * )
