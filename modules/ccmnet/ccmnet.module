@@ -649,7 +649,7 @@ function ccmnet_send_notification_email($policy, $policy_subtype, $title, $set_e
   if (is_array($set_email)) {
     foreach ($set_email as $single_email) {
       $email_factory = Drupal::service('email_factory');
-      $email = $email_factory ->newTypedEmail($policy, $policy_subtype)
+      $email = $email_factory->newTypedEmail($policy, $policy_subtype)
         ->setVariable('title', $title)
         ->setVariable('url', $link);
       $email->setTo($single_email);

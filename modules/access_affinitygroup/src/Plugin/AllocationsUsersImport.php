@@ -3,7 +3,6 @@
 namespace Drupal\access_affinitygroup\Plugin;
 
 // Use Drupal\access_misc\Plugin\Util\FindAccessOrg;.
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Batch\BatchBuilder;
 use Drupal\Core\Entity\EntityInterface;
@@ -646,12 +645,15 @@ class AllocationsUsersImport {
     $policy_subtype = 'allocation_error';
     $role = 'site_developer';
     $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+    $set_email = explode(',', $set_email);
 
-    $email_factory = Drupal::service('email_factory');
-    $email = $email_factory ->newTypedEmail($policy, $policy_subtype)
-      ->setVariable('body', $body);
-    $email->setTo($site_dev_emails);
-    $email->send();
+    foreach ($set_email as $single_email) {
+      $email_factory = Drupal::service('email_factory');
+      $email = $email_factory->newTypedEmail($policy, $policy_subtype)
+        ->setVariable('body', $body);
+      $email->setTo($site_dev_emails);
+      $email->send();
+    }
   }
 
   /**
