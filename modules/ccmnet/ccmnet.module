@@ -749,17 +749,7 @@ function ccmnet_cron() {
         $env = getenv('PANTHEON_ENVIRONMENT');
         $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
         $policy_subtype = 'cron_role_update';
-        $email_body = [];
-        $email_body['string'] = [
-          '#type' => 'inline_template',
-          '#template' => '{{ text }}
-                          {{ link }}',
-          '#context' => [
-            'text' => t('Mentorship request. Please click here to view.'),
-            'link' => $interested_links,
-          ],
-        ];
-        $body_string = $render->renderRoot($email_body)->__toString();
+
         $ccmnet_admin_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
         ccmnet_send_notification_email($policy, $policy_subtype, '', $ccmnet_admin_emails, '', $interested_links);
         \Drupal::state()->set('access_mentorship_interested', 0);
