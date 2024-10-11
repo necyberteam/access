@@ -13,6 +13,7 @@ use Drupal\symfony_mailer\EmailInterface;
  *   sub_types = {
  *     "simplelist_error" = @Translation("Simplelist Error"),
  *     "allocation_error" = @Translation("Allocation Error"),
+ *     "cc_error" = @Translation("Constant Contact Error"),
  *   },
  *   common_adjusters = {"email_subject", "email_body"},
  * )
