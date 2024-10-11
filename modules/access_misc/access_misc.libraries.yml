@@ -26,6 +26,11 @@ node_add_tags:
       css/node_add_tags.css: {}
   js:
     js/node_add_tags.js: {}
+nonadmin:
+  version: 1.x
+  css:
+    theme:
+      css/nonadmin.css: {}
 global:
   version: 1.x
   css:

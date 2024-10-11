@@ -23,14 +23,20 @@ use Drupal\Core\Url;
 function access_misc_page_attachments(&$variables) {
   // Adding global library to all pages.
   $variables['#attached']['library'][] = 'access_misc/global';
+  // Adding css for non-admin users.
+  $user = \Drupal::currentUser();
+  $roles = $user->getRoles();
+  if (!in_array('administrator', $roles)) {
+    $variables['#attached']['library'][] = 'access_misc/nonadmin';
+  }
 }
 
 /**
  * Implements hook_user_login().
- * 
- * Redirect people to the <front> page on successful login 
+ *
+ * Redirect people to the <front> page on successful login
  * unless the current or destination parameter is set.
- * Also, clear any messages to prevent the previous 
+ * Also, clear any messages to prevent the previous
  * access denied message from showing after login.
  */
 function access_misc_user_login(UserInterface $account) {
