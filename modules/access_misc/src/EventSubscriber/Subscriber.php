@@ -43,9 +43,9 @@ class Subscriber implements EventSubscriberInterface {
     // Get current url.
     $current_url = \Drupal::request()->getRequestUri();
     // Get destination query.
-    $query = Xss::filter(\Drupal::request()->query->get('redirect'));
+    $query = Xss::filter(\Drupal::request()->query->get('redirect') ? \Drupal::request()->query->get('redirect') : '');
     // Get url query 'check_logged_in'.
-    $logged_in = Xss::filter(\Drupal::request()->query->get('check_logged_in'));
+    $logged_in = Xss::filter(\Drupal::request()->query->get('check_logged_in') ? \Drupal::request()->query->get('check_logged_in') : '');
 
     if ($query) {
       $request = \Drupal::request();
