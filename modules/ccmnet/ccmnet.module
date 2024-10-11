@@ -5,7 +5,6 @@
  * Module for customizing mentorship_engagement node.
  */
 
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Component\Utility\Html;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Entity\Display\EntityViewDisplayInterface;
@@ -727,7 +726,6 @@ function ccmnet_cron() {
       if ($interested_status != 0) {
         $policy = 'ccmnet';
         $render = \Drupal::service('renderer');
-        $nr = new NotifyRoles();
         $interested_list = json_decode($interested_status);
         $interested_links = '';
 
