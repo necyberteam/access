@@ -34,8 +34,20 @@ class SimpleListsApi {
     }
     if ($errmsg <> NULL) {
       \Drupal::logger('access_affinitygroup')->error($errmsg);
-      $nr = new NotifyRoles();
-      $nr->notifyRole('site_developer', 'Simplelists problem', $errmsg);
+
+      // Send email to Site Developer.
+      // simplelist_error
+      $policy = 'affinitygroup';
+      $policy_subtype = 'simplelist_error';
+      $role = 'site_developer';
+      $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+
+      $email_factory = Drupal::service('email_factory');
+      $email = $email_factory ->newTypedEmail($policy, $policy_subtype)
+        ->setVariable('errmsg', $errmsg);
+      $email->setTo($site_dev_emails);
+      $email->send();
+
       \Drupal::messenger()->addMessage($errmsg);
     }
   }
