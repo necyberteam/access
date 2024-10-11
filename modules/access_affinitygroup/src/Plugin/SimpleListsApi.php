@@ -2,8 +2,6 @@
 
 namespace Drupal\access_affinitygroup\Plugin;
 
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
-
 /**
  *
  */
