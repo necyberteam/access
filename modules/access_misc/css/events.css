@@ -1,0 +1,11 @@
+#edit-body-0-format,
+.form-item--recur-type:has(#edit-recur-type-daily-recurring-date),
+.form-item--recur-type:has(#edit-recur-type-consecutive-recurring-date),
+.form-item-recur-type:has(#edit-recur-type-daily-recurring-date),
+.form-item-recur-type:has(#edit-recur-type-consecutive-recurring-date) {
+  display: none;
+}
+
+#field-affinity-group-node-add-more-wrapper (
+  border: 1px solid #ccc;
+}

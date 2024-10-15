@@ -6,6 +6,12 @@ copyclip:
   version: 1.x
   js:
     js/copyclip.js: {}
+events:
+  css:
+    theme:
+      css/events.css: {}
+  js:
+    js/events.js: {}
 add_select:
   version: 1.x
   js:
