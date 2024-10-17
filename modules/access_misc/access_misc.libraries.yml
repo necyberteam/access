@@ -7,9 +7,6 @@ copyclip:
   js:
     js/copyclip.js: {}
 events:
-  css:
-    theme:
-      css/events.css: {}
   js:
     js/events.js: {}
 add_select:
