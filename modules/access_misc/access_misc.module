@@ -270,7 +270,7 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
         'id' => 'field-tags-replace',
         'data-suggest' => '0',
       ],
-      '#weight' => 15,
+      '#weight' => 17,
     ];
 
     $form['field_tags_replace']['field_suggest'] = [
@@ -309,15 +309,17 @@ function access_misc_form_alter(&$form, FormStateInterface $form_state, $form_id
     $add_tags = \Drupal::service('access_misc.addtags');
     $output = $add_tags->getView();
     $tag_label = t('Tags');
-    $tag_description = t('Select tags that relate to your engagement. Tags will help us find people with related expertise.');
+    $tag_description = t('Add tags that will help people find your event.');
     $tag_summary = t('Select Tags');
 
     $form['node_add_tags'] = [
-      '#markup' => "<h4 class='form-required'>$tag_label</h4>
-        <div class='tag-description'>$tag_description</div>
+      '#markup' => "<div class='mt-4'>
+          <h4 class='label form-required'>$tag_label</h4>
+          <div class='tag-description'>$tag_description</div>
+        </div>
         <div id='tag-suggestions'></div>
         <details class='tags m-0 mb-8'><summary class='font-bold'>$tag_summary</summary>$output</details>",
-      '#weight' => 15,
+      '#weight' => 17,
       '#allowed_tags' => [
         'button',
         'details',

@@ -27,16 +27,3 @@ for (const radioButton of radioButtons) {
 if (radioSelect) {
   document.getElementById("edit-recur-type-custom").checked = true;
 }
-
-(function ($, Drupal, once) {
-  "use strict";
-  Drupal.behaviors.nodeAddTags = {
-    attach: function (context, settings) {
-        // Select all buttons value="Remove" and change to "Delete".
-        let buttons = document.querySelectorAll('input[value="Remove"]');
-        for (let i = 0; i < buttons.length; i++) {
-          buttons[i].value = 'X';
-        }
-    }
-  };
-})(jQuery, Drupal, once);
