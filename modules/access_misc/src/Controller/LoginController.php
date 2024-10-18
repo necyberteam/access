@@ -72,7 +72,7 @@ class LoginController extends ControllerBase {
   public function login() {
     $mail = \Drupal::service('access_misc.symfony.mail');
     $policy = 'ccmnet';
-    $policy_subtype = 'cron_author_update';
+    $policy_subtype = 'mentorship_created';
     $set_email = 'miles.france@gmail.com';
     $variables = [
       'name' => 'Miles',
