@@ -21,6 +21,7 @@ use Drupal\symfony_mailer\EmailInterface;
  *     "ccmnet_welcome" = @Translation("Welcome message for new ccmnet user"),
  *     "cron_author_update" = @Translation("Once per day send an email notifying the author of the update to mentor/mentee"),
  *     "cron_role_update" = @Translation("Once per day send an email notifying the ccmnet role of the update to mentor/mentee"),
+ *     "mentorship_created" = @Translation("Notify person their mentorship engagement has been created"),
  *   },
  *   common_adjusters = {"email_subject", "email_body"},
  * )
