@@ -423,9 +423,14 @@ function ccmnet_user_login($account) {
 
     // send the welcome email
     if ($new_ccmnet_user) {
-      $link = "/community-persona/$uid";
+      $link = "https://ccmnet.org/community-persona/$uid";
+      $variables = [
+        'url' => $link,
+      ];
       $email = $user->getEmail();
-      ccmnet_send_notification_email('ccmnet', 'ccmnet_welcome', '', $email, $link);
+      $policy = 'ccmnet';
+      $policy_subtype = 'ccmnet_welcome';
+      \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $email, $variables);
       $user->save();
     }
   }
@@ -452,15 +457,20 @@ function ccmnet_node_insert(\Drupal\Core\Entity\EntityInterface $entity) {
     // Mail person creating mentorship engagement.
     $policy_subtype = 'mentorship_created';
     $link_title = t('here');
+    $variables = [
+      'title' => $link_title,
+      'url' => $link,
+    ];
 
-    ccmnet_send_notification_email($policy, $policy_subtype, $link_title, $email, $link);
+    \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $email, $variables);
 
     // Send email to CCMNet admin.
     // mentorship_created_admin
     $role = $env == 'live' ? 'ccmnet_admin' : 'site_developer';
     $ccmnet_admin_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+    $policy_subtype = 'mentorship_created_admin';
 
-    ccmnet_send_notification_email($policy, 'mentorship_created_admin', 'here', $ccmnet_admin_emails, $link);
+    \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $ccmnet_admin_emails, $variables);
   }
 }
 
@@ -506,8 +516,13 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       $options = ['absolute' => TRUE];
       $here = Url::fromUri('internal:/community-persona/' . $uid, $options);
       $link = $here->toString(TRUE)->getGeneratedUrl();
+      $policy_subtype = 'ccmnet_new_user';
+      $variables = [
+        'title' => t('Click here to view'),
+        'url' => $link,
+      ];
 
-      ccmnet_send_notification_email($policy, 'ccmnet_new_user', 'Click here to view', $ccmnet_emails, $link);
+      \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $ccmnet_emails, $variables);
     }
   }
   if ($entity->bundle() == 'mentorship_engagement' && $entity->original) {
@@ -556,8 +571,13 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
     if ($approved_state == 1 && $prev_approved_state != $approved_state) {
       $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
       $ccmnet_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+      $policy_subtype = 'mentorship_approved_ccmnet_pm';
+      $variables = [
+        'title' => t('here'),
+        'url' => $link,
+      ];
 
-      ccmnet_send_notification_email($policy, 'mentorship_approved_ccmnet_pm', 'here', $ccmnet_emails, $link);
+      \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $ccmnet_emails, $variables);
     }
 
     // If mentor is added or changed, send email to new mentor and liaison.
@@ -577,7 +597,11 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         if ( !in_array($current_mentor_id, $og_mentor) ) {
           $mentor_user = \Drupal\user\Entity\User::load($current_mentor_id);
           $mentor_email = $mentor_user->getEmail();
-          ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentor_email, $link);
+          $variables = [
+            'title' => $title,
+            'url' => $link,
+          ];
+          \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $mentor_email, $variables);
           $mentor_update = 1;
         }
       }
@@ -586,7 +610,12 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       if ($liaison && $mentor_update) {
         $liaison_user = \Drupal\user\Entity\User::load($liaison);
         $liaison_email = $liaison_user->getEmail();
-        ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
+        $policy_subtype = 'liaison_mentor_mentee_changed';
+        $variables = [
+          'title' => $title,
+          'url' => $link,
+        ];
+        \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $liaison_email, $variables);
       }
     }
 
@@ -606,7 +635,11 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
         if ( !in_array($current_mentee_id, $og_mentee) ) {
           $mentee_user = \Drupal\user\Entity\User::load($current_mentee_id);
           $mentee_email = $mentee_user->getEmail();
-          ccmnet_send_notification_email($policy, $policy_subtype, $title, $mentee_email, $link);
+          $variables = [
+            'title' => $title,
+            'url' => $link,
+          ];
+          \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $mentee_email, $variables);
           $mentee_update = 1;
         }
       }
@@ -616,7 +649,12 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       if ($liaison && $mentee_update) {
         $liaison_user = \Drupal\user\Entity\User::load($liaison);
         $liaison_email = $liaison_user->getEmail();
-        ccmnet_send_notification_email($policy, 'liaison_mentor_mentee_changed', $title, $liaison_email, $link);
+        $policy_subtype = 'liaison_mentor_mentee_changed';
+        $variables = [
+          'title' => $title,
+          'url' => $link,
+        ];
+        \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $liaison_email, $variables);
       }
     }
 
@@ -625,45 +663,20 @@ function ccmnet_entity_presave(\Drupal\Core\Entity\EntityInterface $entity) {
       $liaison = $entity->get('field_me_ccmnet_leadership')->getValue()[0]['target_id'];
       $liaison_user = \Drupal\user\Entity\User::load($liaison);
       $liaison_email = $liaison_user->getEmail();
+      $policy_subtype = 'mentorship_in_progress';
 
       $role = $env == 'live' ? 'ccmnet_pm' : 'site_developer';
 
       // Get list of unique emails.
       $progress_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], [$liaison_email]);
+      $variables = [
+        'title' => t('Click here to view'),
+        'url' => $link,
+      ];
 
-      ccmnet_send_notification_email($policy, 'mentorship_in_progress', 'Click here to view', $progress_emails, $link);
+      \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $progress_emails, $variables);
     }
   }
-}
-
-/**
- * Send notification email.
- */
-function ccmnet_send_notification_email($policy, $policy_subtype, $title, $set_email, $link) {
-
-  // Currently multiple emails are not working. Send separately.
-  if (strpos($set_email, ',') !== FALSE) {
-    $set_email = explode(',', $set_email);
-  }
-
-  if (is_array($set_email)) {
-    foreach ($set_email as $single_email) {
-      $email_factory = Drupal::service('email_factory');
-      $email = $email_factory->newTypedEmail($policy, $policy_subtype)
-        ->setVariable('title', $title)
-        ->setVariable('url', $link);
-      $email->setTo($single_email);
-      $email->send();
-    }
-  } else {
-    $email_factory = Drupal::service('email_factory');
-    $email = $email_factory ->newTypedEmail($policy, $policy_subtype)
-      ->setVariable('title', $title)
-      ->setVariable('url', $link);
-    $email->setTo($set_email);
-    $email->send();
-  }
-
 }
 
 /**
@@ -741,8 +754,12 @@ function ccmnet_cron() {
           $title = t('click here');
           $link = 'https://ccmnet.org' . $here->toString(TRUE)->getGeneratedUrl();
           $interested_links .= 'https://ccmnet.org' . $here->toString(TRUE)->getGeneratedUrl() . "\n";
+          $variables = [
+            'title' => $title,
+            'url' => $link,
+          ];
 
-          ccmnet_send_notification_email($policy, $policy_subtype, $title, $author, $link);
+          \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $author, $variables);
         }
 
         // 2nd email: send collection of request links to all with ccmnet_pm role
@@ -751,7 +768,10 @@ function ccmnet_cron() {
         $policy_subtype = 'cron_role_update';
 
         $ccmnet_admin_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
-        ccmnet_send_notification_email($policy, $policy_subtype, '', $ccmnet_admin_emails, '', $interested_links);
+        $variables = [
+          'extra' => $interested_links,
+        ];
+        \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $ccmnet_admin_emails, $variables);
         \Drupal::state()->set('access_mentorship_interested', 0);
       }
     }

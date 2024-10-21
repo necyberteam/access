@@ -70,15 +70,15 @@ class LoginController extends ControllerBase {
    * Route user to login.
    */
   public function login() {
-    $mail = \Drupal::service('access_misc.symfony.mail');
     $policy = 'ccmnet';
-    $policy_subtype = 'mentorship_created_admin';
-    $set_email = 'miles.france@gmail.com';
+    $policy_subtype = 'mentorship_created';
+    $email = 'policy-test@protitude.com';
     $variables = [
-      'name' => 'Miles',
-      'author' => 'Miles France',
+      'link_title' => 'here',
+      'url' => 'https://www.google.com',
     ];
-    $mail->email($policy, $policy_subtype, $set_email, $variables);
+
+    \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $email, $variables);
     die();
     $this->killSwitch->trigger();
     // Check if user is logged in.
