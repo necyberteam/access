@@ -27,10 +27,10 @@ function access_misc_page_attachments(&$variables) {
 
 /**
  * Implements hook_user_login().
- * 
- * Redirect people to the <front> page on successful login 
+ *
+ * Redirect people to the <front> page on successful login
  * unless the current or destination parameter is set.
- * Also, clear any messages to prevent the previous 
+ * Also, clear any messages to prevent the previous
  * access denied message from showing after login.
  */
 function access_misc_user_login(UserInterface $account) {
@@ -97,6 +97,32 @@ function access_misc_views_post_render(ViewExecutable $view) {
       $view->setTitle($title);
     }
   }
+}
+
+/**
+ * Implements hook_entity_insert().
+ */
+function access_misc_entity_insert(EntityInterface $entity) {
+  // if the entity is a user, send a notification email to the user.
+  if ($entity->getEntityTypeId() == 'user') {
+    $user = $entity;
+    $email = $user->getEmail();
+    $username = $user->getUsername();
+    $host = \Drupal::request()->getSchemeAndHttpHost();
+    $uid = $user->id();
+    $subject = "[Cyberteam Portal] New User $username";
+    $body = "Please check the account at /user/$uid";
+    $variables = [
+      'username' => $username,
+      'body' => $body,
+    ];
+    $policy = 'access_misc';
+    $policy_subtype = 'new_user';
+    $email = "nect@mghpcc.org";
+    // Delete this hook if we're skipping rules.
+    //\Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $email, $variables);
+  }
+
 }
 
 /**
