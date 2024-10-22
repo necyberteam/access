@@ -423,7 +423,7 @@ function access_misc_replace_event_section_callback(array &$form, FormStateInter
   $raw_data = $form_state->getUserInput();
   $body_filter = Xss::filter($raw_data['body'][0]['value']);
   $suggested_tag_ids = '0';
-  if (strlen($body_filter) >= 400) {
+  if (strlen($body_filter) >= 100) {
     $llm = \Drupal::service('access_llm.ai_references_generator');
     $llm->generateTaxonomyPrompt('tags', 1, $body_filter);
     $suggested_tag_ids = implode(', ', $llm->taxonomyIdSuggested());

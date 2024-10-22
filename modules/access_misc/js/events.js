@@ -27,3 +27,8 @@ for (const radioButton of radioButtons) {
 if (radioSelect) {
   document.getElementById("edit-recur-type-custom").checked = true;
 }
+
+// Overwrite text in #edit-title-0-value--description to 'Event Title'.
+let title = document.querySelector('#edit-title-0-value--description');
+title.textContent = title.textContent;
+title.innerHTML = 'The title of your event. Please do not include date or location information in the title since that is listed elsewhere in the event.';
