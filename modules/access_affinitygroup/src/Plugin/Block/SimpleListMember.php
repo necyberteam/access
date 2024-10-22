@@ -91,7 +91,7 @@ class SimpleListMember extends BlockBase implements
     ];
     $list_default = $sl_options[$user_list];
     $options = '';
-    $path = Xss::filter(\Drupal::service('path.current')->getPath());
+    $path = \Drupal::service('path.current')->getPath() ? Xss::filter(\Drupal::service('path.current')->getPath()) : '';
     foreach ($sl_options as $key => $value) {
       if ($key != $user_list) {
         $options .= '<li><a href="' . $value['url'] . '?current=' . $user_list . '&redirect=' . $path . '&slug=' . $group_slug . '">' . $value['title'] . '</a></li>';

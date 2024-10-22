@@ -324,26 +324,26 @@ class FilterPeopleByTags extends ConfigFormBase {
    * Create a table of people.
    */
   private function createTable(array &$form, FormStateInterface $form_state, $first_tags, $second_tags, $third_tags, $fourth_tags, $fifth_tags) {
-    $selected_role = Xss::filter($form_state->getValue('roles'));
+    $selected_role = $form_state->getValue('roles') ? Xss::filter($form_state->getValue('roles')) : '';
     $first_filter_group = [];
     for ($i = 0; $i < $first_tags; $i++) {
-      $first_filter_group[] = Xss::filter($form_state->getValue('first_tags', 'tag', 0)['tag'][$i]);
+      $first_filter_group[] = $form_state->getValue('first_tags', 'tag', 0)['tag'][$i] ? Xss::filter($form_state->getValue('first_tags', 'tag', 0)['tag'][$i]) : '';
     }
     $second_filter_group = [];
     for ($i = 0; $i < $second_tags; $i++) {
-      $second_filter_group[] = Xss::filter($form_state->getValue('second_tags', 'tag', 0)['tag'][$i]);
+      $second_filter_group[] = $form_state->getValue('second_tags', 'tag', 0)['tag'][$i] ? Xss::filter($form_state->getValue('second_tags', 'tag', 0)['tag'][$i]) : '';
     }
     $third_filter_group = [];
     for ($i = 0; $i < $third_tags; $i++) {
-      $third_filter_group[] = Xss::filter($form_state->getValue('third_tags', 'tag', 0)['tag'][$i]);
+      $third_filter_group[] = $form_state->getValue('third_tags', 'tag', 0)['tag'][$i] ? Xss::filter($form_state->getValue('third_tags', 'tag', 0)['tag'][$i]) : '';
     }
     $fourth_filter_group = [];
     for ($i = 0; $i < $fourth_tags; $i++) {
-      $fourth_filter_group[] = Xss::filter($form_state->getValue('fourth_tags', 'tag', 0)['tag'][$i]);
+      $fourth_filter_group[] = $form_state->getValue('fourth_tags', 'tag', 0)['tag'][$i] ? Xss::filter($form_state->getValue('fourth_tags', 'tag', 0)['tag'][$i]) : '';
     }
     $fifth_filter_group = [];
     for ($i = 0; $i < $fifth_tags; $i++) {
-      $fifth_filter_group[] = Xss::filter($form_state->getValue('fifth_tags', 'tag', 0)['tag'][$i]);
+      $fifth_filter_group[] = $form_state->getValue('fifth_tags', 'tag', 0)['tag'][$i] ? Xss::filter($form_state->getValue('fifth_tags', 'tag', 0)['tag'][$i]) : '';
     }
     $header = [
       'Name',

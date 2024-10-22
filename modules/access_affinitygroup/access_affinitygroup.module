@@ -230,7 +230,7 @@ function access_affinitygroup_entity_presave(EntityInterface $entity) {
         $created_list = $cca->apiCall('/contact_lists ', $post_data, 'POST');
 
         if (!empty($created_list)) {
-          $list_id = Xss::filter($created_list->list_id);
+          $list_id = $created_list->list_id ? Xss::filter($created_list->list_id) : '';
         }
 
         if (!empty($list_id)) {
@@ -1332,7 +1332,7 @@ function access_affinitygroup_form_alter(&$form, FormStateInterface $form_state,
  */
 function access_affinitygroup_replace_section_callback(array &$form, FormStateInterface $form_state) {
   $raw_data = $form_state->getUserInput();
-  $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  $body_filter = $raw_data['body'][0]['value'] ? Xss::filter($raw_data['body'][0]['value']) : '';
   $suggested_tag_ids = '0';
   if (strlen($body_filter) >= 100) {
     $llm = \Drupal::service('access_llm.ai_references_generator');

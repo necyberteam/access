@@ -85,7 +85,7 @@ class CiLinkController extends ControllerBase {
     $ci_tagged = '';
     foreach ($terms as $term) {
       // Remove leading space.
-      $term = Xss::filter(ltrim($term));
+      $term = $term ? Xss::filter(ltrim($term)) : '';
       $tagged = explode(' ', $term);
       $tag_link = Link::fromTextAndUrl($tagged[0], Url::fromUri('internal:/tags/' . $tagged[0]))->toString();
       $ci_tagged .= $tag_link->__toString() . ' ';
@@ -94,8 +94,8 @@ class CiLinkController extends ControllerBase {
     // Get links to resource.
     $link_data = '';
     foreach ($data['link_to_resource'] as $link) {
-      $title = Xss::filter($link['title']);
-      $link = Xss::filter($link['url']);
+      $title = $link['title'] ? Xss::filter($link['title']) : '';
+      $link = $link['url'] ? Xss::filter($link['url']) : '';
       if ($title && empty($link)) {
         $link = $title;
       }
@@ -288,6 +288,9 @@ class CiLinkController extends ControllerBase {
       ';
     }
 
+    $description = $data['description'] ? Xss::filter($data['description']) : '';
+    $category = $data['category'] ? Xss::filter($data['category']) : '';
+
     $cilink_page['string'] = [
       '#type' => 'inline_template',
       '#attached' => [
@@ -299,12 +302,12 @@ class CiLinkController extends ControllerBase {
       '#template' => $template,
       '#context' => [
         'tags' => $ci_tagged,
-        'description' => Xss::filter($data['description']),
+        'description' => $description,
         'links' => $link_data,
         'flag_upvote' => $flag_upvote,
         'count' => $flag_upvote_count,
         'user_login' => $login,
-        'category' => Xss::filter($data['category']),
+        'category' => $category,
         'skill_graph' => $skill_graph,
         'affinity_groups' => $affinity_nodes,
         'user' => $user->id(),
