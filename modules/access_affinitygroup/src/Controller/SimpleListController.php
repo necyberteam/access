@@ -87,7 +87,7 @@ class SimpleListController extends ControllerBase {
     // Setup SimpleListsApi.
     $simpleListsApi = new \Drupal\access_affinitygroup\Plugin\SimpleListsApi();
     $msg = "";
-    $listName = Xss::filter($param['slug']);
+    $listName = $param['slug'] ? Xss::filter($param['slug']) : '';
     // Get current user email.
     $userEmail = $this->currentUser->getEmail();
     $user = \Drupal\user\Entity\User::load($this->currentUser->id());
@@ -120,7 +120,7 @@ class SimpleListController extends ControllerBase {
     }
     $this->killSwitch->trigger();
     // Get redirect destination from url.
-    $destination = Xss::filter($param['redirect']);
+    $destination = $param['redirect'] ? Xss::filter($param['redirect']) : '/';
     // Redirect to destination.
     $response = new RedirectResponse($destination);
     $response->send();

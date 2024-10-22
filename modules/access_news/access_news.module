@@ -97,7 +97,8 @@ function access_news_form_alter(&$form, FormStateInterface $form_state, $form_id
  */
 function access_news_replace_section_callback(array &$form, FormStateInterface $form_state) {
   $raw_data = $form_state->getUserInput();
-  $body_filter = Xss::filter($raw_data['body'][0]['value']);
+  $body = $raw_data['body']['0']['value'];
+  $body_filter = $body ? Xss::filter($body) : '';
   $suggested_tag_ids = '0';
   if (strlen($body_filter) >= 100) {
     $llm = \Drupal::service('access_llm.ai_references_generator');
