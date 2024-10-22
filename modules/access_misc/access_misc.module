@@ -100,32 +100,6 @@ function access_misc_views_post_render(ViewExecutable $view) {
 }
 
 /**
- * Implements hook_entity_insert().
- */
-function access_misc_entity_insert(EntityInterface $entity) {
-  // if the entity is a user, send a notification email to the user.
-  if ($entity->getEntityTypeId() == 'user') {
-    $user = $entity;
-    $email = $user->getEmail();
-    $username = $user->getUsername();
-    $host = \Drupal::request()->getSchemeAndHttpHost();
-    $uid = $user->id();
-    $subject = "[Cyberteam Portal] New User $username";
-    $body = "Please check the account at /user/$uid";
-    $variables = [
-      'username' => $username,
-      'body' => $body,
-    ];
-    $policy = 'access_misc';
-    $policy_subtype = 'new_user';
-    $email = "nect@mghpcc.org";
-    // Delete this hook if we're skipping rules.
-    //\Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $email, $variables);
-  }
-
-}
-
-/**
  * Implements hook_entity_view_alter().
  */
 function access_misc_entity_view(array &$build, EntityInterface $entity, EntityViewDisplayInterface $display) {
