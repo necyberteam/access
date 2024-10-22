@@ -83,6 +83,7 @@ class ConstantContactApi {
 
         \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
       }
+    }
     catch (\Exception $e) {
       $policy = 'affinitygroup';
       $policy_subtype = 'cc_error';
