@@ -72,34 +72,31 @@ class ConstantContactApi {
 
       if (empty($this->clientSecret) || empty($this->clientId)) {
         $policy = 'affinitygroup';
-        $policy_subtype = 'cc_key_error';
+        $policy_subtype = 'cc_error';
         $role = 'site_developer';
         $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
         $set_email = explode(',', $set_email);
+        $message = t('Constant Contact: client id or secret not set.');
+        $variables = [
+          'message' => $message,
+        ];
 
-        $this->symfony_mailer($policy, $policy_subtype, 'Constant Contact: client id or secret not set.', $site_dev_emails);
+        \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
       }
     catch (\Exception $e) {
       $policy = 'affinitygroup';
-      $policy_subtype = 'cc_key_error';
+      $policy_subtype = 'cc_error';
       $role = 'site_developer';
       $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
       $set_email = explode(',', $set_email);
 
       \Drupal::logger('access_affinitygroup')->notice('Exception in constantContactApi constructor: ' . $e->getMessage());
 
-      $message = 'Exception in constantContactApi constructor: ' . $e->getMessage();
-      $this->symfony_mailer($policy, $policy_subtype, $message, $site_dev_emails);
-    }
-  }
-
-  private function symfony_mailer($policy, $policy_subtype, $message, $set_emails) {
-    foreach ($set_emails as $single_email) {
-      $email_factory = Drupal::service('email_factory');
-      $email = $email_factory->newTypedEmail($policy, $policy_subtype);
-      $email->setVariable('message', $message);
-      $email->setTo($single_email);
-      $email->send();
+      $message = t('Exception in constantContactApi constructor: ') . $e->getMessage();
+      $variables = [
+        'message' => $message,
+      ];
+      \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
     }
   }
 
@@ -218,13 +215,16 @@ class ConstantContactApi {
         $this->apiError($result->error, $result->error_description);
 
         $policy = 'affinitygroup';
-        $policy_subtype = 'cc_key_error';
+        $policy_subtype = 'cc_error';
         $role = 'site_developer';
         $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
         $set_email = explode(',', $set_email);
 
         $message = 'New token error at host ' . $host . '. See logs for access_affinitygroup.';
-        $this->symfony_mailer($policy, $policy_subtype, $message, $site_dev_emails);
+        $variables = [
+          'message' => $message,
+        ];
+        \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
       }
     }
     catch (\Exception $e) {

@@ -645,15 +645,11 @@ class AllocationsUsersImport {
     $policy_subtype = 'allocation_error';
     $role = 'site_developer';
     $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
-    $set_email = explode(',', $set_email);
+    $variables = [
+      'body' => $body,
+    ];
 
-    foreach ($set_email as $single_email) {
-      $email_factory = Drupal::service('email_factory');
-      $email = $email_factory->newTypedEmail($policy, $policy_subtype)
-        ->setVariable('body', $body);
-      $email->setTo($site_dev_emails);
-      $email->send();
-    }
+    \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
   }
 
   /**

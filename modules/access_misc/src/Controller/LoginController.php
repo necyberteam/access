@@ -74,7 +74,7 @@ class LoginController extends ControllerBase {
     $policy_subtype = 'mentorship_created';
     $email = 'policy-test@protitude.com';
     $variables = [
-      'link_title' => 'here',
+      'title' => 'here',
       'url' => 'https://www.google.com',
     ];
 
