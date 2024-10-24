@@ -117,6 +117,11 @@ class MentorshipNodeBlock extends BlockBase implements
         $is_recruiting = strcasecmp($state, $state_tid) == 0 ? TRUE : FALSE;
       }
       if (!$is_recruiting) {
+        $lookup = \Drupal::entityTypeManager()->getStorage('taxonomy_term')->loadByProperties(['name' => 'In Progress and Recruiting', 'vid' => 'state']);
+        $state_tid = array_keys($lookup)[0];
+        $is_recruiting = strcasecmp($state, $state_tid) == 0 ? TRUE : FALSE;
+      }
+      if (!$is_recruiting) {
         return [];
       }
 
