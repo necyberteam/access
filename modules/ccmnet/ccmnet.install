@@ -49,9 +49,9 @@ function ccmnet_update_10000() {
 /**
  * Add state.
  */
-function ccmnet_update_10001() {
+function ccmnet_update_10002() {
   $term = Term::create([
-    'name' => $state,
+    'name' => 'In Progress and Recruiting',
     'vid' => 'state',
     'weight' => 3,
   ]);
