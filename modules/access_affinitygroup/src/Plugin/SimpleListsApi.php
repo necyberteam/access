@@ -2,8 +2,6 @@
 
 namespace Drupal\access_affinitygroup\Plugin;
 
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
-
 /**
  *
  */
@@ -34,8 +32,19 @@ class SimpleListsApi {
     }
     if ($errmsg <> NULL) {
       \Drupal::logger('access_affinitygroup')->error($errmsg);
-      $nr = new NotifyRoles();
-      $nr->notifyRole('site_developer', 'Simplelists problem', $errmsg);
+
+      // Send email to Site Developer.
+      // simplelist_error
+      $policy = 'affinitygroup';
+      $policy_subtype = 'simplelist_error';
+      $role = 'site_developer';
+      $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+      $variables = [
+        'errmsg' => $errmsg,
+      ];
+
+      \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
+
       \Drupal::messenger()->addMessage($errmsg);
     }
   }

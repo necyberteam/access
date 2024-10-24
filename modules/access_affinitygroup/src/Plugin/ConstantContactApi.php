@@ -2,8 +2,6 @@
 
 namespace Drupal\access_affinitygroup\Plugin;
 
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
-
 /**
  * Make Constant Contact api call.
  */
@@ -73,14 +71,33 @@ class ConstantContactApi {
       $this->supressErrDisplay = FALSE;
 
       if (empty($this->clientSecret) || empty($this->clientId)) {
-        $nr = new NotifyRoles();
-        $nr->notifyRole('site_developer', 'Constant Contact problem', 'Client secret and/or client id keys missing.');
+        $policy = 'affinitygroup';
+        $policy_subtype = 'cc_error';
+        $role = 'site_developer';
+        $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+        $set_email = explode(',', $set_email);
+        $message = t('Constant Contact: client id or secret not set.');
+        $variables = [
+          'message' => $message,
+        ];
+
+        \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
       }
     }
     catch (\Exception $e) {
+      $policy = 'affinitygroup';
+      $policy_subtype = 'cc_error';
+      $role = 'site_developer';
+      $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+      $set_email = explode(',', $set_email);
+
       \Drupal::logger('access_affinitygroup')->notice('Exception in constantContactApi constructor: ' . $e->getMessage());
-      $nr = new NotifyRoles();
-      $nr->notifyRole('site_developer', 'Constant Contact problem', 'Exception in constantContactApi constructor: ' . $e->getMessage());
+
+      $message = t('Exception in constantContactApi constructor: ') . $e->getMessage();
+      $variables = [
+        'message' => $message,
+      ];
+      \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
     }
   }
 
@@ -197,8 +214,18 @@ class ConstantContactApi {
         \Drupal::logger('access_affinitygroup')->notice("New token httpCode: $httpCode");
         \Drupal::logger('access_affinitygroup')->error("New token error; host $host");
         $this->apiError($result->error, $result->error_description);
-        $nr = new NotifyRoles();
-        $nr->notifyRole('site_developer', 'Constant Contact error.', "New token error at host $host. See logs for access_affinitygroup.");
+
+        $policy = 'affinitygroup';
+        $policy_subtype = 'cc_error';
+        $role = 'site_developer';
+        $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+        $set_email = explode(',', $set_email);
+
+        $message = 'New token error at host ' . $host . '. See logs for access_affinitygroup.';
+        $variables = [
+          'message' => $message,
+        ];
+        \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
       }
     }
     catch (\Exception $e) {

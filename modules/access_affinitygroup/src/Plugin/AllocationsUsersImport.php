@@ -3,7 +3,6 @@
 namespace Drupal\access_affinitygroup\Plugin;
 
 // Use Drupal\access_misc\Plugin\Util\FindAccessOrg;.
-use Drupal\access_misc\Plugin\Util\NotifyRoles;
 use Drupal\Component\Serialization\Json;
 use Drupal\Core\Batch\BatchBuilder;
 use Drupal\Core\Entity\EntityInterface;
@@ -639,8 +638,18 @@ class AllocationsUsersImport {
     if (strlen($body) > 3000) {
       $body = substr($body, 0, 3000) . "\r\n...see logs for more.";
     }
-    $nr = new NotifyRoles();
-    $nr->notifyRole('site_developer', 'Errors during allocations import', $body);
+
+    // Send email to Site Developer.
+    // allocation_error
+    $policy = 'affinitygroup';
+    $policy_subtype = 'allocation_error';
+    $role = 'site_developer';
+    $site_dev_emails = \Drupal::service('access_misc.usertools')->getEmails([$role], []);
+    $variables = [
+      'body' => $body,
+    ];
+
+    \Drupal::service('access_misc.symfony.mail')->email($policy, $policy_subtype, $site_dev_emails, $variables);
   }
 
   /**
