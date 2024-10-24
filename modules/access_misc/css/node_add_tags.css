@@ -6,6 +6,7 @@ details.tags {
   position: relative;
   padding: 0 1rem;
   max-height: 300px;
+  width: 100%;
   overflow: auto;
   border-radius: 0.25rem;
 }

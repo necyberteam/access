@@ -103,6 +103,18 @@ if (checkBoxEmail) {
           }
         });
 
+
+      // Misc tweaks.
+      // Select all buttons value="Remove" and change to "X".
+      let buttons = document.querySelectorAll('input[value="Remove"]');
+      for (let i = 0; i < buttons.length; i++) {
+        buttons[i].value = 'X';
+      }
+      let time = document.querySelectorAll('input[type="time"]');
+      for (let i = 0; i < time.length; i++) {
+        time[i].step = '60';
+      }
+
     }
   };
 })(jQuery, Drupal, once);
