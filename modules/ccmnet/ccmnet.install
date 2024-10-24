@@ -17,6 +17,7 @@ function ccmnet_install() {
     'Recruiting',
     'Reviewing',
     'In Progress',
+    'In Progress and Recruiting',
     'Finishing Up',
     'Complete',
     'On Hold',
@@ -42,4 +43,17 @@ function ccmnet_install() {
 function ccmnet_update_10000() {
   \Drupal::state()->set('access_mentorship_interested', 0);
 
+}
+
+
+/**
+ * Add state.
+ */
+function ccmnet_update_10001() {
+  $term = Term::create([
+    'name' => $state,
+    'vid' => 'state',
+    'weight' => 3,
+  ]);
+  $term->save();
 }
