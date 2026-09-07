@@ -62,5 +62,12 @@ services:
     class: Drupal\access_misc\Plugin\Util\ViewsTools
     arguments: ["@entity_type.manager"]
 
+  access_misc.flag_link_builder:
+    class: Drupal\access_misc\FlagLinkBuilderDecorator
+    decorates: flag.link_builder
+    arguments:
+      - '@access_misc.flag_link_builder.inner'
+      - '@current_user'
+
 parameters:
   access_misc.verbose: FALSE
