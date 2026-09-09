@@ -814,6 +814,70 @@ abstract class EventKernelTestBase extends KernelTestBase {
   }
 
   /**
+   * Seeds the eventseries timezone + in-person fields and their inheritance.
+   *
+   * Both live on the SERIES; nearly every display and index surface reads the
+   * INSTANCE, and a series field reaches an instance only through an explicit
+   * field_inheritance config. `inherit` needs no destination field.
+   *
+   * Note the read name: field_inheritance names the computed instance field
+   * from the config id with the `eventinstance_default_` prefix stripped, so
+   * `eventinstance_default_event_timezone` is read as
+   * $instance->get('event_timezone'). Reading `field_event_timezone` on an
+   * instance returns nothing — and for the boolean, nothing is falsy, which
+   * silently renders the safe (viewer-local) branch.
+   */
+  protected function seedTimezoneFields(): void {
+    if (!FieldStorageConfig::loadByName('eventseries', 'field_event_timezone')) {
+      FieldStorageConfig::create([
+        'entity_type' => 'eventseries',
+        'field_name' => 'field_event_timezone',
+        'type' => 'string',
+        'settings' => ['max_length' => 64],
+      ])->save();
+      FieldConfig::create([
+        'entity_type' => 'eventseries',
+        'field_name' => 'field_event_timezone',
+        'bundle' => 'default',
+        'label' => 'Event timezone',
+      ])->save();
+    }
+    if (!FieldStorageConfig::loadByName('eventseries', 'field_event_in_person')) {
+      FieldStorageConfig::create([
+        'entity_type' => 'eventseries',
+        'field_name' => 'field_event_in_person',
+        'type' => 'boolean',
+      ])->save();
+      FieldConfig::create([
+        'entity_type' => 'eventseries',
+        'field_name' => 'field_event_in_person',
+        'bundle' => 'default',
+        'label' => 'This event has a physical venue',
+      ])->save();
+    }
+    foreach ([
+      'eventinstance_default_event_timezone' => ['Event timezone', 'field_event_timezone'],
+      'eventinstance_default_event_in_person' => ['Event has a physical venue', 'field_event_in_person'],
+    ] as $id => [$label, $sourceField]) {
+      if (!FieldInheritance::load($id)) {
+        FieldInheritance::create([
+          'id' => $id,
+          'label' => $label,
+          'type' => 'inherit',
+          'sourceEntityType' => 'eventseries',
+          'sourceEntityBundle' => 'default',
+          'sourceField' => $sourceField,
+          'destinationEntityType' => 'eventinstance',
+          'destinationEntityBundle' => 'default',
+          'destinationField' => '',
+          'plugin' => 'default_inheritance',
+        ])->save();
+      }
+    }
+    \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
+  }
+
+  /**
    * Creates an instance whose series carries list_string event_type/skill_level.
    *
    * Seeds the eventseries `field_event_type` and `field_skill_level` as
