@@ -8,6 +8,8 @@ use Drupal\access_events\Plugin\Util\EventDateConvert;
 use Drupal\Core\Form\FormStateInterface;
 use Drupal\Core\Entity\EntityInterface;
 use Drupal\Core\Session\AccountInterface;
+use Drupal\Core\Datetime\TimeZoneFormHelper;
+use Drupal\Core\Entity\EntityFormInterface;
 use Drupal\Core\Access\AccessResult;
 use Drupal\Component\Utility\Xss;
 use Drupal\Core\Render\Element;
@@ -32,6 +34,30 @@ use Drupal\recurring_events\EventInstanceCreatorPluginManager;
 /**
  * Implements hook_form_alter().
  */
+/**
+ * Resolves the timezone an event form should pre-select for an author.
+ *
+ * Organizers have always entered times in their own account timezone — that
+ * is the contract the old form stated, and the one the backfill assumes for
+ * existing events. So the field starts on the zone the author was already
+ * assuming, and where they have none set, on the site default, shown rather
+ * than hidden because that is the case most likely to need correcting.
+ *
+ * @param \Drupal\Core\Session\AccountInterface $account
+ *   The account authoring the event.
+ *
+ * @return string
+ *   An IANA timezone name, always one core's select offers.
+ */
+function _access_events_default_event_timezone(AccountInterface $account): string {
+  $zone = $account->getTimeZone();
+  if ($zone !== NULL && $zone !== '') {
+    return $zone;
+  }
+  return \Drupal::config('system.date')->get('timezone.default')
+    ?: date_default_timezone_get();
+}
+
 function access_events_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form['#id'] == 'views-exposed-form-events-facet-recorded-webinars-block') {
     $form['search_api_fulltext']['#attributes']['placeholder'] = t('Search this collection');
@@ -133,8 +159,29 @@ function access_events_form_alter(&$form, FormStateInterface $form_state, $form_
         unset($form[$hiddenField]['widget']['#options'][$hiddenValue]);
       }
     }
-    $set_tz = $form['custom_date']['widget'][0]['value']['#date_timezone'];
-    $suffix = '<div class="form-text">' . t('Your time zone is set to ') . "<strong>$set_tz</strong>. " . t('If your event is in a different time zone, calculate the time difference accordingly.') . '</div>';
+    // The event's timezone is a field now, so the author no longer has to do
+    // the arithmetic the old notice asked for ("Your time zone is set to X.
+    // If your event is in a different time zone, calculate the time difference
+    // accordingly."). Production shows what that produced: 30 events with a
+    // timezone typed into the location free-text field.
+    //
+    // Options come from core rather than the field's own allowed_values so the
+    // list tracks the timezone database instead of going stale, and the
+    // default is the zone the author was already assuming.
+    if (isset($form['field_event_timezone']['widget'][0]['value'])) {
+      $tzElement =& $form['field_event_timezone']['widget'][0]['value'];
+      $tzElement['#type'] = 'select';
+      $tzElement['#options'] = TimeZoneFormHelper::getOptionsListByRegion();
+      $tzElement['#empty_option'] = t('- Select a timezone -');
+      if (empty($tzElement['#default_value'])) {
+        $account = $form_state->getFormObject() instanceof EntityFormInterface
+          ? $form_state->getFormObject()->getEntity()->getOwner()
+          : \Drupal::currentUser();
+        $tzElement['#default_value'] = _access_events_default_event_timezone($account);
+      }
+      $tzElement['#description'] = t('Times below are in this timezone.');
+      unset($tzElement['#size'], $tzElement['#maxlength']);
+    }
 
     foreach ($form['custom_date']['widget'] as $key => $value) {
       if (is_numeric($key)) {
@@ -142,14 +189,8 @@ function access_events_form_alter(&$form, FormStateInterface $form_state, $form_
         $form['custom_date']['widget'][$key]['value']['#attributes']['aria-label'] = t('Start date');
         $form['custom_date']['widget'][$key]['end_value']['#prefix'] = '<span class="label">' . t('End date') . '</span>';
         $form['custom_date']['widget'][$key]['end_value']['#attributes']['aria-label'] = t('End date');
-        $form['custom_date']['widget'][$key]['day_occurance']['#suffix'] = $suffix;
       }
     }
-
-    $form['monthly_recurring_date']['widget'][0]['day_occurrence']['#suffix'] = $suffix;
-
-    $form['weekly_recurring_date']['widget'][0]['days']['#suffix'] = $suffix;
-    $form['daily_recurring_date']['widget'][0]['duration']['#suffix'] = $suffix;
 
     $current_user = \Drupal::currentUser();
     $username = $current_user->getAccountName();
