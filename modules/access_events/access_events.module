@@ -35,6 +35,45 @@ use Drupal\recurring_events\EventInstanceCreatorPluginManager;
  * Implements hook_form_alter().
  */
 /**
+ * Resolves the timezone an event series' instances should be generated in.
+ *
+ * Generation used to resolve this from date_default_timezone_get() — the
+ * ambient zone of whoever's request was running — so a series authored in one
+ * zone and later edited from another regenerated at a different instant. The
+ * series' own field is the authority; ambient remains the fallback so that a
+ * series with no zone set behaves exactly as it did before this change, which
+ * is every series until the backfill runs.
+ *
+ * Returns a zone NAME rather than a DateTimeZone so callers can decide whether
+ * they need an object, and so an invalid stored value degrades to the fallback
+ * here rather than throwing inside an entity hook, where an unhandled
+ * exception would abort the save.
+ *
+ * @param \Drupal\recurring_events\Entity\EventSeries|null $series
+ *   The series being generated, or NULL to get the ambient fallback.
+ *
+ * @return string
+ *   A valid IANA timezone name.
+ */
+function _access_events_generation_timezone($series = NULL): string {
+  $fallback = date_default_timezone_get();
+  if ($series === NULL || !$series->hasField('field_event_timezone')) {
+    return $fallback;
+  }
+  $stored = trim((string) ($series->get('field_event_timezone')->value ?? ''));
+  if ($stored === '') {
+    return $fallback;
+  }
+  // A stored value can be anything: the field is a plain string with no
+  // allowed-values constraint, and this runs inside insert/update hooks where
+  // a DateInvalidTimeZoneException would take the save down with it.
+  if (!in_array($stored, \DateTimeZone::listIdentifiers(), TRUE)) {
+    return $fallback;
+  }
+  return $stored;
+}
+
+/**
  * Resolves the timezone an event form should pre-select for an author.
  *
  * Organizers have always entered times in their own account timezone — that
