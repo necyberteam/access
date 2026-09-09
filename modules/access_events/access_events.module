@@ -1207,8 +1207,12 @@ function access_events_preprocess_views_view_field(&$variables) {
           $user_timezone = $user->getTimeZone() ?: date_default_timezone_get();
 
           if ($start_date) {
-            $start_date->setTimezone(new \DateTimeZone($user_timezone));
-            $formatted_output = $start_date->format('n/j/Y g:i A T');
+            // Clone first: start_date is the entity's cached DateTimeComputed
+            // object, shared with every other reader in this request, and
+            // setTimezone() mutates in place.
+            $formatted_output = (clone $start_date)
+              ->setTimezone(new \DateTimeZone($user_timezone))
+              ->format('n/j/Y g:i A T');
             $variables['output'] = Markup::create($formatted_output);
           }
         }
@@ -1272,11 +1276,16 @@ function access_events_preprocess_views_view_field(&$variables) {
           $user = \Drupal::currentUser();
           $user_timezone = $user->getTimeZone() ?: date_default_timezone_get();
 
+          // Clone before converting: these are the entity's cached
+          // DateTimeComputed objects, shared with every other reader in this
+          // request, and setTimezone() mutates in place.
           if ($start_date) {
-            $start_date->setTimezone(new \DateTimeZone($user_timezone));
+            $start_date = (clone $start_date)
+              ->setTimezone(new \DateTimeZone($user_timezone));
           }
           if ($end_date) {
-            $end_date->setTimezone(new \DateTimeZone($user_timezone));
+            $end_date = (clone $end_date)
+              ->setTimezone(new \DateTimeZone($user_timezone));
           }
 
           // Create formatted output
