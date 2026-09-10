@@ -35,6 +35,29 @@ use Drupal\recurring_events\EventInstanceCreatorPluginManager;
  * Implements hook_form_alter().
  */
 /**
+ * Implements hook_field_formatter_info_alter().
+ *
+ * Points the two core date-range formatters at subclasses that render an
+ * in-person event in its venue's timezone. Doing it here rather than in the
+ * view displays means the six views that use daterange_default are covered
+ * too, without touching 21 config entries — and without a listing quietly
+ * keeping viewer-local times while the detail page looks right.
+ *
+ * Online events are unaffected: the subclasses defer to core unless the event
+ * is marked in-person and carries a valid zone.
+ */
+function access_events_field_formatter_info_alter(array &$info) {
+  if (isset($info['daterange_custom'])) {
+    $info['daterange_custom']['class'] = 'Drupal\\access_events\\Plugin\\Field\\FieldFormatter\\EventVenueDateRangeCustomFormatter';
+    $info['daterange_custom']['provider'] = 'access_events';
+  }
+  if (isset($info['daterange_default'])) {
+    $info['daterange_default']['class'] = 'Drupal\\access_events\\Plugin\\Field\\FieldFormatter\\EventVenueDateRangeDefaultFormatter';
+    $info['daterange_default']['provider'] = 'access_events';
+  }
+}
+
+/**
  * Resolves the timezone an event series' instances should be generated in.
  *
  * Generation used to resolve this from date_default_timezone_get() — the
