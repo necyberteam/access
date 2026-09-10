@@ -333,6 +333,18 @@ function access_events_form_alter(&$form, FormStateInterface $form_state, $form_
         $tzElement['#default_value'] = _access_events_default_event_timezone($account);
       }
       $tzElement['#description'] = t('Times below are in this timezone.');
+      // A timezone change reschedules the event, so say so where the change is
+      // made rather than leaving the editor to discover it on save.
+      $entity = $form_state->getFormObject() instanceof EntityFormInterface
+        ? $form_state->getFormObject()->getEntity()
+        : NULL;
+      if ($entity instanceof EventSeries) {
+        $changeWarning = \Drupal::service('access_events.form_warnings')
+          ->timezoneChangeWarning($entity);
+        if ($changeWarning !== NULL) {
+          $tzElement['#description'] .= ' ' . $changeWarning;
+        }
+      }
       unset($tzElement['#size'], $tzElement['#maxlength']);
     }
 
