@@ -93,6 +93,102 @@ class EventTimezoneChangeWarningTest extends EventKernelTestBase {
   }
 
   /**
+   * A series with registrations is told the save will be refused.
+   *
+   * This is the branch that matters most to an editor: it is the one telling
+   * them the change will be rejected and what to do instead. Both branches
+   * contain "moves its upcoming occurrences", so a test asserting only that
+   * substring cannot tell them apart.
+   */
+  public function testRegisteredSeriesIsToldTheSaveWillBeRefused(): void {
+    $series = $this->futureWeeklySeriesWithRegistration();
+    $instance = $this->firstInstanceOf($series);
+    $this->registerUser($this->createUser([], 'registrant'), $instance);
+
+    $warning = (string) \Drupal::service('access_events.form_warnings')
+      ->timezoneChangeWarning($series);
+
+    $this->assertStringContainsString('refused', $warning,
+      'the editor learns the save will not go through');
+    $this->assertStringContainsString('cancel the event', $warning,
+      'and is told the route that does work');
+  }
+
+  /**
+   * The same series without registrations gets the plain warning.
+   *
+   * Pins the branch boundary: without this, an implementation that always
+   * returns the refusal text would pass the test above.
+   */
+  public function testUnregisteredSeriesIsNotToldAboutRefusal(): void {
+    $series = $this->futureWeeklySeriesWithRegistration();
+
+    $warning = (string) \Drupal::service('access_events.form_warnings')
+      ->timezoneChangeWarning($series);
+
+    $this->assertStringNotContainsString('refused', $warning,
+      'with no registrations there is nothing to refuse');
+    $this->assertStringContainsString('regenerated on save', $warning,
+      'but the occurrences still move, and the editor is told so');
+  }
+
+  /**
+   * A future rule-based series that accepts registrations.
+   */
+  private function futureWeeklySeriesWithRegistration(): EventSeries {
+    $original = date_default_timezone_get();
+    date_default_timezone_set('America/New_York');
+    try {
+      $series = EventSeries::create([
+        'title' => 'Registrable recurring event',
+        'body' => 'The full event description.',
+        'type' => 'default',
+        'recur_type' => 'weekly_recurring_date',
+        'field_event_timezone' => 'America/New_York',
+        'event_registration' => [
+          'registration' => 1,
+          'registration_type' => 'instance',
+          'registration_dates' => 'open',
+          'capacity' => 60,
+          'waitlist' => 0,
+        ],
+        'weekly_recurring_date' => [
+          'value' => '2099-03-02T00:00:00',
+          'end_value' => '2099-03-30T00:00:00',
+          'time' => '02:00 PM',
+          'end_time' => '03:00 PM',
+          'duration' => 3600,
+          'duration_or_end_time' => 'end_time',
+          'days' => 'monday',
+        ],
+      ]);
+      $series->save();
+    }
+    finally {
+      date_default_timezone_set($original);
+    }
+    $this->publishModerated($series);
+
+    return \Drupal::entityTypeManager()->getStorage('eventseries')
+      ->loadUnchanged($series->id());
+  }
+
+  /**
+   * The first generated occurrence of a series.
+   */
+  private function firstInstanceOf(EventSeries $series) {
+    $ids = \Drupal::entityQuery('eventinstance')
+      ->accessCheck(FALSE)
+      ->condition('eventseries_id', $series->id())
+      ->sort('date.value', 'ASC')
+      ->range(0, 1)
+      ->execute();
+    $this->assertNotEmpty($ids, 'the series generated occurrences');
+    return \Drupal::entityTypeManager()->getStorage('eventinstance')
+      ->load(reset($ids));
+  }
+
+  /**
    * A custom-date series never warns.
    *
    * Custom dates are stored instants rather than a rule to re-expand, so the

@@ -44,14 +44,44 @@ use Drupal\recurring_events\EventInstanceCreatorPluginManager;
  * is marked in-person and carries a valid zone.
  */
 function access_events_field_formatter_info_alter(array &$info) {
+  // Only the class changes. Reassigning 'provider' as well would rewrite the
+  // config dependencies of every display using these formatters — the three
+  // eventinstance displays each swap datetime_range for access_events — which
+  // is export churn, and would make uninstalling this module target those
+  // displays.
   if (isset($info['daterange_custom'])) {
     $info['daterange_custom']['class'] = 'Drupal\\access_events\\Plugin\\Field\\FieldFormatter\\EventVenueDateRangeCustomFormatter';
-    $info['daterange_custom']['provider'] = 'access_events';
   }
   if (isset($info['daterange_default'])) {
     $info['daterange_default']['class'] = 'Drupal\\access_events\\Plugin\\Field\\FieldFormatter\\EventVenueDateRangeDefaultFormatter';
-    $info['daterange_default']['provider'] = 'access_events';
   }
+}
+
+/**
+ * The zone a views row's dates were rendered in, when it is not the viewer's.
+ *
+ * Returns the venue zone for an in-person event, so a listing can label the
+ * time the formatter already produced. Returns NULL for an online event, whose
+ * times are viewer-local and correctly labelled by the ambient zone.
+ *
+ * @param array $variables
+ *   The views field preprocess variables.
+ *
+ * @return string|null
+ *   An IANA zone name, or NULL to leave the ambient zone in charge.
+ */
+function _access_events_row_display_timezone(array $variables): ?string {
+  $entity = $variables['row']->_entity ?? NULL;
+  if ($entity === NULL || !$entity->hasField('event_in_person')) {
+    return NULL;
+  }
+  if (!$entity->get('event_in_person')->value) {
+    return NULL;
+  }
+  $zone = $entity->hasField('event_timezone')
+    ? trim((string) ($entity->get('event_timezone')->value ?? ''))
+    : '';
+  return ($zone !== '' && in_array($zone, \DateTimeZone::listIdentifiers(), TRUE)) ? $zone : NULL;
 }
 
 /**
@@ -1531,7 +1561,11 @@ function access_events_preprocess_views_view_field(&$variables) {
       if (count($output) == 2) {
         $start_date = $output[0];
         $end_date = $output[1];
-        $date = new EventDateConvert($start_date, $end_date);
+        // The formatter has already rendered these in the venue's zone for an
+        // in-person event, so pass that zone through: without it the class
+        // infers a numeric offset from the string and 'T' renders GMT-0500
+        // instead of CST.
+        $date = new EventDateConvert($start_date, $end_date, _access_events_row_display_timezone($variables));
         if ($date->sameDay ) {
           $variables['output'] = Markup::create($date->getStartTime() . " - " . $date->getEndTime());
         } else {

@@ -1732,7 +1732,15 @@ class EventCrudApiController extends ControllerBase {
     // form-layer default this path never runs. Without it every API-created
     // event — which is how the MCP agent creates them — would carry no zone,
     // and that is the population most likely to need one.
-    if (empty($values['field_event_timezone'])) {
+    // Only when the field actually exists. Setting an unknown field throws on
+    // save, so an environment that has not yet imported the config — a fresh
+    // install, a test fixture, a deploy where code precedes config — would get
+    // a broken create API rather than one without timezones.
+    $seriesFields = $this->entityTypeManager
+      ->getStorage('eventseries')
+      ->create(['type' => 'default'])
+      ->getFieldDefinitions();
+    if (isset($seriesFields['field_event_timezone']) && empty($values['field_event_timezone'])) {
       $values['field_event_timezone'] = _access_events_api_default_timezone($this->currentUser());
     }
   }

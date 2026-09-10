@@ -165,13 +165,21 @@ class EventTimezoneBackfill {
 
   /**
    * Writes the zone column and its provenance, without an entity save.
+   *
+   * Writes the revision table as well as the base table, and for EVERY
+   * revision rather than just the current one. A field row missing from a
+   * revision reads as empty when that revision is loaded — so reverting a
+   * series would see no timezone, resolve generation against the ambient zone
+   * instead, and silently reschedule the event. Production has 3,859 series
+   * revisions, up to 22 on a single series.
    */
   private function writeZone($series, string $zone, string $provenance): void {
-    foreach (['eventseries__field_event_timezone' => 'field_event_timezone_value'] as $table => $column) {
-      if (!$this->database->schema()->tableExists($table)) {
-        continue;
-      }
-      $this->database->merge($table)
+    $base = 'eventseries__field_event_timezone';
+    $revision = 'eventseries_revision__field_event_timezone';
+    $column = 'field_event_timezone_value';
+
+    if ($this->database->schema()->tableExists($base)) {
+      $this->database->merge($base)
         ->keys([
           'entity_id' => $series->id(),
           'deleted' => 0,
@@ -184,6 +192,29 @@ class EventTimezoneBackfill {
           $column => $zone,
         ])
         ->execute();
+    }
+
+    if ($this->database->schema()->tableExists($revision)) {
+      $revisionIds = $this->database->select('eventseries_revision', 'r')
+        ->fields('r', ['vid'])
+        ->condition('r.id', $series->id())
+        ->execute()
+        ->fetchCol();
+      foreach ($revisionIds as $vid) {
+        $this->database->merge($revision)
+          ->keys([
+            'entity_id' => $series->id(),
+            'revision_id' => $vid,
+            'deleted' => 0,
+            'delta' => 0,
+            'langcode' => $series->language()->getId(),
+          ])
+          ->fields([
+            'bundle' => $series->bundle(),
+            $column => $zone,
+          ])
+          ->execute();
+      }
     }
     // Provenance lives in state rather than a field: it is operational data
     // about the migration, not part of the event, and "empty" stops
@@ -207,8 +238,13 @@ class EventTimezoneBackfill {
     $ids = $instanceStorage->getQuery()->accessCheck(FALSE)->execute();
     foreach (array_chunk($ids, 50) as $chunk) {
       foreach ($instanceStorage->loadMultiple($chunk) as $instance) {
-        $series = $instance->getEventSeries();
-        if (!$series) {
+        // Read the reference directly rather than through getEventSeries(),
+        // which dereferences the target without a null check and fatals on an
+        // orphaned instance — one whose series has been deleted. Production
+        // has 24 of those, and a fatal here would abandon the rebuild
+        // part-way through with no indication of how far it got.
+        $seriesId = $instance->get('eventseries_id')->target_id ?? NULL;
+        if ($seriesId === NULL) {
           continue;
         }
         $stateKey = $instance->getEntityTypeId() . ':' . $instance->uuid();
@@ -218,7 +254,7 @@ class EventTimezoneBackfill {
         $changed = FALSE;
         foreach (array_keys(self::OWNED_INHERITANCES) as $name) {
           if (empty($row[$name]['entity'])) {
-            $row[$name] = ['entity' => $series->id()];
+            $row[$name] = ['entity' => $seriesId];
             $changed = TRUE;
           }
         }

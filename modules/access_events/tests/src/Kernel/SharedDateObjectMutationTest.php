@@ -22,45 +22,70 @@ namespace Drupal\Tests\access_events\Kernel;
 class SharedDateObjectMutationTest extends EventKernelTestBase {
 
   /**
-   * The clone idiom the display paths use leaves the entity's copy alone.
+   * {@inheritdoc}
    *
-   * This is the exact shape of the three converted call sites in
-   * access_events.module.
+   * The admin list builder formats through date_format config entities that
+   * ship in system's config/install and so are absent here, and through the
+   * recurring_events instance settings that name one.
    */
-  public function testCloningBeforeConvertLeavesTheEntityCopyInUtc(): void {
+  protected function setUp(): void {
+    parent::setUp();
+    foreach (['short' => 'm/d/Y - H:i', 'medium' => 'D, m/d/Y - H:i'] as $id => $pattern) {
+      if (!\Drupal::entityTypeManager()->getStorage('date_format')->load($id)) {
+        \Drupal::entityTypeManager()->getStorage('date_format')->create([
+          'id' => $id,
+          'label' => ucfirst($id),
+          'locked' => TRUE,
+          'pattern' => $pattern,
+        ])->save();
+      }
+    }
+    $this->config('recurring_events.eventinstance.config')
+      ->set('date_format', 'medium')
+      ->save();
+  }
+
+  /**
+   * Building an admin list row leaves the entity's date object in UTC.
+   *
+   * EventInstanceListBuilder::buildRow() is the reachable seam for the clone
+   * the contrib patch adds. It formats a date in the viewer's zone, and before
+   * the patch it did so by mutating the entity's own cached object — so every
+   * later read in that request saw the converted value. Dropping the clone
+   * makes this fail.
+   */
+  public function testBuildingAListRowDoesNotConvertTheEntitysDate(): void {
     $instance = $this->createRegistrableInstance();
     $stored = $instance->get('date')->value;
 
-    $formatted = (clone $instance->get('date')->start_date)
-      ->setTimezone(new \DateTimeZone('America/Los_Angeles'))
-      ->format('n/j/Y g:i A T');
+    $builder = \Drupal::entityTypeManager()->getListBuilder('eventinstance');
+    $row = $builder->buildRow($instance);
 
-    $this->assertNotEmpty($formatted, 'the read still renders');
+    $this->assertNotEmpty($row['date'] ?? NULL, 'the row rendered a date');
     $this->assertSame($stored, $instance->get('date')->value,
       'the stored column is untouched');
     $this->assertSame('UTC',
       $instance->get('date')->start_date->getTimezone()->getName(),
-      'the cached date object is still UTC after a cloned read');
+      "the entity's cached date object is still UTC after the row was built");
   }
 
   /**
-   * Two cloned readers in different zones do not contaminate each other.
+   * Two rows built in sequence do not contaminate each other.
+   *
+   * Without the clone the first row's conversion persists on the shared
+   * object, so the second row formats an already-converted value — the
+   * cross-contamination the patch exists to prevent.
    */
-  public function testTwoClonedReadersDoNotContaminateEachOther(): void {
+  public function testBuildingTwoRowsInSequenceGivesTheSameResult(): void {
     $instance = $this->createRegistrableInstance();
+    $builder = \Drupal::entityTypeManager()->getListBuilder('eventinstance');
 
-    $first = (clone $instance->get('date')->start_date)
-      ->setTimezone(new \DateTimeZone('America/New_York'));
-    $second = (clone $instance->get('date')->start_date)
-      ->setTimezone(new \DateTimeZone('Australia/Perth'));
+    $first = (string) ($builder->buildRow($instance)['date'] ?? '');
+    $second = (string) ($builder->buildRow($instance)['date'] ?? '');
 
-    $this->assertSame('America/New_York', $first->getTimezone()->getName(),
-      'the first reader keeps its own zone');
-    $this->assertSame('Australia/Perth', $second->getTimezone()->getName(),
-      'the second reader keeps its own zone');
-    $this->assertSame('UTC',
-      $instance->get('date')->start_date->getTimezone()->getName(),
-      'and the entity copy is still UTC');
+    $this->assertNotEmpty($first, 'the first row rendered');
+    $this->assertSame($first, $second,
+      'the second row is identical, so the first did not mutate the source');
   }
 
   /**

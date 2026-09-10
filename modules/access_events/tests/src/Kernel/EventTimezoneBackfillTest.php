@@ -139,6 +139,45 @@ class EventTimezoneBackfillTest extends EventKernelTestBase {
   }
 
   /**
+   * The backfill writes every revision, not just the current one.
+   *
+   * A field row missing from a revision reads as EMPTY when that revision is
+   * loaded. Since generation resolves the stored zone, reverting a series to
+   * such a revision would resolve against the ambient zone instead and
+   * silently reschedule the event. Production has 3,859 series revisions.
+   */
+  public function testBackfillWritesEveryRevision(): void {
+    $series = $this->seriesOwnedByAuthorInZone('America/Chicago', 'revisioned');
+
+    // A second and third revision, as an edited series accumulates.
+    foreach (['Second title', 'Third title'] as $title) {
+      $series->setNewRevision(TRUE);
+      $series->set('title', $title);
+      $series->save();
+    }
+
+    $revisionIds = \Drupal::database()->select('eventseries_revision', 'r')
+      ->fields('r', ['vid'])
+      ->condition('r.id', $series->id())
+      ->execute()
+      ->fetchCol();
+    $this->assertGreaterThan(1, count($revisionIds), 'the series has several revisions');
+
+    \Drupal::service('access_events.timezone_backfill')->backfill();
+
+    $storage = \Drupal::entityTypeManager()->getStorage('eventseries');
+    foreach ($revisionIds as $vid) {
+      $revision = $storage->loadRevision($vid);
+      $this->assertNotNull($revision, "revision $vid loads");
+      $this->assertSame(
+        'America/Chicago',
+        $revision->get('field_event_timezone')->value,
+        "revision $vid carries the zone, so reverting to it cannot reschedule the event"
+      );
+    }
+  }
+
+  /**
    * The inheritance keyvalue rebuild is what makes the field readable.
    *
    * Installing the inheritance config under config sync — which is how it

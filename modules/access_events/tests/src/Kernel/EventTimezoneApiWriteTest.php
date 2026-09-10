@@ -53,18 +53,58 @@ class EventTimezoneApiWriteTest extends EventKernelTestBase {
   /**
    * A create that omits the timezone gets the acting user's account zone.
    *
-   * This mirrors what the form does, so both write paths agree rather than
-   * diverging by which one an event happened to come through.
+   * Drives the controller's own field-application path rather than calling the
+   * resolver directly: the resolver being correct in isolation says nothing
+   * about whether the create actually calls it, and the wiring is three lines
+   * that can be deleted without the resolver noticing.
    */
   public function testCreateWithoutTimezoneDefaultsToActingUsersZone(): void {
     $actor = $this->createUser([], 'api_actor');
     $actor->set('timezone', 'America/Denver')->save();
+    $this->container->get('current_user')->setAccount($actor);
 
-    $this->assertSame(
-      'America/Denver',
-      _access_events_api_default_timezone($actor),
-      "an API create with no timezone takes the acting user's zone"
-    );
+    $values = $this->applyContentFields(['title' => 'No zone supplied']);
+
+    $this->assertSame('America/Denver', $values['field_event_timezone'] ?? NULL,
+      "the create path itself applies the acting user's zone");
+  }
+
+  /**
+   * A create that supplies a timezone keeps it.
+   */
+  public function testSuppliedTimezoneIsHonouredOverTheDefault(): void {
+    $actor = $this->createUser([], 'supplier_actor');
+    $actor->set('timezone', 'America/Denver')->save();
+    $this->container->get('current_user')->setAccount($actor);
+
+    $values = $this->applyContentFields([
+      'title' => 'Zone supplied',
+      'field_event_timezone' => 'Europe/Rome',
+    ]);
+
+    $this->assertSame('Europe/Rome', $values['field_event_timezone'] ?? NULL,
+      'an explicit zone is not overwritten by the default');
+  }
+
+  /**
+   * The in-person flag submitted through the API reaches the values array.
+   *
+   * The allowlist constant containing the name proves only that a string is in
+   * an array; this proves the field is actually applied on write.
+   */
+  public function testInPersonFlagIsAppliedOnWrite(): void {
+    $actor = $this->createUser([], 'inperson_actor');
+    $this->container->get('current_user')->setAccount($actor);
+
+    $values = $this->applyContentFields([
+      'title' => 'In person',
+      'field_event_in_person' => TRUE,
+    ]);
+
+    $this->assertArrayHasKey('field_event_in_person', $values,
+      'the API can mark an event as having a physical venue');
+    $this->assertTrue((bool) $values['field_event_in_person'],
+      'and the submitted value survives');
   }
 
   /**
@@ -74,26 +114,24 @@ class EventTimezoneApiWriteTest extends EventKernelTestBase {
     $this->config('system.date')->set('timezone.default', 'America/New_York')->save();
     $actor = $this->createUser([], 'zoneless_actor');
     $actor->set('timezone', '')->save();
+    $this->container->get('current_user')->setAccount($actor);
 
-    $this->assertSame(
-      'America/New_York',
-      _access_events_api_default_timezone($actor),
-      'the site default stands in, as it does on the form'
-    );
+    $values = $this->applyContentFields(['title' => 'Zoneless actor']);
+
+    $this->assertSame('America/New_York', $values['field_event_timezone'] ?? NULL,
+      'the site default stands in, as it does on the form');
   }
 
   /**
-   * The resolved default is always a zone the select would offer.
+   * Runs the controller's private field-application step on a request body.
    */
-  public function testResolvedApiDefaultIsAlwaysValid(): void {
-    $actor = $this->createUser([], 'validity_actor');
-    $actor->set('timezone', 'Australia/Perth')->save();
-
-    $this->assertContains(
-      _access_events_api_default_timezone($actor),
-      \DateTimeZone::listIdentifiers(),
-      'the default is a real IANA zone, so generation and display can use it'
-    );
+  private function applyContentFields(array $body): array {
+    $controller = \Drupal\access_events\Controller\EventCrudApiController::create($this->container);
+    $method = new \ReflectionMethod($controller, 'applyContentFields');
+    $method->setAccessible(TRUE);
+    $values = [];
+    $method->invokeArgs($controller, [&$values, $body]);
+    return $values;
   }
 
   /**
