@@ -125,6 +125,27 @@ function _access_events_event_time_object(string $storedValue, string $zone): \D
 }
 
 /**
+ * The timezone an API-created event should take when none is supplied.
+ *
+ * The browser form pre-selects the author's account zone, but that is a
+ * form-layer default and the write API never runs it. Without an equivalent,
+ * every event created through api/2.3 — which is how the MCP agent creates
+ * them — would carry no zone at all.
+ *
+ * Resolves the same way the form does, so an event's zone does not depend on
+ * which write path it happened to arrive through.
+ *
+ * @param \Drupal\Core\Session\AccountInterface $account
+ *   The acting user.
+ *
+ * @return string
+ *   An IANA timezone name.
+ */
+function _access_events_api_default_timezone(AccountInterface $account): string {
+  return _access_events_default_event_timezone($account);
+}
+
+/**
  * Resolves the timezone an event series' instances should be generated in.
  *
  * Generation used to resolve this from date_default_timezone_get() — the
