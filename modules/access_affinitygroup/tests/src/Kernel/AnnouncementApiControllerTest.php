@@ -43,6 +43,7 @@ class AnnouncementApiControllerTest extends KernelTestBase {
     'taxonomy',
     'workflows',
     'content_moderation',
+    'access',
     'access_affinitygroup',
     'access_news',
     'key',
