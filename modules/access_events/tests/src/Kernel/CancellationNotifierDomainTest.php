@@ -236,17 +236,26 @@ class CancellationNotifierDomainTest extends EventKernelTestBase {
   }
 
   /**
-   * Creates a registrable future instance assigned to the event's domain.
+   * Creates a registrable future instance that belongs to the event's domain.
    *
-   * The domain is deliberately set on the INSTANCE only:
-   * access_events_entity_presave() overwrites an instance's domain_access
-   * from its series whenever the series has one, so leaving the series' value
-   * empty is what lets the instance keep the value set here.
+   * The domain is set on the SERIES and the instance re-saved: the eventseries
+   * presave domain guard scopes a new series with no domain_access to the
+   * active domain, and access_events_entity_presave() copies the series'
+   * domain onto the instance on every save, so an instance-only value cannot
+   * survive. Setting the series is what a real event on its own site looks
+   * like, and the enqueue under test still happens from the other site.
    */
   private function createInstanceOnEventDomain(): EventInstance {
     $instance = $this->createRegistrableInstance();
-    $instance->set('domain_access', [['target_id' => $this->eventDomain->id()]]);
+    $series = $instance->getEventSeries();
+    $series->set('domain_access', [['target_id' => $this->eventDomain->id()]]);
+    $series->save();
     $instance->save();
+    $this->assertSame(
+      $this->eventDomain->id(),
+      $instance->get('domain_access')->target_id,
+      'Fixture premise: the instance is on the event domain.'
+    );
     return $instance;
   }
 
