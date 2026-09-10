@@ -32,9 +32,6 @@ use Drupal\recurring_events\EventInstanceCreatorInterface;
 use Drupal\recurring_events\EventInstanceCreatorPluginManager;
 
 /**
- * Implements hook_form_alter().
- */
-/**
  * Implements hook_field_formatter_info_alter().
  *
  * Points the two core date-range formatters at subclasses that render an
@@ -55,6 +52,76 @@ function access_events_field_formatter_info_alter(array &$info) {
     $info['daterange_default']['class'] = 'Drupal\\access_events\\Plugin\\Field\\FieldFormatter\\EventVenueDateRangeDefaultFormatter';
     $info['daterange_default']['provider'] = 'access_events';
   }
+}
+
+/**
+ * Formats a stored event time in a given zone, for use outside a request.
+ *
+ * On a web request Drupal sets the ambient timezone to the viewer's account
+ * zone, so a strtotime()/date() round trip happens to come out right. Cron,
+ * queue workers and mail runs have no viewer, ambient falls back to the site
+ * default, and that cancellation stops holding — so these callers have to name
+ * the zone they mean.
+ *
+ * Both the number and any zone token in the format come from the same date
+ * object, which is what keeps a label from naming a different instant than the
+ * time beside it. That is also why the abbreviation is correct for the event's
+ * own date rather than for whenever the run happens: EST for a January event
+ * even in a July digest.
+ *
+ * @param string $storedValue
+ *   The stored naive-UTC value, as Drupal keeps datetimes.
+ * @param string $zone
+ *   An IANA zone name. An empty or unrecognised value falls back to the site
+ *   default, because these paths run where an exception is an unsent digest
+ *   rather than a visible error.
+ * @param string $format
+ *   A PHP date format string.
+ *
+ * @return string
+ *   The formatted time.
+ */
+function _access_events_format_event_time(string $storedValue, string $zone, string $format): string {
+  return _access_events_event_time_object($storedValue, $zone)->format($format);
+}
+
+/**
+ * An event time as ISO 8601 with the offset for its own zone and date.
+ *
+ * Structured-data consumers want an explicit offset, and Google reads it
+ * literally. Emitting
+ * a local offset against a value parsed as if it were local — which is what
+ * the JSON-LD builder did — is wrong by the full offset.
+ *
+ * Note this shape is for structured data only. RFC 5545 forbids an offset on
+ * an iCalendar DATE-TIME, so a calendar export needs its own serialiser rather
+ * than sharing this string.
+ *
+ * @param string $storedValue
+ *   The stored naive-UTC value.
+ * @param string $zone
+ *   An IANA zone name, with the same fallback as above.
+ *
+ * @return string
+ *   An ISO 8601 datetime carrying a numeric UTC offset.
+ */
+function _access_events_iso8601_event_time(string $storedValue, string $zone): string {
+  return _access_events_event_time_object($storedValue, $zone)->format('c');
+}
+
+/**
+ * Builds a zoned date object from a stored naive-UTC event value.
+ */
+function _access_events_event_time_object(string $storedValue, string $zone): \DateTime {
+  $date = new \DateTime($storedValue, new \DateTimeZone('UTC'));
+
+  $zone = trim($zone);
+  if ($zone === '' || !in_array($zone, \DateTimeZone::listIdentifiers(), TRUE)) {
+    $zone = (string) (\Drupal::config('system.date')->get('timezone.default') ?: date_default_timezone_get());
+  }
+  $date->setTimezone(new \DateTimeZone($zone));
+
+  return $date;
 }
 
 /**
@@ -120,6 +187,9 @@ function _access_events_default_event_timezone(AccountInterface $account): strin
     ?: date_default_timezone_get();
 }
 
+/**
+ * Implements hook_form_alter().
+ */
 function access_events_form_alter(&$form, FormStateInterface $form_state, $form_id) {
   if ($form['#id'] == 'views-exposed-form-events-facet-recorded-webinars-block') {
     $form['search_api_fulltext']['#attributes']['placeholder'] = t('Search this collection');

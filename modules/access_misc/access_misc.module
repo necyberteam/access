@@ -2000,8 +2000,16 @@ function _access_misc_build_json_ld($entity) {
 
         if ($entity->hasField('date') && !$entity->get('date')->isEmpty()) {
           $date_value = $entity->get('date')->getValue()[0];
-          $json_ld['startDate'] = date('c', strtotime($date_value['value']));
-          $json_ld['endDate'] = date('c', strtotime($date_value['end_value']));
+          // The stored value is naive UTC. strtotime() parsed it as if it were
+          // local and date('c') then stamped a local offset, so the emitted
+          // instant was wrong by the full offset — and Google reads that
+          // offset literally. The event's own zone gives the offset that is
+          // correct for the event's own date.
+          $event_zone = $entity->hasField('event_timezone')
+            ? trim((string) ($entity->get('event_timezone')->value ?? ''))
+            : '';
+          $json_ld['startDate'] = _access_events_iso8601_event_time($date_value['value'], $event_zone);
+          $json_ld['endDate'] = _access_events_iso8601_event_time($date_value['end_value'], $event_zone);
         }
       }
       else {
