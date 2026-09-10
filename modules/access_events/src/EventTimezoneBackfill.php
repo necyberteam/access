@@ -131,10 +131,34 @@ class EventTimezoneBackfill {
     if (preg_match('/^(multiple|tbd|tba|n\/a|na|varies|various)$/i', $location)) {
       return 'location is "' . $location . '" — may be a broadcast to satellite sites; check the body for the stated time';
     }
-    // The workaround this field replaces: a zone written into free text.
-    if (preg_match('/\b([ECMP][SD]T|UTC|GMT|BST|CES?T)\b/i', $location, $m)
-      && stripos($written, (string) $m[1]) === FALSE) {
-      return 'location names "' . $m[1] . '" but the author zone gives ' . $written;
+    // The workaround this field replaces: a zone written into free text. Only
+    // report it when the typed zone DISAGREES with what was written — an
+    // author in America/Chicago who typed "CST" is confirming the derived
+    // value, not contradicting it, and reporting those buries the real
+    // conflicts in noise. Matching is case-sensitive and word-bounded because
+    // a case-insensitive match finds "CEST" inside "Commons".
+    static $abbreviations = [
+      'EST' => 'America/New_York',
+      'EDT' => 'America/New_York',
+      'CST' => 'America/Chicago',
+      'CDT' => 'America/Chicago',
+      'MST' => 'America/Denver',
+      'MDT' => 'America/Denver',
+      'PST' => 'America/Los_Angeles',
+      'PDT' => 'America/Los_Angeles',
+      'BST' => 'Europe/London',
+      'CEST' => 'Europe/Rome',
+      'CET' => 'Europe/Rome',
+    ];
+    if (preg_match('/\b(E[SD]T|C[SD]T|M[SD]T|P[SD]T|BST|CES?T|UTC|GMT)\b/', $location, $m)) {
+      $typed = strtoupper($m[1]);
+      $implied = $abbreviations[$typed] ?? NULL;
+      if ($implied !== NULL && $implied !== $written) {
+        return 'location says "' . $typed . '" (' . $implied . ') but the author zone gives ' . $written;
+      }
+      if ($implied === NULL) {
+        return 'location says "' . $typed . '", which has no single zone — check it';
+      }
     }
     return NULL;
   }
