@@ -392,3 +392,154 @@ function access_events_update_10007() {
   \Drupal::entityDefinitionUpdateManager()
     ->installFieldStorageDefinition('individually_cancelled', 'eventinstance', 'access_events', $definition);
 }
+
+/**
+ * Decides whether a field_inheritance key-value row is dead weight.
+ *
+ * A "dead" row is one that field_inheritance_update_10300() would migrate onto
+ * a base field at the cost of an entity save (and therefore a pathauto alias
+ * regeneration), while carrying no inheritance state worth migrating.
+ *
+ * A row qualifies only when ALL of the following hold:
+ *  - its entity-type prefix is not 'eventinstance' — those are the rows the
+ *    site actually inherits into and 10300 must migrate them;
+ *  - its entity-type prefix is not 'file' — file rows are out of scope for
+ *    this pass by explicit decision and are left for 10300;
+ *  - the row's 'enabled' member is falsy;
+ *  - the row carries no field mappings, i.e. no array members. 10300 treats
+ *    every array member as a field mapping.
+ *
+ * @param string $key
+ *   The key-value key, in '<entity_type_id>:<uuid>' form.
+ * @param mixed $value
+ *   The stored row value.
+ *
+ * @return bool
+ *   TRUE when the row can be safely deleted.
+ */
+function _access_events_field_inheritance_row_is_dead(string $key, $value): bool {
+  if (!is_array($value)) {
+    return FALSE;
+  }
+
+  $entity_type_id = explode(':', $key)[0];
+  if ($entity_type_id === 'eventinstance' || $entity_type_id === 'file') {
+    return FALSE;
+  }
+
+  if (!empty($value['enabled'])) {
+    return FALSE;
+  }
+
+  foreach ($value as $member) {
+    if (is_array($member)) {
+      return FALSE;
+    }
+  }
+
+  return TRUE;
+}
+
+/**
+ * Trims field_inheritance config and drops dead key-value rows before 10300.
+ */
+function access_events_update_10008() {
+  // This MUST run before field_inheritance_update_10300(); the
+  // access_events_update_dependencies() entry at the bottom of this file
+  // orders it. Unmodified, 10300 re-saves every entity named in the
+  // field_inheritance key-value collection — on production that is 653 nodes,
+  // terms and block_contents carrying no inheritance state at all — and
+  // pathauto regenerates an alias on each save, moving live page URLs such as
+  // /outages. 10300 also adds the field_inheritance widget to every bundle
+  // listed in the old included_bundles string, and its config save makes
+  // field_inheritance's ConfigSubscriber install and then uninstall base field
+  // storage on four unrelated entity types.
+  //
+  // Step A narrows field_inheritance.config to eventinstance so 10300 has
+  // nothing else to act on. Step B deletes the dead key-value rows so 10300
+  // never loads or re-saves those entities.
+  //
+  // The key-value deletion is one-way on production: there is no restore path
+  // once the rows are gone. That is why the predicate is deliberately narrow
+  // and why every unexpected surviving row is logged at warning level.
+  //
+  // The hook is idempotent. On an environment where 10300 has already run, the
+  // collection is empty and the config already lists eventinstance only, so it
+  // deletes nothing and returns cleanly.
+  //
+  // Step A — trim field_inheritance.config.
+  $config = \Drupal::configFactory()->getEditable('field_inheritance.config');
+  $changed_config = FALSE;
+
+  if ($config->get('included_entities') !== ['eventinstance']) {
+    $config->set('included_entities', ['eventinstance']);
+    $changed_config = TRUE;
+  }
+
+  // Only rewrite included_bundles when the key is still present. It is a
+  // pre-3.x key with no schema in field_inheritance 3.x, read nowhere but
+  // update_10300, and dropped entirely by that hook's setData() call — so
+  // re-adding it on an already-upgraded site would leave a stray, unschema'd
+  // key that the exported field_inheritance.config.yml does not carry.
+  if ($config->get('included_bundles') !== NULL && $config->get('included_bundles') !== 'eventinstance:default') {
+    $config->set('included_bundles', 'eventinstance:default');
+    $changed_config = TRUE;
+  }
+
+  if ($changed_config) {
+    $config->save();
+  }
+
+  // Step B — delete the dead key-value rows.
+  $key_value = \Drupal::keyValue('field_inheritance');
+  $logger = \Drupal::logger('access_events');
+
+  $delete = [];
+  $kept = 0;
+  foreach ($key_value->getAll() as $key => $value) {
+    if (_access_events_field_inheritance_row_is_dead($key, $value)) {
+      $delete[] = $key;
+      continue;
+    }
+
+    $kept++;
+
+    // The eventinstance and file rows are kept by design and are the bulk
+    // of the collection, so only warn about rows that survived unexpectedly
+    // — those are worth eyeballing in dslog before 10300 re-saves them.
+    $entity_type_id = explode(':', $key)[0];
+    if ($entity_type_id === 'eventinstance' || $entity_type_id === 'file') {
+      continue;
+    }
+
+    $reason = !is_array($value)
+      ? 'value is not an array'
+      : (!empty($value['enabled']) ? 'inheritance is enabled' : 'row carries field mappings');
+    $logger->warning('access_events_update_10008 kept field_inheritance row @key: @reason.', [
+      '@key' => $key,
+      '@reason' => $reason,
+    ]);
+  }
+
+  if (!empty($delete)) {
+    $key_value->deleteMultiple($delete);
+  }
+
+  return t('Trimmed field_inheritance.config to eventinstance. Deleted @deleted dead field_inheritance key-value rows, kept @kept.', [
+    '@deleted' => count($delete),
+    '@kept' => $kept,
+  ]);
+}
+
+/**
+ * Implements hook_update_dependencies().
+ */
+function access_events_update_dependencies() {
+  // field_inheritance_update_10300() re-saves every entity in the
+  // field_inheritance key-value collection. access_events_update_10008()
+  // removes the dead rows and narrows the config first, so 10300 only touches
+  // event instances. This orders PENDING updates only — on an environment
+  // where 10300 has already run, 10008 simply runs on its own and no-ops.
+  $dependencies['field_inheritance'][10300]['access_events'] = 10008;
+  return $dependencies;
+}
