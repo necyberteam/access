@@ -533,6 +533,9 @@ function access_events_update_10008() {
 
 /**
  * Backfill event timezones and repair their field inheritance.
+ *
+ * 10008 belongs to the field_inheritance cleanup that ships with the
+ * recurring_events 3.x upgrade.
  */
 function access_events_update_10009(&$sandbox) {
   $backfill = \Drupal::service('access_events.timezone_backfill');
