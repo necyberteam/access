@@ -14,3 +14,98 @@ function access_update_9001() {
   \Drupal::service('module_installer')->uninstall(['swiftmailer']);
   \Drupal::service('module_installer')->install(['symfony_mailer']);
 }
+
+/**
+ * Remove accounts registered with spam domains banned by D8-2849.
+ *
+ * Three spam email domains (clarionstreams.site, slappergiraffe.site,
+ * centraltermites.site) were added to the registration blocklist in
+ * advanced_email_validation.settings, but accounts had already been created
+ * on those domains before the block took effect. This hook deletes every
+ * account whose email address is on one of those domains — an address on one
+ * of these domains is treated as sufficient proof of a spam registration, so
+ * no further checks are made on roles or authored content. The domain list
+ * below is hardcoded and intentionally NOT read from
+ * advanced_email_validation.settings config: an update hook must be frozen at
+ * deploy time, and reading the live config would mean a future addition to
+ * the banned list silently deletes unreviewed accounts the next time this
+ * hook happens to run. This hook is idempotent: a second run finds nothing
+ * left to do.
+ */
+function access_update_9002(array &$sandbox): string {
+  // Hardcoded on purpose — see docblock above. Do not swap this out for a
+  // config read.
+  $domains = [
+    'clarionstreams.site',
+    'slappergiraffe.site',
+    'centraltermites.site',
+  ];
+
+  $logger = \Drupal::logger('access');
+  $user_storage = \Drupal::entityTypeManager()->getStorage('user');
+
+  if (!isset($sandbox['uids'])) {
+    $uids = [];
+    $database = \Drupal::database();
+    foreach ($domains as $domain) {
+      $query = $user_storage->getQuery()
+        ->accessCheck(FALSE)
+        ->condition('mail', '%@' . $database->escapeLike($domain), 'LIKE');
+      $uids = array_merge($uids, array_values($query->execute()));
+    }
+    $uids = array_unique($uids);
+
+    $sandbox['uids'] = $uids;
+    $sandbox['total'] = count($uids);
+    $sandbox['processed'] = 0;
+    $sandbox['deleted'] = 0;
+    $sandbox['skipped'] = 0;
+  }
+
+  $batch = array_splice($sandbox['uids'], 0, 50);
+  $accounts = $batch ? $user_storage->loadMultiple($batch) : [];
+
+  foreach ($batch as $uid) {
+    $sandbox['processed']++;
+
+    // The anonymous and root accounts are never in scope, whatever address
+    // they happen to carry.
+    if ((int) $uid === 0 || (int) $uid === 1) {
+      $sandbox['skipped']++;
+      continue;
+    }
+
+    $account = $accounts[$uid] ?? NULL;
+    if (!$account) {
+      $sandbox['skipped']++;
+      continue;
+    }
+
+    // Deleting the account does not remove the matching contact from Constant
+    // Contact, so log the id to make those recoverable afterwards.
+    $constant_contact_id = '';
+    if ($account->hasField('field_constant_contact_id') && !$account->get('field_constant_contact_id')->isEmpty()) {
+      $constant_contact_id = $account->get('field_constant_contact_id')->value;
+    }
+
+    $logger->notice('Deleting spam-domain account uid @uid (@name <@mail>), created @created, last accessed @access, Constant Contact id @cc_id', [
+      '@uid' => $uid,
+      '@name' => $account->getAccountName(),
+      '@mail' => $account->getEmail(),
+      '@created' => \Drupal::service('date.formatter')->format((int) $account->getCreatedTime(), 'custom', 'Y-m-d H:i:s'),
+      '@access' => $account->getLastAccessedTime() ? \Drupal::service('date.formatter')->format((int) $account->getLastAccessedTime(), 'custom', 'Y-m-d H:i:s') : 'never',
+      '@cc_id' => $constant_contact_id !== '' ? $constant_contact_id : '(none)',
+    ]);
+
+    $account->delete();
+    $sandbox['deleted']++;
+  }
+
+  $sandbox['#finished'] = $sandbox['total'] > 0 ? $sandbox['processed'] / $sandbox['total'] : 1;
+
+  return sprintf(
+    'Deleted %d spam-domain account(s) (skipped %d).',
+    $sandbox['deleted'],
+    $sandbox['skipped']
+  );
+}
