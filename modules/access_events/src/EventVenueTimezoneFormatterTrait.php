@@ -88,7 +88,12 @@ trait EventVenueTimezoneFormatterTrait {
     // full, which for a one-hour event repeats the whole date. This used to be
     // done by re-parsing the rendered markup in access_misc_entity_view(); it
     // belongs here, where the zone the date was computed in is known.
-    if ($this->usesCompactRange()) {
+    // Only when this formatter is actually rendering BOTH endpoints. The
+    // api/2.1/events data_export display uses this same formatter id with
+    // from_to 'start_date' and an ISO date_format; rewriting that into prose
+    // corrupts JSON that consumers parse.
+    $bothEndpoints = ($this->getSetting('from_to') ?? 'both') === 'both';
+    if ($this->usesCompactRange() && $bothEndpoints) {
       foreach ($items as $delta => $item) {
         if (isset($elements[$delta]) && !empty($item->start_date) && !empty($item->end_date)) {
           $elements[$delta] = $this->compactRange($elements[$delta], $item);
@@ -173,9 +178,12 @@ trait EventVenueTimezoneFormatterTrait {
     $this->setTimeZone($start);
     $this->setTimeZone($end);
 
+    // A cross-day range reads ' to ' between the endpoints; a same-day one
+    // keeps the plain dash. Both are what the detail page has always shown.
     $sameDay = $start->format('Y-m-d') === $end->format('Y-m-d');
-    $text = $start->format('m/d/y - g:i A') . ' - '
-      . ($sameDay ? $end->format('g:i A T') : $end->format('m/d/y - g:i A T'));
+    $text = $sameDay
+      ? $start->format('m/d/y - g:i A') . ' - ' . $end->format('g:i A T')
+      : $start->format('m/d/y - g:i A') . ' to ' . $end->format('m/d/y - g:i A T');
 
     // Replace the whole delta: core builds start/end/separator as separate
     // children, and leaving any of them would render the range twice.

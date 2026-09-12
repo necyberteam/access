@@ -135,6 +135,37 @@ class EventTimezoneDisplayTest extends EventKernelTestBase {
     $this->assertStringContainsString('07/15/26', $output, 'the start date');
     $this->assertStringContainsString('07/17/26', $output,
       'and the end date, because this one spans days');
+    $this->assertStringContainsString(' to ', $output,
+      "and the endpoints read ' to ', as a multi-day range always has");
+  }
+
+  /**
+   * A formatter rendering only one endpoint is left alone.
+   *
+   * api/2.1/events is a data_export display using this same formatter id with
+   * from_to 'start_date' and an ISO date_format, so a consumer parses what it
+   * emits. Compacting a range makes no sense when only one endpoint is being
+   * rendered, and rewriting it into prose corrupts the JSON.
+   */
+  public function testSingleEndpointRenderingIsNotRewritten(): void {
+    $instance = $this->instanceWithZone('America/Chicago', TRUE);
+    $instance->set('date', [
+      'value' => '2026-07-15T19:00:00',
+      'end_value' => '2026-07-15T20:00:00',
+    ]);
+    $instance->save();
+
+    $output = $this->renderDate($this->reloadInstance($instance), 'daterange_custom', [
+      'timezone_override' => '',
+      'date_format' => 'Y-m-d\\TH:i:s\\Z',
+      'from_to' => 'start_date',
+      'separator' => '::',
+    ]);
+
+    $this->assertMatchesRegularExpression('/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}Z/', $output,
+      'the ISO instant survives untouched');
+    $this->assertStringNotContainsString('PM', $output,
+      'and no prose rendering leaks into it');
   }
 
   /**
