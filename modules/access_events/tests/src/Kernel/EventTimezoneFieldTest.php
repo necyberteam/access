@@ -14,9 +14,10 @@ namespace Drupal\Tests\access_events\Kernel;
  *   computed field from the config id via idWithoutTypeAndBundle()). Reading
  *   `field_event_timezone` on an instance returns nothing, and for the boolean
  *   nothing is falsy, which renders the safe branch and hides the bug.
- * - The inheritance plugin resolves its source through a keyvalue store, not
- *   an entity reference, so a field can be configured correctly and still read
- *   empty if that store has no row for the instance.
+ * - The inheritance plugin resolves its source through a `field_inheritance`
+ *   base field, not an entity reference, so a field can be configured
+ *   correctly and still read empty if that map carries no pointer at the
+ *   source series for the instance.
  *
  * @group access_events
  */
@@ -26,10 +27,11 @@ class EventTimezoneFieldTest extends EventKernelTestBase {
    * {@inheritdoc}
    *
    * The fields and their inheritance configs must exist BEFORE any instance is
-   * created: configureDefaultInheritances() writes a keyvalue row only when
-   * one is absent, so an instance created first never picks up a field added
-   * later. That ordering is the whole reason the production backfill (B5)
-   * needs a keyvalue rebuild rather than just a config deploy.
+   * created: configureDefaultInheritances() writes a per-field entry only for
+   * the configs present at creation time, so an instance created first never
+   * picks up a field added later. Pre-existing instances resolve a later-added
+   * field through the base field's entities[] fallback instead — pinned in
+   * EventTimezoneBackfillTest.
    */
   protected function setUp(): void {
     parent::setUp();
@@ -105,8 +107,8 @@ class EventTimezoneFieldTest extends EventKernelTestBase {
    * core at form-build time (TimeZoneFormHelper) rather than being frozen into
    * config allowed_values, which would go stale as the timezone database
    * changes. The constraint that a value must BE a valid IANA name is enforced
-   * by the widget, which B3 replaces with a select — until then the form shows
-   * a raw textfield.
+   * at form build, where access_events_form_alter() swaps the textfield for a
+   * select populated from TimeZoneFormHelper.
    */
   public function testStorageAcceptsAnyStringAndDefersValidationToTheWidget(): void {
     $instance = $this->createRegistrableInstance();

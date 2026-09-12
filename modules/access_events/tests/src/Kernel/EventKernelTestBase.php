@@ -35,7 +35,7 @@ use Symfony\Component\HttpFoundation\Request;
  *
  * Provides the module list, entity-schema/config install, two seeded users,
  * and the registrable/non-registrable instance + registrant helpers that both
- * RegistrationStateTest (A1) and EventDetailApiControllerTest (A2) rely on.
+ * RegistrationStateTest and EventDetailApiControllerTest rely on.
  * Also provides the moderation + node + coordinator scaffolding (workflows,
  * an `affinity_group` node type with `field_coordinator`, and coordinator
  * series/instance builders) that the upcoming event-CRUD endpoint tests need.
@@ -104,7 +104,8 @@ abstract class EventKernelTestBase extends KernelTestBase {
     // remaining site detail fields (location/event_type/skill_level/speakers/
     // tags/registration) inherit from CONFIGURED eventseries fields that are
     // site-level (not shipped by the contrib module), so they are absent here
-    // and the controller degrades them to null — asserted in A2.
+    // and the controller degrades them to null — asserted in
+    // EventDetailApiControllerTest::testAbsentInheritedFieldsAreNull().
     // field_inheritance 3.x installs a `field_inheritance` base field on every
     // entity type named in field_inheritance.config, via its ConfigSubscriber.
     // The module's install default names node/taxonomy_term/block_content/file,
@@ -593,7 +594,7 @@ abstract class EventKernelTestBase extends KernelTestBase {
    *
    * The series title/body base fields are seeded, and per-instance field
    * inheritance state is configured, so the inherited detail fields (title,
-   * description) resolve non-empty for the A2 detail assertions.
+   * description) resolve non-empty for the detail-API assertions.
    *
    * @param int $capacity
    *   Seat capacity.
@@ -602,12 +603,12 @@ abstract class EventKernelTestBase extends KernelTestBase {
    * @param bool $pastDate
    *   When TRUE, the instance date is in the past; with registration_dates =
    *   'open' the window is now → instance start, so a past instance is closed
-   *   and registrationIsOpen() returns FALSE (A3 registration_closed case).
+   *   and registrationIsOpen() returns FALSE (the registration_closed case).
    * @param string[] $permittedRoles
    *   Role machine names permitted to register. Empty = open to all. The
    *   contrib stores this as the comma-delimited event_registration
    *   ->permitted_roles string and registrationPermittedRoles() splits it back
-   *   into an array (A3 not_permitted / permitted cases).
+   *   into an array (the not_permitted / permitted cases).
    */
   protected function createRegistrableInstance(int $capacity = 60, bool $waitlist = FALSE, bool $pastDate = FALSE, array $permittedRoles = []): EventInstance {
     $date = $pastDate
@@ -1142,7 +1143,8 @@ abstract class EventKernelTestBase extends KernelTestBase {
    * Builds a POST Request carrying the JSON body and the
    * acting_user_uid attribute the ActingUserAccess gate would set, then
    * calls the controller method directly (the gate is covered separately in
-   * A4). This mirrors A2's direct-controller invocation.
+   * EventRouteAccessTest). This mirrors the detail-API tests' direct-controller
+   * invocation.
    *
    * @param \Drupal\recurring_events\Entity\EventInstance $instance
    *   The event instance to register for.
