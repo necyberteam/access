@@ -1217,11 +1217,19 @@ function access_events_views_pre_render(ViewExecutable $view) {
     $instance_id = is_numeric($path_args[2]) ? $path_args[2] : '';
 
     // Entity load 'eventinstance' to get event title.
-    $eventinstance = \Drupal::entityTypeManager()->getStorage('eventinstance')->load($instance_id);
-    // Load event series to get event title.
-    $event_title = $eventinstance->getEventSeries()->get('title')->value;
+    $eventinstance = $instance_id === ''
+      ? NULL
+      : \Drupal::entityTypeManager()->getStorage('eventinstance')->load($instance_id);
+    // Both loads can come back empty: the path argument is whatever is in the
+    // URL, and an instance whose series has been deleted resolves to no series
+    // at all. Leave the view's own title in place rather than fataling on the
+    // admin screen.
+    $series = $eventinstance?->getEventSeries();
+    if ($series === NULL) {
+      return;
+    }
 
-    $view->setTitle(t('Registrations - @title', ['@title' => $event_title]));
+    $view->setTitle(t('Registrations - @title', ['@title' => $series->get('title')->value]));
   }
 }
 
