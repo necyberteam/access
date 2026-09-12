@@ -6,6 +6,7 @@ namespace Drupal\access_events;
 
 use Drupal\Core\Datetime\DrupalDateTime;
 use Drupal\Core\Field\FieldItemListInterface;
+use Drupal\Core\Render\BubbleableMetadata;
 
 /**
  * Renders an in-person event's times in its venue's timezone.
@@ -101,23 +102,25 @@ trait EventVenueTimezoneFormatterTrait {
       }
     }
 
-    $venueZone = $this->venueTimezone();
-    if ($venueZone === NULL) {
-      return $elements;
-    }
-
     // The zone lives on the SERIES while this renders an INSTANCE, and neither
     // recurring_events nor field_inheritance bubbles any cacheability for an
-    // inherited value. Without the series tag, editing a timezone leaves every
-    // cached instance render showing the old one indefinitely.
-    $series = method_exists($this->venueTimezoneEntity, 'getEventSeries')
-      ? $this->venueTimezoneEntity->getEventSeries()
+    // inherited value. Attach the tag WHATEVER the current modality: the render
+    // depends on those series fields regardless of the values they hold today,
+    // so marking an in-person event alone would leave every already-cached
+    // online render showing viewer-local times after the series was flipped.
+    $series = $this->venueTimezoneEntity->hasField('eventseries_id')
+      ? $this->venueTimezoneEntity->get('eventseries_id')->entity
       : NULL;
     if ($series !== NULL) {
       $elements['#cache']['tags'] = array_merge(
         $elements['#cache']['tags'] ?? [],
         $series->getCacheTags()
       );
+    }
+
+    $venueZone = $this->venueTimezone();
+    if ($venueZone === NULL) {
+      return $elements;
     }
 
     // An in-person time is the same string for every viewer, so varying the
@@ -187,12 +190,21 @@ trait EventVenueTimezoneFormatterTrait {
 
     // Replace the whole delta: core builds start/end/separator as separate
     // children, and leaving any of them would render the range twice.
-    $rebuilt = ['#plain_text' => $text];
-    foreach (['#cache', '#attached'] as $key) {
-      if (isset($element[$key])) {
-        $rebuilt[$key] = $element[$key];
+    //
+    // Carry the discarded children's cacheability across. Core attaches the
+    // 'timezone' cache context to the start_date and end_date CHILDREN, not to
+    // this outer element, so copying $element['#cache'] alone salvages nothing
+    // — and an online event's render, which legitimately differs per viewer,
+    // would then be cached without that context and served to the wrong one.
+    $metadata = BubbleableMetadata::createFromRenderArray($element);
+    foreach ($element as $key => $child) {
+      if (is_array($child) && str_starts_with((string) $key, '#') === FALSE) {
+        $metadata = $metadata->merge(BubbleableMetadata::createFromRenderArray($child));
       }
     }
+
+    $rebuilt = ['#plain_text' => $text];
+    $metadata->applyTo($rebuilt);
     return $rebuilt;
   }
 

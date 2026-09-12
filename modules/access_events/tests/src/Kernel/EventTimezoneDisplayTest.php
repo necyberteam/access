@@ -169,6 +169,65 @@ class EventTimezoneDisplayTest extends EventKernelTestBase {
   }
 
   /**
+   * An ONLINE event keeps the viewer-timezone cache context.
+   *
+   * This is the direction that leaks. An online event's rendered time
+   * legitimately differs per viewer, so its render must carry the 'timezone'
+   * context or the first viewer's copy is served to everyone. Core attaches
+   * that context to the start_date and end_date CHILDREN of the delta, so a
+   * compaction that rebuilds the delta and copies only the outer '#cache'
+   * silently discards it — and nothing about the output looks wrong.
+   *
+   * A New York viewer would warm the cache with 10:00 AM EDT and a Los
+   * Angeles viewer be served that same string, three hours off, labelled with
+   * a zone the number was not computed in.
+   */
+  public function testOnlineEventKeepsTheViewerTimezoneCacheContext(): void {
+    $instance = $this->instanceWithZone('America/Chicago', FALSE);
+
+    $build = $this->reloadInstance($instance)->get('date')->view([
+      'type' => 'daterange_custom',
+      'label' => 'hidden',
+      'settings' => [
+        'timezone_override' => '',
+        'date_format' => 'n/j/Y g:i A T',
+        'from_to' => 'both',
+        'separator' => '-',
+      ],
+    ]);
+
+    $this->assertContains('timezone', $build[0]['#cache']['contexts'] ?? [],
+      'an online event varies by viewer, so its render must say so');
+  }
+
+  /**
+   * The series cache tag is attached whatever the current modality.
+   *
+   * The render depends on the series' timezone and modality fields regardless
+   * of the values they hold right now. Tagging only in-person events means
+   * flipping a series to in-person never invalidates the renders cached while
+   * it was online, so they keep showing viewer-local times indefinitely.
+   */
+  public function testSeriesCacheTagIsAttachedForOnlineEventsToo(): void {
+    $instance = $this->instanceWithZone('America/Chicago', FALSE);
+    $series = $this->reloadInstance($instance)->getEventSeries();
+
+    $build = $this->reloadInstance($instance)->get('date')->view([
+      'type' => 'daterange_custom',
+      'label' => 'hidden',
+      'settings' => [
+        'timezone_override' => '',
+        'date_format' => 'n/j/Y g:i A T',
+        'from_to' => 'both',
+        'separator' => '-',
+      ],
+    ]);
+
+    $this->assertContains('eventseries:' . $series->id(), $build['#cache']['tags'] ?? [],
+      'so that marking the series in-person invalidates this render');
+  }
+
+  /**
    * Renders an instance's date field through a named formatter.
    */
   private function renderDate(EventInstance $instance, string $formatter, array $settings): string {
