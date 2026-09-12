@@ -19,6 +19,15 @@ class EventVenueDateRangeCustomFormatter extends DateRangeCustomFormatter {
   use EventVenueTimezoneFormatterTrait;
 
   /**
+   * {@inheritdoc}
+   *
+   * This is the detail page's prose rendering, where the compact form belongs.
+   */
+  protected function usesCompactRange(): bool {
+    return TRUE;
+  }
+
+  /**
    * The entity being rendered, captured so buildDate() can reach its fields.
    *
    * @var \Drupal\Core\Entity\EntityInterface|null

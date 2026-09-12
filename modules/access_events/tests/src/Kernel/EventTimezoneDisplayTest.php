@@ -77,6 +77,67 @@ class EventTimezoneDisplayTest extends EventKernelTestBase {
   }
 
   /**
+   * A same-day event shows the end as a time, not a repeated date.
+   *
+   * This is the shape the detail page has always had:
+   *   09/30/25 - 12:00 PM - 1:00 PM EDT
+   * The date appears once, the end is time-only, and the zone is named once at
+   * the end. Letting core's daterange formatter render both endpoints in full
+   * instead produces
+   *   9/30/2025 12:00 PM EDT - 9/30/2025 1:00 PM EDT
+   * which repeats the whole date for a one-hour event.
+   */
+  public function testSameDayEventRendersTheEndAsTimeOnly(): void {
+    $instance = $this->instanceWithZone('America/Chicago', TRUE);
+    $instance->set('date', [
+      'value' => '2026-07-15T19:00:00',
+      'end_value' => '2026-07-15T20:00:00',
+    ]);
+    $instance->save();
+
+    $output = $this->renderDate($this->reloadInstance($instance), 'daterange_custom', [
+      'timezone_override' => '',
+      'date_format' => 'n/j/Y g:i A T',
+      'from_to' => 'both',
+      'separator' => '-',
+    ]);
+
+    $this->assertStringContainsString('07/15/26', $output,
+      'the date is rendered once, with a two-digit year');
+    $this->assertStringContainsString('2:00 PM', $output, 'the start time');
+    $this->assertStringContainsString('3:00 PM CDT', $output,
+      'and the end is a bare time carrying the zone label');
+    $this->assertSame(1, substr_count($output, '07/15/26'),
+      'the date appears exactly once, not on both endpoints');
+  }
+
+  /**
+   * A cross-day event shows the full date on both endpoints.
+   *
+   * The other arm of the same-day split: when the event genuinely spans days,
+   * the end date has to be stated or the reader cannot tell when it finishes.
+   */
+  public function testCrossDayEventRendersBothDates(): void {
+    $instance = $this->instanceWithZone('America/Chicago', TRUE);
+    $instance->set('date', [
+      'value' => '2026-07-15T19:00:00',
+      'end_value' => '2026-07-17T20:00:00',
+    ]);
+    $instance->save();
+
+    $output = $this->renderDate($this->reloadInstance($instance), 'daterange_custom', [
+      'timezone_override' => '',
+      'date_format' => 'n/j/Y g:i A T',
+      'from_to' => 'both',
+      'separator' => '-',
+    ]);
+
+    $this->assertStringContainsString('07/15/26', $output, 'the start date');
+    $this->assertStringContainsString('07/17/26', $output,
+      'and the end date, because this one spans days');
+  }
+
+  /**
    * Renders an instance's date field through a named formatter.
    */
   private function renderDate(EventInstance $instance, string $formatter, array $settings): string {

@@ -83,6 +83,19 @@ trait EventVenueTimezoneFormatterTrait {
     $this->venueTimezoneEntity = $items->getEntity();
     $elements = parent::viewElements($items, $langcode);
 
+    // Render the compact form: the date once, and the end as a bare time when
+    // the event starts and ends on the same day. Core states both endpoints in
+    // full, which for a one-hour event repeats the whole date. This used to be
+    // done by re-parsing the rendered markup in access_misc_entity_view(); it
+    // belongs here, where the zone the date was computed in is known.
+    if ($this->usesCompactRange()) {
+      foreach ($items as $delta => $item) {
+        if (isset($elements[$delta]) && !empty($item->start_date) && !empty($item->end_date)) {
+          $elements[$delta] = $this->compactRange($elements[$delta], $item);
+        }
+      }
+    }
+
     $venueZone = $this->venueTimezone();
     if ($venueZone === NULL) {
       return $elements;
@@ -111,6 +124,68 @@ trait EventVenueTimezoneFormatterTrait {
     }
 
     return $elements;
+  }
+
+  /**
+   * Whether this formatter renders the compact human-readable range.
+   *
+   * Only the detail page's prose rendering is compacted. The views formatter
+   * feeds six views including the API view and emits machine-readable values
+   * (html_datetime, with an ISO offset a consumer parses); rewriting those
+   * into prose would corrupt them.
+   *
+   * @return bool
+   *   TRUE to render the compact range.
+   */
+  protected function usesCompactRange(): bool {
+    return FALSE;
+  }
+
+  /**
+   * Renders a range compactly: the date once, the end as a time when same-day.
+   *
+   * Produces "07/15/26 - 2:00 PM - 3:00 PM CDT" for a same-day event and
+   * "07/15/26 - 2:00 PM - 07/17/26 - 3:00 PM CDT" when it spans days, which is
+   * how the event detail page has always read. Both endpoints are formatted in
+   * whatever zone setTimeZone() resolved, so an in-person event states its
+   * venue's clock and an online one the viewer's.
+   *
+   * @param array $element
+   *   The rendered element for this delta.
+   * @param \Drupal\datetime_range\Plugin\Field\FieldType\DateRangeItem $item
+   *   The field item being rendered.
+   *
+   * @return array
+   *   The element, with its markup replaced by the compact rendering.
+   */
+  private function compactRange(array $element, $item): array {
+    $start = $item->start_date;
+    $end = $item->end_date;
+    if (!$start instanceof DrupalDateTime || !$end instanceof DrupalDateTime) {
+      return $element;
+    }
+
+    // Clone before converting: these are the field item's own objects and
+    // setTimezone() mutates in place, leaking the conversion into every later
+    // reader of the same item.
+    $start = clone $start;
+    $end = clone $end;
+    $this->setTimeZone($start);
+    $this->setTimeZone($end);
+
+    $sameDay = $start->format('Y-m-d') === $end->format('Y-m-d');
+    $text = $start->format('m/d/y - g:i A') . ' - '
+      . ($sameDay ? $end->format('g:i A T') : $end->format('m/d/y - g:i A T'));
+
+    // Replace the whole delta: core builds start/end/separator as separate
+    // children, and leaving any of them would render the range twice.
+    $rebuilt = ['#plain_text' => $text];
+    foreach (['#cache', '#attached'] as $key) {
+      if (isset($element[$key])) {
+        $rebuilt[$key] = $element[$key];
+      }
+    }
+    return $rebuilt;
   }
 
   /**
