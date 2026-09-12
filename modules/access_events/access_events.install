@@ -537,33 +537,17 @@ function access_events_update_10008() {
  * 10008 belongs to the field_inheritance cleanup that ships with the
  * recurring_events 3.x upgrade.
  */
-function access_events_update_10009(&$sandbox) {
+function access_events_update_10009() {
   $backfill = \Drupal::service('access_events.timezone_backfill');
+  $result = $backfill->backfill();
+  $written = $result['author_zone'] + $result['site_default'];
 
-  // The instance rebuild is the long half: ~1,700 rows in production. Batch it
-  // so a slow environment cannot time the update out mid-write. The backfill
-  // itself is idempotent, so a retried pass is safe.
-  if (!isset($sandbox['phase'])) {
-    $result = $backfill->backfill();
-    $sandbox['phase'] = 'inheritance';
-    $sandbox['written'] = $result['author_zone'] + $result['site_default'];
-    $sandbox['review'] = count($result['review']);
-    $sandbox['#finished'] = 0;
-    return t('Wrote @n event timezones.', ['@n' => $sandbox['written']]);
-  }
-
-  $repaired = $backfill->rebuildInheritance();
-  $sandbox['#finished'] = 1;
-
-  $message = t('Wrote @n timezones and repaired inheritance on @r instances.', [
-    '@n' => $sandbox['written'],
-    '@r' => $repaired,
-  ]);
-  if (!empty($sandbox['review'])) {
+  $message = t('Wrote @n event timezones.', ['@n' => $written]);
+  if (!empty($result['review'])) {
     // Not a failure: these are rows where the data disagrees with the derived
     // default. Run the drush command to list them.
     $message .= ' ' . t('@c series need review — run `drush access-events:backfill-timezones` to list them.', [
-      '@c' => $sandbox['review'],
+      '@c' => count($result['review']),
     ]);
   }
   return $message;

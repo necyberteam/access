@@ -23,22 +23,20 @@ class AccessEventsCommands extends DrushCommands {
   }
 
   /**
-   * Backfill event timezones and repair their field inheritance.
+   * Backfill event timezones from each series author's account zone.
    *
    * This is the re-runnable path. It is idempotent: a series that already has
    * a timezone is skipped, so a human correction survives a re-run.
    *
-   * Run it after any deployment that installs or changes the timezone
-   * inheritance config. The contrib hook that writes field_inheritance's
-   * keyvalue rows returns early during config sync, which is exactly how a
-   * deploy installs config — so without the repair the field reads empty on
-   * every pre-existing instance, and because empty is falsy the display shows
-   * its safe branch and nothing looks broken.
+   * Inheritance onto instances needs no repair. field_inheritance 3.x resolves
+   * from a base field whose entities[<type>:<bundle>] entry covers every
+   * inheritance from that source, and recurring_events_update_103000() writes
+   * that entry for every existing instance.
    *
    * @command access-events:backfill-timezones
    * @aliases access-events-tz
    * @usage drush access-events:backfill-timezones
-   *   Write missing timezones, repair inheritance, and report rows for review.
+   *   Write missing timezones and report the rows that need review.
    */
   public function backfillTimezones(): void {
     $result = $this->backfill->backfill();
@@ -47,11 +45,6 @@ class AccessEventsCommands extends DrushCommands {
       '@author' => $result['author_zone'],
       '@site' => $result['site_default'],
       '@skipped' => $result['skipped'],
-    ]));
-
-    $repaired = $this->backfill->rebuildInheritance();
-    $this->logger()->success(dt('Field-inheritance rows repaired on @count instances.', [
-      '@count' => $repaired,
     ]));
 
     if (empty($result['review'])) {

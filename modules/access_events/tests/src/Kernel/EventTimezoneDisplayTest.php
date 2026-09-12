@@ -71,9 +71,6 @@ class EventTimezoneDisplayTest extends EventKernelTestBase {
     ]);
     $instance->save();
 
-    // The inheritance rows are written per instance per field, so a field set
-    // after the instance exists needs the same repair the backfill performs.
-    \Drupal::service('access_events.timezone_backfill')->rebuildInheritance();
     \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
 
     return $this->reloadInstance($instance);
@@ -161,7 +158,10 @@ class EventTimezoneDisplayTest extends EventKernelTestBase {
    * fixes the detail page while every listing keeps rendering viewer-local.
    */
   public function testInPersonBranchAppliesToTheViewsFormatterToo(): void {
-    $instance = $this->instanceWithZone('America/Chicago', TRUE);
+    // Deliberately NOT America/Chicago, which every other case here uses: a
+    // formatter that hardcoded the zone rather than reading the event's own
+    // would satisfy all of those and fail only this one.
+    $instance = $this->instanceWithZone('America/Denver', TRUE);
 
     $original = date_default_timezone_get();
     date_default_timezone_set('America/Los_Angeles');
@@ -177,14 +177,16 @@ class EventTimezoneDisplayTest extends EventKernelTestBase {
       date_default_timezone_set($original);
     }
 
-    // Chicago in July is UTC-5; a Los Angeles viewer would get -0700. The 'O'
+    // Denver in July is UTC-6; a Los Angeles viewer would get -0700. The 'O'
     // format emits the offset without a colon.
-    $this->assertStringContainsString('-0500', $output,
+    $this->assertStringContainsString('-0600', $output,
       'the views formatter emits the venue offset, not the viewer’s');
     $this->assertStringNotContainsString('-0700', $output,
       'and specifically not the viewer’s offset');
-    $this->assertStringContainsString('T14:00:00', $output,
-      'the wall clock is the venue’s 2pm, not the viewer’s noon');
+    $this->assertStringNotContainsString('-0500', $output,
+      'and not Chicago’s either — the zone is read from the event, not assumed');
+    $this->assertStringContainsString('T13:00:00', $output,
+      'the wall clock is the venue’s 1pm, not the viewer’s noon');
   }
 
   /**

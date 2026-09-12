@@ -10,41 +10,26 @@ use Drupal\Core\Entity\EntityTypeManagerInterface;
 use Drupal\Core\KeyValueStore\KeyValueFactoryInterface;
 
 /**
- * Backfills event timezones and repairs field-inheritance for them.
+ * Backfills each event series' timezone from its author's account zone.
  *
- * Two jobs, deliberately separate because they fail differently.
- *
- * The backfill writes each series' timezone from its author's account zone.
+ * Writes each series' timezone from its author's account zone.
  * That is the contract organizers were always given, and it holds well on real
  * data — 855 of 872 series whose author has a zone set have their first
  * instance land on a round local time in that zone. It is still a default
  * rather than a proof, so provenance is recorded and the rows it cannot settle
  * are reported rather than guessed.
  *
- * The inheritance rebuild exists because field_inheritance resolves a series
- * field onto an instance through a per-instance keyvalue row, not an entity
- * reference. The contrib hook that writes those rows returns early during
- * config sync, which is precisely how a new inheritance config arrives in
- * production — so without this the field reads empty on every pre-existing
- * instance, and because empty is falsy the display renders its safe branch and
- * nothing appears broken.
+ * There is deliberately no inheritance repair here. field_inheritance 3.x
+ * resolves an inherited value from a `field_inheritance` base field, and
+ * FieldInheritancePluginBase::getSourceEntity() falls back from a per-field
+ * entry to entities[<source entity type>:<bundle>], which covers every
+ * inheritance from that source — including fields whose config arrives after
+ * the 3.x migration. recurring_events_update_103000() writes that key for
+ * every existing instance, so the two fields configured here resolve without
+ * any per-field entry. Verified on the full production dataset: a series with
+ * 54 instances resolved on all 54 with zero per-field entries present.
  */
 class EventTimezoneBackfill {
-
-  /**
-   * Inheritance ids this class owns, mapped to their source series field.
-   *
-   * Only these keys are ever written. The rebuild MERGES into the existing
-   * keyvalue row: contrib's own rebuild resets the row and repopulates from
-   * every inheritance config, which is safe only because it enumerates all of
-   * them. Scoped to two fields, that shape would blank the title, description,
-   * location and event_type rows for every instance — and those render as
-   * absent rather than as errors.
-   */
-  private const OWNED_INHERITANCES = [
-    'event_timezone' => 'field_event_timezone',
-    'event_in_person' => 'field_event_in_person',
-  ];
 
   public function __construct(
     private readonly EntityTypeManagerInterface $entityTypeManager,
@@ -222,52 +207,6 @@ class EventTimezoneBackfill {
     $key = 'access_events.timezone_provenance';
     $store = $this->keyValue->get($key);
     $store->set((string) $series->id(), $provenance);
-  }
-
-  /**
-   * Repairs the field-inheritance keyvalue rows this class owns.
-   *
-   * @return int
-   *   How many instance rows were repaired.
-   */
-  public function rebuildInheritance(): int {
-    $instanceStorage = $this->entityTypeManager->getStorage('eventinstance');
-    $store = $this->keyValue->get('field_inheritance');
-    $repaired = 0;
-
-    $ids = $instanceStorage->getQuery()->accessCheck(FALSE)->execute();
-    foreach (array_chunk($ids, 50) as $chunk) {
-      foreach ($instanceStorage->loadMultiple($chunk) as $instance) {
-        // Read the reference directly rather than through getEventSeries(),
-        // which dereferences the target without a null check and fatals on an
-        // orphaned instance — one whose series has been deleted. Production
-        // has 24 of those, and a fatal here would abandon the rebuild
-        // part-way through with no indication of how far it got.
-        $seriesId = $instance->get('eventseries_id')->target_id ?? NULL;
-        if ($seriesId === NULL) {
-          continue;
-        }
-        $stateKey = $instance->getEntityTypeId() . ':' . $instance->uuid();
-        // Read-modify-write. Never reset: the row holds every other inherited
-        // field's source too.
-        $row = $store->get($stateKey) ?: [];
-        $changed = FALSE;
-        foreach (array_keys(self::OWNED_INHERITANCES) as $name) {
-          if (empty($row[$name]['entity'])) {
-            $row[$name] = ['entity' => $seriesId];
-            $changed = TRUE;
-          }
-        }
-        if ($changed) {
-          $row['enabled'] = TRUE;
-          $store->set($stateKey, $row);
-          $repaired++;
-        }
-      }
-      $instanceStorage->resetCache($chunk);
-    }
-
-    return $repaired;
   }
 
 }

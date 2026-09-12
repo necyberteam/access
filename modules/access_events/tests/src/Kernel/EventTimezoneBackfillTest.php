@@ -4,15 +4,11 @@ declare(strict_types=1);
 
 namespace Drupal\Tests\access_events\Kernel;
 
-use Drupal\Core\Config\ConfigInstallerInterface;
-use Drupal\field_inheritance\Entity\FieldInheritance;
 use Drupal\recurring_events\Entity\EventSeries;
 use Drupal\user\Entity\User;
 
 /**
- * Tests the event timezone backfill and its field-inheritance rebuild.
- *
- * Two things here are silent when wrong, and both are pinned below.
+ * Tests the event timezone backfill.
  *
  * The backfill writes a zone to every existing series, derived from the
  * author's account timezone. Measured against production that contract holds
@@ -20,13 +16,10 @@ use Drupal\user\Entity\User;
  * — but it is a default, not a proof, and the rows it cannot settle have to
  * reach a human rather than being guessed.
  *
- * Separately, field_inheritance resolves a series field onto an instance
- * through a per-instance keyvalue row, NOT an entity reference. The hook that
- * writes those rows returns early during config sync, which is exactly how a
- * new inheritance config reaches production. So the field can be configured
- * correctly, deploy cleanly, and read empty on every existing instance — and
- * because empty is falsy, the display branch renders its safe side and the
- * whole feature looks like it works while doing nothing.
+ * It is silent when wrong in two ways, both pinned below: a zone written over
+ * a human correction, and a revision left without the field (which reads as
+ * empty, so reverting to it would resolve against the ambient zone and
+ * silently reschedule the event).
  *
  * @group access_events
  */
@@ -38,16 +31,6 @@ class EventTimezoneBackfillTest extends EventKernelTestBase {
   protected function setUp(): void {
     parent::setUp();
     $this->seedTimezoneFields();
-  }
-
-  /**
-   * {@inheritdoc}
-   */
-  protected function tearDown(): void {
-    // setSyncing is a container-level flag; leaving it set leaks into every
-    // later test method in this class.
-    \Drupal::service(ConfigInstallerInterface::class)->setSyncing(FALSE);
-    parent::tearDown();
   }
 
   /**
@@ -178,85 +161,58 @@ class EventTimezoneBackfillTest extends EventKernelTestBase {
   }
 
   /**
-   * The inheritance keyvalue rebuild is what makes the field readable.
+   * A pre-existing instance resolves through the entities[] fallback alone.
    *
-   * Installing the inheritance config under config sync — which is how it
-   * reaches production — writes no keyvalue row, so the instance reads empty.
-   * A test that instead creates a series programmatically passes whether or
-   * not the rebuild exists, because the insert hook fires on that path.
+   * This pins the mechanism the feature now depends on instead of a rebuild.
+   *
+   * field_inheritance 3.x resolves an inherited value from a base field.
+   * FieldInheritancePluginBase::getSourceEntity() takes the source id from
+   * fields[<id>]['entity'] when present, and otherwise falls back to
+   * entities[<source entity type>:<bundle>]['entity'] — a per-source-bundle
+   * default covering every inheritance from that source, including fields
+   * whose config arrived after the 3.x migration.
+   *
+   * That matters because field_inheritance_update_10300() migrates the old
+   * keyvalue rows into fields[] and writes NO entities[] key, and it migrates
+   * only what those rows already held — so on a site where this branch has not
+   * run, nothing carries our two fields. recurring_events_update_103000()
+   * supplies the entities[] key afterwards, and that is what makes them
+   * resolve. Verified against the full production dataset: a series with 54
+   * instances resolved on all 54 with zero per-field entries present.
+   *
+   * If a future contrib change re-keys entities[], drops the fallback, or
+   * reorders the two update hooks, this test is what turns red. Without it the
+   * failure is silent: the value reads empty, and because empty is falsy the
+   * display renders its safe branch and nothing looks broken.
    */
-  public function testKeyvalueRebuildMakesInheritedFieldReadable(): void {
-    // A series and instance that exist BEFORE the inheritance config, which is
-    // the situation of all 1,737 production instances.
+  public function testPreExistingInstanceResolvesThroughTheEntitiesFallback(): void {
     $instance = $this->createRegistrableInstance();
     $series = $instance->getEventSeries();
-    $series->set('field_event_timezone', 'America/Denver')->save();
+    $series->set('field_event_timezone', 'America/Denver')
+      ->set('field_event_in_person', 1)
+      ->save();
 
-    $keyValue = \Drupal::keyValue('field_inheritance');
-    $stateKey = 'eventinstance:' . $instance->uuid();
-
-    // Drop the row this fixture's helper wrote, to model the deployed state.
-    $row = $keyValue->get($stateKey) ?: [];
-    unset($row['event_timezone']);
-    $keyValue->set($stateKey, $row);
-
-    // Re-declare the config the way a deploy does: during config sync.
-    \Drupal::service(ConfigInstallerInterface::class)->setSyncing(TRUE);
-    if ($existing = FieldInheritance::load('eventinstance_default_event_timezone')) {
-      $existing->delete();
-    }
-    FieldInheritance::create([
-      'id' => 'eventinstance_default_event_timezone',
-      'label' => 'Event timezone',
-      'type' => 'inherit',
-      'sourceEntityType' => 'eventseries',
-      'sourceEntityBundle' => 'default',
-      'sourceField' => 'field_event_timezone',
-      'destinationEntityType' => 'eventinstance',
-      'destinationEntityBundle' => 'default',
-      'destinationField' => '',
-      'plugin' => 'default_inheritance',
+    // Model exactly what the 3.x migration leaves behind: enabled, an
+    // entities[] pointer at the source series, and NO per-field entry for
+    // either of our fields.
+    $instance = $this->reloadInstance($instance);
+    $instance->set('field_inheritance', [
+      'enabled' => TRUE,
+      'fields' => [],
+      'entities' => [
+        'eventseries:default' => ['entity' => $series->id()],
+      ],
     ])->save();
-    \Drupal::service(ConfigInstallerInterface::class)->setSyncing(FALSE);
-    \Drupal::service('entity_field.manager')->clearCachedFieldDefinitions();
 
-    $this->assertArrayNotHasKey('event_timezone', $keyValue->get($stateKey) ?: [],
-      'a config-sync install writes no keyvalue row — this is the silent failure');
+    $reloaded = $this->reloadInstance($instance);
+    $map = $reloaded->get('field_inheritance')->first()->getValue();
+    $this->assertSame([], $map['fields'],
+      'the instance carries no per-field entry, as after the migration');
 
-    $rebuilt = \Drupal::service('access_events.timezone_backfill')->rebuildInheritance();
-
-    $this->assertArrayHasKey('event_timezone', $keyValue->get($stateKey) ?: [],
-      'the rebuild writes the missing row');
-    $this->assertGreaterThan(0, $rebuilt, 'and reports how many it repaired');
-    $this->assertSame('America/Denver',
-      $this->reloadInstance($instance)->get('event_timezone')->value,
-      'so the instance finally resolves a non-empty value');
-  }
-
-  /**
-   * The rebuild MERGES; it must not wipe other inherited fields.
-   *
-   * Contrib's own rebuild resets the row and repopulates from every
-   * inheritance config, which is safe only because it enumerates all of them.
-   * Copying that shape while scoped to two fields would blank the title,
-   * description, location and event_type rows for all 1,737 instances — and
-   * those render as absent rather than as errors, so nothing would look broken.
-   */
-  public function testRebuildPreservesOtherInheritedFields(): void {
-    $instance = $this->createRegistrableInstance();
-    $keyValue = \Drupal::keyValue('field_inheritance');
-    $stateKey = 'eventinstance:' . $instance->uuid();
-
-    $before = $keyValue->get($stateKey) ?: [];
-    $this->assertNotEmpty($before, 'the instance starts with inheritance rows');
-
-    \Drupal::service('access_events.timezone_backfill')->rebuildInheritance();
-
-    $after = $keyValue->get($stateKey) ?: [];
-    foreach (array_keys($before) as $key) {
-      $this->assertArrayHasKey($key, $after,
-        "the rebuild preserved the pre-existing '$key' row");
-    }
+    $this->assertSame('America/Denver', $reloaded->get('event_timezone')->value,
+      'and still resolves the timezone through the entities[] fallback');
+    $this->assertEquals(1, $reloaded->get('event_in_person')->value,
+      'and the modality too — the fallback covers every field from that source');
   }
 
   /**
