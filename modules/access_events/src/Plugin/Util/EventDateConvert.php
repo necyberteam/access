@@ -76,6 +76,7 @@ class EventDateConvert {
       $start_date = self::render($start_iso, 'Y-m-d', $startZone);
       $start = self::render($start_iso, 'm/d/y - g:i A', $startZone);
       $start_time = self::render($start_iso, 'g:i A', $startZone);
+      $start_day_date = self::render($start_iso, 'l n/j/Y', $startZone);
     }
 
     $end = 0;
@@ -99,6 +100,7 @@ class EventDateConvert {
 
     $this->start = $start;
     $this->startTime = $start_time;
+    $this->startDayDate = $start_day_date ?? '';
     $this->end = $end;
     $this->endTime = $end_time;
   }
@@ -125,6 +127,18 @@ class EventDateConvert {
    */
   public function getStartTime() {
     return $this->startTime;
+  }
+
+  /**
+   * The weekday and date of the start, in the same zone as the times.
+   *
+   * Callers that print a weekday alongside getStartTime() need it computed in
+   * the zone the times were rendered in. Re-deriving it with date() would use
+   * the ambient zone, which for an evening in-person event names the wrong
+   * weekday and the wrong day.
+   */
+  public function getStartDayDate() {
+    return $this->startDayDate;
   }
 
   /**

@@ -1516,9 +1516,18 @@ function access_events_preprocess_views_view_field(&$variables) {
           $start_date = $date_field->start_date;
           $end_date = $date_field->end_date;
 
-          // Convert to user timezone
-          $user = \Drupal::currentUser();
-          $user_timezone = $user->getTimeZone() ?: date_default_timezone_get();
+          // An in-person event states its venue's clock for every viewer; an
+          // online one is converted to the viewer's zone as before. This block
+          // bypasses the field formatter, so it has to resolve the same zone
+          // the formatter would rather than assuming the viewer's.
+          $venue_zone = $entity->hasField('event_in_person')
+            && !empty($entity->get('event_in_person')->value)
+            && $entity->hasField('event_timezone')
+            ? trim((string) ($entity->get('event_timezone')->value ?? ''))
+            : '';
+          $user_timezone = ($venue_zone !== '' && in_array($venue_zone, \DateTimeZone::listIdentifiers(), TRUE))
+            ? $venue_zone
+            : (\Drupal::currentUser()->getTimeZone() ?: date_default_timezone_get());
 
           // Clone before converting: these are the entity's cached
           // DateTimeComputed objects, shared with every other reader in this
@@ -1549,7 +1558,11 @@ function access_events_preprocess_views_view_field(&$variables) {
         if (count($output) == 2) {
           $start_date = $output[0];
           $end_date = $output[1];
-          $date = new EventDateConvert($start_date, $end_date);
+          // Pass the row's display zone for the same reason as the sibling
+          // branch below: without it the class infers a numeric offset from
+          // the rendered string and labels an in-person event GMT-0500
+          // rather than CST.
+          $date = new EventDateConvert($start_date, $end_date, _access_events_row_display_timezone($variables));
           if ($date->sameDay ) {
             $variables['output'] = Markup::create($date->getStart() . " - " . $date->getEnd());
           } else {
@@ -1591,8 +1604,12 @@ function access_events_preprocess_views_view_field(&$variables) {
       if (count($output) == 2) {
         $start_date = $output[0];
         $end_date = $output[1];
-        $date = new EventDateConvert($start_date, $end_date);
-        $start_date = date('l n/j/Y', strtotime($start_date));
+        $rowZone = _access_events_row_display_timezone($variables);
+        $date = new EventDateConvert($start_date, $end_date, $rowZone);
+        // Re-format the weekday and date in the SAME zone the times were
+        // rendered in. date()/strtotime() here would use the ambient zone,
+        // which for an evening in-person event names the wrong weekday.
+        $start_date = $date->getStartDayDate();
 
         if ($date->sameDay ) {
           $variables['output'] = Markup::create($start_date . " | " . $date->getStartTime() . " - " . $date->getEndTime());
